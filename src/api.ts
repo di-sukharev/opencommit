@@ -1,4 +1,4 @@
-import { intro, outro, text } from '@clack/prompts';
+import { intro, outro } from '@clack/prompts';
 import {
   ChatCompletionRequestMessage,
   ChatCompletionResponseMessage,
@@ -6,7 +6,7 @@ import {
   OpenAIApi
 } from 'openai';
 
-import { CONFIG_KEYS, getConfig, setConfig } from './commands/config';
+import { getConfig } from './commands/config';
 
 const config = getConfig();
 
@@ -14,14 +14,25 @@ let apiKey = config?.OPENAI_API_KEY;
 
 if (!apiKey) {
   intro('opencommit');
-  const apiKey = await text({
-    message: 'input your OPENAI_API_KEY'
-  });
 
-  setConfig([[CONFIG_KEYS.OPENAI_API_KEY as string, apiKey as any]]);
-
-  outro('OPENAI_API_KEY is set');
+  outro(
+    'OPENAI_API_KEY is not set, please run `oc config set OPENAI_API_KEY=<your token>`'
+  );
+  outro(
+    'For help Look into README https://github.com/di-sukharev/opencommit#setup'
+  );
 }
+
+// if (!apiKey) {
+//   intro('opencommit');
+//   const apiKey = await text({
+//     message: 'input your OPENAI_API_KEY'
+//   });
+
+//   setConfig([[CONFIG_KEYS.OPENAI_API_KEY as string, apiKey as any]]);
+
+//   outro('OPENAI_API_KEY is set');
+// }
 
 class OpenAi {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
