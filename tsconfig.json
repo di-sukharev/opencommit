@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES5"],
+
+    "module": "CommonJS",
+    // "rootDir": "./src",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+
+    "allowJs": true,
+
+    "outDir": "./out",
+
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  }
+}
