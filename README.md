@@ -11,6 +11,10 @@
 
 ---
 
+## Examples
+
+Look into [the commits](https://github.com/di-sukharev/opencommit/commit/4795a695800686c42e7c72fca7569103d21cd510) to see how OpenCommit works. Emoji and long commit description text is configurable.
+
 ## Setup
 
 > The minimum supported version of Node.js is the latest v14. Check your Node.js version with `node --version`.
