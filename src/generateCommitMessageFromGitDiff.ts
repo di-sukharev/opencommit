@@ -77,13 +77,17 @@ interface GenerateCommitMessageError {
   error: GenerateCommitMessageErrorEnum;
 }
 
+const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
+  (msg) => msg.content
+).join('').length;
+
 export const generateCommitMessageWithChatCompletion = async (
   diff: string
 ): Promise<string | GenerateCommitMessageError> => {
   try {
     const MAX_REQ_TOKENS = 3900;
 
-    if (diff.length >= MAX_REQ_TOKENS) {
+    if (INIT_MESSAGES_PROMPT_LENGTH + diff.length >= MAX_REQ_TOKENS) {
       const separator = 'diff --git ';
 
       const diffByFiles = diff.split(separator).slice(1);
@@ -91,11 +95,13 @@ export const generateCommitMessageWithChatCompletion = async (
       const commitMessages = [];
 
       for (const diffFile of diffByFiles) {
-        if (diffFile.length >= MAX_REQ_TOKENS) continue;
+        if (INIT_MESSAGES_PROMPT_LENGTH + diffFile.length >= MAX_REQ_TOKENS)
+          continue;
 
         const messages = generateCommitMessageChatCompletionPrompt(
           separator + diffFile
         );
+
         const commitMessage = await api.generateCommitMessage(messages);
 
         // TODO: handle this edge case
