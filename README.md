@@ -13,7 +13,7 @@
 
 ## Examples
 
-Look into [the commits](https://github.com/di-sukharev/opencommit/commit) to see how OpenCommit works. Emoji and long commit description text is configurable.
+Look into [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emoji and long commit description text is configurable.
 
 ## Setup
 
