@@ -15,8 +15,11 @@
     "opencommit": "./out/cli.mjs",
     "oc": "./out/cli.mjs"
   },
+  "repository": {
+    "url": "https://github.com/di-sukharev/opencommit"
+  },
   "type": "module",
-  "author": "",
+  "author": "https://github.com/di-sukharev",
   "license": "ISC",
   "files": [
     "out/**/*"
