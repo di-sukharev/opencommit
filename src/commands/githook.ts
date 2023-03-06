@@ -20,7 +20,9 @@ export const hookCommand = command(
     parameters: ['<set/unset>']
   },
   async (argv) => {
-    const HOOK_PATH = fileURLToPath(new URL('out/cli.cjs', import.meta.url));
+    const HOOK_PATH = fileURLToPath(
+      new URL('../../out/cli.cjs', import.meta.url)
+    );
 
     try {
       await assertGitRepo();
