@@ -37,6 +37,8 @@ export const prepareCommitMessageHook = async () => {
 
     if (typeof commitMessage !== 'string') throw new Error(commitMessage.error);
 
+    console.log({ messageFilePath, commitMessage });
+
     await fs.appendFile(messageFilePath, commitMessage);
 
     outro(`${chalk.green('✔')} commit done`);
