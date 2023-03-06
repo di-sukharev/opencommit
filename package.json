@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "AI generates conventional commits with mind-blowing accuracy.",
   "keywords": [
     "git",
