@@ -37,7 +37,7 @@
     "start": "node ./out/cli.cjs",
     "dev": "ts-node ./src/cli.ts",
     "build": "rimraf out && esbuild ./src/cli.ts --bundle --outfile=out/cli.cjs --format=cjs --platform=node",
-    "publish": "npm version patch && npm publish",
+    "publish": "npm version patch",
     "lint": "eslint src --ext ts && tsc --noEmit"
   },
   "devDependencies": {
