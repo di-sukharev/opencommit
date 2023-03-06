@@ -83,7 +83,7 @@ To remove description:
 opencommit config set description=false
 ```
 
-## Git hook
+<!-- ## Git hook
 
 You can set opencommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with you IDE Source Control and allows you edit the message before commit.
 
@@ -106,7 +106,7 @@ To use the hook:
    git commit
 ```
 
-Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow.
+Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow. -->
 
 ## Payments
 
