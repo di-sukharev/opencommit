@@ -60,13 +60,13 @@ oc
 To add emoji:
 
 ```sh
-opencommit config set emoji=true
+oc config set emoji=true
 ```
 
 To remove emoji:
 
 ```sh
-opencommit config set emoji=false
+oc config set emoji=false
 ```
 
 ### Postface commits with descriptions of changes
@@ -74,13 +74,13 @@ opencommit config set emoji=false
 To add descriptions:
 
 ```sh
-opencommit config set description=true
+oc config set description=true
 ```
 
 To remove description:
 
 ```sh
-opencommit config set description=false
+oc config set description=false
 ```
 
 ## Git hook
@@ -90,20 +90,20 @@ You can set opencommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/gi
 To set the hook:
 
 ```sh
-  opencommit hook set
+oc hook set
 ```
 
 To unset the hook:
 
 ```sh
-  opencommit hook unset
+oc hook unset
 ```
 
 To use the hook:
 
 ```sh
-   git add <files...>
-   git commit
+git add <files...>
+git commit
 ```
 
 Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow.
