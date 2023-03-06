@@ -69,7 +69,7 @@ To remove emoji:
 opencommit config set emoji=false
 ```
 
-### Postface commits with descriptions of changes 🤠
+### Postface commits with descriptions of changes
 
 To add descriptions:
 
