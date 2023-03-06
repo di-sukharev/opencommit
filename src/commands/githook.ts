@@ -20,7 +20,7 @@ export const hookCommand = command(
     parameters: ['<set/unset>']
   },
   async (argv) => {
-    const HOOK_PATH = fileURLToPath(new URL('cli.mjs', import.meta.url));
+    const HOOK_URL = __filename;
 
     try {
       await assertGitRepo();
@@ -39,7 +39,7 @@ export const hookCommand = command(
             realPath = null;
           }
 
-          if (realPath === HOOK_PATH)
+          if (realPath === HOOK_URL)
             return outro(`opencommit is already set as '${HOOK_NAME}'`);
 
           throw new Error(
@@ -48,7 +48,7 @@ export const hookCommand = command(
         }
 
         await fs.mkdir(path.dirname(SYMLINK_URL), { recursive: true });
-        await fs.symlink(HOOK_PATH, SYMLINK_URL, 'file');
+        await fs.symlink(HOOK_URL, SYMLINK_URL, 'file');
         await fs.chmod(SYMLINK_URL, 0o755);
 
         return outro(`${chalk.green('✔')} Hook set`);
@@ -64,7 +64,7 @@ export const hookCommand = command(
         }
 
         const realpath = await fs.realpath(SYMLINK_URL);
-        if (realpath !== HOOK_PATH) {
+        if (realpath !== HOOK_URL) {
           return outro(
             `opencommit wasn't previously set as '${HOOK_NAME}' hook, but different hook was, if you want to remove it — do it manually`
           );
