@@ -1,6 +1,5 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { command } from 'cleye';
 import { assertGitRepo } from '../utils/git.js';
 import { existsSync } from 'fs';
