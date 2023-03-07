@@ -1,7 +1,6 @@
 import { intro, outro } from '@clack/prompts';
 import {
   ChatCompletionRequestMessage,
-  ChatCompletionResponseMessage,
   Configuration as OpenAiApiConfiguration,
   OpenAIApi
 } from 'openai';
@@ -43,7 +42,7 @@ class OpenAi {
 
   public generateCommitMessage = async (
     messages: Array<ChatCompletionRequestMessage>
-  ): Promise<ChatCompletionResponseMessage | undefined> => {
+  ): Promise<string | undefined> => {
     try {
       const { data } = await this.openAI.createChatCompletion({
         model: 'gpt-3.5-turbo',
@@ -55,7 +54,7 @@ class OpenAi {
 
       const message = data.choices[0].message;
 
-      return message;
+      return message?.content;
     } catch (error) {
       console.error('openAI api error', { error });
       throw error;

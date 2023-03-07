@@ -92,17 +92,18 @@ export const generateCommitMessageWithChatCompletion = async (
 
       const diffByFiles = diff.split(separator).slice(1);
 
-      const commitMessagePromises = diffByFiles.map((fileDiff) => {
-        // TODO: split by files
-        if (INIT_MESSAGES_PROMPT_LENGTH + fileDiff.length >= MAX_REQ_TOKENS)
-          return null;
+      const commitMessagePromises = diffByFiles
+        .map((fileDiff) => {
+          // TODO: split by files
+          if (fileDiff.length >= MAX_REQ_TOKENS) return null;
 
-        const messages = generateCommitMessageChatCompletionPrompt(
-          separator + fileDiff
-        );
+          const messages = generateCommitMessageChatCompletionPrompt(
+            separator + fileDiff
+          );
 
-        return api.generateCommitMessage(messages);
-      });
+          return api.generateCommitMessage(messages);
+        })
+        .filter(Boolean);
 
       const commitMessages = await Promise.all(commitMessagePromises);
 
@@ -116,7 +117,7 @@ export const generateCommitMessageWithChatCompletion = async (
     if (!commitMessage)
       return { error: GenerateCommitMessageErrorEnum.emptyMessage };
 
-    return commitMessage.content;
+    return commitMessage;
   } catch (error) {
     return { error: GenerateCommitMessageErrorEnum.internalError };
   }
