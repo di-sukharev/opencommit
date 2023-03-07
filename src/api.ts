@@ -43,8 +43,6 @@ class OpenAi {
   public generateCommitMessage = async (
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> => {
-    console.log({ messages });
-
     try {
       const { data } = await this.openAI.createChatCompletion({
         model: 'gpt-3.5-turbo',
@@ -58,7 +56,7 @@ class OpenAi {
 
       return message?.content;
     } catch (error) {
-      console.error('openAI api error', { error });
+      // console.error('openAI api error', { error });
       throw error;
     }
   };

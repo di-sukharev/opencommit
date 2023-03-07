@@ -82,7 +82,7 @@ const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
   (msg) => msg.content
 ).join('').length;
 
-const MAX_REQ_TOKENS = 1000 - INIT_MESSAGES_PROMPT_LENGTH;
+const MAX_REQ_TOKENS = 3900 - INIT_MESSAGES_PROMPT_LENGTH;
 
 export const generateCommitMessageWithChatCompletion = async (
   diff: string
