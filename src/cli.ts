@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { cli } from 'cleye';
-import packageJSON from '../package.json';
+import packageJSON from '../package.json' assert { type: 'json' };
 
 import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';

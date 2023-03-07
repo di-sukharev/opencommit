@@ -81,34 +81,30 @@ const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
   (msg) => msg.content
 ).join('').length;
 
+const MAX_REQ_TOKENS = 3900 - INIT_MESSAGES_PROMPT_LENGTH;
+
 export const generateCommitMessageWithChatCompletion = async (
   diff: string
 ): Promise<string | GenerateCommitMessageError> => {
   try {
-    const MAX_REQ_TOKENS = 3900;
-
-    if (INIT_MESSAGES_PROMPT_LENGTH + diff.length >= MAX_REQ_TOKENS) {
+    if (diff.length >= MAX_REQ_TOKENS) {
       const separator = 'diff --git ';
 
       const diffByFiles = diff.split(separator).slice(1);
 
-      const commitMessages = [];
-
-      for (const diffFile of diffByFiles) {
-        if (INIT_MESSAGES_PROMPT_LENGTH + diffFile.length >= MAX_REQ_TOKENS)
-          continue;
+      const commitMessagePromises = diffByFiles.map((fileDiff) => {
+        // TODO: split by files
+        if (INIT_MESSAGES_PROMPT_LENGTH + fileDiff.length >= MAX_REQ_TOKENS)
+          return null;
 
         const messages = generateCommitMessageChatCompletionPrompt(
-          separator + diffFile
+          separator + fileDiff
         );
 
-        const commitMessage = await api.generateCommitMessage(messages);
+        return api.generateCommitMessage(messages);
+      });
 
-        // TODO: handle this edge case
-        if (!commitMessage?.content) continue;
-
-        commitMessages.push(commitMessage?.content);
-      }
+      const commitMessages = await Promise.all(commitMessagePromises);
 
       return commitMessages.join('\n\n');
     }
