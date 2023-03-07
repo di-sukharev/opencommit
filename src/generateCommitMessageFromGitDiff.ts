@@ -122,3 +122,20 @@ export const generateCommitMessageWithChatCompletion = async (
     return { error: GenerateCommitMessageErrorEnum.internalError };
   }
 };
+
+function getMessagesPromisesByLines(fileDiff: string, separator: string) {
+  const [fileHeader, ...fileDiffByLines] = fileDiff.split('\n@@');
+  const lineDiffsWithHeader = fileDiffByLines.map(
+    (d) => fileHeader + '\n@@' + d
+  );
+
+  const mergedLines = mergeStrings(lineDiffsWithHeader, MAX_REQ_TOKENS);
+
+  const commitMsgsFromFileLineDiffs = mergedLines.map((d) => {
+    const messages = generateCommitMessageChatCompletionPrompt(separator + d);
+
+    return api.generateCommitMessage(messages);
+  });
+
+  return commitMsgsFromFileLineDiffs;
+}
