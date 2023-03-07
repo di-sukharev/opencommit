@@ -4,6 +4,7 @@ import {
 } from 'openai';
 import { api } from './api';
 import { getConfig } from './commands/config';
+import { mergeStrings } from './utils/mergeStrings';
 
 const config = getConfig();
 
@@ -81,43 +82,28 @@ const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
   (msg) => msg.content
 ).join('').length;
 
-const MAX_REQ_TOKENS = 3900 - INIT_MESSAGES_PROMPT_LENGTH;
+const MAX_REQ_TOKENS = 1000 - INIT_MESSAGES_PROMPT_LENGTH;
 
 export const generateCommitMessageWithChatCompletion = async (
   diff: string
 ): Promise<string | GenerateCommitMessageError> => {
   try {
     if (diff.length >= MAX_REQ_TOKENS) {
-      const separator = 'diff --git ';
-
-      const diffByFiles = diff.split(separator).slice(1);
-
-      const commitMessagePromises = diffByFiles
-        .map((fileDiff) => {
-          // TODO: split by files
-          if (fileDiff.length >= MAX_REQ_TOKENS) return null;
-
-          const messages = generateCommitMessageChatCompletionPrompt(
-            separator + fileDiff
-          );
-
-          return api.generateCommitMessage(messages);
-        })
-        .filter(Boolean);
+      const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(diff);
 
       const commitMessages = await Promise.all(commitMessagePromises);
 
       return commitMessages.join('\n\n');
+    } else {
+      const messages = generateCommitMessageChatCompletionPrompt(diff);
+
+      const commitMessage = await api.generateCommitMessage(messages);
+
+      if (!commitMessage)
+        return { error: GenerateCommitMessageErrorEnum.emptyMessage };
+
+      return commitMessage;
     }
-
-    const messages = generateCommitMessageChatCompletionPrompt(diff);
-
-    const commitMessage = await api.generateCommitMessage(messages);
-
-    if (!commitMessage)
-      return { error: GenerateCommitMessageErrorEnum.emptyMessage };
-
-    return commitMessage;
   } catch (error) {
     return { error: GenerateCommitMessageErrorEnum.internalError };
   }
@@ -138,4 +124,31 @@ function getMessagesPromisesByLines(fileDiff: string, separator: string) {
   });
 
   return commitMsgsFromFileLineDiffs;
+}
+
+function getCommitMsgsPromisesFromFileDiffs(diff: string) {
+  const separator = 'diff --git ';
+
+  const diffByFiles = diff.split(separator).slice(1);
+
+  const mergedDiffs = mergeStrings(diffByFiles, MAX_REQ_TOKENS);
+
+  const commitMessagePromises = [];
+
+  for (const fileDiff of mergedDiffs) {
+    if (fileDiff.length >= MAX_REQ_TOKENS) {
+      // split fileDiff into lineDiff
+      const messagesPromises = getMessagesPromisesByLines(fileDiff, separator);
+
+      commitMessagePromises.push(...messagesPromises);
+    } else {
+      // generate commits for files
+      const messages = generateCommitMessageChatCompletionPrompt(
+        separator + fileDiff
+      );
+
+      commitMessagePromises.push(api.generateCommitMessage(messages));
+    }
+  }
+  return commitMessagePromises;
 }
