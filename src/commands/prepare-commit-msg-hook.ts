@@ -43,8 +43,6 @@ export const prepareCommitMessageHook = async () => {
       messageFilePath,
       commitMessage + '\n' + fileContent.toString()
     );
-
-    outro(`${chalk.green('✔')} commit done`);
   } catch (error) {
     outro(`${chalk.red('✖')} ${error}`);
     process.exit(1);
