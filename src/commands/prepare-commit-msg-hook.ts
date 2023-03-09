@@ -37,8 +37,12 @@ export const prepareCommitMessageHook = async () => {
 
     if (typeof commitMessage !== 'string') throw new Error(commitMessage.error);
 
-    // TODO: change to read file > write file with commitMessage
-    await fs.appendFile(messageFilePath, commitMessage);
+    const fileContent = await fs.readFile(messageFilePath);
+
+    await fs.writeFile(
+      messageFilePath,
+      commitMessage + '\n' + fileContent.toString()
+    );
 
     outro(`${chalk.green('✔')} commit done`);
   } catch (error) {
