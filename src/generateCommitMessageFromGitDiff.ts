@@ -110,14 +110,20 @@ export const generateCommitMessageWithChatCompletion = async (
 };
 
 function getMessagesPromisesByLines(fileDiff: string, separator: string) {
-  const [fileHeader, ...fileDiffByLines] = fileDiff.split('\n@@');
-  const lineDiffsWithHeader = fileDiffByLines.map(
-    (d) => fileHeader + '\n@@' + d
+  const lineSeparator = '\n@@';
+  const [fileHeader, ...fileDiffByLines] = fileDiff.split(lineSeparator);
+
+  // merge multiple line-diffs into 1 to save tokens
+  const mergedLines = mergeStrings(
+    fileDiffByLines.map((line) => lineSeparator + line),
+    MAX_REQ_TOKENS
   );
 
-  const mergedLines = mergeStrings(lineDiffsWithHeader, MAX_REQ_TOKENS);
+  const lineDiffsWithHeader = mergedLines.map(
+    (d) => fileHeader + lineSeparator + d
+  );
 
-  const commitMsgsFromFileLineDiffs = mergedLines.map((d) => {
+  const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map((d) => {
     const messages = generateCommitMessageChatCompletionPrompt(separator + d);
 
     return api.generateCommitMessage(messages);
@@ -131,18 +137,18 @@ function getCommitMsgsPromisesFromFileDiffs(diff: string) {
 
   const diffByFiles = diff.split(separator).slice(1);
 
-  const mergedDiffs = mergeStrings(diffByFiles, MAX_REQ_TOKENS);
+  // merge multiple files-diffs into 1 prompt to save tokens
+  const mergedFilesDiffs = mergeStrings(diffByFiles, MAX_REQ_TOKENS);
 
   const commitMessagePromises = [];
 
-  for (const fileDiff of mergedDiffs) {
+  for (const fileDiff of mergedFilesDiffs) {
     if (fileDiff.length >= MAX_REQ_TOKENS) {
-      // split fileDiff into lineDiff
+      // if file-diff is bigger than gpt context — split fileDiff into lineDiff
       const messagesPromises = getMessagesPromisesByLines(fileDiff, separator);
 
       commitMessagePromises.push(...messagesPromises);
     } else {
-      // generate commits for files
       const messages = generateCommitMessageChatCompletionPrompt(
         separator + fileDiff
       );
