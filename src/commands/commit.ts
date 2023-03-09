@@ -44,8 +44,9 @@ ${chalk.grey('——————————————————')}`
   });
 
   if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
-    await execa('git', ['commit', '-m', commitMessage]);
+    const { stdout } = await execa('git', ['commit', '-m', commitMessage]);
     outro(`${chalk.green('✔')} successfully committed`);
+    outro(stdout);
   } else outro(`${chalk.gray('✖')} process cancelled`);
 };
 
