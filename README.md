@@ -5,7 +5,7 @@
     <h4 align="center">Author <a href="https://github.com/di-sukharev">@di-sukharev</a> <a href="https://twitter.com/io_Y_oi"><img src="https://img.shields.io/twitter/follow/io_Y_oi?style=flat&label=io_Y_oi&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
     </h4>
   </div>
-	<p>AI generates conventional commits with mind-blowing accuracy</p>
+	<p>AI generates conventional commits with mind-blowing accuracy 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
 </div>
 
