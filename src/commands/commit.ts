@@ -79,7 +79,7 @@ export async function commit(isStageAllFlag = false) {
         .bold('`oc`')} command.`
     );
 
-    stagedFilesSpinner.stop('Counting staged files');
+    stagedFilesSpinner.stop('No files are staged');
     const isStageAllAndCommitConfirmedByUser = await confirm({
       message: 'Do you want to stage all files and generate commit message?'
     });
