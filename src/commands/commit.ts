@@ -47,6 +47,15 @@ ${chalk.grey('——————————————————')}`
     const { stdout } = await execa('git', ['commit', '-m', commitMessage]);
     outro(`${chalk.green('✔')} successfully committed`);
     outro(stdout);
+    const isPushConfirmedByUser = await confirm({
+      message: 'Do you want to run `git push`?'
+    });
+
+    if (isPushConfirmedByUser) {
+      const { stdout } = await execa('git', ['push']);
+      outro(`${chalk.green('✔')} successfully pushed all commits`);
+      outro(stdout);
+    }
   } else outro(`${chalk.gray('✖')} process cancelled`);
 };
 
