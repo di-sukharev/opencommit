@@ -16,6 +16,7 @@ const generateCommitMessageFromGitDiff = async (
   commitSpinner.start('Generating the commit message');
   const commitMessage = await generateCommitMessageWithChatCompletion(diff);
 
+  // TODO: show proper error messages
   if (typeof commitMessage !== 'string') {
     const errorMessages = {
       [GenerateCommitMessageErrorEnum.emptyMessage]:
