@@ -11,7 +11,9 @@
 
 ---
 
-## Examples
+<div align="center">
+    <img src=".github/opencommit-example.png" alt="OpenCommit example"/>
+</div>
 
 All the commits in this repo are done with OpenCommit — look into [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emoji and long commit description text is configurable.
 
@@ -30,10 +32,10 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 3. Set the key to opencommit config:
 
    ```sh
-   opencommit config set OPENAI_API_KEY=<your token>
+   opencommit config set OPENAI_API_KEY=<your_api_key>
    ```
 
-   Your token isn't sent to anyone, it's saved in `~/.opencommit` config file.
+   Your api key is stored locally in `~/.opencommit` config file.
 
 ## Usage
 
