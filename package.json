@@ -1,13 +1,17 @@
 {
   "name": "opencommit",
   "version": "1.0.8",
-  "description": "AI generates conventional commits with mind-blowing accuracy 🤯🔫",
+  "description": "GPT CLI to auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
     "chatgpt",
     "gpt",
     "ai",
     "openai",
+    "opencommit",
+    "aicommit",
+    "aicommits",
+    "gptcommit",
     "commit"
   ],
   "main": "cli.js",
