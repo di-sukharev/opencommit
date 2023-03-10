@@ -28,10 +28,11 @@ cli(
       await commit();
       const { stdout } = await execa('npm', ['view', 'opencommit', 'version']);
 
-      if (stdout !== packageJSON.version)
+      if (stdout !== packageJSON.version) {
         outro(
           'new opencommit version is available, update with `npm i -g opencommit`'
         );
+      }
     }
   },
   rawArgv
