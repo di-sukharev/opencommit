@@ -20,6 +20,7 @@ if (!apiKey) {
   outro(
     'For help Look into README https://github.com/di-sukharev/opencommit#setup'
   );
+  process.exit(1);
 }
 
 // if (!apiKey) {
