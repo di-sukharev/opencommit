@@ -11,7 +11,9 @@ const config = getConfig();
 
 let apiKey = config?.OPENAI_API_KEY;
 
-if (!apiKey) {
+const [command, mode] = process.argv.slice(2);
+
+if (!apiKey && command !== 'config' && mode !== 'set') {
   intro('opencommit');
 
   outro(
@@ -20,6 +22,8 @@ if (!apiKey) {
   outro(
     'For help Look into README https://github.com/di-sukharev/opencommit#setup'
   );
+
+  process.exit(1);
 }
 
 // if (!apiKey) {
