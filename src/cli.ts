@@ -21,11 +21,18 @@ cli(
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
     help: { description: packageJSON.description }
   },
-  () => {
+  async () => {
     if (isHookCalled) {
-      prepareCommitMessageHook();
+      await prepareCommitMessageHook();
     } else {
-      commit();
+      await commit();
+      const { stdout } = await execa('npm', ['view', 'opencommit', 'version']);
+
+      if (stdout !== packageJSON.version) {
+        outro(
+          'new opencommit version is available, update with `npm i -g opencommit`'
+        );
+      }
     }
   },
   rawArgv
