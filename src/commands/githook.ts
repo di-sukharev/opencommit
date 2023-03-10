@@ -5,6 +5,7 @@ import { assertGitRepo } from '../utils/git.js';
 import { existsSync } from 'fs';
 import chalk from 'chalk';
 import { intro, outro } from '@clack/prompts';
+import { COMMANDS } from '../CommandsEnum.js';
 
 const HOOK_NAME = 'prepare-commit-msg';
 const SYMLINK_URL = `.git/hooks/${HOOK_NAME}`;
@@ -15,7 +16,7 @@ const isHookExists = existsSync(SYMLINK_URL);
 
 export const hookCommand = command(
   {
-    name: 'hook',
+    name: COMMANDS.hook,
     parameters: ['<set/unset>']
   },
   async (argv) => {

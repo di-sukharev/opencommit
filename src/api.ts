@@ -5,7 +5,7 @@ import {
   OpenAIApi
 } from 'openai';
 
-import { getConfig } from './commands/config';
+import { CONFIG_MODES, getConfig } from './commands/config';
 
 const config = getConfig();
 
@@ -13,7 +13,7 @@ let apiKey = config?.OPENAI_API_KEY;
 
 const [command, mode] = process.argv.slice(2);
 
-if (!apiKey && command !== 'config' && mode !== 'set') {
+if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
   intro('opencommit');
 
   outro(

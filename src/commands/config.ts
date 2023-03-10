@@ -5,11 +5,17 @@ import { existsSync, writeFileSync, readFileSync } from 'fs';
 import { homedir } from 'os';
 import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
+import { COMMANDS } from '../CommandsEnum';
 
 export enum CONFIG_KEYS {
   OPENAI_API_KEY = 'OPENAI_API_KEY',
   description = 'description',
   emoji = 'emoji'
+}
+
+export enum CONFIG_MODES {
+  get = 'get',
+  set = 'set'
 }
 
 const validateConfig = (
@@ -110,7 +116,7 @@ export const setConfig = (keyValues: [key: string, value: string][]) => {
 
 export const configCommand = command(
   {
-    name: 'config',
+    name: COMMANDS.config,
     parameters: ['<mode>', '<key=values...>']
   },
   async (argv) => {
@@ -118,12 +124,12 @@ export const configCommand = command(
     try {
       const { mode, keyValues } = argv._;
 
-      if (mode === 'get') {
+      if (mode === CONFIG_MODES.get) {
         const config = getConfig() || {};
         for (const key of keyValues) {
           outro(`${key}=${config[key as keyof typeof config]}`);
         }
-      } else if (mode === 'set') {
+      } else if (mode === CONFIG_MODES.set) {
         await setConfig(
           keyValues.map((keyValue) => keyValue.split('=') as [string, string])
         );
