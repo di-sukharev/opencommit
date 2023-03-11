@@ -13,6 +13,7 @@ let apiKey = config?.OPENAI_API_KEY;
 
 const [command, mode] = process.argv.slice(2);
 
+
 if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
   intro('opencommit');
 
@@ -47,6 +48,9 @@ class OpenAi {
   public generateCommitMessage = async (
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> => {
+
+      
+
     try {
       const { data } = await this.openAI.createChatCompletion({
         model: 'gpt-3.5-turbo',

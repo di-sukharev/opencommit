@@ -3,9 +3,11 @@ import {
   GenerateCommitMessageErrorEnum,
   generateCommitMessageWithChatCompletion
 } from '../generateCommitMessageFromGitDiff';
-import { assertGitRepo, getStagedGitDiff } from '../utils/git';
-import { spinner, confirm, outro, isCancel, intro } from '@clack/prompts';
+import { assertGitRepo, getChangedFiles, getDif, getStagedFiles, getStagedGitDiff, gitAdd } from '../utils/git';
+import { spinner, confirm, outro, isCancel, intro, multiselect } from '@clack/prompts';
 import chalk from 'chalk';
+import { trytm } from "@bdsqqq/try";
+import { exitProgram } from '../utils/utils';
 
 const generateCommitMessageFromGitDiff = async (
   diff: string
@@ -65,7 +67,15 @@ ${chalk.grey('——————————————————')}`
 };
 
 export async function commit(isStageAllFlag = false) {
+
+  const [stagedFiles, errorStagedFiles] = await trytm(getStagedFiles())
+  const [changedFiles, errorChangedFiles] = await trytm(getChangedFiles())
+
   intro('open-commit');
+  if (errorChangedFiles ?? errorStagedFiles) {
+    outro(`${chalk.red('✖')} ${errorChangedFiles ?? errorStagedFiles}`);
+    process.exit(1);
+  }
 
   const stagedFilesSpinner = spinner();
   stagedFilesSpinner.start('Counting staged files');
@@ -78,8 +88,8 @@ export async function commit(isStageAllFlag = false) {
       )} — write some code, stage the files ${chalk
         .hex('0000FF')
         .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
+          .hex('0000FF')
+          .bold('`oc`')} command.`
     );
 
     process.exit(1);
@@ -90,8 +100,8 @@ export async function commit(isStageAllFlag = false) {
       `${chalk.red('Nothing to commit')} — stage the files ${chalk
         .hex('0000FF')
         .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
+          .hex('0000FF')
+          .bold('`oc`')} command.`
     );
 
     stagedFilesSpinner.stop('No files are staged');
@@ -106,14 +116,28 @@ export async function commit(isStageAllFlag = false) {
       await commit(true);
     }
 
-    process.exit(1);
+    if (stagedFiles.length === 0 && changedFiles.length > 0) {
+      const files = await multiselect({
+        message: chalk.cyan('Selecciona los ficheros que quieres añadir al commit:'),
+        options: changedFiles.map(file => ({
+          value: file,
+          label: file
+        }))
+      }) as string[]
+
+      if (isCancel(files)) exitProgram()
+
+      await gitAdd({ files })
+    }
+
+    commit(false);
   }
 
   stagedFilesSpinner.stop(
-    `${staged.files.length} staged files:\n${staged.files
+    `${stagedFiles.length} staged files:\n${stagedFiles
       .map((file) => `  ${file}`)
       .join('\n')}`
   );
 
-  await generateCommitMessageFromGitDiff(staged.diff);
+  await generateCommitMessageFromGitDiff(await getDif({files: stagedFiles}));
 }
