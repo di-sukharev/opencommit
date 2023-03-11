@@ -117,7 +117,7 @@ export async function commit(isStageAllFlag = false) {
 
     if (stagedFiles.length === 0 && changedFiles.length > 0) {
       const files = await multiselect({
-        message: chalk.cyan('Selecciona los ficheros que quieres añadir al commit:'),
+        message: chalk.cyan("Select the files you want to add to the commit:"),
         options: changedFiles.map(file => ({
           value: file,
           label: file
