@@ -1,4 +1,6 @@
 import { intro, outro } from '@clack/prompts';
+import { AxiosError } from 'axios';
+import chalk from 'chalk';
 import {
   ChatCompletionRequestMessage,
   Configuration as OpenAiApiConfiguration,
@@ -17,25 +19,14 @@ if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
   intro('opencommit');
 
   outro(
-    'OPENAI_API_KEY is not set, please run `oc config set OPENAI_API_KEY=<your token>`'
+    'OPENAI_API_KEY is not set, please run `oc config set OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`'
   );
   outro(
-    'For help Look into README https://github.com/di-sukharev/opencommit#setup'
+    'For help look into README https://github.com/di-sukharev/opencommit#setup'
   );
 
   process.exit(1);
 }
-
-// if (!apiKey) {
-//   intro('opencommit');
-//   const apiKey = await text({
-//     message: 'input your OPENAI_API_KEY'
-//   });
-
-//   setConfig([[CONFIG_KEYS.OPENAI_API_KEY as string, apiKey as any]]);
-
-//   outro('OPENAI_API_KEY is set');
-// }
 
 class OpenAi {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
@@ -59,9 +50,23 @@ class OpenAi {
       const message = data.choices[0].message;
 
       return message?.content;
-    } catch (error) {
-      // console.error('openAI api error', { error });
-      throw error;
+    } catch (error: any) {
+      outro(`${chalk.red('✖')} ${error}`);
+
+      if (error.isAxiosError && error.response?.status === 401) {
+        const err = error as AxiosError;
+
+        const openAiError = (
+          err.response?.data as { error?: { message: string } }
+        ).error;
+
+        if (openAiError?.message) outro(openAiError.message);
+        outro(
+          'For help look into README https://github.com/di-sukharev/opencommit#setup'
+        );
+      }
+
+      process.exit(1);
     }
   };
 }

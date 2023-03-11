@@ -24,7 +24,10 @@ const validateConfig = (
   validationMessage: string
 ) => {
   if (!condition) {
-    throw new Error(`Unsupported config key ${key}: ${validationMessage}`);
+    outro(
+      `${chalk.red('✖')} Unsupported config key ${key}: ${validationMessage}`
+    );
+    process.exit(1);
   }
 };
 
