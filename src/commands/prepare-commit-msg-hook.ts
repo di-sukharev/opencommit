@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import chalk from 'chalk';
 import { intro, outro } from '@clack/prompts';
-import { getChangedFiles, getDif, getStagedFiles, gitAdd } from '../utils/git';
+import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { getConfig } from './config';
 import { generateCommitMessageWithChatCompletion } from '../generateCommitMessageFromGitDiff';
 
@@ -34,7 +34,7 @@ export const prepareCommitMessageHook = async () => {
     }
 
     const commitMessage = await generateCommitMessageWithChatCompletion(
-      await getDif({ files: staged })
+      await getDiff({ files: staged })
     );
 
     if (typeof commitMessage !== 'string') throw new Error(commitMessage.error);

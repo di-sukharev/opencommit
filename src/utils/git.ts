@@ -41,7 +41,7 @@ export const gitAdd = async ({ files }: { files: string[] }) => {
   gitAddSpinner.stop('Done');
 };
 
-export const getDif = async ({ files }: { files: string[] }) => {
+export const getDiff = async ({ files }: { files: string[] }) => {
   const { stdout: diff } = await execa('git', [
     'diff',
     '--staged',

@@ -6,7 +6,7 @@ import {
 import {
   assertGitRepo,
   getChangedFiles,
-  getDif,
+  getDiff,
   getStagedFiles,
   gitAdd
 } from '../utils/git';
@@ -159,7 +159,7 @@ export async function commit(isStageAllFlag = false) {
   );
 
   const [, generateCommitError] = await trytm(
-    generateCommitMessageFromGitDiff(await getDif({ files: stagedFiles }))
+    generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }))
   );
 
   if (generateCommitError) {
