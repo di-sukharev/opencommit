@@ -105,6 +105,7 @@ export const generateCommitMessageWithChatCompletion = async (
       return commitMessage;
     }
   } catch (error) {
+    console.log({ error });
     return { error: GenerateCommitMessageErrorEnum.internalError };
   }
 };

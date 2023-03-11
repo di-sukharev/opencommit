@@ -28,7 +28,7 @@ All the commits in this repo are done with OpenCommit — look into [the commits
    npm install -g opencommit
    ```
 
-2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys)
+2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure you add payment details, so API works.
 
 3. Set the key to opencommit config:
 

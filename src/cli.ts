@@ -7,8 +7,6 @@ import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
 import { commit } from './commands/commit';
-import { execa } from 'execa';
-import { outro } from '@clack/prompts';
 
 const rawArgv = process.argv.slice(2);
 
