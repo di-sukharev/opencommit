@@ -1,4 +1,6 @@
 import { intro, outro } from '@clack/prompts';
+import { AxiosError } from 'axios';
+import chalk from 'chalk';
 import {
   ChatCompletionRequestMessage,
   Configuration as OpenAiApiConfiguration,
@@ -48,9 +50,23 @@ class OpenAi {
       const message = data.choices[0].message;
 
       return message?.content;
-    } catch (error) {
-      // console.error('openAI api error', { error });
-      throw error;
+    } catch (error: any) {
+      outro(`${chalk.red('✖')} ${error}`);
+
+      if (error.isAxiosError && error.response?.status === 401) {
+        const err = error as AxiosError;
+
+        const openAiError = (
+          err.response?.data as { error?: { message: string } }
+        ).error;
+
+        if (openAiError?.message) outro(openAiError.message);
+        outro(
+          'For help look into README https://github.com/di-sukharev/opencommit#setup'
+        );
+      }
+
+      process.exit(1);
     }
   };
 }
