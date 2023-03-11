@@ -162,5 +162,5 @@ export async function commit(isStageAllFlag = false) {
     process.exit(1);
   }
 
-  generateCommitResponse;
+  return generateCommitResponse;
 }
