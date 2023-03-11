@@ -7,7 +7,6 @@ import { assertGitRepo, getChangedFiles, getDif, getStagedFiles, getStagedGitDif
 import { spinner, confirm, outro, isCancel, intro, multiselect } from '@clack/prompts';
 import chalk from 'chalk';
 import { trytm } from "@bdsqqq/try";
-import { exitProgram } from '../utils/utils';
 
 const generateCommitMessageFromGitDiff = async (
   diff: string
@@ -125,7 +124,7 @@ export async function commit(isStageAllFlag = false) {
         }))
       }) as string[]
 
-      if (isCancel(files)) exitProgram()
+      if (isCancel(files)) process.exit(1);
 
       await gitAdd({ files })
     }
