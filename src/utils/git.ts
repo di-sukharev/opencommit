@@ -49,28 +49,32 @@ export const getStagedGitDiff = async (
 };
 
 export const getStagedFiles = async (): Promise<string[]> => {
-  const { stdout: files } = await execa('git', ['diff', '--name-only', '--cached']);
+  const { stdout: files } = await execa('git', [
+    'diff',
+    '--name-only',
+    '--cached'
+  ]);
 
   if (!files) return [];
 
   return files.split('\n').sort();
-}
+};
 
 export const getChangedFiles = async (): Promise<string[]> => {
   const { stdout: files } = await execa('git', ['ls-files', '--modified']);
 
   return files.split('\n').sort();
-}
+};
 
 export const gitAdd = async ({ files }: { files: string[] }) => {
   const gitAddSpinner = spinner();
   gitAddSpinner.start('Adding files to commit');
   await execa('git', ['add', ...files]);
   gitAddSpinner.stop('Done');
-}
+};
 
 export const getDif = async ({ files }: { files: string[] }) => {
   const { stdout: diff } = await execa('git', ['diff', '--staged', ...files]);
 
   return diff;
-}
+};
