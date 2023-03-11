@@ -153,7 +153,7 @@ export async function commit(isStageAllFlag = false) {
       .join('\n')}`
   );
 
-  const [generateCommitResponse, generateCommitError] = await trytm(
+  const [, generateCommitError] = await trytm(
     generateCommitMessageFromGitDiff(await getDif({ files: stagedFiles }))
   );
 
@@ -162,5 +162,5 @@ export async function commit(isStageAllFlag = false) {
     process.exit(1);
   }
 
-  return generateCommitResponse;
+  process.exit(0);
 }
