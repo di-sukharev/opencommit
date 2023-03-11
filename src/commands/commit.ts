@@ -8,7 +8,6 @@ import {
   getChangedFiles,
   getDif,
   getStagedFiles,
-  getStagedGitDiff,
   gitAdd
 } from '../utils/git';
 import {
@@ -20,7 +19,7 @@ import {
   multiselect
 } from '@clack/prompts';
 import chalk from 'chalk';
-import { trytm } from '@bdsqqq/try';
+import { trytm } from '../utils/trytm';
 
 const generateCommitMessageFromGitDiff = async (
   diff: string
@@ -80,6 +79,10 @@ ${chalk.grey('——————————————————')}`
 };
 
 export async function commit(isStageAllFlag = false) {
+  if (isStageAllFlag) {
+    await gitAdd({ files: await getChangedFiles() });
+  }
+
   const [stagedFiles, errorStagedFiles] = await trytm(getStagedFiles());
   const [changedFiles, errorChangedFiles] = await trytm(getChangedFiles());
 
@@ -91,9 +94,8 @@ export async function commit(isStageAllFlag = false) {
 
   const stagedFilesSpinner = spinner();
   stagedFilesSpinner.start('Counting staged files');
-  const staged = await getStagedGitDiff(isStageAllFlag);
 
-  if (!staged && isStageAllFlag) {
+  if (!stagedFiles.length && isStageAllFlag) {
     outro(
       `${chalk.red(
         'No changes detected'
@@ -107,7 +109,7 @@ export async function commit(isStageAllFlag = false) {
     process.exit(1);
   }
 
-  if (!staged) {
+  if (!stagedFiles.length) {
     outro(
       `${chalk.red('Nothing to commit')} — stage the files ${chalk
         .hex('0000FF')
@@ -151,5 +153,14 @@ export async function commit(isStageAllFlag = false) {
       .join('\n')}`
   );
 
-  await generateCommitMessageFromGitDiff(await getDif({ files: stagedFiles }));
+  const [generateCommitResponse, generateCommitError] = await trytm(
+    generateCommitMessageFromGitDiff(await getDif({ files: stagedFiles }))
+  );
+
+  if (generateCommitError) {
+    outro(`${chalk.red('✖')} ${generateCommitError}`);
+    process.exit(1);
+  }
+
+  generateCommitResponse;
 }

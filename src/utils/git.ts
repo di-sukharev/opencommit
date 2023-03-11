@@ -13,41 +13,6 @@ const excludeBigFilesFromDiff = ['*-lock.*', '*.lock'].map(
   (file) => `:(exclude)${file}`
 );
 
-export interface StagedDiff {
-  files: string[];
-  diff: string;
-}
-
-export const getStagedGitDiff = async (
-  isStageAllFlag = false
-): Promise<StagedDiff | null> => {
-  if (isStageAllFlag) {
-    const stageAllSpinner = spinner();
-    stageAllSpinner.start('Staging all changes');
-    await execa('git', ['add', '.']);
-    stageAllSpinner.stop('Done');
-  }
-
-  const diffStaged = ['diff', '--staged'];
-  const { stdout: files } = await execa('git', [
-    ...diffStaged,
-    '--name-only',
-    ...excludeBigFilesFromDiff
-  ]);
-
-  if (!files) return null;
-
-  const { stdout: diff } = await execa('git', [
-    ...diffStaged,
-    ...excludeBigFilesFromDiff
-  ]);
-
-  return {
-    files: files.split('\n').sort(),
-    diff
-  };
-};
-
 export const getStagedFiles = async (): Promise<string[]> => {
   const { stdout: files } = await execa('git', [
     'diff',
@@ -61,9 +26,12 @@ export const getStagedFiles = async (): Promise<string[]> => {
 };
 
 export const getChangedFiles = async (): Promise<string[]> => {
-  const { stdout: files } = await execa('git', ['ls-files', '--modified']);
+  const { stdout: modified } = await execa('git', ['ls-files', '--modified']);
+  const { stdout: others } = await execa('git', ['ls-files', '--others', '--exclude-standard']);
 
-  return files.split('\n').sort();
+  const files = [...modified.split('\n'), ...others.split('\n')];
+
+  return files.filter(Boolean).sort();
 };
 
 export const gitAdd = async ({ files }: { files: string[] }) => {
@@ -74,7 +42,12 @@ export const gitAdd = async ({ files }: { files: string[] }) => {
 };
 
 export const getDif = async ({ files }: { files: string[] }) => {
-  const { stdout: diff } = await execa('git', ['diff', '--staged', ...files]);
+  const { stdout: diff } = await execa('git', [
+    'diff',
+    '--staged',
+    ...files,
+    ...excludeBigFilesFromDiff
+  ]);
 
   return diff;
 };
