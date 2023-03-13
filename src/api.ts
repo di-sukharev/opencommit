@@ -53,10 +53,8 @@ class OpenAi {
     } catch (error: unknown) {
       outro(`${chalk.red('✖')} ${error}`);
 
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        const openAiError = (
-          error.response?.data as { error?: { message: string } }
-        ).error;
+      if (axios.isAxiosError<{ error?: { message: string } }>(error) && error.response?.status === 401) {
+        const openAiError = error.response?.data.error;
 
         if (openAiError?.message) outro(openAiError.message);
         outro(
