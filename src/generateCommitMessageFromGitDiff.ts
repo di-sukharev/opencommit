@@ -49,8 +49,8 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   {
     role: ChatCompletionRequestMessageRoleEnum.Assistant,
     // prettier-ignore
-    content: `* ${config?.emoji ? '🐛 ' : ''}fix(server.ts): change port variable case from lowercase port to uppercase PORT
-* ${config?.emoji ? '✨ ' : ''}feat(server.ts): add support for process.env.PORT environment variable
+    content: `${config?.emoji ? '🐛 ' : ''}fix(server.ts): change port variable case from lowercase port to uppercase PORT
+${config?.emoji ? '✨ ' : ''}feat(server.ts): add support for process.env.PORT environment variable
 ${config?.description ? 'The port variable is now named PORT, which improves consistency with the naming conventions as PORT is a constant. Support for an environment variable allows the application to be more flexible as it can now run on any available port specified via the process.env.PORT environment variable.' : ''}`
   }
 ];
