@@ -13,7 +13,7 @@ export const someFilesExcludedMessage = (files: string[]) => {
   return text({
     message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
       .filter((file) => file.includes('.lock') || file.includes('-lock.'))
-      .join('\n')}`
+      .join('\n').padStart(5)}`
   });
 };
 
