@@ -46,8 +46,6 @@ export const getChangedFiles = async ({
     '--exclude-standard'
   ]);
 
-  console.log({ modified, others });
-
   const files = [...modified.split('\n'), ...others.split('\n')];
 
   const filteredFiles = files.filter((file) => !!file);
