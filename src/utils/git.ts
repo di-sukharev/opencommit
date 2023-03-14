@@ -20,7 +20,9 @@ export const getStagedFiles = async (): Promise<string[]> => {
 
   const excludedFiles = files
     .split('\n')
+    .filter((file) => !!file)
     .filter((file) => file.includes('.lock') || file.includes('-lock.'));
+
   if (excludedFiles.length === files.split('\n').length) {
     throw new Error(
       `Staged files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${excludedFiles.join(
@@ -29,13 +31,14 @@ export const getStagedFiles = async (): Promise<string[]> => {
     );
   }
 
-  return files
-    .split('\n')
-    .filter((file) => !!file)
-    .sort();
+  return files.split('\n').sort();
 };
 
-export const getChangedFiles = async (): Promise<string[]> => {
+export const getChangedFiles = async ({
+  isStageAllFlag
+}: {
+  isStageAllFlag: boolean;
+}): Promise<string[]> => {
   const { stdout: modified } = await execa('git', ['ls-files', '--modified']);
   const { stdout: others } = await execa('git', [
     'ls-files',
@@ -43,13 +46,17 @@ export const getChangedFiles = async (): Promise<string[]> => {
     '--exclude-standard'
   ]);
 
+  console.log({ modified, others });
+
   const files = [...modified.split('\n'), ...others.split('\n')];
 
-  const filesWithoutLocks = files.filter(
+  const filteredFiles = files.filter((file) => !!file);
+
+  const filesWithoutLocks = filteredFiles.filter(
     (file) => !file.includes('.lock') && !file.includes('-lock.')
   );
 
-  if (filesWithoutLocks.length === 0) {
+  if (!isStageAllFlag && filesWithoutLocks.length === 0) {
     throw new Error(
       `No files to commit. All files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
         .filter((file) => file.includes('.lock') || file.includes('-lock.'))
@@ -57,7 +64,7 @@ export const getChangedFiles = async (): Promise<string[]> => {
     );
   }
 
-  return filesWithoutLocks.filter((file) => !!file).sort();
+  return filesWithoutLocks.sort();
 };
 
 export const gitAdd = async ({ files }: { files: string[] }) => {
