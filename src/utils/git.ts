@@ -29,7 +29,10 @@ export const getStagedFiles = async (): Promise<string[]> => {
     );
   }
 
-  return files.split('\n').sort();
+  return files
+    .split('\n')
+    .filter((file) => !!file)
+    .sort();
 };
 
 export const getChangedFiles = async (): Promise<string[]> => {
@@ -54,7 +57,7 @@ export const getChangedFiles = async (): Promise<string[]> => {
     );
   }
 
-  return filesWithoutLocks.sort();
+  return filesWithoutLocks.filter((file) => !!file).sort();
 };
 
 export const gitAdd = async ({ files }: { files: string[] }) => {
