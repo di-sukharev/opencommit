@@ -34,11 +34,7 @@ export const getStagedFiles = async (): Promise<string[]> => {
   return files.split('\n').sort();
 };
 
-export const getChangedFiles = async ({
-  isStageAllFlag
-}: {
-  isStageAllFlag: boolean;
-}): Promise<string[]> => {
+export const getChangedFiles = async (): Promise<string[]> => {
   const { stdout: modified } = await execa('git', ['ls-files', '--modified']);
   const { stdout: others } = await execa('git', [
     'ls-files',
@@ -46,20 +42,20 @@ export const getChangedFiles = async ({
     '--exclude-standard'
   ]);
 
-  const files = [...modified.split('\n'), ...others.split('\n')];
+  const files = [...modified.split('\n'), ...others.split('\n')].filter(
+    (file) => !!file
+  );
 
-  const filteredFiles = files.filter((file) => !!file);
-
-  const filesWithoutLocks = filteredFiles.filter(
+  const filesWithoutLocks = files.filter(
     (file) => !file.includes('.lock') && !file.includes('-lock.')
   );
 
-  if (!isStageAllFlag && filesWithoutLocks.length === 0) {
-    throw new Error(
-      `No files to commit. All files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
+  if (files.length !== filesWithoutLocks.length) {
+    text({
+      message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
         .filter((file) => file.includes('.lock') || file.includes('-lock.'))
         .join('\n')}`
-    );
+    });
   }
 
   return filesWithoutLocks.sort();
