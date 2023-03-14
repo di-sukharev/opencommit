@@ -18,7 +18,7 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
     }. Use the present tense. ${
       config?.description
         ? "Add a short description of what the commit is about after the commit message, make sure you do NOT start the description with 'This commit', simply describe the changes."
-        : "Don't add any descriptions to the commit, only commit message."
+        : "Do NOT add any descriptions to the commit, only commit message."
     }`
   },
   {
