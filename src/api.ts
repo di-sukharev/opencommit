@@ -1,5 +1,5 @@
 import { intro, outro } from '@clack/prompts';
-import { AxiosError } from 'axios';
+import axios from 'axios';
 import chalk from 'chalk';
 import {
   ChatCompletionRequestMessage,
@@ -50,15 +50,11 @@ class OpenAi {
       const message = data.choices[0].message;
 
       return message?.content;
-    } catch (error: any) {
+    } catch (error: unknown) {
       outro(`${chalk.red('✖')} ${error}`);
 
-      if (error.isAxiosError && error.response?.status === 401) {
-        const err = error as AxiosError;
-
-        const openAiError = (
-          err.response?.data as { error?: { message: string } }
-        ).error;
+      if (axios.isAxiosError<{ error?: { message: string } }>(error) && error.response?.status === 401) {
+        const openAiError = error.response.data.error;
 
         if (openAiError?.message) outro(openAiError.message);
         outro(
