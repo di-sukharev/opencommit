@@ -84,9 +84,7 @@ export async function commit(isStageAllFlag = false) {
   }
 
   const [stagedFiles, errorStagedFiles] = await trytm(getStagedFiles());
-  const [changedFiles, errorChangedFiles] = await trytm(
-    getChangedFiles()
-  );
+  const [changedFiles, errorChangedFiles] = await trytm(getChangedFiles());
 
   if (!changedFiles?.length && !stagedFiles?.length) {
     outro(chalk.red('No changes detected'));

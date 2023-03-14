@@ -34,6 +34,14 @@ export const getStagedFiles = async (): Promise<string[]> => {
   return files.split('\n').sort();
 };
 
+export const someFilesExcludedMessage = (files: string[]) => {
+  return text({
+    message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
+      .filter((file) => file.includes('.lock') || file.includes('-lock.'))
+      .join('\n')}`
+  });
+};
+
 export const getChangedFiles = async (): Promise<string[]> => {
   const { stdout: modified } = await execa('git', ['ls-files', '--modified']);
   const { stdout: others } = await execa('git', [
@@ -51,11 +59,7 @@ export const getChangedFiles = async (): Promise<string[]> => {
   );
 
   if (files.length !== filesWithoutLocks.length) {
-    text({
-      message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
-        .filter((file) => file.includes('.lock') || file.includes('-lock.'))
-        .join('\n')}`
-    });
+    someFilesExcludedMessage(files);
   }
 
   return filesWithoutLocks.sort();
@@ -72,11 +76,7 @@ export const gitAdd = async ({ files }: { files: string[] }) => {
   gitAddSpinner.stop('Done');
 
   if (filteredFiles.length !== files.length) {
-    text({
-      message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
-        .filter((file) => file.includes('.lock') || file.includes('-lock.'))
-        .join('\n')}`
-    });
+    someFilesExcludedMessage(files);
   }
 };
 
@@ -86,11 +86,7 @@ export const getDiff = async ({ files }: { files: string[] }) => {
   );
 
   if (filesWithoutLocks.length !== files.length) {
-    text({
-      message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
-        .filter((file) => file.includes('.lock') || file.includes('-lock.'))
-        .join('\n')}`
-    });
+    someFilesExcludedMessage(files);
   }
 
   const { stdout: diff } = await execa('git', [
