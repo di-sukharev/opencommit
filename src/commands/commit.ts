@@ -8,7 +8,8 @@ import { spinner, confirm, outro, isCancel, intro } from '@clack/prompts';
 import chalk from 'chalk';
 
 const generateCommitMessageFromGitDiff = async (
-  diff: string
+  diff: string,
+  extraArgs: string[]
 ): Promise<void> => {
   await assertGitRepo();
 
@@ -45,7 +46,7 @@ ${chalk.grey('——————————————————')}`
   });
 
   if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
-    const { stdout } = await execa('git', ['commit', '-m', commitMessage]);
+    const { stdout } = await execa('git', ['commit', '-m', commitMessage, ...extraArgs]);
     outro(`${chalk.green('✔')} successfully committed`);
     outro(stdout);
     const isPushConfirmedByUser = await confirm({
@@ -64,7 +65,7 @@ ${chalk.grey('——————————————————')}`
   } else outro(`${chalk.gray('✖')} process cancelled`);
 };
 
-export async function commit(isStageAllFlag = false) {
+export async function commit(extraArgs=[], isStageAllFlag = false) {
   intro('open-commit');
 
   const stagedFilesSpinner = spinner();
@@ -103,7 +104,7 @@ export async function commit(isStageAllFlag = false) {
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-      await commit(true);
+      await commit(extraArgs, true);
     }
 
     process.exit(1);
@@ -115,5 +116,5 @@ export async function commit(isStageAllFlag = false) {
       .join('\n')}`
   );
 
-  await generateCommitMessageFromGitDiff(staged.diff);
+  await generateCommitMessageFromGitDiff(staged.diff, extraArgs);
 }
