@@ -15,9 +15,9 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
       config?.emoji
         ? 'Use Gitmoji convention to preface the commit'
         : 'Do not preface the commit with anything'
-    }, use the present tense. ${
+    }. Use the present tense. ${
       config?.description
-        ? 'Add a short description of what commit is about after the commit message. Don\'t start it with "This commit", just describe the changes.'
+        ? "Add a short description of what the commit is about after the commit message, make sure you do NOT start the description with 'This commit', simply describe the changes."
         : "Don't add any descriptions to the commit, only commit message."
     }`
   },
@@ -51,7 +51,7 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
     // prettier-ignore
     content: `${config?.emoji ? '🐛 ' : ''}fix(server.ts): change port variable case from lowercase port to uppercase PORT
 ${config?.emoji ? '✨ ' : ''}feat(server.ts): add support for process.env.PORT environment variable
-${config?.description ? 'The port variable is now named PORT, which improves consistency with the naming conventions as PORT is a constant. Support for an environment variable allows the application to be more flexible as it can now run on any available port specified via the process.env.PORT environment variable.' : ''}`
+${config?.description ? '\nThe port variable is now named PORT, which improves consistency with the naming conventions as PORT is a constant. Support for an environment variable allows the application to be more flexible as it can now run on any available port specified via the process.env.PORT environment variable.' : ''}`
   }
 ];
 
