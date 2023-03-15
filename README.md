@@ -20,8 +20,6 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 
 ## Setup
 
-> The minimum supported version of Node.js is the latest v14. Check your Node.js version with `node --version`.
-
 1. Install opencommit globally to use in any repository:
 
    ```sh
