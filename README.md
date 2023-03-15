@@ -111,4 +111,4 @@ Or follow the process of your IDE Source Control feature, when it calls `git com
 
 ## Payments
 
-You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT official model, that is ~10x times cheaper than GPT-3.
+You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT official model, that is ~10x times cheaper than GPT-3 and ~6x times cheaper than GPT-4.
