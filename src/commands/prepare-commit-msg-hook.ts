@@ -15,15 +15,16 @@ export const prepareCommitMessageHook = async () => {
       );
     }
 
-    if (commitSource) return;
+    const config = getConfig();
+
+    // Skip commit message check if the user has set the skipCommitMessageCheck flag to true
+    if (!config?.skipCommitMessageCheck && commitSource) return;
 
     const staged = await getStagedGitDiff();
 
     if (!staged) return;
 
     intro('opencommit');
-
-    const config = getConfig();
 
     if (!config?.OPENAI_API_KEY) {
       throw new Error(

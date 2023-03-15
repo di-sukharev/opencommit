@@ -10,7 +10,8 @@ import { COMMANDS } from '../CommandsEnum';
 export enum CONFIG_KEYS {
   OPENAI_API_KEY = 'OPENAI_API_KEY',
   description = 'description',
-  emoji = 'emoji'
+  emoji = 'emoji',
+  skipCommitMessageCheck = 'skipCommitMessageCheck'
 }
 
 export enum CONFIG_MODES {
@@ -64,7 +65,16 @@ export const configValidators = {
     );
 
     return value;
-  }
+  },
+  [CONFIG_KEYS.skipCommitMessageCheck](value: any) {
+    validateConfig(
+      CONFIG_KEYS.skipCommitMessageCheck,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+
+    return value;
+  },
 };
 
 export type ConfigType = {
