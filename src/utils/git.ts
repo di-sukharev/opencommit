@@ -1,5 +1,7 @@
 import { execa } from 'execa';
 import { outro, spinner } from '@clack/prompts';
+import { readFileSync } from 'fs';
+import ignore, { Ignore } from 'ignore';
 
 export const assertGitRepo = async () => {
   try {
@@ -13,16 +15,32 @@ export const assertGitRepo = async () => {
 //   (file) => `:(exclude)${file}`
 // );
 
+export const getOpenCommitIgnore = (): Ignore => {
+  const ig = ignore();
+
+  try {
+    ig.add(readFileSync('.opencommitignore').toString().split('\n'));
+  } catch(e) {}
+
+  return ig;
+}
+
 export const getStagedFiles = async (): Promise<string[]> => {
   const { stdout: files } = await execa('git', [
     'diff',
     '--name-only',
-    '--cached'
+    '--cached',
   ]);
 
-  if (!files) return [];
+  const filesList = files.split('\n');
 
-  return files.split('\n').sort();
+
+  const ig = getOpenCommitIgnore();
+  const allowedFiles = filesList.filter(file => !ig.ignores(file));
+
+  if (!allowedFiles) return [];
+
+  return allowedFiles.sort();
 };
 
 export const getChangedFiles = async (): Promise<string[]> => {
