@@ -80,7 +80,12 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(isStageAllFlag = false) {
   if (isStageAllFlag) {
-    await gitAdd({ files: await getChangedFiles() });
+    const changedFiles = await getChangedFiles();
+    if (changedFiles) await gitAdd({ files: changedFiles });
+    else {
+        outro("No changes detected, write some code and run `oc` again");
+        process.exit(1);
+    }
   }
 
   const [stagedFiles, errorStagedFiles] = await trytm(getStagedFiles());
