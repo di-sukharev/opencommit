@@ -56,7 +56,7 @@ ${chalk.grey('——————————————————')}`
       const pushSpinner = spinner();
 
       pushSpinner.start('Running `git push`');
-      const { stdout } = await execa('git', ['push']);
+      const { stdout } = await execa('git', ['push', '-u', 'origin', 'HEAD']);
       pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits`);
 
       if (stdout) outro(stdout);
