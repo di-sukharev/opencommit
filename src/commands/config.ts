@@ -7,8 +7,11 @@ import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { COMMANDS } from '../CommandsEnum';
 
+import * as dotenv from 'dotenv'
+dotenv.config()
+
 export enum CONFIG_KEYS {
-  OPENAI_API_KEY = 'OPENAI_API_KEY',
+  OPENCOMMIT_OPENAI_API_KEY = 'OPENCOMMIT_OPENAI_API_KEY',
   OPENCOMMIT_DESCRIPTION = 'OPENCOMMIT_DESCRIPTION',
   OPENCOMMIT_EMOJI = 'OPENCOMMIT_EMOJI'
 }
@@ -32,15 +35,15 @@ const validateConfig = (
 };
 
 export const configValidators = {
-  [CONFIG_KEYS.OPENAI_API_KEY](value: any) {
-    validateConfig(CONFIG_KEYS.OPENAI_API_KEY, value, 'Cannot be empty');
+  [CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY](value: any) {
+    validateConfig(CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY, value, 'Cannot be empty');
     validateConfig(
-      CONFIG_KEYS.OPENAI_API_KEY,
+      CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY,
       value.startsWith('sk-'),
       'Must start with "sk-"'
     );
     validateConfig(
-      CONFIG_KEYS.OPENAI_API_KEY,
+      CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY,
       value.length === 51,
       'Must be 51 characters long'
     );

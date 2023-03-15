@@ -31,7 +31,7 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 3. Set the key to opencommit config:
 
    ```sh
-   opencommit config set OPENAI_API_KEY=<your_api_key>
+   opencommit config set OPENCOMMIT_OPENAI_API_KEY=<your_api_key>
    ```
 
    Your api key is stored locally in `~/.opencommit` config file.

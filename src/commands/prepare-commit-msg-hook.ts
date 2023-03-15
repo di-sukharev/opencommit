@@ -25,7 +25,7 @@ export const prepareCommitMessageHook = async () => {
 
     const config = getConfig();
 
-    if (!config?.OPENAI_API_KEY) {
+    if (!config?.OPENCOMMIT_OPENAI_API_KEY) {
       throw new Error(
         'No OPEN_AI_API exists. Set your OPEN_AI_API=<key> in ~/.opencommit'
       );
