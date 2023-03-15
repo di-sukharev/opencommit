@@ -102,6 +102,12 @@ To unset the hook:
 oc hook unset
 ```
 
+In the hook, there is a check that checks if the commit message is not empty. If it is not, the hook will not run. To skip that check and always replace the commit message run:
+
+```sh
+oc config set skipCommitMsgHookSourceCheck=true
+```
+
 To use the hook:
 
 ```sh
