@@ -4,8 +4,14 @@ import {
   generateCommitMessageWithChatCompletion
 } from '../generateCommitMessageFromGitDiff';
 import { assertGitRepo, getStagedGitDiff } from '../utils/git';
-import { spinner, confirm, outro, isCancel, intro } from '@clack/prompts';
+import { spinner, confirm, outro, isCancel, intro, select } from '@clack/prompts';
 import chalk from 'chalk';
+
+// Adding a function to get the remote list
+const getGitRemotes = async () => {
+  const { stdout } = await execa('git', ['remote']);
+  return stdout.split('\n').filter((remote) => remote.trim() !== '');
+};
 
 const generateCommitMessageFromGitDiff = async (
   diff: string
@@ -55,11 +61,20 @@ ${chalk.grey('——————————————————')}`
     if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
       const pushSpinner = spinner();
 
-      pushSpinner.start('Running `git push`');
-      const { stdout } = await execa('git', ['push']);
-      pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits`);
+      // Get the remote list and ask the user to choose the remote needed
+      const remotes = await getGitRemotes();
+      const selectedRemote = await select({
+        message: 'Choose a remote to push to',
+        choices: remotes.map((remote) => ({ title: remote, value: remote })),
+      });
 
-      if (stdout) outro(stdout);
+      if (!isCancel(selectedRemote)) {
+        pushSpinner.start(`Running \`git push ${selectedRemote}\``);
+        const { stdout } = await execa('git', ['push', selectedRemote]);
+        pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${selectedRemote}`);
+
+        if (stdout) outro(stdout);
+      }
     }
   } else outro(`${chalk.gray('✖')} process cancelled`);
 };
@@ -73,47 +88,37 @@ export async function commit(isStageAllFlag = false) {
 
   if (!staged && isStageAllFlag) {
     outro(
-      `${chalk.red(
-        'No changes detected'
-      )} — write some code, stage the files ${chalk
-        .hex('0000FF')
-        .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
-    );
+      `${chalk.red
+No changes detected')} — write some code, stage the files ${chalk .hex('0000FF') .bold('git add .')} and rerun ${chalk .hex('0000FF') .bold('oc')} command.
+);
 
-    process.exit(1);
-  }
+process.exit(1);
 
-  if (!staged) {
-    outro(
-      `${chalk.red('Nothing to commit')} — stage the files ${chalk
-        .hex('0000FF')
-        .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
-    );
+}
 
-    stagedFilesSpinner.stop('No files are staged');
-    const isStageAllAndCommitConfirmedByUser = await confirm({
-      message: 'Do you want to stage all files and generate commit message?'
-    });
+if (!staged) {
+outro(
+${chalk.red('Nothing to commit')} — stage the files ${chalk .hex('0000FF') .bold('git add .')} and rerun ${chalk .hex('0000FF') .bold('oc')} command.
+);
 
-    if (
-      isStageAllAndCommitConfirmedByUser &&
-      !isCancel(isStageAllAndCommitConfirmedByUser)
-    ) {
-      await commit(true);
-    }
+stagedFilesSpinner.stop('No files are staged');
+const isStageAllAndCommitConfirmedByUser = await confirm({
+  message: 'Do you want to stage all files and generate commit message?'
+});
 
-    process.exit(1);
-  }
+if (
+  isStageAllAndCommitConfirmedByUser &&
+  !isCancel(isStageAllAndCommitConfirmedByUser)
+) {
+  await commit(true);
+}
 
-  stagedFilesSpinner.stop(
-    `${staged.files.length} staged files:\n${staged.files
-      .map((file) => `  ${file}`)
-      .join('\n')}`
-  );
+process.exit(1);
+}
 
-  await generateCommitMessageFromGitDiff(staged.diff);
+stagedFilesSpinner.stop(
+${staged.files.length} staged files:\n${staged.files .map((file) => ${file}) .join('\n')}
+);
+
+await generateCommitMessageFromGitDiff(staged.diff);
 }
