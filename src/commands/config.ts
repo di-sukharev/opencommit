@@ -48,7 +48,7 @@ export const configValidators = {
     return value;
   },
   [CONFIG_KEYS.OPENCOMMIT_DESCRIPTION](value: any) {
-    const parsedValue = typeof value === 'boolean' || value === 'true' ? value : 'false'
+    const parsedValue = typeof value === 'boolean' ? value : value === 'true' ? true : false
     validateConfig(
       CONFIG_KEYS.OPENCOMMIT_DESCRIPTION,
       typeof parsedValue === 'boolean',
@@ -58,7 +58,7 @@ export const configValidators = {
     return parsedValue;
   },
   [CONFIG_KEYS.OPENCOMMIT_EMOJI](value: any) {
-    const parsedValue = typeof value === 'boolean' || value === 'true' ? value : 'false'
+    const parsedValue = typeof value === 'boolean' ? value : value === 'true' ? true : false
     validateConfig(
       CONFIG_KEYS.OPENCOMMIT_EMOJI,
       typeof parsedValue === 'boolean',
