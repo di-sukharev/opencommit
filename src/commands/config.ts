@@ -11,7 +11,7 @@ export enum CONFIG_KEYS {
   OPENAI_API_KEY = 'OPENAI_API_KEY',
   description = 'description',
   emoji = 'emoji',
-  skipCommitMessageCheck = 'skipCommitMessageCheck'
+  skipCommitMsgHookSourceCheck = 'skipCommitMsgHookSourceCheck'
 }
 
 export enum CONFIG_MODES {
@@ -66,9 +66,9 @@ export const configValidators = {
 
     return value;
   },
-  [CONFIG_KEYS.skipCommitMessageCheck](value: any) {
+  [CONFIG_KEYS.skipCommitMsgHookSourceCheck](value: any) {
     validateConfig(
-      CONFIG_KEYS.skipCommitMessageCheck,
+      CONFIG_KEYS.skipCommitMsgHookSourceCheck,
       typeof value === 'boolean',
       'Must be true or false'
     );

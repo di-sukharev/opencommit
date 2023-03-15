@@ -18,7 +18,7 @@ export const prepareCommitMessageHook = async () => {
     const config = getConfig();
 
     // Skip commit message check if the user has set the skipCommitMessageCheck flag to true
-    if (!config?.skipCommitMessageCheck && commitSource) return;
+    if (!config?.skipCommitMsgHookSourceCheck && commitSource) return;
 
     const staged = await getStagedGitDiff();
 
