@@ -29,7 +29,7 @@ export const getStagedFiles = async (): Promise<string[]> => {
 
   const excludedFiles = files
     .split('\n')
-    .filter((file) => !!file)
+    .filter(Boolean)
     .filter((file) => file.includes('.lock') || file.includes('-lock.'));
 
   if (excludedFiles.length === files.split('\n').length) {
