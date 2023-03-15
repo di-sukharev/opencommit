@@ -17,7 +17,12 @@ export const prepareCommitMessageHook = async () => {
 
     if (commitSource) return;
 
-    await gitAdd({ files: await getChangedFiles() });
+    const changedFiles = await getChangedFiles();
+    if (changedFiles) await gitAdd({ files: changedFiles });
+    else {
+        outro("No changes detected, write some code and run `oc` again");
+        process.exit(1);
+    }
 
     const staged = await getStagedFiles();
 
