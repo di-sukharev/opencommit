@@ -20,8 +20,6 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 
 ## Setup
 
-> The minimum supported version of Node.js is the latest v14. Check your Node.js version with `node --version`.
-
 1. Install opencommit globally to use in any repository:
 
    ```sh
@@ -86,6 +84,20 @@ To remove description:
 oc config set description=false
 ```
 
+### Git flags
+
+The `opencommit` or `oc` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oc`.
+
+```sh
+oc --no-verify
+```
+
+is translated to :
+
+```sh
+git commit -m "${generatedMessage}" --no-verify
+```
+
 ## Git hook
 
 You can set opencommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with you IDE Source Control and allows you edit the message before commit.
@@ -113,4 +125,4 @@ Or follow the process of your IDE Source Control feature, when it calls `git com
 
 ## Payments
 
-You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT official model, that is ~10x times cheaper than GPT-3.
+You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT official model, that is ~10x times cheaper than GPT-3 and ~6x times cheaper than GPT-4.
