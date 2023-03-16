@@ -137,7 +137,7 @@ export async function commit(isStageAllFlag = false) {
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-      await commit(true);
+      return await commit(true);
     }
 
     if (stagedFiles.length === 0 && changedFiles.length > 0) {
