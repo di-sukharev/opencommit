@@ -7,21 +7,6 @@ import zh_CN from '../i18n/zh_CN.json' assert { type: 'json' };
 import zh_TW from '../i18n/zh_TW.json' assert { type: 'json' };
 import ja from '../i18n/ja.json' assert { type: 'json' };
 
-// Because esbuild does not support dynamic imports, the code below cannot be used.
-// await import(`./i18n/${language}.json`)
-
-// ✘ [ERROR] Top-level await is not available in the configured target environment ("es2020")
-// the code below cannot be used.
-/**
- * const translations = await {
- *     'en': () => import(`./i18n/en.json`, {
- *       assert: { type: 'json' }
- *     }),
- *     'zh_CN': () => import(`./i18n/zh_CN.json`, {
- *       assert: { type: 'json' }
- *     })
- *   }[language as I18nLocals]();
- * */
 export enum I18nLocals {
   'en' = 'en',
   'zh_CN' = 'zh_CN',
