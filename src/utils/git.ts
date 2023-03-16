@@ -1,5 +1,5 @@
 import { execa } from 'execa';
-import { spinner } from '@clack/prompts';
+import { spinner, text } from '@clack/prompts';
 
 export const assertGitRepo = async () => {
   try {
@@ -9,41 +9,88 @@ export const assertGitRepo = async () => {
   }
 };
 
-const excludeBigFilesFromDiff = ['*-lock.*', '*.lock'].map(
-  (file) => `:(exclude)${file}`
-);
+export const someFilesExcludedMessage = (files: string[]) => {
+  return text({
+    message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
+      .filter((file) => file.includes('.lock') || file.includes('-lock.'))
+      .join('\n')
+      }`
+  });
+};
 
-export interface StagedDiff {
-  files: string[];
-  diff: string;
-}
+export const getStagedFiles = async (): Promise<string[]> => {
+  const { stdout: files } = await execa('git', [
+    'diff',
+    '--name-only',
+    '--cached'
+  ]);
 
-export const getStagedGitDiff = async (
-  isStageAllFlag = false
-): Promise<StagedDiff | null> => {
-  if (isStageAllFlag) {
-    const stageAllSpinner = spinner();
-    stageAllSpinner.start('Staging all changes');
-    await execa('git', ['add', '.']);
-    stageAllSpinner.stop('Done');
+  if (!files) return [];
+
+  const excludedFiles = files
+    .split('\n')
+    .filter(Boolean)
+    .filter((file) => file.includes('.lock') || file.includes('-lock.'));
+
+  if (excludedFiles.length === files.split('\n').length) {
+    someFilesExcludedMessage(files.split('\n'));
   }
 
-  const diffStaged = ['diff', '--staged'];
-  const { stdout: files } = await execa('git', [
-    ...diffStaged,
-    '--name-only',
-    ...excludeBigFilesFromDiff
+  return files.split('\n').sort();
+};
+
+export const getChangedFiles = async (): Promise<string[]> => {
+  const { stdout: modified } = await execa('git', ['ls-files', '--modified']);
+  const { stdout: others } = await execa('git', [
+    'ls-files',
+    '--others',
+    '--exclude-standard'
   ]);
 
-  if (!files) return null;
+  const files = [...modified.split('\n'), ...others.split('\n')].filter(
+    (file) => !!file
+  );
+
+  const filesWithoutLocks = files.filter(
+    (file) => !file.includes('.lock') && !file.includes('-lock.')
+  );
+
+  if (files.length !== filesWithoutLocks.length) {
+    someFilesExcludedMessage(files);
+  }
+
+  return filesWithoutLocks.sort();
+};
+
+export const gitAdd = async ({ files }: { files: string[] }) => {
+  const filteredFiles = files.filter(
+    (file) => !file.includes('.lock') && !file.includes('-lock.')
+  );
+
+  const gitAddSpinner = spinner();
+  gitAddSpinner.start('Adding files to commit');
+  await execa('git', ['add', ...filteredFiles]);
+  gitAddSpinner.stop('Done');
+
+  if (filteredFiles.length !== files.length) {
+    someFilesExcludedMessage(files);
+  }
+};
+
+export const getDiff = async ({ files }: { files: string[] }) => {
+  const filesWithoutLocks = files.filter(
+    (file) => !file.includes('.lock') && !file.includes('-lock.')
+  );
+
+  if (filesWithoutLocks.length !== files.length) {
+    someFilesExcludedMessage(files);
+  }
 
   const { stdout: diff } = await execa('git', [
-    ...diffStaged,
-    ...excludeBigFilesFromDiff
+    'diff',
+    '--staged',
+    ...filesWithoutLocks
   ]);
 
-  return {
-    files: files.split('\n').sort(),
-    diff
-  };
+  return diff;
 };
