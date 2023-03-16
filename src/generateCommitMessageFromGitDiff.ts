@@ -5,8 +5,10 @@ import {
 import { api } from './api';
 import { getConfig } from './commands/config';
 import { mergeStrings } from './utils/mergeStrings';
+import { i18n, I18nLocals } from './i18n';
 
 const config = getConfig();
+const translation = i18n[config?.language as I18nLocals || 'en']
 
 const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   {
@@ -18,8 +20,8 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
     }, use the present tense. ${
       config?.description
         ? 'Add a short description of what commit is about after the commit message. Don\'t start it with "This commit", just describe the changes.'
-        : "Don't add any descriptions to the commit, only commit message."
-    }`
+        : 'Don\'t add any descriptions to the commit, only commit message.'
+    } Use ${translation.localLanguage} to answer.}`
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.User,
@@ -48,10 +50,9 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.Assistant,
-    // prettier-ignore
-    content: `${config?.emoji ? '🐛 ' : ''}fix(server.ts): change port variable case from lowercase port to uppercase PORT
-${config?.emoji ? '✨ ' : ''}feat(server.ts): add support for process.env.PORT environment variable
-${config?.description ? 'The port variable is now named PORT, which improves consistency with the naming conventions as PORT is a constant. Support for an environment variable allows the application to be more flexible as it can now run on any available port specified via the process.env.PORT environment variable.' : ''}`
+    content: `${config?.emoji ? '🐛 ' : ''}${translation.commitFix}
+${config?.emoji ? '✨ ' : ''}${translation.commitFeat}
+${config?.description ? translation.commitDescription : ''}`
   }
 ];
 
