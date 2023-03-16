@@ -54,21 +54,21 @@ ${chalk.grey('——————————————————')}`
     const { stdout } = await execa('git', ['commit', '-m', commitMessage]);
     outro(`${chalk.green('✔')} successfully committed`);
     outro(stdout);
-    const isPushConfirmedByUser = await confirm({
-      message: 'Do you want to run `git push`?'
-    });
-
-    if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
+    const remotes = await getGitRemotes();
+    if (remotes.length === 1) {
       const pushSpinner = spinner();
-
-      // Get the list of remotes and ask the user to choose the desired remote
-      const remotes = await getGitRemotes();
+      pushSpinner.start(`Running \`git push ${remotes[0]}\``);
+      const { stdout } = await execa('git', ['push', remotes[0]]);
+      pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`);
+      if (stdout) outro(stdout);
+    } else {
       const selectedRemote = await select({
         message: 'Choose a remote to push to',
         choices: remotes.map((remote) => ({ title: remote, value: remote })),
       });
       
       if (!isCancel(selectedRemote)) {
+      const pushSpinner = spinner();
       pushSpinner.start(`Running \`git push ${selectedRemote}\``);
       const { stdout } = await execa('git', ['push', selectedRemote]);
       pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${selectedRemote}`);
