@@ -60,8 +60,11 @@ ${chalk.grey('——————————————————')}`
 
   if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
     const { stdout } = await execa('git', ['commit', '-m', commitMessage]);
+
     outro(`${chalk.green('✔')} successfully committed`);
+
     outro(stdout);
+
     const isPushConfirmedByUser = await confirm({
       message: 'Do you want to run `git push`?'
     });
@@ -83,8 +86,8 @@ export async function commit(isStageAllFlag = false) {
     const changedFiles = await getChangedFiles();
     if (changedFiles) await gitAdd({ files: changedFiles });
     else {
-        outro("No changes detected, write some code and run `oc` again");
-        process.exit(1);
+      outro('No changes detected, write some code and run `oc` again');
+      process.exit(1);
     }
   }
 
@@ -105,29 +108,7 @@ export async function commit(isStageAllFlag = false) {
   const stagedFilesSpinner = spinner();
   stagedFilesSpinner.start('Counting staged files');
 
-  if (!stagedFiles.length && isStageAllFlag) {
-    outro(
-      `${chalk.red(
-        'No changes detected'
-      )} — write some code, stage the files ${chalk
-        .hex('0000FF')
-        .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
-    );
-
-    process.exit(1);
-  }
-
   if (!stagedFiles.length) {
-    outro(
-      `${chalk.red('Nothing to commit')} — stage the files ${chalk
-        .hex('0000FF')
-        .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
-    );
-
     stagedFilesSpinner.stop('No files are staged');
     const isStageAllAndCommitConfirmedByUser = await confirm({
       message: 'Do you want to stage all files and generate commit message?'
@@ -137,7 +118,8 @@ export async function commit(isStageAllFlag = false) {
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-      return await commit(true);
+      await commit(true);
+      process.exit(1);
     }
 
     if (stagedFiles.length === 0 && changedFiles.length > 0) {
@@ -154,7 +136,8 @@ export async function commit(isStageAllFlag = false) {
       await gitAdd({ files });
     }
 
-    commit(false);
+    await commit(false);
+    process.exit(1);
   }
 
   stagedFilesSpinner.stop(
