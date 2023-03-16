@@ -85,7 +85,7 @@ oc config set description=false
 ```
 
 ### Ignore files
-You can ignore files from submission to OpenGPT by creating a `.opencommitignore` file. For example:
+You can ignore files from submission to OpenAI by creating a `.opencommitignore` file. For example:
 
 ```ignorelang
 path/to/large-asset.zip
