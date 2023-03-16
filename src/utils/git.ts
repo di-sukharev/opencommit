@@ -1,5 +1,5 @@
 import { execa } from 'execa';
-import { spinner, text } from '@clack/prompts';
+import { outro, spinner } from '@clack/prompts';
 
 export const assertGitRepo = async () => {
   try {
@@ -9,13 +9,12 @@ export const assertGitRepo = async () => {
   }
 };
 
-export const someFilesExcludedMessage = (files: string[]) => {
-  return text({
-    message: `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
+export const showSomeFilesExcludedMessage = (files: string[]) => {
+  outro(
+    `Some files are .lock files which are excluded by default as it's too big, commit it yourself, don't waste your api tokens. \n${files
       .filter((file) => file.includes('.lock') || file.includes('-lock.'))
-      .join('\n')
-      }`
-  });
+      .join('\n')}`
+  );
 };
 
 export const getStagedFiles = async (): Promise<string[]> => {
@@ -33,7 +32,7 @@ export const getStagedFiles = async (): Promise<string[]> => {
     .filter((file) => file.includes('.lock') || file.includes('-lock.'));
 
   if (excludedFiles.length === files.split('\n').length) {
-    someFilesExcludedMessage(files.split('\n'));
+    showSomeFilesExcludedMessage(files.split('\n'));
   }
 
   return files.split('\n').sort();
@@ -56,7 +55,7 @@ export const getChangedFiles = async (): Promise<string[]> => {
   );
 
   if (files.length !== filesWithoutLocks.length) {
-    someFilesExcludedMessage(files);
+    showSomeFilesExcludedMessage(files);
   }
 
   return filesWithoutLocks.sort();
@@ -73,7 +72,7 @@ export const gitAdd = async ({ files }: { files: string[] }) => {
   gitAddSpinner.stop('Done');
 
   if (filteredFiles.length !== files.length) {
-    someFilesExcludedMessage(files);
+    showSomeFilesExcludedMessage(files);
   }
 };
 
@@ -83,7 +82,7 @@ export const getDiff = async ({ files }: { files: string[] }) => {
   );
 
   if (filesWithoutLocks.length !== files.length) {
-    someFilesExcludedMessage(files);
+    showSomeFilesExcludedMessage(files);
   }
 
   const { stdout: diff } = await execa('git', [
