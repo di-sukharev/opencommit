@@ -6,11 +6,13 @@ import { homedir } from 'os';
 import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { COMMANDS } from '../CommandsEnum';
+import { getI18nLocal } from '../i18n';
 
 export enum CONFIG_KEYS {
   OPENAI_API_KEY = 'OPENAI_API_KEY',
   description = 'description',
-  emoji = 'emoji'
+  emoji = 'emoji',
+  language = 'language'
 }
 
 export enum CONFIG_MODES {
@@ -64,6 +66,14 @@ export const configValidators = {
     );
 
     return value;
+  },
+  [CONFIG_KEYS.language](value: any) {
+    validateConfig(
+      CONFIG_KEYS.language,
+      getI18nLocal(value),
+      `${value} is not supported yet`
+    );
+    return getI18nLocal(value);
   }
 };
 
