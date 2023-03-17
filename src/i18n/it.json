@@ -1,0 +1,6 @@
+{
+  "localLanguage": "italiano",
+  "commitFix": "fix(server.ts): cambia il caso della variabile di porta da minuscolo port a maiuscolo PORT",
+  "commitFeat": "funzionalità(server.ts): aggiungi supporto per la variabile di ambiente process.env.PORT",
+  "commitDescription": "La variabile di porta è ora chiamata PORT, il che migliora la coerenza con le convenzioni di denominazione in quanto PORT è una costante. Il supporto per una variabile di ambiente consente all'applicazione di essere più flessibile poiché ora può essere eseguita su qualsiasi porta disponibile specificata tramite la variabile di ambiente process.env.PORT."
+}

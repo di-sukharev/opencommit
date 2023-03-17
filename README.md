@@ -2,7 +2,7 @@
   <div>
     <img src=".github/logo-grad.svg" alt="OpenCommit logo"/>
     <h1 align="center">OpenCommit</h1>
-    <h4 align="center">Author <a href="https://github.com/di-sukharev">@di-sukharev</a> <a href="https://twitter.com/io_Y_oi"><img src="https://img.shields.io/twitter/follow/io_Y_oi?style=flat&label=io_Y_oi&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
+    <h4 align="center">Follow the bird <a href="https://twitter.com/io_Y_oi"><img src="https://img.shields.io/twitter/follow/io_Y_oi?style=flat&label=io_Y_oi&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
     </h4>
   </div>
 	<h2>GPT CLI to auto-generate impressive commits in 1 second</h2>
@@ -20,7 +20,7 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 
 ## Setup
 
-1. Install opencommit globally to use in any repository:
+1. Install OpenCommit globally to use in any repository:
 
    ```sh
    npm install -g opencommit
@@ -28,7 +28,7 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 
 2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure you add payment details, so API works.
 
-3. Set the key to opencommit config:
+3. Set the key to OpenCommit config:
 
    ```sh
    opencommit config set OPENAI_API_KEY=<your_api_key>
@@ -38,7 +38,7 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 
 ## Usage
 
-You can call `opencommit` directly to generate a commit message for your staged changes:
+You can call OpenCommit directly to generate a commit message for your staged changes:
 
 ```sh
 git add <files...>
@@ -100,7 +100,7 @@ git commit -m "${generatedMessage}" --no-verify
 
 ## Git hook
 
-You can set opencommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with you IDE Source Control and allows you edit the message before commit.
+You can set OpenCommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with you IDE Source Control and allows you edit the message before commit.
 
 To set the hook:
 

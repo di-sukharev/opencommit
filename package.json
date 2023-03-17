@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "1.1.9",
+  "version": "1.1.11",
   "description": "GPT CLI to auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
@@ -42,7 +42,8 @@
     "dev": "ts-node ./src/cli.ts",
     "build": "rimraf out && esbuild ./src/cli.ts --bundle --outfile=out/cli.cjs --format=cjs --platform=node",
     "deploy": "npm run build && npm version patch && npm publish --tag latest",
-    "lint": "eslint src --ext ts && tsc --noEmit"
+    "lint": "eslint src --ext ts && tsc --noEmit",
+    "format": "prettier --write src"
   },
   "devDependencies": {
     "@types/ini": "^1.3.31",
@@ -53,6 +54,7 @@
     "dotenv": "^16.0.3",
     "esbuild": "^0.15.18",
     "eslint": "^8.28.0",
+    "prettier": "^2.8.4",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.3"
   },

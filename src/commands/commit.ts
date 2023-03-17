@@ -3,9 +3,23 @@ import {
   GenerateCommitMessageErrorEnum,
   generateCommitMessageWithChatCompletion
 } from '../generateCommitMessageFromGitDiff';
-import { assertGitRepo, getStagedGitDiff } from '../utils/git';
-import { spinner, confirm, outro, isCancel, intro } from '@clack/prompts';
+import {
+  assertGitRepo,
+  getChangedFiles,
+  getDiff,
+  getStagedFiles,
+  gitAdd
+} from '../utils/git';
+import {
+  spinner,
+  confirm,
+  outro,
+  isCancel,
+  intro,
+  multiselect
+} from '@clack/prompts';
 import chalk from 'chalk';
+import { trytm } from '../utils/trytm';
 
 const generateCommitMessageFromGitDiff = async (
   diff: string,
@@ -47,8 +61,11 @@ ${chalk.grey('——————————————————')}`
 
   if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
     const { stdout } = await execa('git', ['commit', '-m', commitMessage, ...extraArgs]);
+
     outro(`${chalk.green('✔')} successfully committed`);
+
     outro(stdout);
+
     const isPushConfirmedByUser = await confirm({
       message: 'Do you want to run `git push`?'
     });
@@ -58,6 +75,7 @@ ${chalk.grey('——————————————————')}`
 
       pushSpinner.start('Running `git push`');
       const { stdout } = await execa('git', ['push']);
+
       pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits`);
 
       if (stdout) outro(stdout);
@@ -65,36 +83,37 @@ ${chalk.grey('——————————————————')}`
   } else outro(`${chalk.gray('✖')} process cancelled`);
 };
 
+
 export async function commit(extraArgs=[], isStageAllFlag = false) {
-  intro('open-commit');
+  if (isStageAllFlag) {
+    const changedFiles = await getChangedFiles();
 
-  const stagedFilesSpinner = spinner();
-  stagedFilesSpinner.start('Counting staged files');
-  const staged = await getStagedGitDiff(isStageAllFlag);
+    if (changedFiles) await gitAdd({ files: changedFiles });
+    else {
+      outro('No changes detected, write some code and run `oc` again');
+      process.exit(1);
+    }
+  }
 
-  if (!staged && isStageAllFlag) {
-    outro(
-      `${chalk.red(
-        'No changes detected'
-      )} — write some code, stage the files ${chalk
-        .hex('0000FF')
-        .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
-    );
+  const [stagedFiles, errorStagedFiles] = await trytm(getStagedFiles());
+  const [changedFiles, errorChangedFiles] = await trytm(getChangedFiles());
 
+  if (!changedFiles?.length && !stagedFiles?.length) {
+    outro(chalk.red('No changes detected'));
     process.exit(1);
   }
 
-  if (!staged) {
-    outro(
-      `${chalk.red('Nothing to commit')} — stage the files ${chalk
-        .hex('0000FF')
-        .bold('`git add .`')} and rerun ${chalk
-        .hex('0000FF')
-        .bold('`oc`')} command.`
-    );
+  intro('open-commit');
+  if (errorChangedFiles ?? errorStagedFiles) {
+    outro(`${chalk.red('✖')} ${errorChangedFiles ?? errorStagedFiles}`);
+    process.exit(1);
+  }
 
+  const stagedFilesSpinner = spinner();
+
+  stagedFilesSpinner.start('Counting staged files');
+
+  if (!stagedFiles.length) {
     stagedFilesSpinner.stop('No files are staged');
     const isStageAllAndCommitConfirmedByUser = await confirm({
       message: 'Do you want to stage all files and generate commit message?'
@@ -104,17 +123,43 @@ export async function commit(extraArgs=[], isStageAllFlag = false) {
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
+
       await commit(extraArgs, true);
+      process.exit(1);
     }
 
+    if (stagedFiles.length === 0 && changedFiles.length > 0) {
+      const files = (await multiselect({
+        message: chalk.cyan('Select the files you want to add to the commit:'),
+        options: changedFiles.map((file) => ({
+          value: file,
+          label: file
+        }))
+      })) as string[];
+
+      if (isCancel(files)) process.exit(1);
+
+      await gitAdd({ files });
+    }
+
+    await commit(extraArgs, false);
     process.exit(1);
   }
 
   stagedFilesSpinner.stop(
-    `${staged.files.length} staged files:\n${staged.files
+    `${stagedFiles.length} staged files:\n${stagedFiles
       .map((file) => `  ${file}`)
       .join('\n')}`
   );
 
-  await generateCommitMessageFromGitDiff(staged.diff, extraArgs);
+  const [, generateCommitError] = await trytm(
+    generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }), extraArgs)
+  );
+
+  if (generateCommitError) {
+    outro(`${chalk.red('✖')} ${generateCommitError}`);
+    process.exit(1);
+  }
+
+  process.exit(0);
 }
