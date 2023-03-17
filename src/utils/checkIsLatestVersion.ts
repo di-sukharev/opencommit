@@ -12,9 +12,10 @@ export const checkIsLatestVersion = async () => {
         chalk.yellow(
           `
 You are not using the latest stable version of OpenCommit!
-consider updating to the latest version to get the latest features and bug fixes.
+Consider updating to the latest version to get the latest features and bug fixes.
 Current version: ${currentVersion}
 Latest version: ${latestVersion}
+🎉 To update to the latest version, run: npm update opencommit
         `
         )
       );
