@@ -30,6 +30,7 @@ export const getStagedFiles = async (): Promise<string[]> => {
     'diff',
     '--name-only',
     '--cached',
+    '--relative'
   ]);
 
   const filesList = files.split('\n');
