@@ -1,0 +1,6 @@
+{
+  "localLanguage": "繁體中文",
+  "commitFix": "修正(server.ts)：將端口變數從小寫端口改為大寫PORT",
+  "commitFeat": "功能(server.ts)：新增對process.env.PORT環境變數的支援",
+  "commitDescription": "現在port變數已更名為PORT，以符合命名慣例，因為PORT是一個常量。支援環境變數可以使應用程序更靈活，因為它現在可以通過process.env.PORT環境變數運行在任何可用端口上。"
+}

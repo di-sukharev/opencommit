@@ -1,5 +1,5 @@
 import { execa } from 'execa';
-import { spinner } from '@clack/prompts';
+import { outro, spinner } from '@clack/prompts';
 
 export const assertGitRepo = async () => {
   try {
@@ -9,41 +9,66 @@ export const assertGitRepo = async () => {
   }
 };
 
-const excludeBigFilesFromDiff = ['*-lock.*', '*.lock'].map(
-  (file) => `:(exclude)${file}`
-);
+// const excludeBigFilesFromDiff = ['*-lock.*', '*.lock'].map(
+//   (file) => `:(exclude)${file}`
+// );
 
-export interface StagedDiff {
-  files: string[];
-  diff: string;
-}
+export const getStagedFiles = async (): Promise<string[]> => {
+  const { stdout: files } = await execa('git', [
+    'diff',
+    '--name-only',
+    '--cached'
+  ]);
 
-export const getStagedGitDiff = async (
-  isStageAllFlag = false
-): Promise<StagedDiff | null> => {
-  if (isStageAllFlag) {
-    const stageAllSpinner = spinner();
-    stageAllSpinner.start('Staging all changes');
-    await execa('git', ['add', '.']);
-    stageAllSpinner.stop('Done');
+  if (!files) return [];
+
+  return files.split('\n').sort();
+};
+
+export const getChangedFiles = async (): Promise<string[]> => {
+  const { stdout: modified } = await execa('git', ['ls-files', '--modified']);
+  const { stdout: others } = await execa('git', [
+    'ls-files',
+    '--others',
+    '--exclude-standard'
+  ]);
+
+  const files = [...modified.split('\n'), ...others.split('\n')].filter(
+    (file) => !!file
+  );
+
+  return files.sort();
+};
+
+export const gitAdd = async ({ files }: { files: string[] }) => {
+  const gitAddSpinner = spinner();
+  gitAddSpinner.start('Adding files to commit');
+  await execa('git', ['add', ...files]);
+  gitAddSpinner.stop('Done');
+};
+
+export const getDiff = async ({ files }: { files: string[] }) => {
+  const lockFiles = files.filter(
+    (file) => file.includes('.lock') || file.includes('-lock.')
+  );
+
+  if (lockFiles.length) {
+    outro(
+      `Some files are '.lock' files which are excluded by default from 'git diff'. No commit messages are generated for this files:\n${lockFiles.join(
+        '\n'
+      )}`
+    );
   }
 
-  const diffStaged = ['diff', '--staged'];
-  const { stdout: files } = await execa('git', [
-    ...diffStaged,
-    '--name-only',
-    ...excludeBigFilesFromDiff
-  ]);
-
-  if (!files) return null;
+  const filesWithoutLocks = files.filter(
+    (file) => !file.includes('.lock') && !file.includes('-lock.')
+  );
 
   const { stdout: diff } = await execa('git', [
-    ...diffStaged,
-    ...excludeBigFilesFromDiff
+    'diff',
+    '--staged',
+    ...filesWithoutLocks
   ]);
 
-  return {
-    files: files.split('\n').sort(),
-    diff
-  };
+  return diff;
 };
