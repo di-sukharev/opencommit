@@ -102,7 +102,31 @@ oc config set language=française
 The default language set is **English**  
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
+### Git flags
 
+The `opencommit` or `oc` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oc`.
+
+```sh
+oc --no-verify
+```
+
+is translated to :
+
+```sh
+git commit -m "${generatedMessage}" --no-verify
+```
+
+### Ignore files
+You can ignore files from submission to OpenAI by creating a `.opencommitignore` file. For example:
+
+```ignorelang
+path/to/large-asset.zip
+**/*.jpg
+```
+
+This is useful for preventing opencommit from uploading artifacts and large files.
+
+By default, opencommit ignores files matching: `*-lock.*` and `*.lock`
 
 ## Git hook
 
