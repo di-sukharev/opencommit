@@ -8,7 +8,7 @@ import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
 import { commit } from './commands/commit';
 
-const rawArgv = process.argv.slice(2);
+const extraArgs = process.argv.slice(2);
 
 cli(
   {
@@ -23,8 +23,8 @@ cli(
     if (isHookCalled) {
       prepareCommitMessageHook();
     } else {
-      commit();
+      commit(extraArgs);
     }
   },
-  rawArgv
+  extraArgs
 );
