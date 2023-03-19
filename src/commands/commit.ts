@@ -22,7 +22,8 @@ import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
 
 const generateCommitMessageFromGitDiff = async (
-  diff: string
+  diff: string,
+  extraArgs: string[]
 ): Promise<void> => {
   await assertGitRepo();
 
@@ -59,7 +60,7 @@ ${chalk.grey('——————————————————')}`
   });
 
   if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
-    const { stdout } = await execa('git', ['commit', '-m', commitMessage]);
+    const { stdout } = await execa('git', ['commit', '-m', commitMessage, ...extraArgs]);
 
     outro(`${chalk.green('✔')} successfully committed`);
 
@@ -74,6 +75,7 @@ ${chalk.grey('——————————————————')}`
 
       pushSpinner.start('Running `git push`');
       const { stdout } = await execa('git', ['push']);
+
       pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits`);
 
       if (stdout) outro(stdout);
@@ -81,9 +83,11 @@ ${chalk.grey('——————————————————')}`
   } else outro(`${chalk.gray('✖')} process cancelled`);
 };
 
-export async function commit(isStageAllFlag = false) {
+
+export async function commit(extraArgs=[], isStageAllFlag = false) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
+
     if (changedFiles) await gitAdd({ files: changedFiles });
     else {
       outro('No changes detected, write some code and run `oc` again');
@@ -106,6 +110,7 @@ export async function commit(isStageAllFlag = false) {
   }
 
   const stagedFilesSpinner = spinner();
+
   stagedFilesSpinner.start('Counting staged files');
 
   if (!stagedFiles.length) {
@@ -118,7 +123,8 @@ export async function commit(isStageAllFlag = false) {
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-      await commit(true);
+
+      await commit(extraArgs, true);
       process.exit(1);
     }
 
@@ -136,7 +142,7 @@ export async function commit(isStageAllFlag = false) {
       await gitAdd({ files });
     }
 
-    await commit(false);
+    await commit(extraArgs, false);
     process.exit(1);
   }
 
@@ -147,7 +153,7 @@ export async function commit(isStageAllFlag = false) {
   );
 
   const [, generateCommitError] = await trytm(
-    generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }))
+    generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }), extraArgs)
   );
 
   if (generateCommitError) {
