@@ -3,7 +3,7 @@ import { outro, spinner } from '@clack/prompts';
 
 export const assertGitRepo = async () => {
   try {
-    await execa('git', ['rev-parse']);
+    process.chdir(await execa('git', ['rev-parse', '--show-toplevel']));
   } catch (error) {
     throw new Error(error as string);
   }
