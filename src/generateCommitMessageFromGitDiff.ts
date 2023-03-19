@@ -21,7 +21,7 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
       config?.description
         ? 'Add a short description of what commit is about after the commit message. Don\'t start it with "This commit", just describe the changes.'
         : 'Don\'t add any descriptions to the commit, only commit message.'
-    } Use ${translation.localLanguage} to answer.}`
+    } Use ${translation.localLanguage} to answer.`
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.User,

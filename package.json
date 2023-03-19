@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "1.1.11",
+  "version": "1.1.16",
   "description": "GPT CLI to auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
@@ -64,6 +64,7 @@
     "chalk": "^5.2.0",
     "cleye": "^1.3.2",
     "execa": "^7.0.0",
+    "ignore": "^5.2.4",
     "ini": "^3.0.1",
     "inquirer": "^9.1.4",
     "openai": "^3.2.1"
