@@ -84,6 +84,24 @@ To remove description:
 oc config set description=false
 ```
 
+### Internationalization support
+
+To specify the language used to generate commit messages:
+
+```sh
+# de, German ,Deutsch
+oc config set language=de
+oc config set language=German
+oc config set language=Deutsch
+
+# fr, French, française
+oc config set language=fr
+oc config set language=French
+oc config set language=française
+```
+The default language set is **English**  
+All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
+
 ### Git flags
 
 The `opencommit` or `oc` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oc`.

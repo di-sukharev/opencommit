@@ -3,6 +3,7 @@ import {
   GenerateCommitMessageErrorEnum,
   generateCommitMessageWithChatCompletion
 } from '../generateCommitMessageFromGitDiff';
+
 import { assertGitRepo, getStagedGitDiff, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { spinner, confirm, outro, isCancel, intro, multiselect, select } from '@clack/prompts';
 import chalk from 'chalk';
@@ -59,7 +60,12 @@ ${chalk.grey('——————————————————')}`
   });
 
   if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
-    const { stdout } = await execa('git', ['commit', '-m', commitMessage, ...extraArgs]);
+    const { stdout } = await execa('git', [
+      'commit',
+      '-m',
+      commitMessage,
+      ...extraArgs
+    ]);
 
     outro(`${chalk.green('✔')} successfully committed`);
 
@@ -92,11 +98,13 @@ ${chalk.grey('——————————————————')}`
       pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${selectedRemote} ${currentBranch}`);
       if (stdout) outro(stdout);
     }
-  } else outro(`${chalk.gray('✖')} process cancelled`);
+  }
 };
 
-
-export async function commit(extraArgs=[], isStageAllFlag = false) {
+export async function commit(
+  extraArgs: string[] = [],
+  isStageAllFlag: Boolean = false
+) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
 
@@ -135,7 +143,6 @@ export async function commit(extraArgs=[], isStageAllFlag = false) {
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-
       await commit(extraArgs, true);
       process.exit(1);
     }
@@ -167,7 +174,10 @@ export async function commit(extraArgs=[], isStageAllFlag = false) {
   await generateCommitMessageFromGitDiff(staged.diff);
 }
   const [, generateCommitError] = await trytm(
-    generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }), extraArgs)
+    generateCommitMessageFromGitDiff(
+      await getDiff({ files: stagedFiles }),
+      extraArgs
+    )
   );
 
   if (generateCommitError) {

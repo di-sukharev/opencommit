@@ -7,6 +7,7 @@ import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
 import { commit } from './commands/commit';
+// import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 
 const extraArgs = process.argv.slice(2);
 
@@ -19,7 +20,8 @@ cli(
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
     help: { description: packageJSON.description }
   },
-  () => {
+  async () => {
+    // await checkIsLatestVersion();
     if (isHookCalled) {
       prepareCommitMessageHook();
     } else {
