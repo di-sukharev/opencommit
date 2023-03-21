@@ -29,7 +29,8 @@ export const getStagedFiles = async (): Promise<string[]> => {
   const { stdout: files } = await execa('git', [
     'diff',
     '--name-only',
-    '--cached'
+    '--cached',
+    '--relative'
   ]);
 
   if (!files) return [];
