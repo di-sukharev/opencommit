@@ -84,6 +84,32 @@ To remove description:
 oc config set description=false
 ```
 
+### Git flags
+
+The `opencommit` or `oc` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oc`.
+
+```sh
+oc --no-verify
+```
+
+is translated to :
+
+```sh
+git commit -m "${generatedMessage}" --no-verify
+```
+
+### Ignore files
+You can ignore files from submission to OpenAI by creating a `.opencommitignore` file. For example:
+
+```ignorelang
+path/to/large-asset.zip
+**/*.jpg
+```
+
+This is useful for preventing opencommit from uploading artifacts and large files.
+
+By default, opencommit ignores files matching: `*-lock.*` and `*.lock`
+
 ## Git hook
 
 You can set OpenCommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with you IDE Source Control and allows you edit the message before commit.
