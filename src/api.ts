@@ -53,7 +53,10 @@ class OpenAi {
     } catch (error: unknown) {
       outro(`${chalk.red('✖')} ${error}`);
 
-      if (axios.isAxiosError<{ error?: { message: string } }>(error) && error.response?.status === 401) {
+      if (
+        axios.isAxiosError<{ error?: { message: string } }>(error) &&
+        error.response?.status === 401
+      ) {
         const openAiError = error.response.data.error;
 
         if (openAiError?.message) outro(openAiError.message);
@@ -66,5 +69,19 @@ class OpenAi {
     }
   };
 }
+
+export const getOpenCommitLatestVersion = async (): Promise<
+  string | undefined
+> => {
+  try {
+    const { data } = await axios.get(
+      'https://unpkg.com/opencommit/package.json'
+    );
+    return data.version;
+  } catch (_) {
+    outro('Error while getting the latest version of opencommit');
+    return undefined;
+  }
+};
 
 export const api = new OpenAi();
