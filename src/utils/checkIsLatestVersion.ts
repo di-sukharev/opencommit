@@ -1,6 +1,7 @@
 import { getOpenCommitLatestVersion } from '../api';
 import currentPackage from '../../package.json' assert { type: 'json' };
 import chalk from 'chalk';
+
 export const checkIsLatestVersion = async () => {
   const latestVersion = await getOpenCommitLatestVersion();
 
