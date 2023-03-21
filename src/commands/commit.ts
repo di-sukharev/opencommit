@@ -3,8 +3,22 @@ import {
   GenerateCommitMessageErrorEnum,
   generateCommitMessageWithChatCompletion
 } from '../generateCommitMessageFromGitDiff';
-import { assertGitRepo, getStagedGitDiff, getDiff, getStagedFiles, gitAdd } from '../utils/git';
-import { spinner, confirm, outro, isCancel, intro, multiselect, select } from '@clack/prompts';
+import {
+  assertGitRepo,
+  getChangedFiles,
+  getDiff,
+  getStagedFiles,
+  gitAdd
+} from '../utils/git';
+import {
+  spinner,
+  confirm,
+  outro,
+  isCancel,
+  intro,
+  multiselect,
+  select
+} from '@clack/prompts';
 import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
 
@@ -53,44 +67,58 @@ ${chalk.grey('——————————————————')}`
   });
 
   if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
-    const { stdout } = await execa('git', ['commit', '-m', commitMessage, ...extraArgs]);
+    const { stdout } = await execa('git', [
+      'commit',
+      '-m',
+      commitMessage,
+      ...extraArgs
+    ]);
 
     outro(`${chalk.green('✔')} successfully committed`);
 
     outro(stdout);
     const remotes = await getGitRemotes();
-    
+
     if (remotes.length === 1) {
-    const isPushConfirmedByUser = await confirm({
-      message: 'Do you want to run `git push`?'
-    });
-
-    if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
-      const pushSpinner = spinner();
-      pushSpinner.start(`Running \`git push ${remotes[0]}\``);
-      const { stdout } = await execa('git', ['push', remotes[0]]);
-      pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`);
-      if (stdout) outro(stdout);
-    } else {
-      const selectedRemote = await select({
-        message: 'Choose a remote to push to',
-        choices: remotes.map((remote) => ({ title: remote, value: remote })),
+      const isPushConfirmedByUser = await confirm({
+        message: 'Do you want to run `git push`?'
       });
-      
+
+      if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
+        const pushSpinner = spinner();
+        pushSpinner.start(`Running \`git push ${remotes[0]}\``);
+        const { stdout } = await execa('git', ['push', remotes[0]]);
+        pushSpinner.stop(
+          `${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`
+        );
+        if (stdout) outro(stdout);
+      }
+    } else {
+      const selectedRemote = (await select({
+        message: 'Choose a remote to push to',
+        options: remotes.map((remote) => ({ value: remote, label: remote }))
+      })) as string;
+
       if (!isCancel(selectedRemote)) {
-      const pushSpinner = spinner();
-      pushSpinner.start(`Running \`git push ${selectedRemote}\``);
-      const { stdout } = await execa('git', ['push', selectedRemote]);
-      pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${selectedRemote}`);
+        const pushSpinner = spinner();
+        pushSpinner.start(`Running \`git push ${selectedRemote}\``);
+        const { stdout } = await execa('git', ['push', selectedRemote]);
+        pushSpinner.stop(
+          `${chalk.green(
+            '✔'
+          )} successfully pushed all commits to ${selectedRemote}`
+        );
 
-
-      if (stdout) outro(stdout);
+        if (stdout) outro(stdout);
+      } else outro(`${chalk.gray('✖')} process cancelled`);
     }
-  } else outro(`${chalk.gray('✖')} process cancelled`);
+  }
 };
 
-
-export async function commit(extraArgs=[], isStageAllFlag = false) {
+export async function commit(
+  extraArgs: string[] = [],
+  isStageAllFlag: Boolean = false
+) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
 
@@ -129,7 +157,6 @@ export async function commit(extraArgs=[], isStageAllFlag = false) {
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-
       await commit(extraArgs, true);
       process.exit(1);
     }
@@ -158,10 +185,11 @@ export async function commit(extraArgs=[], isStageAllFlag = false) {
       .join('\n')}`
   );
 
-  await generateCommitMessageFromGitDiff(staged.diff);
-}
   const [, generateCommitError] = await trytm(
-    generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }), extraArgs)
+    generateCommitMessageFromGitDiff(
+      await getDiff({ files: stagedFiles }),
+      extraArgs
+    )
   );
 
   if (generateCommitError) {

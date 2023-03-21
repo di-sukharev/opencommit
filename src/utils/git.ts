@@ -20,10 +20,10 @@ export const getOpenCommitIgnore = (): Ignore => {
 
   try {
     ig.add(readFileSync('.opencommitignore').toString().split('\n'));
-  } catch(e) {}
+  } catch (e) {}
 
   return ig;
-}
+};
 
 export const getStagedFiles = async (): Promise<string[]> => {
   const { stdout: files } = await execa('git', [
@@ -33,11 +33,12 @@ export const getStagedFiles = async (): Promise<string[]> => {
     '--relative'
   ]);
 
+  if (!files) return [];
+
   const filesList = files.split('\n');
 
-
   const ig = getOpenCommitIgnore();
-  const allowedFiles = filesList.filter(file => !ig.ignores(file));
+  const allowedFiles = filesList.filter((file) => !ig.ignores(file));
 
   if (!allowedFiles) return [];
 
@@ -86,6 +87,7 @@ export const getDiff = async ({ files }: { files: string[] }) => {
   const { stdout: diff } = await execa('git', [
     'diff',
     '--staged',
+    '--',
     ...filesWithoutLocks
   ]);
 
