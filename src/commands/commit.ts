@@ -3,9 +3,22 @@ import {
   GenerateCommitMessageErrorEnum,
   generateCommitMessageWithChatCompletion
 } from '../generateCommitMessageFromGitDiff';
-
-import { assertGitRepo, getStagedGitDiff, getDiff, getStagedFiles, gitAdd } from '../utils/git';
-import { spinner, confirm, outro, isCancel, intro, multiselect, select } from '@clack/prompts';
+import {
+  assertGitRepo,
+  getChangedFiles,
+  getDiff,
+  getStagedFiles,
+  gitAdd
+} from '../utils/git';
+import {
+  spinner,
+  confirm,
+  outro,
+  isCancel,
+  intro,
+  multiselect,
+  select
+} from '@clack/prompts';
 import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
 
@@ -13,12 +26,6 @@ import { trytm } from '../utils/trytm';
 const getGitRemotes = async () => {
   const { stdout } = await execa('git', ['remote']);
   return stdout.split('\n').filter((remote) => remote.trim() !== '');
-};
-
-// Adding a function to get the current branch
-const getCurrentBranch = async () => {
-  const { stdout } = await execa('git', ['branch', '--show-current']);
-  return stdout.trim();
 };
 
 const generateCommitMessageFromGitDiff = async (
@@ -71,32 +78,38 @@ ${chalk.grey('——————————————————')}`
 
     outro(stdout);
     const remotes = await getGitRemotes();
-    const currentBranch = await getCurrentBranch();
-    
-    if (remotes.length === 1) {
-    const isPushConfirmedByUser = await confirm({
-      message: 'Do you want to run `git push`?'
-    });
 
-    if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
-      const pushSpinner = spinner();
-      pushSpinner.start(`Running \`git push ${remotes[0]} ${currentBranch}\``);
-      const { stdout } = await execa('git', ['push', remotes[0], currentBranch]);
-      pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${remotes[0]} ${currentBranch}`);
-      if (stdout) outro(stdout);
-    }
-  } else {
-    const selectedRemote = await select({
-      message: 'Choose a remote to push to',
-      choices: remotes.map((remote) => ({ title: remote, value: remote })),
-    });
-      
-    if (!isCancel(selectedRemote)) {
-      const pushSpinner = spinner();
-      pushSpinner.start(`Running \`git push ${selectedRemote} ${currentBranch}\``);
-      const { stdout } = await execa('git', ['push', selectedRemote, currentBranch]);
-      pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${selectedRemote} ${currentBranch}`);
-      if (stdout) outro(stdout);
+    if (remotes.length === 1) {
+      const isPushConfirmedByUser = await confirm({
+        message: 'Do you want to run `git push`?'
+      });
+
+      if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
+        const pushSpinner = spinner();
+        pushSpinner.start(`Running \`git push ${remotes[0]}\``);
+        const { stdout } = await execa('git', ['push', remotes[0]]);
+        pushSpinner.stop(
+          `${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`
+        );
+        if (stdout) outro(stdout);
+      }
+    } else {
+      const selectedRemote = (await select({
+        message: 'Choose a remote to push to',
+        options: remotes.map((remote) => ({ value: remote, label: remote }))
+      })) as string;
+
+      if (!isCancel(selectedRemote)) {
+        const pushSpinner = spinner();
+        pushSpinner.start(`Running \`git push ${selectedRemote}\``);
+        const { stdout } = await execa('git', ['push', selectedRemote]);
+        pushSpinner.stop(
+          `${chalk.green(
+            '✔'
+          )} successfully pushed all commits to ${selectedRemote}`
+        );
+
+        if (stdout) outro(stdout);
       } else outro(`${chalk.gray('✖')} process cancelled`);
     }
   }
@@ -172,8 +185,6 @@ export async function commit(
       .join('\n')}`
   );
 
-  await generateCommitMessageFromGitDiff(staged.diff);
-}
   const [, generateCommitError] = await trytm(
     generateCommitMessageFromGitDiff(
       await getDiff({ files: stagedFiles }),
