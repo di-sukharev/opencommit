@@ -87,7 +87,7 @@ ${chalk.grey('——————————————————')}`
       if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
         const pushSpinner = spinner();
         pushSpinner.start(`Running \`git push ${remotes[0]}\``);
-        const { stdout } = await execa('git', ['push', remotes[0]]);
+        const { stdout } = await execa('git', ['push', '--verbose', remotes[0]]);
         pushSpinner.stop(
           `${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`
         );
