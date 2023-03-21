@@ -9,6 +9,8 @@ export function mergeStrings(arr: string[], maxStringLength: number): string[] {
       currentItem = item;
     }
   }
+
   mergedArr.push(currentItem);
+
   return mergedArr;
 }
