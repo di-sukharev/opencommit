@@ -97,6 +97,7 @@ ${chalk.grey('——————————————————')}`
       const { stdout } = await execa('git', ['push', selectedRemote, currentBranch]);
       pushSpinner.stop(`${chalk.green('✔')} successfully pushed all commits to ${selectedRemote} ${currentBranch}`);
       if (stdout) outro(stdout);
+      } else outro(`${chalk.gray('✖')} process cancelled`);
     }
   }
 };
