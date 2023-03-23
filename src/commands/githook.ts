@@ -62,7 +62,6 @@ export const hookCommand = command(
           );
         }
 
-        console.log("made it")
         await fs.mkdir(path.dirname(SYMLINK_URL), { recursive: true });
         await fs.symlink(HOOK_URL, SYMLINK_URL, 'file');
         await fs.chmod(SYMLINK_URL, 0o755);
