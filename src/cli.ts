@@ -22,7 +22,8 @@ cli(
   },
   async () => {
     // await checkIsLatestVersion();
-    if (isHookCalled) {
+
+    if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
       commit(extraArgs);
