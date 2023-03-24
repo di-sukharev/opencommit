@@ -196,6 +196,5 @@ export async function commit(
     outro(`${chalk.red('✖')} ${generateCommitError}`);
     process.exit(1);
   }
-
   process.exit(0);
 }
