@@ -12,6 +12,7 @@ import { CONFIG_MODES, getConfig } from './commands/config';
 const config = getConfig();
 
 let apiKey = config?.OPENAI_API_KEY;
+let model = config?.model || 'gpt-3.5-turbo';
 
 const [command, mode] = process.argv.slice(2);
 
@@ -40,7 +41,7 @@ class OpenAi {
   ): Promise<string | undefined> => {
     try {
       const { data } = await this.openAI.createChatCompletion({
-        model: 'gpt-3.5-turbo',
+        model,
         messages,
         temperature: 0,
         top_p: 0.1,

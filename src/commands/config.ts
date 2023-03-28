@@ -7,12 +7,14 @@ import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
+import { openAiModel } from '../utils/openAiModels';
 
 export enum CONFIG_KEYS {
   OPENAI_API_KEY = 'OPENAI_API_KEY',
   description = 'description',
   emoji = 'emoji',
-  language = 'language'
+  language = 'language',
+  model = 'model'
 }
 
 export enum CONFIG_MODES {
@@ -74,6 +76,14 @@ export const configValidators = {
       `${value} is not supported yet`
     );
     return getI18nLocal(value);
+  },
+  [CONFIG_KEYS.model](value: any) {
+    validateConfig(
+      CONFIG_KEYS.model,
+      openAiModel(value),
+      `${value} is not a supported model`
+    );
+    return value;
   }
 };
 
