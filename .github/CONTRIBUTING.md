@@ -1,6 +1,6 @@
 # Contribution Guidelines
 
-Thank you for considering contributing to the project. Let's shake it baby.
+Thanks for considering contributing to the project.
 
 ## How to contribute
 
@@ -28,9 +28,9 @@ Use the library to generate commits, stage the files and run `npm run dev` :)
 
 If you encounter any issues while using the project, please report them on the GitHub issue tracker. When reporting issues, please include as much information as possible, such as steps to reproduce the issue, expected behavior, and actual behavior.
 
-## Contact us
+## Contacts
 
-If you have any questions about contributing to the project, please contact us by [creating an issue](https://github.com/di-sukharev/open-commit/issues) on the GitHub issue tracker.
+If you have any questions about contributing to the project, please contact by [creating an issue](https://github.com/di-sukharev/open-commit/issues) on the GitHub issue tracker.
 
 ## License
 

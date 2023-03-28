@@ -24,7 +24,7 @@
   },
   "type": "module",
   "author": "https://github.com/di-sukharev",
-  "license": "ISC",
+  "license": "MIT",
   "files": [
     "out/**/*"
   ],
