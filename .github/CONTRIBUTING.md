@@ -9,7 +9,7 @@ Thanks for considering contributing to the project.
 3. Create a new branch for your changes.
 4. Make your changes and commit them with descriptive commit messages.
 5. Push your changes to your forked repository.
-6. Create a pull request from your branch to the `dev` branch.
+6. Create a pull request from your branch to the `master` branch.
 
 ## Getting started
 
@@ -18,7 +18,8 @@ To get started, follow these steps:
 1. Clone the project repository locally.
 2. Install dependencies with `npm install`.
 3. Run the project with `npm run dev`.
-4. See [issues](https://github.com/di-sukharev/open-commit/issues) or [TODO.md](../TODO.md) to help the project.
+4. Add your api key with `npm run dev -- config set OPENAI_API_KEY='<your_key>'`
+5. See [issues](https://github.com/di-sukharev/open-commit/issues) or [TODO.md](../TODO.md) to help the project.
 
 ## Commit message guidelines
 
