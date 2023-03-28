@@ -102,6 +102,15 @@ oc config set language=française
 The default language set is **English**  
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
+### OpenAI models support
+
+To specify the language used to generate commit messages:
+```sh
+oc config set model=gpt-4
+```
+The default model set is **gpt-3.5-turbo**  
+
+
 ### Git flags
 
 The `opencommit` or `oc` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oc`.
