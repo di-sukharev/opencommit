@@ -8,12 +8,12 @@ import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../CommandsEnum.js';
 
 const HOOK_NAME = 'prepare-commit-msg';
-const DEFAULT_SYMLINK_URL = `.git/hooks/${HOOK_NAME}`;
+const DEFAULT_SYMLINK_URL = path.join('.git', 'hooks', HOOK_NAME);
 
 const getHooksPath = async (): Promise<string> => {
   try {
     const hooksPath = await getCoreHooksPath();
-    return `${hooksPath}/${HOOK_NAME}`;
+    return path.join(hooksPath, HOOK_NAME);
   } catch (error) {
     return DEFAULT_SYMLINK_URL;
   }
@@ -70,7 +70,9 @@ export const hookCommand = command(
       }
 
       if (mode === 'unset') {
-        intro(`unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`);
+        intro(
+          `unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`
+        );
 
         if (!(await isHookExists())) {
           return outro(
