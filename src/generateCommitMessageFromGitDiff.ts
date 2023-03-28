@@ -9,7 +9,7 @@ import { i18n, I18nLocals } from './i18n';
 import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
-const translation = i18n[config?.language as I18nLocals || 'en']
+const translation = i18n[(config?.language as I18nLocals) || 'en'];
 
 const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   {
@@ -19,8 +19,8 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
       : 'Do not preface the commit with anything'
       }, use the present tense. ${config?.description
         ? 'Add a short description of what commit is about after the commit message. Don\'t start it with "This commit", just describe the changes.'
-        : 'Don\'t add any descriptions to the commit, only commit message.'
-      } Use ${translation.localLanguage} to answer.`
+        : "Don't add any descriptions to the commit, only commit message."
+    } Use ${translation.localLanguage} to answer.`
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.User,
