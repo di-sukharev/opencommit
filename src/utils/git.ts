@@ -34,11 +34,17 @@ export const getCoreHooksPath = async(): Promise<string> => {
 }
 
 export const getStagedFiles = async (): Promise<string[]> => {
-  const { stdout: files } = await execa('git', [
-    'diff',
-    '--name-only',
-    '--cached',
-    '--relative'
+  const { stdout: gitDir } = await execa("git", [
+      "rev-parse",
+      "--show-toplevel"
+  ]);
+
+  const { stdout: files } = await execa("git", [
+    "diff",
+    "--name-only",
+    "--cached",
+    "--relative",
+    gitDir
   ]);
 
   if (!files) return [];

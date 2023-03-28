@@ -29,6 +29,7 @@ const validateConfig = (
     outro(
       `${chalk.red('✖')} Unsupported config key ${key}: ${validationMessage}`
     );
+
     process.exit(1);
   }
 };
@@ -49,6 +50,7 @@ export const configValidators = {
 
     return value;
   },
+
   [CONFIG_KEYS.description](value: any) {
     validateConfig(
       CONFIG_KEYS.description,
@@ -58,6 +60,7 @@ export const configValidators = {
 
     return value;
   },
+
   [CONFIG_KEYS.emoji](value: any) {
     validateConfig(
       CONFIG_KEYS.emoji,
@@ -67,6 +70,7 @@ export const configValidators = {
 
     return value;
   },
+
   [CONFIG_KEYS.language](value: any) {
     validateConfig(
       CONFIG_KEYS.language,
