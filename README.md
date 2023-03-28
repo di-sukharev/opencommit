@@ -146,6 +146,13 @@ oco config set OCO_LANGUAGE=française
 The default language setting is **English**
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
+### Push to git
+
+Pushing to git is on by default but if you would like to turn it off just use:
+```sh
+oc config set OCO_GITPUSH=false
+```
+
 ### Switch to `@commitlint`
 
 OpenCommit allows you to choose the prompt module used to generate commit messages. By default, OpenCommit uses its conventional-commit message generator. However, you can switch to using the `@commitlint` prompt module if you prefer. This option lets you generate commit messages in respect with the local config.
