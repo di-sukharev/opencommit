@@ -6,6 +6,7 @@ import { api } from './api';
 import { getConfig } from './commands/config';
 import { mergeStrings } from './utils/mergeStrings';
 import { i18n, I18nLocals } from './i18n';
+import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
 const translation = i18n[config?.language as I18nLocals || 'en']
@@ -13,15 +14,13 @@ const translation = i18n[config?.language as I18nLocals || 'en']
 const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   {
     role: ChatCompletionRequestMessageRoleEnum.System,
-    content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message. ${
-      config?.emoji
-        ? 'Use Gitmoji convention to preface the commit'
-        : 'Do not preface the commit with anything'
-    }, use the present tense. ${
-      config?.description
+    content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message. ${config?.emoji
+      ? 'Use Gitmoji convention to preface the commit'
+      : 'Do not preface the commit with anything'
+      }, use the present tense. ${config?.description
         ? 'Add a short description of what commit is about after the commit message. Don\'t start it with "This commit", just describe the changes.'
         : 'Don\'t add any descriptions to the commit, only commit message.'
-    } Use ${translation.localLanguage} to answer.`
+      } Use ${translation.localLanguage} to answer.`
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.User,
@@ -80,16 +79,16 @@ interface GenerateCommitMessageError {
 }
 
 const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
-  (msg) => msg.content
-).join('').length;
+  (msg) => tokenCount(msg.content) + 4
+).reduce((a, b) => a + b, 0);
 
 const MAX_REQ_TOKENS = 3900 - INIT_MESSAGES_PROMPT_LENGTH;
 
 export const generateCommitMessageWithChatCompletion = async (
   diff: string
 ): Promise<string | GenerateCommitMessageError> => {
-  try {
-    if (diff.length >= MAX_REQ_TOKENS) {
+ try {
+    if (tokenCount(diff) >= MAX_REQ_TOKENS) {
       const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(diff);
 
       const commitMessages = await Promise.all(commitMessagePromises);
@@ -144,7 +143,7 @@ function getCommitMsgsPromisesFromFileDiffs(diff: string) {
   const commitMessagePromises = [];
 
   for (const fileDiff of mergedFilesDiffs) {
-    if (fileDiff.length >= MAX_REQ_TOKENS) {
+    if (tokenCount(fileDiff) >= MAX_REQ_TOKENS) {
       // if file-diff is bigger than gpt context — split fileDiff into lineDiff
       const messagesPromises = getMessagesPromisesByLines(fileDiff, separator);
 
