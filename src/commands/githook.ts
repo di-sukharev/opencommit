@@ -70,7 +70,9 @@ export const hookCommand = command(
       }
 
       if (mode === 'unset') {
-        intro(`unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`);
+        intro(
+          `unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`
+        );
 
         if (!(await isHookExists())) {
           return outro(
