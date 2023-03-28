@@ -24,6 +24,7 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
+  OCO_GITPUSH = 'OCO_GITPUSH'
 }
 
 export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
@@ -150,7 +151,15 @@ export const configValidators = {
       ['conventional-commit', '@commitlint'].includes(value),
       `${value} is not supported yet, use '@commitlint' or 'conventional-commit' (default)`
     );
+    return value;
+  },
 
+  [CONFIG_KEYS.OCO_GITPUSH](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_GITPUSH,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
     return value;
   },
 
