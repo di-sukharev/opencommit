@@ -55,18 +55,18 @@ export const hookCommand = command(
       }
 
       if (mode === 'unset') {
-        intro(`unsetting opencommit as '${HOOK_NAME}' hook`);
+        intro(`unsetting OpenCommit as '${HOOK_NAME}' hook`);
 
         if (!isHookExists) {
           return outro(
-            `opencommit wasn't previously set as '${HOOK_NAME}' hook, nothing to remove`
+            `OpenCommit wasn't previously set as '${HOOK_NAME}' hook, nothing to remove`
           );
         }
 
         const realpath = await fs.realpath(SYMLINK_URL);
         if (realpath !== HOOK_URL) {
           return outro(
-            `opencommit wasn't previously set as '${HOOK_NAME}' hook, but different hook was, if you want to remove it — do it manually`
+            `OpenCommit wasn't previously set as '${HOOK_NAME}' hook, but different hook was, if you want to remove it — do it manually`
           );
         }
 

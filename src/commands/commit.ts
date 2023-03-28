@@ -148,7 +148,7 @@ ${chalk.grey('——————————————————')}`
             }
           })
           
-          if (typeof newLine == 'symbol') { 
+          if (isCancel(newLine)) { 
             process.exit(0) 
           }
 
@@ -161,6 +161,7 @@ ${chalk.grey('——————————————————')}`
       updatedCommitMessage = newCommitLines.join("\n\n")
 
     } else {
+
       updatedCommitMessage = await text({
         message: 'Update the commit message:',
         initialValue: commitLines[0],
@@ -168,7 +169,7 @@ ${chalk.grey('——————————————————')}`
       })
     }
     
-    if (typeof updatedCommitMessage == 'symbol') { 
+    if (isCancel(updatedCommitMessage)) { 
       process.exit(0) 
     }
     outro(
@@ -266,6 +267,5 @@ export async function commit(
     outro(`${chalk.red('✖')} ${generateCommitError}`);
     process.exit(1);
   }
-
   process.exit(0);
 }
