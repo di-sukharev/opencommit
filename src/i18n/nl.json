@@ -1,0 +1,6 @@
+{
+  "localLanguage": "dutch",
+  "commitFix": "fix(server.ts): verander het geval van de port variabele van kleine letters port in hoofdletters PORT",
+  "commitFeat": "feat(server.ts): ondersteuning toevoegen voor process.env.PORT omgevingsvariabele",
+  "commitDescription": "De poortvariabele heet nu PORT, wat de consistentie met de naamgevingsconventies verbetert, aangezien PORT een constante is. Ondersteuning voor een omgevingsvariabele maakt de toepassing flexibeler, omdat deze nu kan draaien op elke beschikbare poort die is opgegeven via de omgevingsvariabele process.env.PORT."
+}
