@@ -6,7 +6,6 @@ import { existsSync } from 'fs';
 import chalk from 'chalk';
 import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../CommandsEnum.js';
-import { fileURLToPath } from 'url';
 
 const HOOK_NAME = 'prepare-commit-msg';
 const SYMLINK_URL = `.git/hooks/${HOOK_NAME}`;
