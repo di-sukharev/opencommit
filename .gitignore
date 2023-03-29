@@ -12,3 +12,4 @@ uncaughtExceptions.log
 .vscode
 src/*.json
 .idea
+test.ts
