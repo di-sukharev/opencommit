@@ -6,12 +6,11 @@ import { existsSync } from 'fs';
 import chalk from 'chalk';
 import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../CommandsEnum.js';
-import { fileURLToPath } from 'url';
 
 const HOOK_NAME = 'prepare-commit-msg';
-const SYMLINK_URL = `.git/hooks/${HOOK_NAME}`;
+const SYMLINK_URL = process.platform === "win32" ? `\\.git\\hooks\\${HOOK_NAME}` : `/.git/hooks/${HOOK_NAME}`;
 
-export const isHookCalled = process.argv[1].endsWith(`/${SYMLINK_URL}`);
+export const isHookCalled = process.argv[1].endsWith(`${SYMLINK_URL}`);
 
 const isHookExists = existsSync(SYMLINK_URL);
 
