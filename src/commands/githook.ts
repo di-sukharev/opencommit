@@ -6,6 +6,7 @@ import { existsSync } from 'fs';
 import chalk from 'chalk';
 import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../CommandsEnum.js';
+import { fileURLToPath } from 'url';
 
 const HOOK_NAME = 'prepare-commit-msg';
 const SYMLINK_URL = `.git/hooks/${HOOK_NAME}`;
@@ -28,7 +29,7 @@ export const hookCommand = command(
       const { setUnset: mode } = argv._;
 
       if (mode === 'set') {
-        intro(`setting opencommit as '${HOOK_NAME}' hook`);
+        intro(`setting OpenCommit as '${HOOK_NAME}' hook`);
 
         if (isHookExists) {
           let realPath;
@@ -40,7 +41,7 @@ export const hookCommand = command(
           }
 
           if (realPath === HOOK_URL)
-            return outro(`opencommit is already set as '${HOOK_NAME}'`);
+            return outro(`OpenCommit is already set as '${HOOK_NAME}'`);
 
           throw new Error(
             `Different ${HOOK_NAME} is already set. Remove it before setting opencommit as '${HOOK_NAME}' hook.`
