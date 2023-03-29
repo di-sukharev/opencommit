@@ -1,4 +1,4 @@
-name: Bug Report
+name: 🐞 Bug Report
 description: File a bug report
 title: "[Bug]: "
 labels: ["bug", "triage"]
@@ -10,13 +10,38 @@ body:
       value: |
         Thanks for taking the time to fill out this bug report!
   - type: input
-    id: contact
+    id: opencommit-version
     attributes:
-      label: Contact Details
-      description: How can we get in touch with you if we need more info?
-      placeholder: ex. email@example.com
+      label: Opencommit Version
+      description: What version of our software are you running?
+      placeholder: ex. 1.1.22
     validations:
-      required: false
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node Version
+      description: What version of node are you running?
+      placeholder: ex. 19.8.1
+    validations:
+      required: true
+  - type: input
+    id: npm-version
+    attributes:
+      label: NPM Version
+      description: What version of npm are you running?
+      placeholder: ex. 9.6.2
+    validations:
+      required: true
+  - type: dropdown
+    id: OS
+    attributes:
+      label: What OS are you seeing the problem on?
+      multiple: true
+      options:
+        - Mac
+        - Windows
+        - Other Linux Distro
   - type: textarea
     id: what-happened
     attributes:
@@ -26,37 +51,41 @@ body:
       value: "A bug happened!"
     validations:
       required: true
-  - type: dropdown
-    id: version
+  - type: textarea
+    id: expected-behavior
     attributes:
-      label: Version
-      description: What version of our software are you running?
-      options:
-        - 1.0.2 (Default)
-        - 1.0.3 (Edge)
+      label: Expected Behavior
+      description: Also tell us, what did you expect to happen?
+      placeholder: Tell us what you expected to happen!
+    validations:
+      required: true   
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current Behavior
+      description: Also tell us, what is currently happening?
+      placeholder: Tell us what is happening now.
     validations:
       required: true
-  - type: dropdown
-    id: browsers
+  - type: textarea
+    id: possible-solution
     attributes:
-      label: What browsers are you seeing the problem on?
-      multiple: true
-      options:
-        - Firefox
-        - Chrome
-        - Safari
-        - Microsoft Edge
+      label: Possible Solution
+      description: Do you have a solution for the issue?
+      placeholder: Tell us what the solution could look like.
+    validations:
+      required: false
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Tell us how to reproduce the issue?
+      placeholder: Tell us how to reproduce the issue?
+    validations:
+      required: false
   - type: textarea
     id: logs
     attributes:
       label: Relevant log output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
       render: shell
-  - type: checkboxes
-    id: terms
-    attributes:
-      label: Code of Conduct
-      description: By submitting this issue, you agree to follow our [Code of Conduct](https://example.com)
-      options:
-        - label: I agree to follow this project's Code of Conduct
-          required: true
