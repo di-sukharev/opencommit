@@ -10,6 +10,7 @@ import { getI18nLocal } from '../i18n';
 
 export enum CONFIG_KEYS {
   OPENAI_API_KEY = 'OPENAI_API_KEY',
+  OPENAI_BASE_PATH = 'OPENAI_BASE_PATH',
   description = 'description',
   emoji = 'emoji',
   language = 'language'
@@ -78,6 +79,15 @@ export const configValidators = {
       `${value} is not supported yet`
     );
     return getI18nLocal(value);
+  },
+
+  [CONFIG_KEYS.OPENAI_BASE_PATH](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OPENAI_BASE_PATH,
+      typeof value == 'string',
+      `${value} is not supported yet`
+    );
+    return value;
   }
 };
 
