@@ -13,15 +13,16 @@ const translation = i18n[(config?.language as I18nLocals) || 'en'];
 const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   {
     role: ChatCompletionRequestMessageRoleEnum.System,
-    content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message. ${
+    content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+    ${
       config?.emoji
         ? 'Use Gitmoji convention to preface the commit'
         : 'Do not preface the commit with anything'
-    }, use the present tense. ${
+    }. ${
       config?.description
-        ? 'Add a short description of what commit is about after the commit message. Don\'t start it with "This commit", just describe the changes.'
-        : "Don't add any descriptions to the commit, only commit message."
-    } Use ${translation.localLanguage} to answer.`
+        ? 'Add a short description of why the commit is done after the commit message. Don\'t start it with "This commit", just describe the changes'
+        : "Don't add any descriptions to the commit, only commit message"
+    }. Use the present tense. Use ${translation.localLanguage} to answer.`
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.User,
