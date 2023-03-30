@@ -24,7 +24,7 @@ import { trytm } from '../utils/trytm';
 
 const getGitRemotes = async () => {
   const { stdout } = await execa('git', ['remote']);
-  return stdout.split('\n').filter((remote) => remote.trim() !== '');
+  return stdout.split('\n').filter((remote) => Boolean(remote.trim()));
 };
 
 const generateCommitMessageFromGitDiff = async (
@@ -207,5 +207,6 @@ export async function commit(
     outro(`${chalk.red('✖')} ${generateCommitError}`);
     process.exit(1);
   }
+
   process.exit(0);
 }
