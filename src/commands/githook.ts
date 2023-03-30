@@ -8,9 +8,9 @@ import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../CommandsEnum.js';
 
 const HOOK_NAME = 'prepare-commit-msg';
-const SYMLINK_URL = `.git/hooks/${HOOK_NAME}`;
+const SYMLINK_URL = path.join(path.sep, '.git', 'hooks', HOOK_NAME);
 
-export const isHookCalled = process.argv[1].endsWith(`/${SYMLINK_URL}`);
+export const isHookCalled = process.argv[1].endsWith(`${SYMLINK_URL}`);
 
 const isHookExists = existsSync(SYMLINK_URL);
 
