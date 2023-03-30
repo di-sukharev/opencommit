@@ -100,6 +100,9 @@ ${chalk.grey('——————————————————')}`
         );
 
         if (stdout) outro(stdout);
+      } else {
+        outro('`git push` aborted');
+        process.exit(0);
       }
     } else {
       const selectedRemote = (await select({
