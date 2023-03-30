@@ -1,6 +1,6 @@
 {
-  "localLanguage": "english",
-  "commitFix": "fix(server.ts): change port variable case from lowercase port to uppercase PORT",
-  "commitFeat": "feat(server.ts): add support for process.env.PORT environment variable",
-  "commitDescription": "The port variable is now named PORT, which improves consistency with the naming conventions as PORT is a constant. Support for an environment variable allows the application to be more flexible as it can now run on any available port specified via the process.env.PORT environment variable."
+  "localLanguage": "polski",
+  "commitFix": "fix(server.ts): poprawa wielkości zmiennej port na pisane z dużymi literami PORT",
+  "commitFeat": "feat(server.ts): dodanie obsługi zmiennej środowiskowej process.env.PORT",
+  "commitDescription": "Zmienna port jest teraz nazwana PORT, co jest zgodne z konwencją nazewniczą ponieważ PORT jest stałą. Obsługa zmiennej środowiskowej process.env.PORT pozwala łatwiej zarządzać ustaweniami przy starcie."
 }
