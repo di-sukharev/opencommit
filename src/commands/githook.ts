@@ -19,7 +19,8 @@ switch (platform) {
   case 'darwin':
     separator = '';
     break;
-  // Linux
+  // Linux, Android
+  case 'android':
   case 'linux':
     separator = '';
     break;
