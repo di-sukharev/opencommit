@@ -26,16 +26,16 @@ export const getOpenCommitIgnore = (): Ignore => {
 };
 
 export const getStagedFiles = async (): Promise<string[]> => {
-  const { stdout: gitDir } = await execa("git", [
-      "rev-parse",
-      "--show-toplevel"
+  const { stdout: gitDir } = await execa('git', [
+    'rev-parse',
+    '--show-toplevel'
   ]);
 
-  const { stdout: files } = await execa("git", [
-    "diff",
-    "--name-only",
-    "--cached",
-    "--relative",
+  const { stdout: files } = await execa('git', [
+    'diff',
+    '--name-only',
+    '--cached',
+    '--relative',
     gitDir
   ]);
 
