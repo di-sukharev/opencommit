@@ -138,7 +138,8 @@ ${chalk.grey('——————————————————')}`
 
       // Write the text to a file
       fs.writeFileSync('tmp_commit.txt', commitText);
-
+      if (fs.existsSync('tmp_commit.txt')){console.log("it exists");
+      }
       // Open the file in the user's default editor
       execa('xdg-open', ['tmp_commit.txt']).then(() => {
     console.log('File opened successfully.');
