@@ -19,7 +19,6 @@ import {
   intro,
   multiselect,
   select,
-  text
 } from '@clack/prompts';
 import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
@@ -137,23 +136,31 @@ ${chalk.grey('——————————————————')}`
       //await promptUserEdit(commitText)
       const editSpinner = spinner()
 
-      // The text to be written to the file
-      const text = commitText
-
       // Write the text to a file
-      fs.writeFileSync('tmp_commit.txt', text);
+      fs.writeFileSync('tmp_commit.txt', commitText);
 
       // Open the file in the user's default editor
-      execa('open', ['tmp_commit.txt']);
-      // Wait for the user to close the file
+      execa('xdg-open', ['tmp_commit.txt']).then(() => {
+    console.log('File opened successfully.');
+  })
+  .catch((err) => {
+    console.error('Failed to open file:', err);
+  });      // Wait for the user to close the file
       editSpinner.start('Please close the file when you are done editing it.')
       editSpinner.stop('Thank you!')
       process.stdin.resume();
 
       // Read the contents of the file back into the Node.js program
-      const updatedCommitMessage = fs.readFileSync('tmp_commit.txti', 'utf-8');
+      const updatedCommitMessage = fs.readFileSync('tmp_commit.txt', 'utf-8');
       // Delete the file
       fs.unlinkSync('tmp_commit.txt');
+
+    outro(
+      `Commit message:
+${chalk.grey('——————————————————')}
+${updatedCommitMessage}
+${chalk.grey('——————————————————')}`
+      )
 
       await promptUserConfirm(updatedCommitMessage)
 
@@ -162,59 +169,54 @@ ${chalk.grey('——————————————————')}`
     } 
   }
   
-  const promptUserEdit = async(commitText: string) => {
-    let commitLines = commitText.split("\n") 
-    let updatedCommitMessage
+  //const promptUserEdit = async(commitText: string) => {
+  //  let commitLines = commitText.split("\n") 
+  //  let updatedCommitMessage
 
-    if (commitLines.length > 1 ) {
-      let newCommitLines = []
+  //  if (commitLines.length > 1 ) {
+  //    let newCommitLines = []
 
-      for (const line of commitLines) {
-        if (line !== "") {
-          const newLine = await text({
-            message: 'Update line:',
-            initialValue: line,
-            placeholder: "",
-            validate(value) {
-              if (line == commitLines[commitLines.length -1] && newCommitLines.length == 0 && value == "") {
-                return "Message cannot be empty" 
-              } 
-            }
-          })
-          
-          if (isCancel(newLine)) { 
-            process.exit(0) 
-          }
+  //    for (const line of commitLines) {
+  //      if (line !== "") {
+  //        const newLine = await text({
+  //          message: 'Update line:',
+  //          initialValue: line,
+  //          placeholder: "",
+  //          validate(value) {
+  //            if (line == commitLines[commitLines.length -1] && newCommitLines.length == 0 && value == "") {
+  //              return "Message cannot be empty" 
+  //            } 
+  //          }
+  //        })
+  //        
+  //        if (isCancel(newLine)) { 
+  //          process.exit(0) 
+  //        }
 
-          if (newLine !== undefined) {
-            newCommitLines.push(newLine)
-          }
-        }
-      }
-      
-      updatedCommitMessage = newCommitLines.join("\n\n")
+  //        if (newLine !== undefined) {
+  //          newCommitLines.push(newLine)
+  //        }
+  //      }
+  //    }
+  //    
+  //    updatedCommitMessage = newCommitLines.join("\n\n")
 
-    } else {
+  //  } else {
 
-      updatedCommitMessage = await text({
-        message: 'Update the commit message:',
-        initialValue: commitLines[0],
-        validate: (value) => value == "" ? "Message cannot be empty" : ""
-      })
-    }
-    
-    if (isCancel(updatedCommitMessage)) { 
-      process.exit(0) 
-    }
-    outro(
-      `Commit message:
-${chalk.grey('——————————————————')}
-${updatedCommitMessage}
-${chalk.grey('——————————————————')}`
-    );
+  //    updatedCommitMessage = await text({
+  //      message: 'Update the commit message:',
+  //      initialValue: commitLines[0],
+  //      validate: (value) => value == "" ? "Message cannot be empty" : ""
+  //    })
+  //  }
+  //  
+  //  if (isCancel(updatedCommitMessage)) { 
+  //    process.exit(0) 
+  //  }
+  //  );
 
-    await promptUserConfirm(updatedCommitMessage as string)
-  }
+  //  await promptUserConfirm(updatedCommitMessage as string)
+  //}
 
   await promptUserConfirm(commitMessage)
 
