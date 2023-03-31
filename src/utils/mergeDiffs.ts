@@ -1,5 +1,5 @@
-import { tokenCount } from './tokenCount'
-export function mergeStrings(arr: string[], maxStringLength: number): string[] {
+import { tokenCount } from './tokenCount';
+export function mergeDiffs(arr: string[], maxStringLength: number): string[] {
   const mergedArr: string[] = [];
   let currentItem: string = arr[0];
   for (const item of arr.slice(1)) {

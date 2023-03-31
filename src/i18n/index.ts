@@ -10,6 +10,9 @@ import pt_br from '../i18n/pt_br.json' assert { type: 'json' };
 import vi_VN from '../i18n/vi_VN.json' assert { type: 'json' };
 import es_ES from '../i18n/es_ES.json' assert { type: 'json' };
 import sv from '../i18n/sv.json' assert { type: 'json' };
+import nl from '../i18n/nl.json' assert { type: 'json' };
+import ru from '../i18n/ru.json' assert { type: 'json' };
+import id_ID from '../i18n/id_ID.json' assert { type: 'json' };
 
 export enum I18nLocals {
   'en' = 'en',
@@ -18,12 +21,15 @@ export enum I18nLocals {
   'ja' = 'ja',
   'de' = 'de',
   'fr' = 'fr',
+  'nl' = 'nl',
   'it' = 'it',
   'ko' = 'ko',
   'pt_br' = 'pt_br',
   'es_ES' = 'es_ES',
   'sv' = 'sv',
-};
+  'ru' = 'ru',
+  'id_ID' = 'id_ID'
+}
 
 export const i18n = {
   en,
@@ -37,7 +43,10 @@ export const i18n = {
   pt_br,
   vi_VN,
   es_ES,
-  sv
+  sv,
+  id_ID,
+  nl,
+  ru
 };
 
 export const I18N_CONFIG_ALIAS: { [key: string]: string[] } = {
@@ -45,14 +54,17 @@ export const I18N_CONFIG_ALIAS: { [key: string]: string[] } = {
   zh_TW: ['zh_TW', '繁體中文', '繁體'],
   ja: ['ja', 'Japanese', 'にほんご'],
   ko: ['ko', 'Korean', '한국어'],
-  de: ['de', 'German' ,'Deutsch'],
+  de: ['de', 'German', 'Deutsch'],
   fr: ['fr', 'French', 'française'],
   it: ['it', 'Italian', 'italiano'],
+  nl: ['nl', 'Dutch', 'Nederlands'],
   pt_br: ['pt_br', 'Portuguese', 'português'],
   vi_VN: ['vi_VN', 'Vietnamese', 'tiếng Việt'],
   en: ['en', 'English', 'english'],
   es_ES: ['es_ES', 'Spanish', 'español'],
   sv: ['sv', 'Swedish', 'Svenska'],
+  ru: ['ru', 'Russian', 'русский'],
+  id_ID: ['id_ID', 'Bahasa', 'bahasa']
 };
 
 export function getI18nLocal(value: string): string | boolean {

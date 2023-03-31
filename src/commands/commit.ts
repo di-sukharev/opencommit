@@ -23,10 +23,9 @@ import {
 import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
 
-// Adding a function to get the list of remotes
 const getGitRemotes = async () => {
   const { stdout } = await execa('git', ['remote']);
-  return stdout.split('\n').filter((remote) => remote.trim() !== '');
+  return stdout.split('\n').filter((remote) => Boolean(remote.trim()));
 };
 
 const generateCommitMessageFromGitDiff = async (
@@ -86,6 +85,7 @@ ${chalk.grey('——————————————————')}`
       outro(`${chalk.green('✔')} successfully committed`);
 
       outro(stdout);
+      
       const remotes = await getGitRemotes();
 
       if (remotes.length === 1) {
@@ -95,11 +95,19 @@ ${chalk.grey('——————————————————')}`
 
         if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
           const pushSpinner = spinner();
+          
           pushSpinner.start(`Running \`git push ${remotes[0]}\``);
-          const { stdout } = await execa('git', ['push', remotes[0]]);
+          
+          const { stdout } = await execa('git', [
+            'push',
+            '--verbose',
+            remotes[0]
+          ]);
+          
           pushSpinner.stop(
             `${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`
           );
+          
           if (stdout) outro(stdout);
         }
       } else {
@@ -118,8 +126,10 @@ ${chalk.grey('——————————————————')}`
             )} successfully pushed all commits to ${selectedRemote}`
           );
 
-          if (stdout) outro(stdout);
-        } else outro(`${chalk.gray('✖')} process cancelled`);
+        if (stdout) outro(stdout);
+      } else {
+        outro('`git push` aborted');
+        process.exit(0);
       }
     } else if (isCommitConfirmedByUser == "edit" && !isCancel(isCommitConfirmedByUser)) {
       await promptUserEdit(commitText)
@@ -267,5 +277,6 @@ export async function commit(
     outro(`${chalk.red('✖')} ${generateCommitError}`);
     process.exit(1);
   }
+
   process.exit(0);
 }
