@@ -11,16 +11,13 @@ const platform = process.platform;
 
 let separator = '';
 switch (platform) {
-  // Windows
-  case 'win32':
+  case 'win32': // Windows
     separator = path.sep;
     break;
-  // macOS
-  case 'darwin':
+  case 'darwin': // macOS
     separator = '';
     break;
-  // Linux
-  case 'linux':
+  case 'linux': // Linux
     separator = '';
     break;
   default:
