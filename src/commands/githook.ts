@@ -1,19 +1,55 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { command } from 'cleye';
-import { assertGitRepo } from '../utils/git.js';
+import { assertGitRepo, getCoreHooksPath } from '../utils/git.js';
 import { existsSync } from 'fs';
 import chalk from 'chalk';
 import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../CommandsEnum.js';
-import { fileURLToPath } from 'url';
+
+
+const platform = process.platform;
+
+let separator = '';
+switch (platform) {
+  // Windows
+  case 'win32':
+    separator = path.sep;
+    break;
+  // macOS
+  case 'darwin':
+    separator = '';
+    break;
+  // Linux and Android
+  case 'android':
+  case 'linux':
+    separator = '';
+    break;
+  default:
+    throw new Error(`Unsupported platform: ${platform}`);
+}
 
 const HOOK_NAME = 'prepare-commit-msg';
-const SYMLINK_URL = `.git/hooks/${HOOK_NAME}`;
+const DEFAULT_SYMLINK_URL = path.join(separator, '.git', 'hooks', HOOK_NAME);
 
-export const isHookCalled = process.argv[1].endsWith(`/${SYMLINK_URL}`);
+const getHooksPath = async (): Promise<string> => {
+  try {
+    const hooksPath = await getCoreHooksPath();
+    return path.join(hooksPath, HOOK_NAME);
+  } catch (error) {
+    return DEFAULT_SYMLINK_URL;
+  }
+};
 
-const isHookExists = existsSync(SYMLINK_URL);
+export const isHookCalled = async (): Promise<boolean> => {
+  const hooksPath = await getHooksPath();
+  return process.argv[1].endsWith(hooksPath);
+};
+
+const isHookExists = async (): Promise<boolean> => {
+  const hooksPath = await getHooksPath();
+  return existsSync(hooksPath);
+};
 
 export const hookCommand = command(
   {
@@ -22,16 +58,16 @@ export const hookCommand = command(
   },
   async (argv) => {
     const HOOK_URL = __filename;
-
+    const SYMLINK_URL = await getHooksPath();
     try {
       await assertGitRepo();
 
       const { setUnset: mode } = argv._;
 
       if (mode === 'set') {
-        intro(`setting OpenCommit as '${HOOK_NAME}' hook`);
+        intro(`setting opencommit as '${HOOK_NAME}' hook at ${SYMLINK_URL}`);
 
-        if (isHookExists) {
+        if (await isHookExists()) {
           let realPath;
           try {
             realPath = await fs.realpath(SYMLINK_URL);
@@ -56,9 +92,11 @@ export const hookCommand = command(
       }
 
       if (mode === 'unset') {
-        intro(`unsetting OpenCommit as '${HOOK_NAME}' hook`);
+        intro(
+          `unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`
+        );
 
-        if (!isHookExists) {
+        if (!(await isHookExists())) {
           return outro(
             `OpenCommit wasn't previously set as '${HOOK_NAME}' hook, nothing to remove`
           );

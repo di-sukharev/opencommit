@@ -22,10 +22,9 @@ import {
 import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
 
-// Adding a function to get the list of remotes
 const getGitRemotes = async () => {
   const { stdout } = await execa('git', ['remote']);
-  return stdout.split('\n').filter((remote) => remote.trim() !== '');
+  return stdout.split('\n').filter((remote) => Boolean(remote.trim()));
 };
 
 const generateCommitMessageFromGitDiff = async (
@@ -77,7 +76,14 @@ ${chalk.grey('——————————————————')}`
     outro(`${chalk.green('✔')} successfully committed`);
 
     outro(stdout);
+
     const remotes = await getGitRemotes();
+
+    if (!remotes.length) {
+      const { stdout } = await execa('git', ['push']);
+      if (stdout) outro(stdout);
+      process.exit(0);
+    }
 
     if (remotes.length === 1) {
       const isPushConfirmedByUser = await confirm({
@@ -100,6 +106,9 @@ ${chalk.grey('——————————————————')}`
         );
 
         if (stdout) outro(stdout);
+      } else {
+        outro('`git push` aborted');
+        process.exit(0);
       }
     } else {
       const selectedRemote = (await select({
@@ -207,5 +216,6 @@ export async function commit(
     outro(`${chalk.red('✖')} ${generateCommitError}`);
     process.exit(1);
   }
+
   process.exit(0);
 }
