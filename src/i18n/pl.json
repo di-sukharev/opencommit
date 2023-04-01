@@ -1,0 +1,6 @@
+{
+  "localLanguage": "polski",
+  "commitFix": "fix(server.ts): poprawa wielkości zmiennej port na pisane z dużymi literami PORT",
+  "commitFeat": "feat(server.ts): dodanie obsługi zmiennej środowiskowej process.env.PORT",
+  "commitDescription": "Zmienna port jest teraz nazwana PORT, co jest zgodne z konwencją nazewniczą ponieważ PORT jest stałą. Obsługa zmiennej środowiskowej process.env.PORT pozwala łatwiej zarządzać ustawieniami przy starcie."
+}
