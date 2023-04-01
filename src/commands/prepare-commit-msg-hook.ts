@@ -7,7 +7,9 @@ import { generateCommitMessageWithChatCompletion } from '../generateCommitMessag
 
 const [messageFilePath, commitSource] = process.argv.slice(2);
 
-export const prepareCommitMessageHook = async () => {
+export const prepareCommitMessageHook = async (
+  isStageAllFlag: Boolean = false
+) => {
   try {
     if (!messageFilePath) {
       throw new Error(
@@ -17,15 +19,15 @@ export const prepareCommitMessageHook = async () => {
 
     if (commitSource) return;
 
-    const stagedFiles = await getStagedFiles();
-    const changedFiles = await getChangedFiles();
+    if (isStageAllFlag) {
+      const changedFiles = await getChangedFiles();
 
-    if (!stagedFiles && !changedFiles) {
-      outro('No changes detected, write some code and run `oc` again');
-      process.exit(1);
+      if (changedFiles) await gitAdd({ files: changedFiles });
+      else {
+        outro('No changes detected, write some code and run `oc` again');
+        process.exit(1);
+      }
     }
-
-    if (!stagedFiles && changedFiles) await gitAdd({ files: changedFiles });
 
     const staged = await getStagedFiles();
 
