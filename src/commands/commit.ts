@@ -79,6 +79,12 @@ ${chalk.grey('——————————————————')}`
 
     const remotes = await getGitRemotes();
 
+    if (!remotes.length) {
+      const { stdout } = await execa('git', ['push']);
+      if (stdout) outro(stdout);
+      process.exit(0);
+    }
+
     if (remotes.length === 1) {
       const isPushConfirmedByUser = await confirm({
         message: 'Do you want to run `git push`?'
