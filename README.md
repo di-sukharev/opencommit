@@ -99,6 +99,7 @@ oc config set language=fr
 oc config set language=French
 oc config set language=française
 ```
+
 The default language set is **English**  
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
@@ -117,6 +118,7 @@ git commit -m "${generatedMessage}" --no-verify
 ```
 
 ### Ignore files
+
 You can ignore files from submission to OpenAI by creating a `.opencommitignore` file. For example:
 
 ```ignorelang
@@ -155,4 +157,4 @@ Or follow the process of your IDE Source Control feature, when it calls `git com
 
 ## Payments
 
-You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT official model, that is ~10x times cheaper than GPT-3 and ~6x times cheaper than GPT-4.
+You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT (3.5-turbo) official model, that is ~15x times cheaper than GPT-4.
