@@ -10,6 +10,4 @@ export function tokenCount(content: string): number {
   const tokens = encoding.encode(content);
   encoding.free();
   return tokens.length;
-
-  //return content.length / 2.7;
 }
