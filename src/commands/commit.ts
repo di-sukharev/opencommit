@@ -170,9 +170,6 @@ ${chalk.grey('——————————————————')}`
           }
       }     
 
-      //const editSpinner = spinner()
-      //editSpinner.start('Please close the file when you are done editing it.')
-      
       fs.writeFileSync('tmp_commit.txt', commitText);
 
       outro('🙏 Please close the file when you are done editing it.')
@@ -181,8 +178,6 @@ ${chalk.grey('——————————————————')}`
 
       process.stdin.resume();
       
-      //editSpinner.stop('Thank you!')
-
       const updatedCommitMessage = fs.readFileSync('tmp_commit.txt', 'utf-8');
       const updatedCommitMessageTrimmed = updatedCommitMessage.trim()
 
