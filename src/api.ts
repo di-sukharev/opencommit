@@ -12,6 +12,7 @@ import { CONFIG_MODES, getConfig } from './commands/config';
 const config = getConfig();
 
 let apiKey = config?.OPENAI_API_KEY;
+let basePath = config?.OPENAI_BASE_PATH;
 
 const [command, mode] = process.argv.slice(2);
 
@@ -32,8 +33,14 @@ class OpenAi {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
     apiKey: apiKey
   });
+  private openAI!: OpenAIApi;
 
-  private openAI = new OpenAIApi(this.openAiApiConfiguration);
+  constructor() {
+    if (basePath) {
+      this.openAiApiConfiguration.basePath = basePath;
+    }
+    this.openAI = new OpenAIApi(this.openAiApiConfiguration);
+  }
 
   public generateCommitMessage = async (
     messages: Array<ChatCompletionRequestMessage>
