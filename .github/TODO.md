@@ -8,3 +8,4 @@
 - [x] batch small files in one request
 - [] add tests
 - [] optimize prompt, maybe no prompt would be cleaner
+- [] try setting max commit msg length
