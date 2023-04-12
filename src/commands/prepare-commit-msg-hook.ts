@@ -1,13 +1,15 @@
 import fs from 'fs/promises';
 import chalk from 'chalk';
-import { intro, outro } from '@clack/prompts';
+import { intro, outro, spinner } from '@clack/prompts';
 import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { getConfig } from './config';
 import { generateCommitMessageWithChatCompletion } from '../generateCommitMessageFromGitDiff';
 
 const [messageFilePath, commitSource] = process.argv.slice(2);
 
-export const prepareCommitMessageHook = async () => {
+export const prepareCommitMessageHook = async (
+  isStageAllFlag: Boolean = false
+) => {
   try {
     if (!messageFilePath) {
       throw new Error(
@@ -17,11 +19,14 @@ export const prepareCommitMessageHook = async () => {
 
     if (commitSource) return;
 
-    const changedFiles = await getChangedFiles();
-    if (changedFiles) await gitAdd({ files: changedFiles });
-    else {
-        outro("No changes detected, write some code and run `oc` again");
+    if (isStageAllFlag) {
+      const changedFiles = await getChangedFiles();
+
+      if (changedFiles) await gitAdd({ files: changedFiles });
+      else {
+        outro('No changes detected, write some code and run `oc` again');
         process.exit(1);
+      }
     }
 
     const staged = await getStagedFiles();
@@ -38,11 +43,15 @@ export const prepareCommitMessageHook = async () => {
       );
     }
 
+    const spin = spinner();
+    spin.start('Generating commit message');
     const commitMessage = await generateCommitMessageWithChatCompletion(
       await getDiff({ files: staged })
     );
-
-    if (typeof commitMessage !== 'string') throw new Error(commitMessage.error);
+    if (typeof commitMessage !== 'string') {
+      spin.stop('Error');
+      throw new Error(commitMessage.error);
+    } else spin.stop('Done');
 
     const fileContent = await fs.readFile(messageFilePath);
 

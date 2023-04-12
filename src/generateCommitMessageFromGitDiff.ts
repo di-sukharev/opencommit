@@ -4,7 +4,7 @@ import {
 } from 'openai';
 import { api } from './api';
 import { getConfig } from './commands/config';
-import { mergeStrings } from './utils/mergeStrings';
+import { mergeDiffs } from './utils/mergeDiffs';
 import { i18n, I18nLocals } from './i18n';
 import { tokenCount } from './utils/tokenCount';
 
@@ -14,38 +14,38 @@ const translation = i18n[(config?.language as I18nLocals) || 'en'];
 const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   {
     role: ChatCompletionRequestMessageRoleEnum.System,
-    content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message. ${config?.emoji
-      ? 'Use Gitmoji convention to preface the commit'
-      : 'Do not preface the commit with anything'
-      }, use the present tense. ${config?.description
-        ? 'Add a short description of what commit is about after the commit message. Don\'t start it with "This commit", just describe the changes.'
-        : "Don't add any descriptions to the commit, only commit message."
-    } Use ${translation.localLanguage} to answer.`
+    // prettier-ignore
+    content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention and explain why a change was done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+${config?.emoji? 'Use GitMoji convention to preface the commit.': 'Do not preface the commit with anything.'}
+${config?.description  ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.': "Don't add any descriptions to the commit, only commit message."}
+Use the present tense. Lines must not be longer than 74 characters. Use ${translation.localLanguage} to answer.`
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.User,
     content: `diff --git a/src/server.ts b/src/server.ts
-  index ad4db42..f3b18a9 100644
-  --- a/src/server.ts
-  +++ b/src/server.ts
-  @@ -10,7 +10,7 @@ import {
-    initWinstonLogger();
-    
-    const app = express();
-  -const port = 7799;
-  +const PORT = 7799;
-    
-    app.use(express.json());
-    
-  @@ -34,6 +34,6 @@ app.use((_, res, next) => {
-    // ROUTES
-    app.use(PROTECTED_ROUTER_URL, protectedRouter);
-    
-  -app.listen(port, () => {
-  -  console.log(\`Server listening on port \${port}\`);
-  +app.listen(process.env.PORT || PORT, () => {
-  +  console.log(\`Server listening on port \${PORT}\`);
-    });`
+index ad4db42..f3b18a9 100644
+--- a/src/server.ts
++++ b/src/server.ts
+@@ -10,7 +10,7 @@
+import {
+  initWinstonLogger();
+  
+  const app = express();
+ -const port = 7799;
+ +const PORT = 7799;
+  
+  app.use(express.json());
+  
+@@ -34,6 +34,6 @@
+app.use((_, res, next) => {
+  // ROUTES
+  app.use(PROTECTED_ROUTER_URL, protectedRouter);
+  
+ -app.listen(port, () => {
+ -  console.log(\`Server listening on port \${port}\`);
+ +app.listen(process.env.PORT || PORT, () => {
+ +  console.log(\`Server listening on port \${PORT}\`);
+  });`
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.Assistant,
@@ -87,9 +87,12 @@ const MAX_REQ_TOKENS = 3900 - INIT_MESSAGES_PROMPT_LENGTH;
 export const generateCommitMessageWithChatCompletion = async (
   diff: string
 ): Promise<string | GenerateCommitMessageError> => {
- try {
+  try {
     if (tokenCount(diff) >= MAX_REQ_TOKENS) {
-      const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(diff);
+      const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(
+        diff,
+        MAX_REQ_TOKENS
+      );
 
       const commitMessages = await Promise.all(commitMessagePromises);
 
@@ -109,22 +112,28 @@ export const generateCommitMessageWithChatCompletion = async (
   }
 };
 
-function getMessagesPromisesByLines(fileDiff: string, separator: string) {
-  const lineSeparator = '\n@@';
-  const [fileHeader, ...fileDiffByLines] = fileDiff.split(lineSeparator);
+function getMessagesPromisesByChangesInFile(
+  fileDiff: string,
+  separator: string,
+  maxChangeLength: number
+) {
+  const hunkHeaderSeparator = '@@ ';
+  const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
 
   // merge multiple line-diffs into 1 to save tokens
-  const mergedLines = mergeStrings(
-    fileDiffByLines.map((line) => lineSeparator + line),
-    MAX_REQ_TOKENS
+  const mergedChanges = mergeDiffs(
+    fileDiffByLines.map((line) => hunkHeaderSeparator + line),
+    maxChangeLength
   );
 
-  const lineDiffsWithHeader = mergedLines.map(
-    (d) => fileHeader + lineSeparator + d
+  const lineDiffsWithHeader = mergedChanges.map(
+    (change) => fileHeader + change
   );
 
-  const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map((d) => {
-    const messages = generateCommitMessageChatCompletionPrompt(separator + d);
+  const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map((lineDiff) => {
+    const messages = generateCommitMessageChatCompletionPrompt(
+      separator + lineDiff
+    );
 
     return api.generateCommitMessage(messages);
   });
@@ -132,20 +141,27 @@ function getMessagesPromisesByLines(fileDiff: string, separator: string) {
   return commitMsgsFromFileLineDiffs;
 }
 
-function getCommitMsgsPromisesFromFileDiffs(diff: string) {
+export function getCommitMsgsPromisesFromFileDiffs(
+  diff: string,
+  maxDiffLength: number
+) {
   const separator = 'diff --git ';
 
   const diffByFiles = diff.split(separator).slice(1);
 
   // merge multiple files-diffs into 1 prompt to save tokens
-  const mergedFilesDiffs = mergeStrings(diffByFiles, MAX_REQ_TOKENS);
+  const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
 
   const commitMessagePromises = [];
 
   for (const fileDiff of mergedFilesDiffs) {
-    if (tokenCount(fileDiff) >= MAX_REQ_TOKENS) {
+    if (tokenCount(fileDiff) >= maxDiffLength) {
       // if file-diff is bigger than gpt context — split fileDiff into lineDiff
-      const messagesPromises = getMessagesPromisesByLines(fileDiff, separator);
+      const messagesPromises = getMessagesPromisesByChangesInFile(
+        fileDiff,
+        separator,
+        maxDiffLength
+      );
 
       commitMessagePromises.push(...messagesPromises);
     } else {

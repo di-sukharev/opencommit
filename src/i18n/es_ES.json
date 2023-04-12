@@ -1,7 +1,6 @@
 {
-    "localLanguage": "spanish",
-    "commitFix": "fix(server.ts): cambiar la variable port de minúsculas a mayúsculas PORT",
-    "commitFeat": "feat(server.ts): añadir soporte para la variable de entorno process.env.PORT",
-    "commitDescription": "La variable port ahora se llama PORT, lo que mejora la coherencia con las convenciones de nomenclatura, ya que PORT es una constante. El soporte para una variable de entorno permite que la aplicación sea más flexible, ya que ahora puede ejecutarse en cualquier puerto disponible especificado a través de la variable de entorno process.env.PORT."
-  }
-  
+  "localLanguage": "spanish",
+  "commitFix": "fix(server.ts): cambiar la variable port de minúsculas a mayúsculas PORT",
+  "commitFeat": "feat(server.ts): añadir soporte para la variable de entorno process.env.PORT",
+  "commitDescription": "La variable port ahora se llama PORT, lo que mejora la coherencia con las convenciones de nomenclatura, ya que PORT es una constante. El soporte para una variable de entorno permite que la aplicación sea más flexible, ya que ahora puede ejecutarse en cualquier puerto disponible especificado a través de la variable de entorno process.env.PORT."
+}

@@ -25,17 +25,25 @@ export const getOpenCommitIgnore = (): Ignore => {
   return ig;
 };
 
+export const getCoreHooksPath = async(): Promise<string> => {
+  const { stdout } = await execa('git', [
+    'config',
+    'core.hooksPath']);
+
+  return stdout;
+}
+
 export const getStagedFiles = async (): Promise<string[]> => {
-  const { stdout: gitDir } = await execa("git", [
-      "rev-parse",
-      "--show-toplevel"
+  const { stdout: gitDir } = await execa('git', [
+    'rev-parse',
+    '--show-toplevel'
   ]);
 
-  const { stdout: files } = await execa("git", [
-    "diff",
-    "--name-only",
-    "--cached",
-    "--relative",
+  const { stdout: files } = await execa('git', [
+    'diff',
+    '--name-only',
+    '--cached',
+    '--relative',
     gitDir
   ]);
 

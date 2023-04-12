@@ -1,6 +1,6 @@
 {
-  "localLanguage": "にほんご",
-  "commitFix": "修正(server.ts): ポート変数のケースを小文字のポートから大文字のPORTに変更",
-  "commitFeat": "新機能(server.ts): process.env.PORT環境変数のサポートを追加する",
-  "commitDescription": "ポート変数は現在PORTという名前になっており、PORTは定数であるため命名規則に一貫性があります。環境変数のサポートにより、アプリケーションはより柔軟になり、process.env.PORT環境変数で指定された任意の利用可能なポートで実行できるようになりまし"
+  "localLanguage": "日本語",
+  "commitFix": "修正(server.ts): ポート変数を小文字のportから大文字のPORTに変更",
+  "commitFeat": "新機能(server.ts): 環境変数process.env.PORTのサポートを追加",
+  "commitDescription": "ポート変数は現在PORTという名前になり、定数であるPORTを使うことで命名規則に一貫性が生まれました。環境変数をサポートすることで、環境変数process.env.PORTで指定された任意の利用可能なポートで実行できるようになり、アプリケーションはより柔軟になりました。"
 }
