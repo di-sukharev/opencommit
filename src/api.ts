@@ -11,8 +11,8 @@ import { CONFIG_MODES, getConfig } from './commands/config';
 
 const config = getConfig();
 
-let apiKey = config?.OPENAI_API_KEY;
-let basePath = config?.OPENAI_BASE_PATH;
+let apiKey = config?.OPENCOMMIT_OPENAI_API_KEY;
+let basePath = config?.OPENCOMMIT_OPENAI_BASE_PATH;
 
 const [command, mode] = process.argv.slice(2);
 
@@ -20,7 +20,7 @@ if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
   intro('opencommit');
 
   outro(
-    'OPENAI_API_KEY is not set, please run `oc config set OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`'
+    'OPENCOMMIT_OPENAI_API_KEY is not set, please run `oc config set OPENCOMMIT_OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`'
   );
   outro(
     'For help look into README https://github.com/di-sukharev/opencommit#setup'

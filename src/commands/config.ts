@@ -8,12 +8,15 @@ import chalk from 'chalk';
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 export enum CONFIG_KEYS {
-  OPENAI_API_KEY = 'OPENAI_API_KEY',
-  OPENAI_BASE_PATH = 'OPENAI_BASE_PATH',
-  description = 'description',
-  emoji = 'emoji',
-  language = 'language'
+  OPENCOMMIT_OPENAI_API_KEY = 'OPENCOMMIT_OPENAI_API_KEY',
+  OPENCOMMIT_OPENAI_BASE_PATH = 'OPENCOMMIT_OPENAI_BASE_PATH',
+  OPENCOMMIT_DESCRIPTION = 'OPENCOMMIT_DESCRIPTION',
+  OPENCOMMIT_EMOJI = 'OPENCOMMIT_EMOJI',
+  OPENCOMMIT_LANGUAGE = 'OPENCOMMIT_LANGUAGE'
 }
 
 export enum CONFIG_MODES {
@@ -36,15 +39,15 @@ const validateConfig = (
 };
 
 export const configValidators = {
-  [CONFIG_KEYS.OPENAI_API_KEY](value: any) {
-    validateConfig(CONFIG_KEYS.OPENAI_API_KEY, value, 'Cannot be empty');
+  [CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY](value: any) {
+    validateConfig(CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY, value, 'Cannot be empty');
     validateConfig(
-      CONFIG_KEYS.OPENAI_API_KEY,
+      CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY,
       value.startsWith('sk-'),
       'Must start with "sk-"'
     );
     validateConfig(
-      CONFIG_KEYS.OPENAI_API_KEY,
+      CONFIG_KEYS.OPENCOMMIT_OPENAI_API_KEY,
       value.length === 51,
       'Must be 51 characters long'
     );
@@ -52,9 +55,9 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.description](value: any) {
+  [CONFIG_KEYS.OPENCOMMIT_DESCRIPTION](value: any) {
     validateConfig(
-      CONFIG_KEYS.description,
+      CONFIG_KEYS.OPENCOMMIT_DESCRIPTION,
       typeof value === 'boolean',
       'Must be true or false'
     );
@@ -62,9 +65,9 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.emoji](value: any) {
+  [CONFIG_KEYS.OPENCOMMIT_EMOJI](value: any) {
     validateConfig(
-      CONFIG_KEYS.emoji,
+      CONFIG_KEYS.OPENCOMMIT_EMOJI,
       typeof value === 'boolean',
       'Must be true or false'
     );
@@ -72,18 +75,18 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.language](value: any) {
+  [CONFIG_KEYS.OPENCOMMIT_LANGUAGE](value: any) {
     validateConfig(
-      CONFIG_KEYS.language,
+      CONFIG_KEYS.OPENCOMMIT_LANGUAGE,
       getI18nLocal(value),
       `${value} is not supported yet`
     );
     return getI18nLocal(value);
   },
 
-  [CONFIG_KEYS.OPENAI_BASE_PATH](value: any) {
+  [CONFIG_KEYS.OPENCOMMIT_OPENAI_BASE_PATH](value: any) {
     validateConfig(
-      CONFIG_KEYS.OPENAI_BASE_PATH,
+      CONFIG_KEYS.OPENCOMMIT_OPENAI_BASE_PATH,
       typeof value == 'string',
       `${value} is not supported yet`
     );
@@ -99,14 +102,16 @@ const configPath = pathJoin(homedir(), '.opencommit');
 
 export const getConfig = (): ConfigType | null => {
   const configExists = existsSync(configPath);
-  if (!configExists) return null;
 
-  const configFile = readFileSync(configPath, 'utf8');
-  const config = iniParse(configFile);
+  const configFile = configExists ? readFileSync(configPath, 'utf8') : '';
+  const config = configFile? iniParse(configFile) : {};
 
-  for (const configKey of Object.keys(config)) {
+  for (const configKey in CONFIG_KEYS) {
+    const envValue = process.env[configKey];
+    const configValue = config[configKey];
+    const value = envValue !== undefined ? envValue : configValue;
     const validValue = configValidators[configKey as CONFIG_KEYS](
-      config[configKey]
+        value
     );
 
     config[configKey] = validValue;

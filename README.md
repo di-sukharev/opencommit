@@ -31,7 +31,7 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 3. Set the key to OpenCommit config:
 
    ```sh
-   opencommit config set OPENAI_API_KEY=<your_api_key>
+   opencommit config set OPENCOMMIT_OPENAI_API_KEY=<your_api_key>
    ```
 
    Your api key is stored locally in `~/.opencommit` config file.
@@ -61,13 +61,13 @@ oc
 To add emoji:
 
 ```sh
-oc config set emoji=true
+oc config set OPENCOMMIT_EMOJI=true
 ```
 
 To remove emoji:
 
 ```sh
-oc config set emoji=false
+oc config set OPENCOMMIT_EMOJI=false
 ```
 
 ### Postface commits with descriptions of changes
@@ -75,13 +75,13 @@ oc config set emoji=false
 To add descriptions:
 
 ```sh
-oc config set description=true
+oc config set OPENCOMMIT_DESCRIPTION=true
 ```
 
 To remove description:
 
 ```sh
-oc config set description=false
+oc config set OPENCOMMIT_DESCRIPTION=false
 ```
 
 ### Internationalization support
@@ -90,14 +90,14 @@ To specify the language used to generate commit messages:
 
 ```sh
 # de, German ,Deutsch
-oc config set language=de
-oc config set language=German
-oc config set language=Deutsch
+oc config set OPENCOMMIT_LANGUAGE=de
+oc config set OPENCOMMIT_LANGUAGE=German
+oc config set OPENCOMMIT_LANGUAGE=Deutsch
 
 # fr, French, française
-oc config set language=fr
-oc config set language=French
-oc config set language=française
+oc config set OPENCOMMIT_LANGUAGE=fr
+oc config set OPENCOMMIT_LANGUAGE=French
+oc config set OPENCOMMIT_LANGUAGE=française
 ```
 
 The default language set is **English**  
