@@ -15,6 +15,7 @@ import nl from '../i18n/nl.json' assert { type: 'json' };
 import ru from '../i18n/ru.json' assert { type: 'json' };
 import id_ID from '../i18n/id_ID.json' assert { type: 'json' };
 import pl from '../i18n/pl.json' assert { type: 'json' };
+import tr from '../i18n/tr.json' assert { type: 'json' };
 import th from '../i18n/th.json' assert { type: 'json' };
 
 export enum I18nLocals {
@@ -34,6 +35,7 @@ export enum I18nLocals {
   'ru' = 'ru',
   'id_ID' = 'id_ID',
   'pl' = 'pl',
+  'tr' = 'tr',
   'th' = 'th',
 }
 
@@ -55,6 +57,7 @@ export const i18n = {
   nl,
   ru,
   pl,
+  tr,
   th
 };
 
@@ -76,6 +79,7 @@ export const I18N_CONFIG_ALIAS: { [key: string]: string[] } = {
   ru: ['ru', 'Russian', 'русский'],
   id_ID: ['id_ID', 'Bahasa', 'bahasa'],
   pl: ['pl', 'Polish', 'Polski'],
+  tr: ['tr', 'Turkish', 'Turkish'],
   th: ['th', 'Thai', 'ไทย']
 };
 
