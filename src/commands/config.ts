@@ -10,6 +10,7 @@ import { getI18nLocal } from '../i18n';
 
 export enum CONFIG_KEYS {
   OPENAI_API_KEY = 'OPENAI_API_KEY',
+  OPENAI_MAX_TOKENS = 'OPENAI_MAX_TOKENS',
   OPENAI_BASE_PATH = 'OPENAI_BASE_PATH',
   description = 'description',
   emoji = 'emoji',
@@ -57,6 +58,16 @@ export const configValidators = {
       CONFIG_KEYS.description,
       typeof value === 'boolean',
       'Must be true or false'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OPENAI_MAX_TOKENS](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OPENAI_MAX_TOKENS,
+      typeof value === 'number',
+      'Must be a number'
     );
 
     return value;
