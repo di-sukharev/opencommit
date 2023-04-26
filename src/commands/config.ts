@@ -13,7 +13,8 @@ export enum CONFIG_KEYS {
   OPENAI_BASE_PATH = 'OPENAI_BASE_PATH',
   description = 'description',
   emoji = 'emoji',
-  language = 'language'
+  language = 'language',
+  maxChars = 'max_chars',
 }
 
 export enum CONFIG_MODES {
@@ -79,6 +80,15 @@ export const configValidators = {
       `${value} is not supported yet`
     );
     return getI18nLocal(value);
+  },
+
+  [CONFIG_KEYS.maxChars](value: any) {
+    validateConfig(
+      CONFIG_KEYS.maxChars,
+      typeof value === 'number',
+      `${value} is not supported yet`
+    );
+    return value;
   },
 
   [CONFIG_KEYS.OPENAI_BASE_PATH](value: any) {
