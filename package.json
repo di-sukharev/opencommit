@@ -44,7 +44,8 @@
     "build": "rimraf out && node esbuild.config.js",
     "deploy": "npm run build && npm version patch && npm publish --tag latest",
     "lint": "eslint src --ext ts && tsc --noEmit",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "pkg": "pkg package.json -t node14-macos-x64 -o opencommit && mv opencommit out/opencommit && chmod +x out/opencommit"
   },
   "devDependencies": {
     "@types/ini": "^1.3.31",

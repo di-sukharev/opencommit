@@ -97,6 +97,7 @@ ${chalk.grey('——————————————————')}`
 
         const { stdout } = await execa('git', [
           'push',
+          '--set-upstream',
           '--verbose',
           remotes[0]
         ]);

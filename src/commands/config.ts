@@ -85,7 +85,7 @@ export const configValidators = {
   [CONFIG_KEYS.maxChars](value: any) {
     validateConfig(
       CONFIG_KEYS.maxChars,
-      typeof value === 'number',
+      typeof value !== 'number',
       `${value} is not supported yet`
     );
     return value;
