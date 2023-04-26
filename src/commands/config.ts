@@ -14,7 +14,7 @@ export enum CONFIG_KEYS {
   description = 'description',
   emoji = 'emoji',
   language = 'language',
-  maxChars = 'max_chars',
+  maxChars = 'maxChars',
 }
 
 export enum CONFIG_MODES {
