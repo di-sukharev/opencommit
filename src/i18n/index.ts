@@ -1,4 +1,5 @@
 import en from '../i18n/en.json' assert { type: 'json' };
+import cs from '../i18n/cs.json' assert { type: 'json' };
 import de from '../i18n/de.json' assert { type: 'json' };
 import fr from '../i18n/fr.json' assert { type: 'json' };
 import it from '../i18n/it.json' assert { type: 'json' };
@@ -14,6 +15,7 @@ import nl from '../i18n/nl.json' assert { type: 'json' };
 import ru from '../i18n/ru.json' assert { type: 'json' };
 import id_ID from '../i18n/id_ID.json' assert { type: 'json' };
 import pl from '../i18n/pl.json' assert { type: 'json' };
+import tr from '../i18n/tr.json' assert { type: 'json' };
 import th from '../i18n/th.json' assert { type: 'json' };
 
 export enum I18nLocals {
@@ -21,6 +23,7 @@ export enum I18nLocals {
   'zh_CN' = 'zh_CN',
   'zh_TW' = 'zh_TW',
   'ja' = 'ja',
+  'cs' = 'cs',
   'de' = 'de',
   'fr' = 'fr',
   'nl' = 'nl',
@@ -32,6 +35,7 @@ export enum I18nLocals {
   'ru' = 'ru',
   'id_ID' = 'id_ID',
   'pl' = 'pl',
+  'tr' = 'tr',
   'th' = 'th',
 }
 
@@ -40,6 +44,7 @@ export const i18n = {
   zh_CN,
   zh_TW,
   ja,
+  cs,
   de,
   fr,
   it,
@@ -52,6 +57,7 @@ export const i18n = {
   nl,
   ru,
   pl,
+  tr,
   th
 };
 
@@ -60,6 +66,7 @@ export const I18N_CONFIG_ALIAS: { [key: string]: string[] } = {
   zh_TW: ['zh_TW', '繁體中文', '繁體'],
   ja: ['ja', 'Japanese', 'にほんご'],
   ko: ['ko', 'Korean', '한국어'],
+  cs: ['cs', 'Czech', 'česky'],
   de: ['de', 'German', 'Deutsch'],
   fr: ['fr', 'French', 'française'],
   it: ['it', 'Italian', 'italiano'],
@@ -72,6 +79,7 @@ export const I18N_CONFIG_ALIAS: { [key: string]: string[] } = {
   ru: ['ru', 'Russian', 'русский'],
   id_ID: ['id_ID', 'Bahasa', 'bahasa'],
   pl: ['pl', 'Polish', 'Polski'],
+  tr: ['tr', 'Turkish', 'Turkish'],
   th: ['th', 'Thai', 'ไทย']
 };
 
