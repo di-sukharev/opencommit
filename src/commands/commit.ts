@@ -141,7 +141,7 @@ ${chalk.grey('——————————————————')}`
       }
     } else if (isCommitConfirmedByUser == "edit" && !isCancel(isCommitConfirmedByUser)) {
 
-      let defaultEditor = process.env.EDITOR || (process.platform === 'win32' ? 'notepad.exe' : 'vi');
+      let defaultEditor = '' 
       let defaultOpenCommand
       let linuxTermFlag = ''
 
@@ -153,6 +153,7 @@ ${chalk.grey('——————————————————')}`
           defaultOpenCommand = 'start'
           break
         case 'linux':
+          defaultEditor = process.env.EDITOR || ''
           if ( 
             defaultEditor == 'vi'    || 
             defaultEditor == 'vim'   || 
@@ -166,6 +167,7 @@ ${chalk.grey('——————————————————')}`
             break
           } else {
             defaultOpenCommand = 'xdg-open'
+            defaultEditor = ''
             break
           }
       }     
