@@ -13,6 +13,7 @@ export enum CONFIG_KEYS {
   OPENAI_BASE_PATH = 'OPENAI_BASE_PATH',
   description = 'description',
   emoji = 'emoji',
+  model = 'model',
   language = 'language'
 }
 
@@ -86,6 +87,15 @@ export const configValidators = {
       CONFIG_KEYS.OPENAI_BASE_PATH,
       typeof value == 'string',
       `${value} is not supported yet`
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.model](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OPENAI_BASE_PATH,
+      value === 'gpt-3.5-turbo' || value === 'gpt-4',
+      `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
   }

@@ -29,6 +29,8 @@ if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
   process.exit(1);
 }
 
+const MODEL = config?.model || 'gpt-3.5-turbo';
+
 class OpenAi {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
     apiKey: apiKey
@@ -47,7 +49,7 @@ class OpenAi {
   ): Promise<string | undefined> => {
     try {
       const { data } = await this.openAI.createChatCompletion({
-        model: 'gpt-3.5-turbo',
+        model: MODEL,
         messages,
         temperature: 0,
         top_p: 0.1,
