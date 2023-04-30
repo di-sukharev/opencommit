@@ -12,6 +12,15 @@
 
 ---
 
+Core Mainteiners
+
+| Dima Sukharev  |  Sergey Bunas |
+|---|---|
+| ![image](https://user-images.githubusercontent.com/12963383/235348919-900ca9f4-f3d2-4ba8-923e-ffbecfcf1885.png) |  ![f1a2560c-df3b-423eabff-089f33d984aa](https://user-images.githubusercontent.com/12963383/235348907-105cd389-756d-4f51-a95b-242e71ba3b30.jpeg)|
+| https://twitter.com/io_Y_oi/photo  | https://twitter.com/sergeybunas  |
+
+---
+
 <div align="center">
     <img src=".github/opencommit-example.png" alt="OpenCommit example"/>
 </div>
