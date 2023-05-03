@@ -167,6 +167,44 @@ git commit
 
 Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow.
 
+
+If you want to write your code for multiple files first, then you want to commit them one by one you can use the following shell code 
+
+```sh
+#!/bin/bash
+
+# change directory to the git directory
+cd "<Your Local Repo Directory>"
+#example cd "C:\Users\abelk\Desktop\sample check\sample"
+
+# loop through all files and directories in current directory
+for file in *
+do
+    # check if file exists and is a regular file
+    if [ -f "$file" ] ; then
+        # add file to git index and make it executable
+        git add "$file" && git update-index --chmod=+x "$file" && oc
+    # check if file exists and is a directory
+    elif [ -d "$file" ] ; then
+        # loop through all files in directory
+        for file1 in "$file"/*
+        do
+            # check if file exists and is a regular file
+            if [ -f "$file1" ] ; then
+                # add file to git index and make it executable
+                git add "$file1" && git update-index --chmod=+x "$file1" && oc
+            fi
+        done
+    fi
+done
+
+# create a commit with a commit message and push changes to GitHub
+oc && git push -u origin main
+
+```
+
+
 ## Payments
 
 You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT (3.5-turbo) official model, that is ~15x times cheaper than GPT-4.
+
