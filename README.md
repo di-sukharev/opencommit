@@ -174,25 +174,23 @@ If you want to write your code for multiple files first, then you want to commit
 #!/bin/bash
 
 # change directory to the git directory
-cd "<Your Local Repo Directory>"
+cd "C:\Abel\Courses\Shopping Application using Microservices\Shopping-App-using-Microservice-Architecture"
 #example cd "C:\Users\abelk\Desktop\sample check\sample"
 
-# loop through all files and directories in current directory
+# loop through all files and directories in the current directory
 for file in *
 do
     # check if file exists and is a regular file
     if [ -f "$file" ] ; then
-        # add file to git index and make it executable
-        git add "$file" && git update-index --chmod=+x "$file" && oc
+        git add "$file" && oc
     # check if file exists and is a directory
     elif [ -d "$file" ] ; then
-        # loop through all files in directory
+        # loop through all files in a directory
         for file1 in "$file"/*
         do
             # check if file exists and is a regular file
             if [ -f "$file1" ] ; then
-                # add file to git index and make it executable
-                git add "$file1" && git update-index --chmod=+x "$file1" && oc
+                git add "$file1"  && oc
             fi
         done
     fi
@@ -200,6 +198,7 @@ done
 
 # create a commit with a commit message and push changes to GitHub
 oc && git push -u origin main
+
 
 ```
 
