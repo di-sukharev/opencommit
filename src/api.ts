@@ -61,7 +61,7 @@ class OpenAi {
 
       const prefix = generatePrefix();
 
-      const finalMessage = (prefix || '') + (message?.content || '');
+      const finalMessage = (prefix ? prefix + ' ' : '') + (message?.content || '')
       
       return finalMessage;
     } catch (error: unknown) {
