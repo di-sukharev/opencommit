@@ -96,6 +96,24 @@ To remove description:
 oc config set description=false
 ```
 
+### Configure openAI maxTokens param
+
+Default value for `maxTokens` is 196, sometimes you can get 400 error if request+response exceeds `maxToken` parameter.
+
+so you can increase it:
+
+```sh
+oc config set OPENAI_MAX_TOKENS=<number>
+```
+
+### Configure BASE_PATH for openAI api
+
+if you want to call GPT via proxy — you can change `BASE_PATH` parameter:
+
+```sh
+oc config set OPENAI_BASE_PATH=<string>
+```
+
 ### Internationalization support
 
 To specify the language used to generate commit messages:
