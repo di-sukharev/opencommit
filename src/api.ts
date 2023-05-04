@@ -1,4 +1,5 @@
 import { intro, outro } from '@clack/prompts';
+import { execSync } from 'child_process';
 import axios from 'axios';
 import chalk from 'chalk';
 import {
@@ -61,8 +62,8 @@ class OpenAi {
 
       const prefix = generatePrefix();
 
-      const finalMessage = (prefix ? prefix + ' ' : '') + (message?.content || '')
-      
+      const finalMessage = (prefix != "undefined" ? prefix + ' ' : '') + (message?.content || '')
+
       return finalMessage;
     } catch (error: unknown) {
       outro(`${chalk.red('✖')} ${error}`);
@@ -99,11 +100,56 @@ export const getOpenCommitLatestVersion = async (): Promise<
 };
 
 function generatePrefix(): string | undefined {
-  if (!config?.prefix !== undefined) {
+  const prefix = config?.prefix
+
+  if (prefix === undefined) {
     return undefined;
   }
-  return config?.prefix;
+
+  const prefixIsRegexString = prefix.startsWith('/') && prefix.endsWith('/');
+
+  if (prefixIsRegexString) {
+    try {
+      return generatePrefixFromRegex(prefix);
+    } catch (error) {
+      console.error(`Failed to generate prefix from regex: ${error}`);
+      return undefined;
+    }
+  }
+
+  return prefix;
 }
 
 export const api = new OpenAi();
 
+
+function generatePrefixFromRegex(regex: string): string | undefined {
+
+  // We currently only support regex input from git branch name
+
+  const branch = getCurrentGitBranch();
+
+  if (branch === undefined) {
+    return undefined;
+  }
+
+  const regexWithoutSlashes = regex.slice(1, -1);
+  const regexObject = new RegExp(regexWithoutSlashes);
+  const match = branch.match(regexObject);
+
+  if (match === null) {
+    return undefined;
+  }
+
+  return match[0];
+}
+
+function getCurrentGitBranch(): string | undefined {
+  try {
+    const branchName = execSync('git symbolic-ref --short HEAD', { encoding: 'utf8' }).trim();
+    return branchName;
+  } catch (error) {
+    console.error(`Failed to get current git branch: ${error}`);
+    return undefined;
+  }
+}
