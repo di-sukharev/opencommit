@@ -54,6 +54,18 @@ oc
 
 ## Features
 
+### Switch to GPT-4
+
+By default OpenCommit uses GPT-3.5-turbo (ChatGPT).
+
+You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
+
+```sh
+oc config set model=gpt-4
+```
+
+Make sure you do lowercase `gpt-4`.
+
 ### Preface commits with emoji 🤠
 
 [GitMoji](https://gitmoji.dev/) convention is used.

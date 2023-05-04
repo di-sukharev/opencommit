@@ -13,6 +13,7 @@ const config = getConfig();
 
 let apiKey = config?.OPENAI_API_KEY;
 let basePath = config?.OPENAI_BASE_PATH;
+let maxTokens = config?.OPENAI_MAX_TOKENS;
 
 const [command, mode] = process.argv.slice(2);
 
@@ -53,7 +54,7 @@ class OpenAi {
         messages,
         temperature: 0,
         top_p: 0.1,
-        max_tokens: 196
+        max_tokens: maxTokens ?? 196
       });
 
       const message = data.choices[0].message;
