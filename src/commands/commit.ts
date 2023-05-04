@@ -73,7 +73,7 @@ ${chalk.grey('——————————————————')}`
       ...extraArgs
     ]);
 
-    outro(`${chalk.green('✔')} successfully committed`);
+    outro(`${chalk.green('✔')} Successfully committed`);
 
     outro(stdout);
 
@@ -102,7 +102,7 @@ ${chalk.grey('——————————————————')}`
         ]);
 
         pushSpinner.stop(
-          `${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`
+          `${chalk.green('✔')} Successfully pushed all commits to ${remotes[0]}`
         );
 
         if (stdout) outro(stdout);
@@ -126,7 +126,7 @@ ${chalk.grey('——————————————————')}`
         pushSpinner.stop(
           `${chalk.green(
             '✔'
-          )} successfully pushed all commits to ${selectedRemote}`
+          )} Successfully pushed all commits to ${selectedRemote}`
         );
 
         if (stdout) outro(stdout);
