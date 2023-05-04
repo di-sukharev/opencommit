@@ -99,10 +99,10 @@ export const getOpenCommitLatestVersion = async (): Promise<
 };
 
 function generatePrefix(): string | undefined {
-  if (!config?.prefix) {
+  if (!config?.prefix !== undefined) {
     return undefined;
   }
-  return config.prefix;
+  return config?.prefix;
 }
 
 export const api = new OpenAi();
