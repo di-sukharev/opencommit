@@ -59,7 +59,11 @@ class OpenAi {
 
       const message = data.choices[0].message;
 
-      return message?.content;
+      const prefix = generatePrefix();
+
+      const finalMessage = (prefix || '') + (message?.content || '');
+      
+      return finalMessage;
     } catch (error: unknown) {
       outro(`${chalk.red('✖')} ${error}`);
 
@@ -94,4 +98,12 @@ export const getOpenCommitLatestVersion = async (): Promise<
   }
 };
 
+function generatePrefix(): string | undefined {
+  if (!config?.prefix) {
+    return undefined;
+  }
+  return config.prefix;
+}
+
 export const api = new OpenAi();
+
