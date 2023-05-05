@@ -96,8 +96,8 @@ export const configValidators = {
   [CONFIG_KEYS.OPENAI_BASE_PATH](value: any) {
     validateConfig(
       CONFIG_KEYS.OPENAI_BASE_PATH,
-      typeof value == 'string',
-      `${value} is not supported yet`
+      typeof value === 'string',
+      'Must be string'
     );
     return value;
   },
