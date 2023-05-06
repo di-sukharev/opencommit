@@ -17,7 +17,6 @@
   "main": "cli.js",
   "bin": {
     "opencommit": "./out/cli.cjs",
-    "oc": "./out/cli.cjs",
     "oco": "./out/cli.cjs"
   },
   "repository": {

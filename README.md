@@ -45,11 +45,11 @@ git add <files...>
 opencommit
 ```
 
-You can also use the `oc` shortcut:
+You can also use the `oco` shortcut:
 
 ```sh
 git add <files...>
-oc
+oco
 ```
 
 ## Features
@@ -61,7 +61,7 @@ By default OpenCommit uses GPT-3.5-turbo (ChatGPT).
 You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 
 ```sh
-oc config set model=gpt-4
+oco config set model=gpt-4
 ```
 
 Make sure you do lowercase `gpt-4`.
@@ -73,13 +73,13 @@ Make sure you do lowercase `gpt-4`.
 To add emoji:
 
 ```sh
-oc config set emoji=true
+oco config set emoji=true
 ```
 
 To remove emoji:
 
 ```sh
-oc config set emoji=false
+oco config set emoji=false
 ```
 
 ### Postface commits with descriptions of changes
@@ -87,13 +87,13 @@ oc config set emoji=false
 To add descriptions:
 
 ```sh
-oc config set description=true
+oco config set description=true
 ```
 
 To remove description:
 
 ```sh
-oc config set description=false
+oco config set description=false
 ```
 
 ### Internationalization support
@@ -102,25 +102,25 @@ To specify the language used to generate commit messages:
 
 ```sh
 # de, German ,Deutsch
-oc config set language=de
-oc config set language=German
-oc config set language=Deutsch
+oco config set language=de
+oco config set language=German
+oco config set language=Deutsch
 
 # fr, French, française
-oc config set language=fr
-oc config set language=French
-oc config set language=française
+oco config set language=fr
+oco config set language=French
+oco config set language=française
 ```
 
-The default language set is **English**  
+The default language set is **English**
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
 ### Git flags
 
-The `opencommit` or `oc` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oc`.
+The `opencommit` or `oco` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oco`.
 
 ```sh
-oc --no-verify
+oco --no-verify
 ```
 
 is translated to :
@@ -149,13 +149,13 @@ You can set OpenCommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/gi
 To set the hook:
 
 ```sh
-oc hook set
+oco hook set
 ```
 
 To unset the hook:
 
 ```sh
-oc hook unset
+oco hook unset
 ```
 
 To use the hook:

@@ -24,7 +24,7 @@ export const prepareCommitMessageHook = async (
 
       if (changedFiles) await gitAdd({ files: changedFiles });
       else {
-        outro('No changes detected, write some code and run `oc` again');
+        outro('No changes detected, write some code and run `oco` again');
         process.exit(1);
       }
     }
