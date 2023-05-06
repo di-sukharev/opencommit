@@ -6,6 +6,9 @@ import {
   Configuration as OpenAiApiConfiguration,
   OpenAIApi
 } from 'openai';
+import {
+  AzureOpenAIApi
+} from './utils/AzureOpenAI';
 
 import { CONFIG_MODES, getConfig } from './commands/config';
 
@@ -14,6 +17,7 @@ const config = getConfig();
 let apiKey = config?.OPENAI_API_KEY;
 let basePath = config?.OPENAI_BASE_PATH;
 let maxTokens = config?.OPENAI_MAX_TOKENS;
+let apiType = config?.OPENAI_API_TYPE || 'openai';
 
 const [command, mode] = process.argv.slice(2);
 
@@ -36,13 +40,15 @@ class OpenAi {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
     apiKey: apiKey
   });
-  private openAI!: OpenAIApi;
+  private openAI!: OpenAIApi | AzureOpenAIApi;
 
   constructor() {
     if (basePath) {
       this.openAiApiConfiguration.basePath = basePath;
     }
-    this.openAI = new OpenAIApi(this.openAiApiConfiguration);
+    this.openAI = apiType === 'azure'
+    ? new AzureOpenAIApi(this.openAiApiConfiguration)
+    : new OpenAIApi(this.openAiApiConfiguration);
   }
 
   public generateCommitMessage = async (
