@@ -1,5 +1,4 @@
 import { intro, outro } from '@clack/prompts';
-import { execSync } from 'child_process';
 import axios from 'axios';
 import chalk from 'chalk';
 import {
@@ -9,6 +8,7 @@ import {
 } from 'openai';
 
 import { CONFIG_MODES, getConfig } from './commands/config';
+import { execaCommandSync } from 'execa';
 
 const config = getConfig();
 
@@ -61,8 +61,9 @@ class OpenAi {
       const message = data.choices[0].message;
 
       const prefix = generatePrefix();
+      const usePrefix = prefix != undefined && prefix?.trim() != ""
 
-      const finalMessage = (prefix != "undefined" ? prefix + ' ' : '') + (message?.content || '')
+      const finalMessage = (usePrefix ? prefix + ' ' : '') + (message?.content || '')
 
       return finalMessage;
     } catch (error: unknown) {
@@ -146,7 +147,7 @@ function generatePrefixFromRegex(regex: string): string | undefined {
 
 function getCurrentGitBranch(): string | undefined {
   try {
-    const branchName = execSync('git symbolic-ref --short HEAD', { encoding: 'utf8' }).trim();
+    const branchName = execaCommandSync('git symbolic-ref --short HEAD').stdout.trim()
     return branchName;
   } catch (error) {
     console.error(`Failed to get current git branch: ${error}`);
