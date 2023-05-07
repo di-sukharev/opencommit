@@ -141,7 +141,7 @@ function generatePrefixFromRegex(regex: string): string | undefined {
     return undefined;
   }
 
-  return match[0];
+  return match.length > 1 ? match[1] : match[0];
 }
 
 function getCurrentGitBranch(): string | undefined {
