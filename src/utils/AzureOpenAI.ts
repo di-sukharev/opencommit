@@ -6,13 +6,11 @@
  */
 
 import {
-  BaseAPI,
-} from 'openai/dist/base';
-import {
   CreateChatCompletionRequest,
   Configuration,
 } from "openai";
-import { AxiosRequestConfig} from 'axios';
+import { BaseAPI } from 'openai/dist/base';
+import { AxiosRequestConfig} from 'openai/node_modules/axios';
 
 export class AzureOpenAIApi extends BaseAPI {
   constructor(configuration: Configuration) {
