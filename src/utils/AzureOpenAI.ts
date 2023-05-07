@@ -53,10 +53,9 @@ export class AzureOpenAIApi extends BaseAPI {
       ...options.params,
     }
 
-    // Azure OpenAI APIのREST call
+    // Azure OpenAI API REST call
     const response = await this.axios.post(url, createChatCompletionRequest, options);
 
-    // console.log(response.data.usage);
     return response;
   }
 
