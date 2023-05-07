@@ -65,6 +65,15 @@ export const configValidators = {
   },
 
   [CONFIG_KEYS.OPENAI_MAX_TOKENS](value: any) {
+    // If the value is a string, convert it to a number.
+    if (typeof value === 'string') {
+      value = parseInt(value);
+      validateConfig(
+        CONFIG_KEYS.OPENAI_MAX_TOKENS,
+        !isNaN(value),
+        'Must be a number'
+      );
+    }
     validateConfig(
       CONFIG_KEYS.OPENAI_MAX_TOKENS,
       typeof value === 'number',
