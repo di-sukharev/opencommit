@@ -9,7 +9,7 @@ import {
   CreateChatCompletionRequest,
   Configuration,
 } from "openai";
-import { BaseAPI } from 'openai/dist/base';
+import { BaseAPI, RequiredError } from 'openai/dist/base';
 import { AxiosRequestConfig} from 'openai/node_modules/axios';
 
 export class AzureOpenAIApi extends BaseAPI {
@@ -27,16 +27,16 @@ export class AzureOpenAIApi extends BaseAPI {
    */
   public async createChatCompletion(createChatCompletionRequest: CreateChatCompletionRequest, options?: AxiosRequestConfig) {
     if (!this.configuration) {
-      throw new Error('Required parameter configuration was null or undefined when calling createChatCompletion.');
+      throw new RequiredError('configuration', 'Required configuration was null or undefined when calling createChatCompletion.');
     }
     if (!this.configuration.basePath) {
-      throw new Error('Required parameter basePath was null or undefined when calling createChatCompletion.');
+      throw new RequiredError('basePath', 'Required configuration basePath was null or undefined when calling createChatCompletion.');
     }
     if (!this.configuration.apiKey) {
-      throw new Error('Required parameter apiKey was null or undefined when calling createChatCompletion.');
+      throw new RequiredError('apiKey', 'Required configuration apiKey was null or undefined when calling createChatCompletion.');
     }
     if (typeof this.configuration.apiKey !== 'string') {
-      throw new Error('Required parameter apiKey was of type string when calling createChatCompletion.');
+        throw new RequiredError('apiKey', 'Required configuration apiKey was not string when calling createChatCompletion');
     }
 
     const url = this.configuration.basePath + 'openai/deployments/' + createChatCompletionRequest.model + '/chat/completions';
@@ -53,17 +53,7 @@ export class AzureOpenAIApi extends BaseAPI {
       ...options.params,
     }
 
-    // axios DEBUG
-    // this.axios.interceptors.request.use(request => {
-    //   console.log('Starting Request: ', request)
-    //   return request
-    // })
-    // this.axios.interceptors.response.use(response => {
-    //   console.log('Response: ', response)
-    //   return response
-    // })
-
-    // Azure OpenAI APIのREST呼び出し
+    // Azure OpenAI APIのREST call
     const response = await this.axios.post(url, createChatCompletionRequest, options);
 
     // console.log(response.data.usage);
