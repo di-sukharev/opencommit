@@ -43,13 +43,13 @@ export const configValidators = {
     validateConfig(CONFIG_KEYS.OPENAI_API_KEY, value, 'Cannot be empty');
     validateConfig(
       CONFIG_KEYS.OPENAI_API_KEY,
-      value.startsWith('sk-'),
-      'Must start with "sk-"'
+      value.startsWith('sk-') || value.match(/^[a-z0-9]{32}$/),
+    'Must start with "sk-". Or a valid Azure OpenAI API key'
     );
     validateConfig(
       CONFIG_KEYS.OPENAI_API_KEY,
-      value.length === 51,
-      'Must be 51 characters long'
+      value.length === 51 || value.length === 32,
+      'Must be 51 or 32 characters long'
     );
 
     return value;

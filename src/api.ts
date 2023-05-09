@@ -6,9 +6,6 @@ import {
   Configuration as OpenAiApiConfiguration,
   OpenAIApi
 } from 'openai';
-import {
-  AzureOpenAIApi
-} from './utils/AzureOpenAI';
 
 import { CONFIG_MODES, getConfig } from './commands/config';
 
@@ -40,15 +37,31 @@ class OpenAi {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
     apiKey: apiKey
   });
-  private openAI!: OpenAIApi | AzureOpenAIApi;
+  private openAI!: OpenAIApi;
 
   constructor() {
-    if (basePath) {
-      this.openAiApiConfiguration.basePath = basePath;
+    switch (apiType) {
+      case 'azure':
+        this.openAiApiConfiguration.baseOptions =  {
+          headers: {
+            "api-key": apiKey,
+          },
+          params: {
+            'api-version': '2023-03-15-preview',
+          }
+        };
+        if (basePath) {
+          this.openAiApiConfiguration.basePath = basePath + 'openai/deployments/' + MODEL;
+        }
+        break;
+      case 'openai':
+      default:
+        if (basePath) {
+          this.openAiApiConfiguration.basePath = basePath;
+        }
+        break;
     }
-    this.openAI = apiType === 'azure'
-    ? new AzureOpenAIApi(this.openAiApiConfiguration)
-    : new OpenAIApi(this.openAiApiConfiguration);
+    this.openAI = new OpenAIApi(this.openAiApiConfiguration);
   }
 
   public generateCommitMessage = async (
