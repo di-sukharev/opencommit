@@ -168,7 +168,7 @@ export const setConfig = (keyValues: [key: string, value: string][]) => {
 
   writeFileSync(configPath, iniStringify(config), 'utf8');
 
-  outro(`${chalk.green('✔')} config successfully set`);
+  outro(`${chalk.green('✔')} Config successfully set`);
 };
 
 export const configCommand = command(
