@@ -15,7 +15,13 @@ const context = github.context;
 const owner = context.repo.owner;
 const repo = context.repo.repo;
 
-async function improveCommitMessagesWithRebase(commits: Commit[]) {
+type ListCommitsResponse = ReturnType<typeof octokit.rest.pulls.listCommits>; // This gives you Promise<OctokitResponse<PullsListCommitsResponseData>>
+
+type CommitsData = ListCommitsResponse extends Promise<infer T> ? T : never; // This gives you OctokitResponse<PullsListCommitsResponseData>
+
+type CommitsArray = CommitsData['data'];
+
+async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   const commitsToImprove = [];
   // TODO: fix the error
   for (const commit of commits) {
@@ -55,17 +61,24 @@ async function improveCommitMessagesWithRebase(commits: Commit[]) {
 async function run() {
   intro('OpenCommit — improving commit messages with GPT');
   try {
-    if (github.context.eventName === 'push') {
-      const payload = github.context.payload as PushEvent;
+    if (github.context.eventName === 'pull_request') {
+      if (github.context.payload.action === 'opened')
+        outro('Pull Request opened');
+      else if (github.context.payload.action === 'synchronize')
+        outro('New commits are pushed');
+      else return outro('Unhandled action: ' + github.context.payload.action);
 
-      return await improveCommitMessagesWithRebase(payload.commits);
-    } else if (
-      github.context.eventName === 'pull_request' &&
-      github.context.payload.action === 'opened'
-    ) {
       const payload = github.context.payload as PullRequestEvent;
       // Question: how to get proper Input type
-      const commits = payload.pull_request.commits_url;
+      const commitsResponse = await octokit.rest.pulls.listCommits({
+        owner,
+        repo,
+        pull_number: payload.pull_request.number
+      });
+
+      const commits = commitsResponse.data;
+      core.info('testing core.info');
+      outro('testing outro');
 
       return await improveCommitMessagesWithRebase(commits);
     } else {
