@@ -1,7 +1,7 @@
 import { execa } from 'execa';
 import {
   GenerateCommitMessageErrorEnum,
-  generateCommitMessageWithChatCompletion
+  generateCommitMessageByDiff
 } from '../generateCommitMessageFromGitDiff';
 import {
   assertGitRepo,
@@ -35,7 +35,7 @@ const generateCommitMessageFromGitDiff = async (
 
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
-  const commitMessage = await generateCommitMessageWithChatCompletion(diff);
+  const commitMessage = await generateCommitMessageByDiff(diff);
 
   // TODO: show proper error messages
   if (typeof commitMessage !== 'string') {

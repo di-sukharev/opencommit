@@ -82,11 +82,11 @@ const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
   (msg) => tokenCount(msg.content) + 4
 ).reduce((a, b) => a + b, 0);
 
-const MAX_REQ_TOKENS = 3900 - INIT_MESSAGES_PROMPT_LENGTH;
+const MAX_REQ_TOKENS = 3000 - INIT_MESSAGES_PROMPT_LENGTH;
 
-export const generateCommitMessageWithChatCompletion = async (
+export const generateCommitMessageByDiff = async (
   diff: string
-): Promise<string | GenerateCommitMessageError> => {
+): Promise<string> => {
   try {
     if (tokenCount(diff) >= MAX_REQ_TOKENS) {
       const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(
@@ -103,12 +103,12 @@ export const generateCommitMessageWithChatCompletion = async (
       const commitMessage = await api.generateCommitMessage(messages);
 
       if (!commitMessage)
-        return { error: GenerateCommitMessageErrorEnum.emptyMessage };
+        throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);
 
       return commitMessage;
     }
   } catch (error) {
-    return { error: GenerateCommitMessageErrorEnum.internalError };
+    throw error;
   }
 };
 

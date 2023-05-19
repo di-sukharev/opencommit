@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { intro, outro, spinner } from '@clack/prompts';
 import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { getConfig } from './config';
-import { generateCommitMessageWithChatCompletion } from '../generateCommitMessageFromGitDiff';
+import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 
 const [messageFilePath, commitSource] = process.argv.slice(2);
 
@@ -45,7 +45,7 @@ export const prepareCommitMessageHook = async (
 
     const spin = spinner();
     spin.start('Generating commit message');
-    const commitMessage = await generateCommitMessageWithChatCompletion(
+    const commitMessage = await generateCommitMessageByDiff(
       await getDiff({ files: staged })
     );
     if (typeof commitMessage !== 'string') {

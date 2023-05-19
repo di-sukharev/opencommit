@@ -1,9 +1,9 @@
 import core from '@actions/core';
 import github from '@actions/github';
 import { execa } from 'execa';
-import { Commit, PushEvent } from '@octokit/webhooks-types';
 import { intro, outro, spinner } from '@clack/prompts';
 import { PullRequestEvent } from '@octokit/webhooks-types';
+import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -15,51 +15,95 @@ const context = github.context;
 const owner = context.repo.owner;
 const repo = context.repo.repo;
 
-type ListCommitsResponse = ReturnType<typeof octokit.rest.pulls.listCommits>; // This gives you Promise<OctokitResponse<PullsListCommitsResponseData>>
+type ListCommitsResponse = ReturnType<typeof octokit.rest.pulls.listCommits>;
 
-type CommitsData = ListCommitsResponse extends Promise<infer T> ? T : never; // This gives you OctokitResponse<PullsListCommitsResponseData>
+type CommitsData = ListCommitsResponse extends Promise<infer T> ? T : never;
 
 type CommitsArray = CommitsData['data'];
 
-async function improveCommitMessagesWithRebase(commits: CommitsArray) {
-  const commitsToImprove = [];
-  // TODO: fix the error
-  for (const commit of commits) {
-    if (commit.message === 'oc' && commit.distinct) {
-      commitsToImprove.push(commit);
+type SHA = string;
+type Diff = string;
+type DiffBySHA = Record<SHA, Diff>;
+
+async function getCommitDiff(commitSha: string) {
+  const diffResponse = await octokit.request<string>(
+    'GET /repos/{owner}/{repo}/commits/{ref}',
+    {
+      owner,
+      repo,
+      ref: commitSha,
+      headers: {
+        Accept: 'application/vnd.github.v3.diff'
+      }
     }
+  );
+  return { sha: commitSha, diff: diffResponse.data };
+}
+
+async function improveCommitMessagesWithRebase(commits: CommitsArray) {
+  const commitsToImprove = commits.filter(
+    ({ commit }) => commit.message === 'oc'
+  );
+
+  if (!commitsToImprove.length) {
+    outro('No commits with a message "oc" found.');
+    outro(
+      'If you want OpenCommit Action to generate a commit message for you — commit the message as two letters: "oc"'
+    );
+    return;
   }
 
-  if (commitsToImprove.length) {
-    const commitSpinner = spinner();
-    commitSpinner.start(
-      `found ${commitsToImprove.length} commits with a message "oc", improving`
-    );
+  const commitSpinner = spinner();
+  commitSpinner.start(
+    `Found ${commitsToImprove.length} commits with a message "oc", improving`
+  );
 
-    // Start an interactive rebase
-    await execa('git', ['rebase', '-i', commitsToImprove.join(' ').trim()]);
+  const commitShas = commitsToImprove.map((commit) => commit.sha);
+  const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
 
-    for (const commit of commitsToImprove) {
-      // Question: how to get commit diff here?
-      const improvedMessage = `improved: ${commit.id}`;
+  const commitDiffBySha: DiffBySHA = await Promise.all(diffPromises)
+    .then((results) =>
+      results.reduce((acc, result) => {
+        acc[result.sha] = result.diff;
+        return acc;
+      }, {} as DiffBySHA)
+    )
+    .catch((error) => {
+      outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+      throw error;
+    });
+
+  outro('Starting interactive rebase: `$ rebase -i`.');
+  await execa('git', ['rebase', '-i', commitsToImprove.join(' ').trim()]);
+
+  for (const commit of commitsToImprove) {
+    try {
+      const commitDiff = commitDiffBySha[commit.sha];
+
+      const improvedMessage = await generateCommitMessageByDiff(commitDiff);
 
       await execa('git', ['commit', '--amend', '-m', improvedMessage]);
       await execa('git', ['rebase', '--continue']);
+    } catch (error) {
+      throw error;
+    } finally {
+      commitSpinner.stop(
+        '📝 Commit messages improved with an interactive rebase: `$ rebase -i`'
+      );
     }
-
-    // Force push the rebased commits
-    await execa('git', ['push', 'origin', `+${context.ref}`]);
-
-    commitSpinner.stop('📝 Commit messages improved with a `rebase -i`');
-  } else {
-    console.log(
-      'No commits with a message "oc" found. If you want OpenCommit to generate a commit message for you — leave the message as "oc".'
-    );
   }
+
+  outro('Force pushing interactively rebased commits into remote origin.');
+
+  // Force push the rebased commits
+  await execa('git', ['push', 'origin', `+${context.ref}`]);
+
+  outro('Done 🙏');
 }
 
-async function run() {
+async function run(retries = 3) {
   intro('OpenCommit — improving commit messages with GPT');
+
   try {
     if (github.context.eventName === 'pull_request') {
       if (github.context.payload.action === 'opened')
@@ -69,7 +113,7 @@ async function run() {
       else return outro('Unhandled action: ' + github.context.payload.action);
 
       const payload = github.context.payload as PullRequestEvent;
-      // Question: how to get proper Input type
+
       const commitsResponse = await octokit.rest.pulls.listCommits({
         owner,
         repo,
@@ -80,7 +124,7 @@ async function run() {
       core.info('testing core.info');
       outro('testing outro');
 
-      return await improveCommitMessagesWithRebase(commits);
+      await improveCommitMessagesWithRebase(commits);
     } else {
       outro('wrong action');
       core.error(
@@ -88,8 +132,8 @@ async function run() {
       );
     }
   } catch (error: any) {
-    // TODO: fix any after test
-    core.setFailed(error!.message || error);
+    if (retries) run(--retries);
+    else core.setFailed(error?.message || error);
   }
 }
 
