@@ -18,7 +18,47 @@
 
 All the commits in this repo are done with OpenCommit — look into [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emoji and long commit description text is configurable.
 
-## Setup
+## Setup OpenCommit as a Github Action
+
+OpenCommit is now available as a GitHub Action which automatically improves all new commits messages looking into their diffs!
+
+Open a Pull Request and OpenCommit will do the job for you on every push of all the new changes.
+
+### Automatic 1 click setup
+
+You can simply setup the action automatically by downloading it on the GitHub Marketplace.
+
+### Manual 3 clicks setup
+
+Create a file `.github/workflows/opencommit.yml` with contents below:
+
+```yml
+on: [pull_request]
+    types: [opened, synchronize]
+    branches-ignore:
+      - master
+      - dev
+      - main
+      - development
+      - release
+      - release-candidate
+      - <YOUR_OTHER_BRANCHES_TO_EXCLUDE>
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: di-sukharev/opencommit@master
+      with:
+        # pattern: only improve messages that match the regexp, e.g. ^fix$
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Make sure you exclude public collaboration branches in `branches-ignore`, so OpenCommit does not interactive rebase commits there when improving the messages.
+
+Interactive rebase (`rebase -i`) changes commit SHA, so commit history in remote becomes different with your local branch history. It's ok when you work on the branch alone, but may be inconvenient for other collaborators due to history conflicts when pulling new changes.
+
+## Setup OpenCommit as a CLI
 
 1. Install OpenCommit globally to use in any repository:
 

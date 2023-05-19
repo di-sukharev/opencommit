@@ -10,6 +10,7 @@ import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff'
 // GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 // https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
 const GITHUB_TOKEN = core.getInput('GITHUB_TOKEN');
+const pattern = core.getInput('pattern');
 const octokit = github.getOctokit(GITHUB_TOKEN);
 const context = github.context;
 const owner = context.repo.owner;
@@ -41,9 +42,9 @@ async function getCommitDiff(commitSha: string) {
 }
 
 async function improveCommitMessagesWithRebase(commits: CommitsArray) {
-  const commitsToImprove = commits.filter(
-    ({ commit }) => commit.message === 'oc'
-  );
+  let commitsToImprove = pattern
+    ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message))
+    : commits;
 
   if (!commitsToImprove.length) {
     outro('No commits with a message "oc" found.');

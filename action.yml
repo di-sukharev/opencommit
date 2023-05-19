@@ -1,12 +1,12 @@
 name: 'OpenCommit GitHub Action'
-description: 'Checks commit messages and replaces "oc" with a smart AI generated message'
+description: 'Checks commit messages and replaces "oc" with a smart and impressive AI generated message 🤯🔫'
 author: 'https://github.com/di-sukharev'
 
 inputs:
-  token:
+  GITHUB_TOKEN:
     description: 'GitHub token'
     required: true
 
 runs:
   using: 'node12'
-  main: 'dist/github-action.js'
+  main: 'dist/github-action.cjs'
