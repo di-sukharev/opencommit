@@ -9,4 +9,4 @@ inputs:
 
 runs:
   using: 'node12'
-  main: 'dist/github-action.cjs'
+  main: 'out/github-action.cjs'
