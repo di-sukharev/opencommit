@@ -60,8 +60,9 @@ class OpenAi {
       const message = data.choices[0].message;
 
       return message?.content;
-    } catch (error: unknown) {
-      outro(`${chalk.red('✖')} ${error}`);
+    } catch (error) {
+      const err = error as Error;
+      outro(`${chalk.red('✖')} ${err?.message || err}`);
 
       if (
         axios.isAxiosError<{ error?: { message: string } }>(error) &&

@@ -67,13 +67,16 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   outro('Done.');
 
   outro('Improving commit messages by diffs.');
-  const improvePromises = commitDiffs.map((commit) => {
-    console.log(124168723, { commit });
-    return generateCommitMessageByDiff(commit.diff);
-  });
+  const improvePromises = commitDiffs.map((commit) =>
+    generateCommitMessageByDiff(commit.diff)
+  );
+
+  console.log({ commitDiffs });
+
   const improvedMessagesBySha: MessageBySha = await Promise.all(improvePromises)
     .then((results) => {
       return results.reduce((acc, improvedMsg, i) => {
+        console.log({ i, sha: commitDiffs[i].sha, improvedMsg });
         acc[commitDiffs[i].sha] = improvedMsg;
         return acc;
       }, {} as MessageBySha);
@@ -92,6 +95,8 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   for (const commit of commitsToImprove) {
     try {
       const commitDiff = improvedMessagesBySha[commit.sha];
+
+      console.log({ commitDiff });
 
       await execa('git', ['commit', '--amend', '-m', commitDiff]);
       await execa('git', ['rebase', '--continue']);
