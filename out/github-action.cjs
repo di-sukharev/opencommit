@@ -57,16 +57,16 @@ var require_utils = __commonJS({
 var require_command = __commonJS({
   "node_modules/@actions/core/lib/command.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -78,9 +78,9 @@ var require_command = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -635,16 +635,16 @@ var require_dist = __commonJS({
 var require_file_command = __commonJS({
   "node_modules/@actions/core/lib/file-command.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -656,9 +656,9 @@ var require_file_command = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -963,9 +963,9 @@ var require_tunnel = __commonJS({
         if (typeof overrides === "object") {
           var keys = Object.keys(overrides);
           for (var j2 = 0, keyLen = keys.length; j2 < keyLen; ++j2) {
-            var k3 = keys[j2];
-            if (overrides[k3] !== void 0) {
-              target[k3] = overrides[k3];
+            var k2 = keys[j2];
+            if (overrides[k2] !== void 0) {
+              target[k2] = overrides[k2];
             }
           }
         }
@@ -1002,16 +1002,16 @@ var require_tunnel2 = __commonJS({
 var require_lib = __commonJS({
   "node_modules/@actions/http-client/lib/index.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -1023,9 +1023,9 @@ var require_lib = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -1546,7 +1546,7 @@ var require_lib = __commonJS({
       }
     };
     exports.HttpClient = HttpClient;
-    var lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k3) => (c[k3.toLowerCase()] = obj[k3], c), {});
+    var lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k2) => (c[k2.toLowerCase()] = obj[k2], c), {});
   }
 });
 
@@ -1914,16 +1914,16 @@ var require_summary = __commonJS({
 var require_path_utils = __commonJS({
   "node_modules/@actions/core/lib/path-utils.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -1935,9 +1935,9 @@ var require_path_utils = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -1964,16 +1964,16 @@ var require_path_utils = __commonJS({
 var require_core = __commonJS({
   "node_modules/@actions/core/lib/core.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -1985,9 +1985,9 @@ var require_core = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -2248,16 +2248,16 @@ var require_context = __commonJS({
 var require_utils2 = __commonJS({
   "node_modules/@actions/github/lib/internal/utils.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -2269,9 +2269,9 @@ var require_utils2 = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -2625,9 +2625,9 @@ var require_dist_node2 = __commonJS({
                 result.push(encodeValue(operator, value2, isKeyOperator(operator) ? key : ""));
               });
             } else {
-              Object.keys(value).forEach(function(k3) {
-                if (isDefined(value[k3])) {
-                  result.push(encodeValue(operator, value[k3], k3));
+              Object.keys(value).forEach(function(k2) {
+                if (isDefined(value[k2])) {
+                  result.push(encodeValue(operator, value[k2], k2));
                 }
               });
             }
@@ -2638,10 +2638,10 @@ var require_dist_node2 = __commonJS({
                 tmp.push(encodeValue(operator, value2));
               });
             } else {
-              Object.keys(value).forEach(function(k3) {
-                if (isDefined(value[k3])) {
-                  tmp.push(encodeUnreserved(k3));
-                  tmp.push(encodeValue(operator, value[k3].toString()));
+              Object.keys(value).forEach(function(k2) {
+                if (isDefined(value[k2])) {
+                  tmp.push(encodeUnreserved(k2));
+                  tmp.push(encodeValue(operator, value[k2].toString()));
                 }
               });
             }
@@ -5135,12 +5135,12 @@ var require_lib3 = __commonJS({
     function getHeaders(headers) {
       let kind = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : "key+value";
       const keys = Object.keys(headers[MAP]).sort();
-      return keys.map(kind === "key" ? function(k3) {
-        return k3.toLowerCase();
-      } : kind === "value" ? function(k3) {
-        return headers[MAP][k3].join(", ");
-      } : function(k3) {
-        return [k3.toLowerCase(), headers[MAP][k3].join(", ")];
+      return keys.map(kind === "key" ? function(k2) {
+        return k2.toLowerCase();
+      } : kind === "value" ? function(k2) {
+        return headers[MAP][k2].join(", ");
+      } : function(k2) {
+        return [k2.toLowerCase(), headers[MAP][k2].join(", ")];
       });
     }
     var INTERNAL = Symbol("internal");
@@ -5723,8 +5723,8 @@ var require_wrappy = __commonJS({
         return wrappy(fn)(cb);
       if (typeof fn !== "function")
         throw new TypeError("need wrapper function");
-      Object.keys(fn).forEach(function(k3) {
-        wrapper[k3] = fn[k3];
+      Object.keys(fn).forEach(function(k2) {
+        wrapper[k2] = fn[k2];
       });
       return wrapper;
       function wrapper() {
@@ -5735,8 +5735,8 @@ var require_wrappy = __commonJS({
         var ret = fn.apply(this, args);
         var cb2 = args[args.length - 1];
         if (typeof ret === "function" && ret !== cb2) {
-          Object.keys(cb2).forEach(function(k3) {
-            ret[k3] = cb2[k3];
+          Object.keys(cb2).forEach(function(k2) {
+            ret[k2] = cb2[k2];
           });
         }
         return ret;
@@ -5766,26 +5766,26 @@ var require_once = __commonJS({
       });
     });
     function once(fn) {
-      var f3 = function() {
-        if (f3.called)
-          return f3.value;
-        f3.called = true;
-        return f3.value = fn.apply(this, arguments);
+      var f2 = function() {
+        if (f2.called)
+          return f2.value;
+        f2.called = true;
+        return f2.value = fn.apply(this, arguments);
       };
-      f3.called = false;
-      return f3;
+      f2.called = false;
+      return f2;
     }
     function onceStrict(fn) {
-      var f3 = function() {
-        if (f3.called)
-          throw new Error(f3.onceError);
-        f3.called = true;
-        return f3.value = fn.apply(this, arguments);
+      var f2 = function() {
+        if (f2.called)
+          throw new Error(f2.onceError);
+        f2.called = true;
+        return f2.value = fn.apply(this, arguments);
       };
       var name = fn.name || "Function wrapped with `once`";
-      f3.onceError = name + " shouldn't be called more than once";
-      f3.called = false;
-      return f3;
+      f2.onceError = name + " shouldn't be called more than once";
+      f2.called = false;
+      return f2;
     }
   }
 });
@@ -7511,16 +7511,16 @@ var require_dist_node10 = __commonJS({
 var require_utils4 = __commonJS({
   "node_modules/@actions/github/lib/utils.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -7532,9 +7532,9 @@ var require_utils4 = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -7571,16 +7571,16 @@ var require_utils4 = __commonJS({
 var require_github = __commonJS({
   "node_modules/@actions/github/lib/github.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o2, v2) {
       Object.defineProperty(o2, "default", { enumerable: true, value: v2 });
@@ -7592,9 +7592,9 @@ var require_github = __commonJS({
         return mod;
       var result = {};
       if (mod != null) {
-        for (var k3 in mod)
-          if (k3 !== "default" && Object.hasOwnProperty.call(mod, k3))
-            __createBinding(result, mod, k3);
+        for (var k2 in mod)
+          if (k2 !== "default" && Object.hasOwnProperty.call(mod, k2))
+            __createBinding(result, mod, k2);
       }
       __setModuleDefault(result, mod);
       return result;
@@ -8447,21 +8447,21 @@ var require_src = __commonJS({
     var CSI = `${ESC}[`;
     var beep = "\x07";
     var cursor = {
-      to(x2, y4) {
-        if (!y4)
+      to(x2, y3) {
+        if (!y3)
           return `${CSI}${x2 + 1}G`;
-        return `${CSI}${y4 + 1};${x2 + 1}H`;
+        return `${CSI}${y3 + 1};${x2 + 1}H`;
       },
-      move(x2, y4) {
+      move(x2, y3) {
         let ret = "";
         if (x2 < 0)
           ret += `${CSI}${-x2}D`;
         else if (x2 > 0)
           ret += `${CSI}${x2}C`;
-        if (y4 < 0)
-          ret += `${CSI}${-y4}A`;
-        else if (y4 > 0)
-          ret += `${CSI}${y4}B`;
+        if (y3 < 0)
+          ret += `${CSI}${-y3}A`;
+        else if (y3 > 0)
+          ret += `${CSI}${y3}B`;
         return ret;
       },
       up: (count = 1) => `${CSI}${count}A`,
@@ -9243,7 +9243,7 @@ var require_ms = __commonJS({
     var h2 = m3 * 60;
     var d4 = h2 * 24;
     var w3 = d4 * 7;
-    var y4 = d4 * 365.25;
+    var y3 = d4 * 365.25;
     module2.exports = function(val, options) {
       options = options || {};
       var type = typeof val;
@@ -9275,7 +9275,7 @@ var require_ms = __commonJS({
         case "yrs":
         case "yr":
         case "y":
-          return n * y4;
+          return n * y3;
         case "weeks":
         case "week":
         case "w":
@@ -9898,8 +9898,8 @@ var require_node = __commonJS({
     exports.inspectOpts = Object.keys(process.env).filter((key) => {
       return /^debug_/i.test(key);
     }).reduce((obj, key) => {
-      const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_2, k3) => {
-        return k3.toUpperCase();
+      const prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, (_2, k2) => {
+        return k2.toUpperCase();
       });
       let val = process.env[key];
       if (/^(yes|on|true|enabled)$/i.test(val)) {
@@ -22063,16 +22063,16 @@ var require_configuration = __commonJS({
 var require_dist2 = __commonJS({
   "node_modules/openai/dist/index.js"(exports) {
     "use strict";
-    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k3, k22) {
+    var __createBinding = exports && exports.__createBinding || (Object.create ? function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
+        k22 = k2;
       Object.defineProperty(o2, k22, { enumerable: true, get: function() {
-        return m3[k3];
+        return m3[k2];
       } });
-    } : function(o2, m3, k3, k22) {
+    } : function(o2, m3, k2, k22) {
       if (k22 === void 0)
-        k22 = k3;
-      o2[k22] = m3[k3];
+        k22 = k2;
+      o2[k22] = m3[k2];
     });
     var __exportStar = exports && exports.__exportStar || function(m3, exports2) {
       for (var p2 in m3)
@@ -22173,26 +22173,26 @@ var require_ini = __commonJS({
         opt.whitespace = opt.whitespace === true;
       }
       const separator = opt.whitespace ? " = " : "=";
-      for (const k3 of Object.keys(obj)) {
-        const val = obj[k3];
+      for (const k2 of Object.keys(obj)) {
+        const val = obj[k2];
         if (val && Array.isArray(val)) {
           for (const item of val) {
-            out += safe(k3 + "[]") + separator + safe(item) + eol;
+            out += safe(k2 + "[]") + separator + safe(item) + eol;
           }
         } else if (val && typeof val === "object") {
-          children.push(k3);
+          children.push(k2);
         } else {
-          out += safe(k3) + separator + safe(val) + eol;
+          out += safe(k2) + separator + safe(val) + eol;
         }
       }
       if (opt.section && out.length) {
         out = "[" + safe(opt.section) + "]" + eol + out;
       }
-      for (const k3 of children) {
-        const nk = dotSplit(k3).join("\\.");
+      for (const k2 of children) {
+        const nk = dotSplit(k2).join("\\.");
         const section = (opt.section ? opt.section + "." : "") + nk;
         const { whitespace } = opt;
-        const child = encode3(obj[k3], {
+        const child = encode3(obj[k2], {
           section,
           whitespace
         });
@@ -22249,11 +22249,11 @@ var require_ini = __commonJS({
         }
       }
       const remove = [];
-      for (const k3 of Object.keys(out)) {
-        if (!hasOwnProperty2.call(out, k3) || typeof out[k3] !== "object" || Array.isArray(out[k3])) {
+      for (const k2 of Object.keys(out)) {
+        if (!hasOwnProperty2.call(out, k2) || typeof out[k2] !== "object" || Array.isArray(out[k2])) {
           continue;
         }
-        const parts = dotSplit(k3);
+        const parts = dotSplit(k2);
         p2 = out;
         const l = parts.pop();
         const nl = l.replace(/\\\./g, ".");
@@ -22269,8 +22269,8 @@ var require_ini = __commonJS({
         if (p2 === out && nl === l) {
           continue;
         }
-        p2[nl] = out[k3];
-        remove.push(k3);
+        p2[nl] = out[k2];
+        remove.push(k2);
       }
       for (const del of remove) {
         delete out[del];
@@ -22606,9 +22606,9 @@ var require_tiktoken_bg = __commonJS({
     function getArrayU8FromWasm0(ptr, len) {
       return getUint8Memory0().subarray(ptr / 1, ptr / 1 + len);
     }
-    function handleError(f3, args) {
+    function handleError(f2, args) {
       try {
-        return f3.apply(this, args);
+        return f2.apply(this, args);
       } catch (e2) {
         wasm.__wbindgen_export_3(addHeapObject(e2));
       }
@@ -23760,8 +23760,6 @@ function execa(file, args, options) {
 
 // node_modules/@clack/core/dist/index.mjs
 var import_sisteransi = __toESM(require_src(), 1);
-var import_node_process3 = require("node:process");
-var f = __toESM(require("node:readline"), 1);
 var m = {};
 var G = { get exports() {
   return m;
@@ -23771,8 +23769,8 @@ var G = { get exports() {
 (function(t) {
   var u2 = {};
   t.exports = u2, u2.eastAsianWidth = function(e2) {
-    var s = e2.charCodeAt(0), C2 = e2.length == 2 ? e2.charCodeAt(1) : 0, D3 = s;
-    return 55296 <= s && s <= 56319 && 56320 <= C2 && C2 <= 57343 && (s &= 1023, C2 &= 1023, D3 = s << 10 | C2, D3 += 65536), D3 == 12288 || 65281 <= D3 && D3 <= 65376 || 65504 <= D3 && D3 <= 65510 ? "F" : D3 == 8361 || 65377 <= D3 && D3 <= 65470 || 65474 <= D3 && D3 <= 65479 || 65482 <= D3 && D3 <= 65487 || 65490 <= D3 && D3 <= 65495 || 65498 <= D3 && D3 <= 65500 || 65512 <= D3 && D3 <= 65518 ? "H" : 4352 <= D3 && D3 <= 4447 || 4515 <= D3 && D3 <= 4519 || 4602 <= D3 && D3 <= 4607 || 9001 <= D3 && D3 <= 9002 || 11904 <= D3 && D3 <= 11929 || 11931 <= D3 && D3 <= 12019 || 12032 <= D3 && D3 <= 12245 || 12272 <= D3 && D3 <= 12283 || 12289 <= D3 && D3 <= 12350 || 12353 <= D3 && D3 <= 12438 || 12441 <= D3 && D3 <= 12543 || 12549 <= D3 && D3 <= 12589 || 12593 <= D3 && D3 <= 12686 || 12688 <= D3 && D3 <= 12730 || 12736 <= D3 && D3 <= 12771 || 12784 <= D3 && D3 <= 12830 || 12832 <= D3 && D3 <= 12871 || 12880 <= D3 && D3 <= 13054 || 13056 <= D3 && D3 <= 19903 || 19968 <= D3 && D3 <= 42124 || 42128 <= D3 && D3 <= 42182 || 43360 <= D3 && D3 <= 43388 || 44032 <= D3 && D3 <= 55203 || 55216 <= D3 && D3 <= 55238 || 55243 <= D3 && D3 <= 55291 || 63744 <= D3 && D3 <= 64255 || 65040 <= D3 && D3 <= 65049 || 65072 <= D3 && D3 <= 65106 || 65108 <= D3 && D3 <= 65126 || 65128 <= D3 && D3 <= 65131 || 110592 <= D3 && D3 <= 110593 || 127488 <= D3 && D3 <= 127490 || 127504 <= D3 && D3 <= 127546 || 127552 <= D3 && D3 <= 127560 || 127568 <= D3 && D3 <= 127569 || 131072 <= D3 && D3 <= 194367 || 177984 <= D3 && D3 <= 196605 || 196608 <= D3 && D3 <= 262141 ? "W" : 32 <= D3 && D3 <= 126 || 162 <= D3 && D3 <= 163 || 165 <= D3 && D3 <= 166 || D3 == 172 || D3 == 175 || 10214 <= D3 && D3 <= 10221 || 10629 <= D3 && D3 <= 10630 ? "Na" : D3 == 161 || D3 == 164 || 167 <= D3 && D3 <= 168 || D3 == 170 || 173 <= D3 && D3 <= 174 || 176 <= D3 && D3 <= 180 || 182 <= D3 && D3 <= 186 || 188 <= D3 && D3 <= 191 || D3 == 198 || D3 == 208 || 215 <= D3 && D3 <= 216 || 222 <= D3 && D3 <= 225 || D3 == 230 || 232 <= D3 && D3 <= 234 || 236 <= D3 && D3 <= 237 || D3 == 240 || 242 <= D3 && D3 <= 243 || 247 <= D3 && D3 <= 250 || D3 == 252 || D3 == 254 || D3 == 257 || D3 == 273 || D3 == 275 || D3 == 283 || 294 <= D3 && D3 <= 295 || D3 == 299 || 305 <= D3 && D3 <= 307 || D3 == 312 || 319 <= D3 && D3 <= 322 || D3 == 324 || 328 <= D3 && D3 <= 331 || D3 == 333 || 338 <= D3 && D3 <= 339 || 358 <= D3 && D3 <= 359 || D3 == 363 || D3 == 462 || D3 == 464 || D3 == 466 || D3 == 468 || D3 == 470 || D3 == 472 || D3 == 474 || D3 == 476 || D3 == 593 || D3 == 609 || D3 == 708 || D3 == 711 || 713 <= D3 && D3 <= 715 || D3 == 717 || D3 == 720 || 728 <= D3 && D3 <= 731 || D3 == 733 || D3 == 735 || 768 <= D3 && D3 <= 879 || 913 <= D3 && D3 <= 929 || 931 <= D3 && D3 <= 937 || 945 <= D3 && D3 <= 961 || 963 <= D3 && D3 <= 969 || D3 == 1025 || 1040 <= D3 && D3 <= 1103 || D3 == 1105 || D3 == 8208 || 8211 <= D3 && D3 <= 8214 || 8216 <= D3 && D3 <= 8217 || 8220 <= D3 && D3 <= 8221 || 8224 <= D3 && D3 <= 8226 || 8228 <= D3 && D3 <= 8231 || D3 == 8240 || 8242 <= D3 && D3 <= 8243 || D3 == 8245 || D3 == 8251 || D3 == 8254 || D3 == 8308 || D3 == 8319 || 8321 <= D3 && D3 <= 8324 || D3 == 8364 || D3 == 8451 || D3 == 8453 || D3 == 8457 || D3 == 8467 || D3 == 8470 || 8481 <= D3 && D3 <= 8482 || D3 == 8486 || D3 == 8491 || 8531 <= D3 && D3 <= 8532 || 8539 <= D3 && D3 <= 8542 || 8544 <= D3 && D3 <= 8555 || 8560 <= D3 && D3 <= 8569 || D3 == 8585 || 8592 <= D3 && D3 <= 8601 || 8632 <= D3 && D3 <= 8633 || D3 == 8658 || D3 == 8660 || D3 == 8679 || D3 == 8704 || 8706 <= D3 && D3 <= 8707 || 8711 <= D3 && D3 <= 8712 || D3 == 8715 || D3 == 8719 || D3 == 8721 || D3 == 8725 || D3 == 8730 || 8733 <= D3 && D3 <= 8736 || D3 == 8739 || D3 == 8741 || 8743 <= D3 && D3 <= 8748 || D3 == 8750 || 8756 <= D3 && D3 <= 8759 || 8764 <= D3 && D3 <= 8765 || D3 == 8776 || D3 == 8780 || D3 == 8786 || 8800 <= D3 && D3 <= 8801 || 8804 <= D3 && D3 <= 8807 || 8810 <= D3 && D3 <= 8811 || 8814 <= D3 && D3 <= 8815 || 8834 <= D3 && D3 <= 8835 || 8838 <= D3 && D3 <= 8839 || D3 == 8853 || D3 == 8857 || D3 == 8869 || D3 == 8895 || D3 == 8978 || 9312 <= D3 && D3 <= 9449 || 9451 <= D3 && D3 <= 9547 || 9552 <= D3 && D3 <= 9587 || 9600 <= D3 && D3 <= 9615 || 9618 <= D3 && D3 <= 9621 || 9632 <= D3 && D3 <= 9633 || 9635 <= D3 && D3 <= 9641 || 9650 <= D3 && D3 <= 9651 || 9654 <= D3 && D3 <= 9655 || 9660 <= D3 && D3 <= 9661 || 9664 <= D3 && D3 <= 9665 || 9670 <= D3 && D3 <= 9672 || D3 == 9675 || 9678 <= D3 && D3 <= 9681 || 9698 <= D3 && D3 <= 9701 || D3 == 9711 || 9733 <= D3 && D3 <= 9734 || D3 == 9737 || 9742 <= D3 && D3 <= 9743 || 9748 <= D3 && D3 <= 9749 || D3 == 9756 || D3 == 9758 || D3 == 9792 || D3 == 9794 || 9824 <= D3 && D3 <= 9825 || 9827 <= D3 && D3 <= 9829 || 9831 <= D3 && D3 <= 9834 || 9836 <= D3 && D3 <= 9837 || D3 == 9839 || 9886 <= D3 && D3 <= 9887 || 9918 <= D3 && D3 <= 9919 || 9924 <= D3 && D3 <= 9933 || 9935 <= D3 && D3 <= 9953 || D3 == 9955 || 9960 <= D3 && D3 <= 9983 || D3 == 10045 || D3 == 10071 || 10102 <= D3 && D3 <= 10111 || 11093 <= D3 && D3 <= 11097 || 12872 <= D3 && D3 <= 12879 || 57344 <= D3 && D3 <= 63743 || 65024 <= D3 && D3 <= 65039 || D3 == 65533 || 127232 <= D3 && D3 <= 127242 || 127248 <= D3 && D3 <= 127277 || 127280 <= D3 && D3 <= 127337 || 127344 <= D3 && D3 <= 127386 || 917760 <= D3 && D3 <= 917999 || 983040 <= D3 && D3 <= 1048573 || 1048576 <= D3 && D3 <= 1114109 ? "A" : "N";
+    var s = e2.charCodeAt(0), C = e2.length == 2 ? e2.charCodeAt(1) : 0, D3 = s;
+    return 55296 <= s && s <= 56319 && 56320 <= C && C <= 57343 && (s &= 1023, C &= 1023, D3 = s << 10 | C, D3 += 65536), D3 == 12288 || 65281 <= D3 && D3 <= 65376 || 65504 <= D3 && D3 <= 65510 ? "F" : D3 == 8361 || 65377 <= D3 && D3 <= 65470 || 65474 <= D3 && D3 <= 65479 || 65482 <= D3 && D3 <= 65487 || 65490 <= D3 && D3 <= 65495 || 65498 <= D3 && D3 <= 65500 || 65512 <= D3 && D3 <= 65518 ? "H" : 4352 <= D3 && D3 <= 4447 || 4515 <= D3 && D3 <= 4519 || 4602 <= D3 && D3 <= 4607 || 9001 <= D3 && D3 <= 9002 || 11904 <= D3 && D3 <= 11929 || 11931 <= D3 && D3 <= 12019 || 12032 <= D3 && D3 <= 12245 || 12272 <= D3 && D3 <= 12283 || 12289 <= D3 && D3 <= 12350 || 12353 <= D3 && D3 <= 12438 || 12441 <= D3 && D3 <= 12543 || 12549 <= D3 && D3 <= 12589 || 12593 <= D3 && D3 <= 12686 || 12688 <= D3 && D3 <= 12730 || 12736 <= D3 && D3 <= 12771 || 12784 <= D3 && D3 <= 12830 || 12832 <= D3 && D3 <= 12871 || 12880 <= D3 && D3 <= 13054 || 13056 <= D3 && D3 <= 19903 || 19968 <= D3 && D3 <= 42124 || 42128 <= D3 && D3 <= 42182 || 43360 <= D3 && D3 <= 43388 || 44032 <= D3 && D3 <= 55203 || 55216 <= D3 && D3 <= 55238 || 55243 <= D3 && D3 <= 55291 || 63744 <= D3 && D3 <= 64255 || 65040 <= D3 && D3 <= 65049 || 65072 <= D3 && D3 <= 65106 || 65108 <= D3 && D3 <= 65126 || 65128 <= D3 && D3 <= 65131 || 110592 <= D3 && D3 <= 110593 || 127488 <= D3 && D3 <= 127490 || 127504 <= D3 && D3 <= 127546 || 127552 <= D3 && D3 <= 127560 || 127568 <= D3 && D3 <= 127569 || 131072 <= D3 && D3 <= 194367 || 177984 <= D3 && D3 <= 196605 || 196608 <= D3 && D3 <= 262141 ? "W" : 32 <= D3 && D3 <= 126 || 162 <= D3 && D3 <= 163 || 165 <= D3 && D3 <= 166 || D3 == 172 || D3 == 175 || 10214 <= D3 && D3 <= 10221 || 10629 <= D3 && D3 <= 10630 ? "Na" : D3 == 161 || D3 == 164 || 167 <= D3 && D3 <= 168 || D3 == 170 || 173 <= D3 && D3 <= 174 || 176 <= D3 && D3 <= 180 || 182 <= D3 && D3 <= 186 || 188 <= D3 && D3 <= 191 || D3 == 198 || D3 == 208 || 215 <= D3 && D3 <= 216 || 222 <= D3 && D3 <= 225 || D3 == 230 || 232 <= D3 && D3 <= 234 || 236 <= D3 && D3 <= 237 || D3 == 240 || 242 <= D3 && D3 <= 243 || 247 <= D3 && D3 <= 250 || D3 == 252 || D3 == 254 || D3 == 257 || D3 == 273 || D3 == 275 || D3 == 283 || 294 <= D3 && D3 <= 295 || D3 == 299 || 305 <= D3 && D3 <= 307 || D3 == 312 || 319 <= D3 && D3 <= 322 || D3 == 324 || 328 <= D3 && D3 <= 331 || D3 == 333 || 338 <= D3 && D3 <= 339 || 358 <= D3 && D3 <= 359 || D3 == 363 || D3 == 462 || D3 == 464 || D3 == 466 || D3 == 468 || D3 == 470 || D3 == 472 || D3 == 474 || D3 == 476 || D3 == 593 || D3 == 609 || D3 == 708 || D3 == 711 || 713 <= D3 && D3 <= 715 || D3 == 717 || D3 == 720 || 728 <= D3 && D3 <= 731 || D3 == 733 || D3 == 735 || 768 <= D3 && D3 <= 879 || 913 <= D3 && D3 <= 929 || 931 <= D3 && D3 <= 937 || 945 <= D3 && D3 <= 961 || 963 <= D3 && D3 <= 969 || D3 == 1025 || 1040 <= D3 && D3 <= 1103 || D3 == 1105 || D3 == 8208 || 8211 <= D3 && D3 <= 8214 || 8216 <= D3 && D3 <= 8217 || 8220 <= D3 && D3 <= 8221 || 8224 <= D3 && D3 <= 8226 || 8228 <= D3 && D3 <= 8231 || D3 == 8240 || 8242 <= D3 && D3 <= 8243 || D3 == 8245 || D3 == 8251 || D3 == 8254 || D3 == 8308 || D3 == 8319 || 8321 <= D3 && D3 <= 8324 || D3 == 8364 || D3 == 8451 || D3 == 8453 || D3 == 8457 || D3 == 8467 || D3 == 8470 || 8481 <= D3 && D3 <= 8482 || D3 == 8486 || D3 == 8491 || 8531 <= D3 && D3 <= 8532 || 8539 <= D3 && D3 <= 8542 || 8544 <= D3 && D3 <= 8555 || 8560 <= D3 && D3 <= 8569 || D3 == 8585 || 8592 <= D3 && D3 <= 8601 || 8632 <= D3 && D3 <= 8633 || D3 == 8658 || D3 == 8660 || D3 == 8679 || D3 == 8704 || 8706 <= D3 && D3 <= 8707 || 8711 <= D3 && D3 <= 8712 || D3 == 8715 || D3 == 8719 || D3 == 8721 || D3 == 8725 || D3 == 8730 || 8733 <= D3 && D3 <= 8736 || D3 == 8739 || D3 == 8741 || 8743 <= D3 && D3 <= 8748 || D3 == 8750 || 8756 <= D3 && D3 <= 8759 || 8764 <= D3 && D3 <= 8765 || D3 == 8776 || D3 == 8780 || D3 == 8786 || 8800 <= D3 && D3 <= 8801 || 8804 <= D3 && D3 <= 8807 || 8810 <= D3 && D3 <= 8811 || 8814 <= D3 && D3 <= 8815 || 8834 <= D3 && D3 <= 8835 || 8838 <= D3 && D3 <= 8839 || D3 == 8853 || D3 == 8857 || D3 == 8869 || D3 == 8895 || D3 == 8978 || 9312 <= D3 && D3 <= 9449 || 9451 <= D3 && D3 <= 9547 || 9552 <= D3 && D3 <= 9587 || 9600 <= D3 && D3 <= 9615 || 9618 <= D3 && D3 <= 9621 || 9632 <= D3 && D3 <= 9633 || 9635 <= D3 && D3 <= 9641 || 9650 <= D3 && D3 <= 9651 || 9654 <= D3 && D3 <= 9655 || 9660 <= D3 && D3 <= 9661 || 9664 <= D3 && D3 <= 9665 || 9670 <= D3 && D3 <= 9672 || D3 == 9675 || 9678 <= D3 && D3 <= 9681 || 9698 <= D3 && D3 <= 9701 || D3 == 9711 || 9733 <= D3 && D3 <= 9734 || D3 == 9737 || 9742 <= D3 && D3 <= 9743 || 9748 <= D3 && D3 <= 9749 || D3 == 9756 || D3 == 9758 || D3 == 9792 || D3 == 9794 || 9824 <= D3 && D3 <= 9825 || 9827 <= D3 && D3 <= 9829 || 9831 <= D3 && D3 <= 9834 || 9836 <= D3 && D3 <= 9837 || D3 == 9839 || 9886 <= D3 && D3 <= 9887 || 9918 <= D3 && D3 <= 9919 || 9924 <= D3 && D3 <= 9933 || 9935 <= D3 && D3 <= 9953 || D3 == 9955 || 9960 <= D3 && D3 <= 9983 || D3 == 10045 || D3 == 10071 || 10102 <= D3 && D3 <= 10111 || 11093 <= D3 && D3 <= 11097 || 12872 <= D3 && D3 <= 12879 || 57344 <= D3 && D3 <= 63743 || 65024 <= D3 && D3 <= 65039 || D3 == 65533 || 127232 <= D3 && D3 <= 127242 || 127248 <= D3 && D3 <= 127277 || 127280 <= D3 && D3 <= 127337 || 127344 <= D3 && D3 <= 127386 || 917760 <= D3 && D3 <= 917999 || 983040 <= D3 && D3 <= 1048573 || 1048576 <= D3 && D3 <= 1114109 ? "A" : "N";
   }, u2.characterLength = function(e2) {
     var s = this.eastAsianWidth(e2);
     return s == "F" || s == "W" || s == "A" ? 2 : 1;
@@ -23781,15 +23779,15 @@ var G = { get exports() {
     return e2.match(/[\uD800-\uDBFF][\uDC00-\uDFFF]|[^\uD800-\uDFFF]/g) || [];
   }
   u2.length = function(e2) {
-    for (var s = F2(e2), C2 = 0, D3 = 0; D3 < s.length; D3++)
-      C2 = C2 + this.characterLength(s[D3]);
-    return C2;
-  }, u2.slice = function(e2, s, C2) {
-    textLen = u2.length(e2), s = s || 0, C2 = C2 || 1, s < 0 && (s = textLen + s), C2 < 0 && (C2 = textLen + C2);
+    for (var s = F2(e2), C = 0, D3 = 0; D3 < s.length; D3++)
+      C = C + this.characterLength(s[D3]);
+    return C;
+  }, u2.slice = function(e2, s, C) {
+    textLen = u2.length(e2), s = s || 0, C = C || 1, s < 0 && (s = textLen + s), C < 0 && (C = textLen + C);
     for (var D3 = "", i2 = 0, o2 = F2(e2), E2 = 0; E2 < o2.length; E2++) {
       var a2 = o2[E2], n = u2.length(a2);
       if (i2 >= s - (n == 2 ? 1 : 0))
-        if (i2 + n <= C2)
+        if (i2 + n <= C)
           D3 += a2;
         else
           break;
@@ -23819,7 +23817,7 @@ function U() {
     if (!F2)
       return [0, 0, 0];
     let [e2] = F2;
-    e2.length === 3 && (e2 = [...e2].map((C2) => C2 + C2).join(""));
+    e2.length === 3 && (e2 = [...e2].map((C) => C + C).join(""));
     const s = Number.parseInt(e2, 16);
     return [s >> 16 & 255, s >> 8 & 255, s & 255];
   }, enumerable: false }, hexToAnsi256: { value: (u2) => r.rgbToAnsi256(...r.hexToRgb(u2)), enumerable: false }, ansi256ToAnsi: { value: (u2) => {
@@ -23835,55 +23833,38 @@ function U() {
       const i2 = u2 % 36;
       F2 = Math.floor(u2 / 36) / 5, e2 = Math.floor(i2 / 6) / 5, s = i2 % 6 / 5;
     }
-    const C2 = Math.max(F2, e2, s) * 2;
-    if (C2 === 0)
+    const C = Math.max(F2, e2, s) * 2;
+    if (C === 0)
       return 30;
     let D3 = 30 + (Math.round(s) << 2 | Math.round(e2) << 1 | Math.round(F2));
-    return C2 === 2 && (D3 += 60), D3;
+    return C === 2 && (D3 += 60), D3;
   }, enumerable: false }, rgbToAnsi: { value: (u2, F2, e2) => r.ansi256ToAnsi(r.rgbToAnsi256(u2, F2, e2)), enumerable: false }, hexToAnsi: { value: (u2) => r.ansi256ToAnsi(r.hexToAnsi256(u2)), enumerable: false } }), r;
 }
 var q = U();
 var Q = "]";
 var w = `${Q}8;;`;
 var R = Symbol("clack:cancel");
-function aD({ input: t = import_node_process3.stdin, output: u2 = import_node_process3.stdout, overwrite: F2 = true, hideCursor: e2 = true } = {}) {
-  const s = f.createInterface({ input: t, output: u2, prompt: "", tabSize: 1 });
-  f.emitKeypressEvents(t, s), t.isTTY && t.setRawMode(true);
-  const C2 = (D3, { name: i2 }) => {
-    if (String(D3) === "" && process.exit(0), !F2)
-      return;
-    let E2 = i2 === "return" ? 0 : -1, a2 = i2 === "return" ? -1 : 0;
-    f.moveCursor(u2, E2, a2, () => {
-      f.clearLine(u2, 1, () => {
-        t.once("keypress", C2);
-      });
-    });
-  };
-  return e2 && process.stdout.write(import_sisteransi.cursor.hide), t.once("keypress", C2), () => {
-    t.off("keypress", C2), e2 && process.stdout.write(import_sisteransi.cursor.show), s.terminal = false, s.close();
-  };
-}
 
 // node_modules/@clack/prompts/dist/index.mjs
-var import_node_process4 = __toESM(require("node:process"), 1);
+var import_node_process3 = __toESM(require("node:process"), 1);
 var import_picocolors = __toESM(require_picocolors(), 1);
 var import_sisteransi2 = __toESM(require_src(), 1);
 function N() {
-  return import_node_process4.default.platform !== "win32" ? import_node_process4.default.env.TERM !== "linux" : Boolean(import_node_process4.default.env.CI) || Boolean(import_node_process4.default.env.WT_SESSION) || Boolean(import_node_process4.default.env.TERMINUS_SUBLIME) || import_node_process4.default.env.ConEmuTask === "{cmd::Cmder}" || import_node_process4.default.env.TERM_PROGRAM === "Terminus-Sublime" || import_node_process4.default.env.TERM_PROGRAM === "vscode" || import_node_process4.default.env.TERM === "xterm-256color" || import_node_process4.default.env.TERM === "alacritty" || import_node_process4.default.env.TERMINAL_EMULATOR === "JetBrains-JediTerm";
+  return import_node_process3.default.platform !== "win32" ? import_node_process3.default.env.TERM !== "linux" : Boolean(import_node_process3.default.env.CI) || Boolean(import_node_process3.default.env.WT_SESSION) || Boolean(import_node_process3.default.env.TERMINUS_SUBLIME) || import_node_process3.default.env.ConEmuTask === "{cmd::Cmder}" || import_node_process3.default.env.TERM_PROGRAM === "Terminus-Sublime" || import_node_process3.default.env.TERM_PROGRAM === "vscode" || import_node_process3.default.env.TERM === "xterm-256color" || import_node_process3.default.env.TERM === "alacritty" || import_node_process3.default.env.TERMINAL_EMULATOR === "JetBrains-JediTerm";
 }
 var p = N();
 var u = (r2, n) => p ? r2 : n;
 var W = u("\u25C6", "*");
 var D = u("\u25A0", "x");
 var F = u("\u25B2", "x");
-var f2 = u("\u25C7", "o");
+var f = u("\u25C7", "o");
 var L2 = u("\u250C", "T");
 var a = u("\u2502", "|");
 var o = u("\u2514", "\u2014");
 var w2 = u("\u25CF", ">");
 var S = u("\u25CB", " ");
 var _ = u("\u25FB", "[\u2022]");
-var y2 = u("\u25FC", "[+]");
+var y = u("\u25FC", "[+]");
 var A = u("\u25FB", "[ ]");
 var q2 = u("\u25AA", "\u2022");
 var R2 = u("\u2500", "-");
@@ -23903,26 +23884,6 @@ var ce = (r2 = "") => {
 ${import_picocolors.default.gray(o)}  ${r2}
 
 `);
-};
-var C = p ? ["\u25D2", "\u25D0", "\u25D3", "\u25D1"] : ["\u2022", "o", "O", "0"];
-var le = () => {
-  let r2, n;
-  const s = p ? 80 : 120;
-  return { start(t = "") {
-    t = t.replace(/\.?\.?\.$/, ""), r2 = aD(), process.stdout.write(`${import_picocolors.default.gray(a)}
-${import_picocolors.default.magenta("\u25CB")}  ${t}
-`);
-    let i2 = 0, c = 0;
-    n = setInterval(() => {
-      let l = C[i2];
-      process.stdout.write(import_sisteransi2.cursor.move(-999, -1)), process.stdout.write(`${import_picocolors.default.magenta(l)}  ${t}${Math.floor(c) >= 1 ? ".".repeat(Math.floor(c)).slice(0, 3) : ""}   
-`), i2 = i2 === C.length - 1 ? 0 : i2 + 1, c = c === C.length ? 0 : c + 0.125;
-    }, s);
-  }, stop(t = "") {
-    process.stdout.write(import_sisteransi2.cursor.move(-999, -2)), process.stdout.write(import_sisteransi2.erase.down(2)), clearInterval(n), process.stdout.write(`${import_picocolors.default.gray(a)}
-${import_picocolors.default.green(f2)}  ${t}
-`), r2();
-  } };
 };
 
 // src/generateCommitMessageFromGitDiff.ts
@@ -26924,16 +26885,16 @@ var ansiStyles = assembleStyles();
 var ansi_styles_default = ansiStyles;
 
 // node_modules/chalk/source/vendor/supports-color/index.js
-var import_node_process5 = __toESM(require("node:process"), 1);
+var import_node_process4 = __toESM(require("node:process"), 1);
 var import_node_os4 = __toESM(require("node:os"), 1);
 var import_node_tty = __toESM(require("node:tty"), 1);
-function hasFlag(flag, argv = globalThis.Deno ? globalThis.Deno.args : import_node_process5.default.argv) {
+function hasFlag(flag, argv = globalThis.Deno ? globalThis.Deno.args : import_node_process4.default.argv) {
   const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
   const position = argv.indexOf(prefix + flag);
   const terminatorPosition = argv.indexOf("--");
   return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
 }
-var { env } = import_node_process5.default;
+var { env } = import_node_process4.default;
 var flagForceColor;
 if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
   flagForceColor = 0;
@@ -26989,7 +26950,7 @@ function _supportsColor(haveStream, { streamIsTTY, sniffFlags = true } = {}) {
   if (env.TERM === "dumb") {
     return min;
   }
-  if (import_node_process5.default.platform === "win32") {
+  if (import_node_process4.default.platform === "win32") {
     const osRelease = import_node_os4.default.release().split(".");
     if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
       return Number(osRelease[2]) >= 14931 ? 3 : 2;
@@ -27246,10 +27207,10 @@ var L3 = Object.prototype.hasOwnProperty;
 var nD2 = (D3) => m2(D3, "__esModule", { value: true });
 var rD2 = (D3, F2) => () => (D3 && (F2 = D3(D3 = 0)), F2);
 var iD2 = (D3, F2) => () => (F2 || D3((F2 = { exports: {} }).exports, F2), F2.exports);
-var oD2 = (D3, F2, u2, C2) => {
+var oD2 = (D3, F2, u2, C) => {
   if (F2 && typeof F2 == "object" || typeof F2 == "function")
     for (let t of tD(F2))
-      !L3.call(D3, t) && (u2 || t !== "default") && m2(D3, t, { get: () => F2[t], enumerable: !(C2 = FD(F2, t)) || C2.enumerable });
+      !L3.call(D3, t) && (u2 || t !== "default") && m2(D3, t, { get: () => F2[t], enumerable: !(C = FD(F2, t)) || C.enumerable });
   return D3;
 };
 var BD = (D3, F2) => oD2(nD2(m2(D3 != null ? DD(ED2(D3)) : {}, "default", !F2 && D3 && D3.__esModule ? { get: () => D3.default, enumerable: true } : { value: D3, enumerable: true })), D3);
@@ -27279,20 +27240,20 @@ i();
 var O = 10;
 var U3 = (D3 = 0) => (F2) => `\x1B[${F2 + D3}m`;
 var V = (D3 = 0) => (F2) => `\x1B[${38 + D3};5;${F2}m`;
-var Y = (D3 = 0) => (F2, u2, C2) => `\x1B[${38 + D3};2;${F2};${u2};${C2}m`;
+var Y = (D3 = 0) => (F2, u2, C) => `\x1B[${38 + D3};2;${F2};${u2};${C}m`;
 function AD() {
   let D3 = /* @__PURE__ */ new Map(), F2 = { modifier: { reset: [0, 0], bold: [1, 22], dim: [2, 22], italic: [3, 23], underline: [4, 24], overline: [53, 55], inverse: [7, 27], hidden: [8, 28], strikethrough: [9, 29] }, color: { black: [30, 39], red: [31, 39], green: [32, 39], yellow: [33, 39], blue: [34, 39], magenta: [35, 39], cyan: [36, 39], white: [37, 39], blackBright: [90, 39], redBright: [91, 39], greenBright: [92, 39], yellowBright: [93, 39], blueBright: [94, 39], magentaBright: [95, 39], cyanBright: [96, 39], whiteBright: [97, 39] }, bgColor: { bgBlack: [40, 49], bgRed: [41, 49], bgGreen: [42, 49], bgYellow: [43, 49], bgBlue: [44, 49], bgMagenta: [45, 49], bgCyan: [46, 49], bgWhite: [47, 49], bgBlackBright: [100, 49], bgRedBright: [101, 49], bgGreenBright: [102, 49], bgYellowBright: [103, 49], bgBlueBright: [104, 49], bgMagentaBright: [105, 49], bgCyanBright: [106, 49], bgWhiteBright: [107, 49] } };
   F2.color.gray = F2.color.blackBright, F2.bgColor.bgGray = F2.bgColor.bgBlackBright, F2.color.grey = F2.color.blackBright, F2.bgColor.bgGrey = F2.bgColor.bgBlackBright;
-  for (let [u2, C2] of Object.entries(F2)) {
-    for (let [t, E2] of Object.entries(C2))
-      F2[t] = { open: `\x1B[${E2[0]}m`, close: `\x1B[${E2[1]}m` }, C2[t] = F2[t], D3.set(E2[0], E2[1]);
-    Object.defineProperty(F2, u2, { value: C2, enumerable: false });
+  for (let [u2, C] of Object.entries(F2)) {
+    for (let [t, E2] of Object.entries(C))
+      F2[t] = { open: `\x1B[${E2[0]}m`, close: `\x1B[${E2[1]}m` }, C[t] = F2[t], D3.set(E2[0], E2[1]);
+    Object.defineProperty(F2, u2, { value: C, enumerable: false });
   }
-  return Object.defineProperty(F2, "codes", { value: D3, enumerable: false }), F2.color.close = "\x1B[39m", F2.bgColor.close = "\x1B[49m", F2.color.ansi = U3(), F2.color.ansi256 = V(), F2.color.ansi16m = Y(), F2.bgColor.ansi = U3(O), F2.bgColor.ansi256 = V(O), F2.bgColor.ansi16m = Y(O), Object.defineProperties(F2, { rgbToAnsi256: { value: (u2, C2, t) => u2 === C2 && C2 === t ? u2 < 8 ? 16 : u2 > 248 ? 231 : Math.round((u2 - 8) / 247 * 24) + 232 : 16 + 36 * Math.round(u2 / 255 * 5) + 6 * Math.round(C2 / 255 * 5) + Math.round(t / 255 * 5), enumerable: false }, hexToRgb: { value: (u2) => {
-    let C2 = /(?<colorString>[a-f\d]{6}|[a-f\d]{3})/i.exec(u2.toString(16));
-    if (!C2)
+  return Object.defineProperty(F2, "codes", { value: D3, enumerable: false }), F2.color.close = "\x1B[39m", F2.bgColor.close = "\x1B[49m", F2.color.ansi = U3(), F2.color.ansi256 = V(), F2.color.ansi16m = Y(), F2.bgColor.ansi = U3(O), F2.bgColor.ansi256 = V(O), F2.bgColor.ansi16m = Y(O), Object.defineProperties(F2, { rgbToAnsi256: { value: (u2, C, t) => u2 === C && C === t ? u2 < 8 ? 16 : u2 > 248 ? 231 : Math.round((u2 - 8) / 247 * 24) + 232 : 16 + 36 * Math.round(u2 / 255 * 5) + 6 * Math.round(C / 255 * 5) + Math.round(t / 255 * 5), enumerable: false }, hexToRgb: { value: (u2) => {
+    let C = /(?<colorString>[a-f\d]{6}|[a-f\d]{3})/i.exec(u2.toString(16));
+    if (!C)
       return [0, 0, 0];
-    let { colorString: t } = C2.groups;
+    let { colorString: t } = C.groups;
     t.length === 3 && (t = t.split("").map((e2) => e2 + e2).join(""));
     let E2 = Number.parseInt(t, 16);
     return [E2 >> 16 & 255, E2 >> 8 & 255, E2 & 255];
@@ -27301,20 +27262,20 @@ function AD() {
       return 30 + u2;
     if (u2 < 16)
       return 90 + (u2 - 8);
-    let C2, t, E2;
+    let C, t, E2;
     if (u2 >= 232)
-      C2 = ((u2 - 232) * 10 + 8) / 255, t = C2, E2 = C2;
+      C = ((u2 - 232) * 10 + 8) / 255, t = C, E2 = C;
     else {
       u2 -= 16;
       let n = u2 % 36;
-      C2 = Math.floor(u2 / 36) / 5, t = Math.floor(n / 6) / 5, E2 = n % 6 / 5;
+      C = Math.floor(u2 / 36) / 5, t = Math.floor(n / 6) / 5, E2 = n % 6 / 5;
     }
-    let e2 = Math.max(C2, t, E2) * 2;
+    let e2 = Math.max(C, t, E2) * 2;
     if (e2 === 0)
       return 30;
-    let r2 = 30 + (Math.round(E2) << 2 | Math.round(t) << 1 | Math.round(C2));
+    let r2 = 30 + (Math.round(E2) << 2 | Math.round(t) << 1 | Math.round(C));
     return e2 === 2 && (r2 += 60), r2;
-  }, enumerable: false }, rgbToAnsi: { value: (u2, C2, t) => F2.ansi256ToAnsi(F2.rgbToAnsi256(u2, C2, t)), enumerable: false }, hexToAnsi: { value: (u2) => F2.ansi256ToAnsi(F2.hexToAnsi256(u2)), enumerable: false } }), F2;
+  }, enumerable: false }, rgbToAnsi: { value: (u2, C, t) => F2.ansi256ToAnsi(F2.rgbToAnsi256(u2, C, t)), enumerable: false }, hexToAnsi: { value: (u2) => F2.ansi256ToAnsi(F2.hexToAnsi256(u2)), enumerable: false } }), F2;
 }
 var fD = AD();
 var pD = "]";
@@ -27323,7 +27284,7 @@ i();
 
 // node_modules/cleye/dist/index.mjs
 var J = import_tty.default.WriteStream.prototype.hasColors();
-var y3 = /^[\w.-]+$/;
+var y2 = /^[\w.-]+$/;
 var { stringify: d3 } = JSON;
 function G3(t, e2) {
   if (!t)
@@ -27331,7 +27292,7 @@ function G3(t, e2) {
   const { name: r2 } = t;
   if (t.name === void 0)
     throw new Error("Command name is required");
-  if (!y3.test(r2))
+  if (!y2.test(r2))
     throw new Error(`Invalid command name ${JSON.stringify(r2)}. Command names must be one word.`);
   return { options: t, callback: e2 };
 }
@@ -27959,10 +27920,7 @@ async function improveCommitMessagesWithRebase(commits) {
     );
     return;
   }
-  const commitSpinner = le();
-  commitSpinner.start(
-    `Found ${commitsToImprove.length} commits with a message "oc", improving`
-  );
+  ce(`Found ${commitsToImprove.length} commits, improving`);
   const commitShas = commitsToImprove.map((commit) => commit.sha);
   const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
   const commitDiffBySha = await Promise.all(diffPromises).then(
@@ -27975,7 +27933,11 @@ async function improveCommitMessagesWithRebase(commits) {
     throw error;
   });
   ce("Starting interactive rebase: `$ rebase -i`.");
-  await execa("git", ["rebase", "-i", commitsToImprove.join(" ").trim()]);
+  await execa("git", [
+    "rebase",
+    "-i",
+    commitsToImprove.map((commit) => commit.sha).join(" ").trim()
+  ]);
   for (const commit of commitsToImprove) {
     try {
       const commitDiff = commitDiffBySha[commit.sha];
@@ -27985,7 +27947,7 @@ async function improveCommitMessagesWithRebase(commits) {
     } catch (error) {
       throw error;
     } finally {
-      commitSpinner.stop(
+      ce(
         "\u{1F4DD} Commit messages improved with an interactive rebase: `$ rebase -i`"
       );
     }
@@ -28011,7 +27973,6 @@ async function run(retries = 3) {
         pull_number: payload.pull_request.number
       });
       const commits = commitsResponse.data;
-      import_core4.default.info("testing core.info");
       ce("testing outro");
       await improveCommitMessagesWithRebase(commits);
     } else {
