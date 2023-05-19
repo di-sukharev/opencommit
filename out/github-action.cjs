@@ -27914,31 +27914,42 @@ async function getCommitDiff(commitSha) {
 async function improveCommitMessagesWithRebase(commits) {
   let commitsToImprove = pattern ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message)) : commits;
   if (!commitsToImprove.length) {
-    ce('No commits with a message "oc" found.');
-    ce(
-      'If you want OpenCommit Action to generate a commit message for you \u2014 commit the message as two letters: "oc"'
-    );
+    ce("No new commits found.");
     return;
   }
-  ce(`Found ${commitsToImprove.length} commits, improving`);
+  ce(`Found ${commitsToImprove.length} commits to improve.`);
   const commitShas = commitsToImprove.map((commit) => commit.sha);
   const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
-  const commitDiffBySha = await Promise.all(diffPromises).then(
-    (results) => results.reduce((acc, result) => {
-      acc[result.sha] = result.diff;
-      return acc;
-    }, {})
+  ce("Fetching commit diffs by SHAs.");
+  const commitDiffs = await Promise.all(
+    diffPromises
   ).catch((error) => {
     ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
     throw error;
   });
-  ce("Starting interactive rebase: `$ rebase -i`.");
+  ce("Done.");
+  ce("Improving commit messages by diffs.");
+  const improvePromises = commitDiffs.map(
+    (commit) => generateCommitMessageByDiff(commit.diff)
+  );
+  const improvedMessagesBySha = await Promise.all(improvePromises).then((results) => {
+    return results.reduce((acc, improvedMsg, i2) => {
+      acc[commitDiffs[i2].sha] = improvedMsg;
+      return acc;
+    }, {});
+  }).catch((error) => {
+    ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+    throw error;
+  });
+  ce("Done.");
+  ce(
+    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`
+  );
   await execa("git", ["rebase", "-i", commitsToImprove[0].parents[0].sha]);
   for (const commit of commitsToImprove) {
     try {
-      const commitDiff = commitDiffBySha[commit.sha];
-      const improvedMessage = await generateCommitMessageByDiff(commitDiff);
-      await execa("git", ["commit", "--amend", "-m", improvedMessage]);
+      const commitDiff = improvedMessagesBySha[commit.sha];
+      await execa("git", ["commit", "--amend", "-m", commitDiff]);
       await execa("git", ["rebase", "--continue"]);
     } catch (error) {
       throw error;
@@ -27950,7 +27961,7 @@ async function improveCommitMessagesWithRebase(commits) {
   }
   ce("Force pushing interactively rebased commits into remote origin.");
   await execa("git", ["push", "origin", `+${context.ref}`]);
-  ce("Done \u{1F64F}");
+  ce("Done \u23F1\uFE0F");
 }
 async function run(retries = 3) {
   ae("OpenCommit \u2014 improving commit messages with GPT");
@@ -27969,12 +27980,11 @@ async function run(retries = 3) {
         pull_number: payload.pull_request.number
       });
       const commits = commitsResponse.data;
-      ce("testing outro");
       await improveCommitMessagesWithRebase(commits);
     } else {
-      ce("wrong action");
+      ce("Wrong action.");
       import_core4.default.error(
-        `OpenCommit was called on ${import_github.default.context.payload.action}. OpenCommit is not supposed to be used on actions other from "pull_request.opened" and "push".`
+        `OpenCommit was called on ${import_github.default.context.payload.action}. OpenCommit is not supposed to be used on actions other from "pull_request.opened" and "pull_request.synchronize".`
       );
     }
   } catch (error) {

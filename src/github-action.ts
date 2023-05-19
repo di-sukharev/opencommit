@@ -24,7 +24,7 @@ type CommitsArray = CommitsData['data'];
 
 type SHA = string;
 type Diff = string;
-type DiffBySHA = Record<SHA, Diff>;
+type MessageBySha = Record<SHA, Diff>;
 
 async function getCommitDiff(commitSha: string) {
   const diffResponse = await octokit.request<string>(
@@ -47,40 +47,52 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
     : commits;
 
   if (!commitsToImprove.length) {
-    outro('No commits with a message "oc" found.');
-    outro(
-      'If you want OpenCommit Action to generate a commit message for you — commit the message as two letters: "oc"'
-    );
+    outro('No new commits found.');
+
     return;
   }
 
-  outro(`Found ${commitsToImprove.length} commits, improving`);
+  outro(`Found ${commitsToImprove.length} commits to improve.`);
 
   const commitShas = commitsToImprove.map((commit) => commit.sha);
   const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
 
-  const commitDiffBySha: DiffBySHA = await Promise.all(diffPromises)
-    .then((results) =>
-      results.reduce((acc, result) => {
-        acc[result.sha] = result.diff;
+  outro('Fetching commit diffs by SHAs.');
+  const commitDiffs: { sha: string; diff: string }[] = await Promise.all(
+    diffPromises
+  ).catch((error) => {
+    outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+    throw error;
+  });
+  outro('Done.');
+
+  outro('Improving commit messages by diffs.');
+  const improvePromises = commitDiffs.map((commit) =>
+    generateCommitMessageByDiff(commit.diff)
+  );
+  const improvedMessagesBySha: MessageBySha = await Promise.all(improvePromises)
+    .then((results) => {
+      return results.reduce((acc, improvedMsg, i) => {
+        acc[commitDiffs[i].sha] = improvedMsg;
         return acc;
-      }, {} as DiffBySHA)
-    )
+      }, {} as MessageBySha);
+    })
     .catch((error) => {
       outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
       throw error;
     });
+  outro('Done.');
 
-  outro('Starting interactive rebase: `$ rebase -i`.');
+  outro(
+    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`
+  );
   await execa('git', ['rebase', '-i', commitsToImprove[0].parents[0].sha]);
 
   for (const commit of commitsToImprove) {
     try {
-      const commitDiff = commitDiffBySha[commit.sha];
+      const commitDiff = improvedMessagesBySha[commit.sha];
 
-      const improvedMessage = await generateCommitMessageByDiff(commitDiff);
-
-      await execa('git', ['commit', '--amend', '-m', improvedMessage]);
+      await execa('git', ['commit', '--amend', '-m', commitDiff]);
       await execa('git', ['rebase', '--continue']);
     } catch (error) {
       throw error;
@@ -96,7 +108,7 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   // Force push the rebased commits
   await execa('git', ['push', 'origin', `+${context.ref}`]);
 
-  outro('Done 🙏');
+  outro('Done ⏱️');
 }
 
 async function run(retries = 3) {
@@ -120,13 +132,11 @@ async function run(retries = 3) {
 
       const commits = commitsResponse.data;
 
-      outro('testing outro');
-
       await improveCommitMessagesWithRebase(commits);
     } else {
-      outro('wrong action');
+      outro('Wrong action.');
       core.error(
-        `OpenCommit was called on ${github.context.payload.action}. OpenCommit is not supposed to be used on actions other from "pull_request.opened" and "push".`
+        `OpenCommit was called on ${github.context.payload.action}. OpenCommit is not supposed to be used on actions other from "pull_request.opened" and "pull_request.synchronize".`
       );
     }
   } catch (error: any) {
