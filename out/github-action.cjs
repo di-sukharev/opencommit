@@ -27929,9 +27929,10 @@ async function improveCommitMessagesWithRebase(commits) {
   });
   ce("Done.");
   ce("Improving commit messages by diffs.");
-  const improvePromises = commitDiffs.map(
-    (commit) => generateCommitMessageByDiff(commit.diff)
-  );
+  const improvePromises = commitDiffs.map((commit) => {
+    console.log(124168723, { commit });
+    return generateCommitMessageByDiff(commit.diff);
+  });
   const improvedMessagesBySha = await Promise.all(improvePromises).then((results) => {
     return results.reduce((acc, improvedMsg, i2) => {
       acc[commitDiffs[i2].sha] = improvedMsg;
