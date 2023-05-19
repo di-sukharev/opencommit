@@ -8822,8 +8822,8 @@ var require_normalizeHeaderName = __commonJS({
 var require_enhanceError = __commonJS({
   "node_modules/openai/node_modules/axios/lib/core/enhanceError.js"(exports, module2) {
     "use strict";
-    module2.exports = function enhanceError(error, config3, code, request, response) {
-      error.config = config3;
+    module2.exports = function enhanceError(error, config4, code, request, response) {
+      error.config = config4;
       if (code) {
         error.code = code;
       }
@@ -8867,9 +8867,9 @@ var require_createError = __commonJS({
   "node_modules/openai/node_modules/axios/lib/core/createError.js"(exports, module2) {
     "use strict";
     var enhanceError = require_enhanceError();
-    module2.exports = function createError(message, config3, code, request, response) {
+    module2.exports = function createError(message, config4, code, request, response) {
       var error = new Error(message);
-      return enhanceError(error, config3, code, request, response);
+      return enhanceError(error, config4, code, request, response);
     };
   }
 });
@@ -9098,32 +9098,32 @@ var require_xhr = __commonJS({
     var createError = require_createError();
     var transitionalDefaults = require_transitional();
     var Cancel2 = require_Cancel();
-    module2.exports = function xhrAdapter(config3) {
+    module2.exports = function xhrAdapter(config4) {
       return new Promise(function dispatchXhrRequest(resolve, reject) {
-        var requestData = config3.data;
-        var requestHeaders = config3.headers;
-        var responseType = config3.responseType;
+        var requestData = config4.data;
+        var requestHeaders = config4.headers;
+        var responseType = config4.responseType;
         var onCanceled;
         function done() {
-          if (config3.cancelToken) {
-            config3.cancelToken.unsubscribe(onCanceled);
+          if (config4.cancelToken) {
+            config4.cancelToken.unsubscribe(onCanceled);
           }
-          if (config3.signal) {
-            config3.signal.removeEventListener("abort", onCanceled);
+          if (config4.signal) {
+            config4.signal.removeEventListener("abort", onCanceled);
           }
         }
         if (utils.isFormData(requestData)) {
           delete requestHeaders["Content-Type"];
         }
         var request = new XMLHttpRequest();
-        if (config3.auth) {
-          var username = config3.auth.username || "";
-          var password = config3.auth.password ? unescape(encodeURIComponent(config3.auth.password)) : "";
+        if (config4.auth) {
+          var username = config4.auth.username || "";
+          var password = config4.auth.password ? unescape(encodeURIComponent(config4.auth.password)) : "";
           requestHeaders.Authorization = "Basic " + btoa(username + ":" + password);
         }
-        var fullPath = buildFullPath2(config3.baseURL, config3.url);
-        request.open(config3.method.toUpperCase(), buildURL2(fullPath, config3.params, config3.paramsSerializer), true);
-        request.timeout = config3.timeout;
+        var fullPath = buildFullPath2(config4.baseURL, config4.url);
+        request.open(config4.method.toUpperCase(), buildURL2(fullPath, config4.params, config4.paramsSerializer), true);
+        request.timeout = config4.timeout;
         function onloadend() {
           if (!request) {
             return;
@@ -9135,7 +9135,7 @@ var require_xhr = __commonJS({
             status: request.status,
             statusText: request.statusText,
             headers: responseHeaders,
-            config: config3,
+            config: config4,
             request
           };
           settle2(function _resolve(value) {
@@ -9164,31 +9164,31 @@ var require_xhr = __commonJS({
           if (!request) {
             return;
           }
-          reject(createError("Request aborted", config3, "ECONNABORTED", request));
+          reject(createError("Request aborted", config4, "ECONNABORTED", request));
           request = null;
         };
         request.onerror = function handleError() {
-          reject(createError("Network Error", config3, null, request));
+          reject(createError("Network Error", config4, null, request));
           request = null;
         };
         request.ontimeout = function handleTimeout() {
-          var timeoutErrorMessage = config3.timeout ? "timeout of " + config3.timeout + "ms exceeded" : "timeout exceeded";
-          var transitional2 = config3.transitional || transitionalDefaults;
-          if (config3.timeoutErrorMessage) {
-            timeoutErrorMessage = config3.timeoutErrorMessage;
+          var timeoutErrorMessage = config4.timeout ? "timeout of " + config4.timeout + "ms exceeded" : "timeout exceeded";
+          var transitional2 = config4.transitional || transitionalDefaults;
+          if (config4.timeoutErrorMessage) {
+            timeoutErrorMessage = config4.timeoutErrorMessage;
           }
           reject(createError(
             timeoutErrorMessage,
-            config3,
+            config4,
             transitional2.clarifyTimeoutError ? "ETIMEDOUT" : "ECONNABORTED",
             request
           ));
           request = null;
         };
         if (utils.isStandardBrowserEnv()) {
-          var xsrfValue = (config3.withCredentials || isURLSameOrigin(fullPath)) && config3.xsrfCookieName ? cookies.read(config3.xsrfCookieName) : void 0;
+          var xsrfValue = (config4.withCredentials || isURLSameOrigin(fullPath)) && config4.xsrfCookieName ? cookies.read(config4.xsrfCookieName) : void 0;
           if (xsrfValue) {
-            requestHeaders[config3.xsrfHeaderName] = xsrfValue;
+            requestHeaders[config4.xsrfHeaderName] = xsrfValue;
           }
         }
         if ("setRequestHeader" in request) {
@@ -9200,19 +9200,19 @@ var require_xhr = __commonJS({
             }
           });
         }
-        if (!utils.isUndefined(config3.withCredentials)) {
-          request.withCredentials = !!config3.withCredentials;
+        if (!utils.isUndefined(config4.withCredentials)) {
+          request.withCredentials = !!config4.withCredentials;
         }
         if (responseType && responseType !== "json") {
-          request.responseType = config3.responseType;
+          request.responseType = config4.responseType;
         }
-        if (typeof config3.onDownloadProgress === "function") {
-          request.addEventListener("progress", config3.onDownloadProgress);
+        if (typeof config4.onDownloadProgress === "function") {
+          request.addEventListener("progress", config4.onDownloadProgress);
         }
-        if (typeof config3.onUploadProgress === "function" && request.upload) {
-          request.upload.addEventListener("progress", config3.onUploadProgress);
+        if (typeof config4.onUploadProgress === "function" && request.upload) {
+          request.upload.addEventListener("progress", config4.onUploadProgress);
         }
-        if (config3.cancelToken || config3.signal) {
+        if (config4.cancelToken || config4.signal) {
           onCanceled = function(cancel) {
             if (!request) {
               return;
@@ -9221,9 +9221,9 @@ var require_xhr = __commonJS({
             request.abort();
             request = null;
           };
-          config3.cancelToken && config3.cancelToken.subscribe(onCanceled);
-          if (config3.signal) {
-            config3.signal.aborted ? onCanceled() : config3.signal.addEventListener("abort", onCanceled);
+          config4.cancelToken && config4.cancelToken.subscribe(onCanceled);
+          if (config4.signal) {
+            config4.signal.aborted ? onCanceled() : config4.signal.addEventListener("abort", onCanceled);
           }
         }
         if (!requestData) {
@@ -10479,15 +10479,15 @@ var require_http = __commonJS({
         setProxy2(redirection, proxy, redirection.href);
       };
     }
-    module2.exports = function httpAdapter2(config3) {
+    module2.exports = function httpAdapter2(config4) {
       return new Promise(function dispatchHttpRequest(resolvePromise, rejectPromise) {
         var onCanceled;
         function done() {
-          if (config3.cancelToken) {
-            config3.cancelToken.unsubscribe(onCanceled);
+          if (config4.cancelToken) {
+            config4.cancelToken.unsubscribe(onCanceled);
           }
-          if (config3.signal) {
-            config3.signal.removeEventListener("abort", onCanceled);
+          if (config4.signal) {
+            config4.signal.removeEventListener("abort", onCanceled);
           }
         }
         var resolve = function resolve2(value) {
@@ -10500,8 +10500,8 @@ var require_http = __commonJS({
           rejected = true;
           rejectPromise(value);
         };
-        var data = config3.data;
-        var headers = config3.headers;
+        var data = config4.data;
+        var headers = config4.headers;
         var headerNames = {};
         Object.keys(headers).forEach(function storeLowerName(name) {
           headerNames[name.toLowerCase()] = name;
@@ -10522,23 +10522,23 @@ var require_http = __commonJS({
           } else {
             return reject(createError(
               "Data after transformation must be a string, an ArrayBuffer, a Buffer, or a Stream",
-              config3
+              config4
             ));
           }
-          if (config3.maxBodyLength > -1 && data.length > config3.maxBodyLength) {
-            return reject(createError("Request body larger than maxBodyLength limit", config3));
+          if (config4.maxBodyLength > -1 && data.length > config4.maxBodyLength) {
+            return reject(createError("Request body larger than maxBodyLength limit", config4));
           }
           if (!headerNames["content-length"]) {
             headers["Content-Length"] = data.length;
           }
         }
         var auth = void 0;
-        if (config3.auth) {
-          var username = config3.auth.username || "";
-          var password = config3.auth.password || "";
+        if (config4.auth) {
+          var username = config4.auth.username || "";
+          var password = config4.auth.password || "";
           auth = username + ":" + password;
         }
-        var fullPath = buildFullPath2(config3.baseURL, config3.url);
+        var fullPath = buildFullPath2(config4.baseURL, config4.url);
         var parsed = url3.parse(fullPath);
         var protocol = parsed.protocol || "http:";
         if (!auth && parsed.auth) {
@@ -10551,31 +10551,31 @@ var require_http = __commonJS({
           delete headers[headerNames.authorization];
         }
         var isHttpsRequest = isHttps2.test(protocol);
-        var agent = isHttpsRequest ? config3.httpsAgent : config3.httpAgent;
+        var agent = isHttpsRequest ? config4.httpsAgent : config4.httpAgent;
         try {
-          buildURL2(parsed.path, config3.params, config3.paramsSerializer).replace(/^\?/, "");
+          buildURL2(parsed.path, config4.params, config4.paramsSerializer).replace(/^\?/, "");
         } catch (err) {
           var customErr = new Error(err.message);
-          customErr.config = config3;
-          customErr.url = config3.url;
+          customErr.config = config4;
+          customErr.url = config4.url;
           customErr.exists = true;
           reject(customErr);
         }
         var options = {
-          path: buildURL2(parsed.path, config3.params, config3.paramsSerializer).replace(/^\?/, ""),
-          method: config3.method.toUpperCase(),
+          path: buildURL2(parsed.path, config4.params, config4.paramsSerializer).replace(/^\?/, ""),
+          method: config4.method.toUpperCase(),
           headers,
           agent,
-          agents: { http: config3.httpAgent, https: config3.httpsAgent },
+          agents: { http: config4.httpAgent, https: config4.httpsAgent },
           auth
         };
-        if (config3.socketPath) {
-          options.socketPath = config3.socketPath;
+        if (config4.socketPath) {
+          options.socketPath = config4.socketPath;
         } else {
           options.hostname = parsed.hostname;
           options.port = parsed.port;
         }
-        var proxy = config3.proxy;
+        var proxy = config4.proxy;
         if (!proxy && proxy !== false) {
           var proxyEnv = protocol.slice(0, -1) + "_proxy";
           var proxyUrl = process.env[proxyEnv] || process.env[proxyEnv.toUpperCase()];
@@ -10622,28 +10622,28 @@ var require_http = __commonJS({
         }
         var transport;
         var isHttpsProxy = isHttpsRequest && (proxy ? isHttps2.test(proxy.protocol) : true);
-        if (config3.transport) {
-          transport = config3.transport;
-        } else if (config3.maxRedirects === 0) {
+        if (config4.transport) {
+          transport = config4.transport;
+        } else if (config4.maxRedirects === 0) {
           transport = isHttpsProxy ? https2 : http2;
         } else {
-          if (config3.maxRedirects) {
-            options.maxRedirects = config3.maxRedirects;
+          if (config4.maxRedirects) {
+            options.maxRedirects = config4.maxRedirects;
           }
           transport = isHttpsProxy ? httpsFollow2 : httpFollow2;
         }
-        if (config3.maxBodyLength > -1) {
-          options.maxBodyLength = config3.maxBodyLength;
+        if (config4.maxBodyLength > -1) {
+          options.maxBodyLength = config4.maxBodyLength;
         }
-        if (config3.insecureHTTPParser) {
-          options.insecureHTTPParser = config3.insecureHTTPParser;
+        if (config4.insecureHTTPParser) {
+          options.insecureHTTPParser = config4.insecureHTTPParser;
         }
         var req = transport.request(options, function handleResponse(res) {
           if (req.aborted)
             return;
           var stream4 = res;
           var lastRequest = res.req || req;
-          if (res.statusCode !== 204 && lastRequest.method !== "HEAD" && config3.decompress !== false) {
+          if (res.statusCode !== 204 && lastRequest.method !== "HEAD" && config4.decompress !== false) {
             switch (res.headers["content-encoding"]) {
               case "gzip":
               case "compress":
@@ -10657,10 +10657,10 @@ var require_http = __commonJS({
             status: res.statusCode,
             statusText: res.statusMessage,
             headers: res.headers,
-            config: config3,
+            config: config4,
             request: lastRequest
           };
-          if (config3.responseType === "stream") {
+          if (config4.responseType === "stream") {
             response.data = stream4;
             settle2(resolve, reject, response);
           } else {
@@ -10669,12 +10669,12 @@ var require_http = __commonJS({
             stream4.on("data", function handleStreamData(chunk) {
               responseBuffer.push(chunk);
               totalResponseBytes += chunk.length;
-              if (config3.maxContentLength > -1 && totalResponseBytes > config3.maxContentLength) {
+              if (config4.maxContentLength > -1 && totalResponseBytes > config4.maxContentLength) {
                 rejected = true;
                 stream4.destroy();
                 reject(createError(
-                  "maxContentLength size of " + config3.maxContentLength + " exceeded",
-                  config3,
+                  "maxContentLength size of " + config4.maxContentLength + " exceeded",
+                  config4,
                   null,
                   lastRequest
                 ));
@@ -10685,25 +10685,25 @@ var require_http = __commonJS({
                 return;
               }
               stream4.destroy();
-              reject(createError("error request aborted", config3, "ERR_REQUEST_ABORTED", lastRequest));
+              reject(createError("error request aborted", config4, "ERR_REQUEST_ABORTED", lastRequest));
             });
             stream4.on("error", function handleStreamError(err) {
               if (req.aborted)
                 return;
-              reject(enhanceError(err, config3, null, lastRequest));
+              reject(enhanceError(err, config4, null, lastRequest));
             });
             stream4.on("end", function handleStreamEnd() {
               try {
                 var responseData = responseBuffer.length === 1 ? responseBuffer[0] : Buffer.concat(responseBuffer);
-                if (config3.responseType !== "arraybuffer") {
-                  responseData = responseData.toString(config3.responseEncoding);
-                  if (!config3.responseEncoding || config3.responseEncoding === "utf8") {
+                if (config4.responseType !== "arraybuffer") {
+                  responseData = responseData.toString(config4.responseEncoding);
+                  if (!config4.responseEncoding || config4.responseEncoding === "utf8") {
                     responseData = utils.stripBOM(responseData);
                   }
                 }
                 response.data = responseData;
               } catch (err) {
-                reject(enhanceError(err, config3, err.code, response.request, response));
+                reject(enhanceError(err, config4, err.code, response.request, response));
               }
               settle2(resolve, reject, response);
             });
@@ -10712,17 +10712,17 @@ var require_http = __commonJS({
         req.on("error", function handleRequestError(err) {
           if (req.aborted && err.code !== "ERR_FR_TOO_MANY_REDIRECTS")
             return;
-          reject(enhanceError(err, config3, null, req));
+          reject(enhanceError(err, config4, null, req));
         });
         req.on("socket", function handleRequestSocket(socket) {
           socket.setKeepAlive(true, 1e3 * 60);
         });
-        if (config3.timeout) {
-          var timeout = parseInt(config3.timeout, 10);
+        if (config4.timeout) {
+          var timeout = parseInt(config4.timeout, 10);
           if (isNaN(timeout)) {
             reject(createError(
               "error trying to parse `config.timeout` to int",
-              config3,
+              config4,
               "ERR_PARSE_TIMEOUT",
               req
             ));
@@ -10731,35 +10731,35 @@ var require_http = __commonJS({
           req.setTimeout(timeout, function handleRequestTimeout() {
             req.abort();
             var timeoutErrorMessage = "";
-            if (config3.timeoutErrorMessage) {
-              timeoutErrorMessage = config3.timeoutErrorMessage;
+            if (config4.timeoutErrorMessage) {
+              timeoutErrorMessage = config4.timeoutErrorMessage;
             } else {
-              timeoutErrorMessage = "timeout of " + config3.timeout + "ms exceeded";
+              timeoutErrorMessage = "timeout of " + config4.timeout + "ms exceeded";
             }
-            var transitional2 = config3.transitional || transitionalDefaults;
+            var transitional2 = config4.transitional || transitionalDefaults;
             reject(createError(
               timeoutErrorMessage,
-              config3,
+              config4,
               transitional2.clarifyTimeoutError ? "ETIMEDOUT" : "ECONNABORTED",
               req
             ));
           });
         }
-        if (config3.cancelToken || config3.signal) {
+        if (config4.cancelToken || config4.signal) {
           onCanceled = function(cancel) {
             if (req.aborted)
               return;
             req.abort();
             reject(!cancel || cancel && cancel.type ? new Cancel2("canceled") : cancel);
           };
-          config3.cancelToken && config3.cancelToken.subscribe(onCanceled);
-          if (config3.signal) {
-            config3.signal.aborted ? onCanceled() : config3.signal.addEventListener("abort", onCanceled);
+          config4.cancelToken && config4.cancelToken.subscribe(onCanceled);
+          if (config4.signal) {
+            config4.signal.aborted ? onCanceled() : config4.signal.addEventListener("abort", onCanceled);
           }
         }
         if (utils.isStream(data)) {
           data.on("error", function handleStreamError(err) {
-            reject(enhanceError(err, config3, null, req));
+            reject(enhanceError(err, config4, null, req));
           }).pipe(req);
         } else {
           req.end(data);
@@ -10907,53 +10907,53 @@ var require_dispatchRequest = __commonJS({
     var isCancel3 = require_isCancel();
     var defaults2 = require_defaults();
     var Cancel2 = require_Cancel();
-    function throwIfCancellationRequested2(config3) {
-      if (config3.cancelToken) {
-        config3.cancelToken.throwIfRequested();
+    function throwIfCancellationRequested2(config4) {
+      if (config4.cancelToken) {
+        config4.cancelToken.throwIfRequested();
       }
-      if (config3.signal && config3.signal.aborted) {
+      if (config4.signal && config4.signal.aborted) {
         throw new Cancel2("canceled");
       }
     }
-    module2.exports = function dispatchRequest2(config3) {
-      throwIfCancellationRequested2(config3);
-      config3.headers = config3.headers || {};
-      config3.data = transformData2.call(
-        config3,
-        config3.data,
-        config3.headers,
-        config3.transformRequest
+    module2.exports = function dispatchRequest2(config4) {
+      throwIfCancellationRequested2(config4);
+      config4.headers = config4.headers || {};
+      config4.data = transformData2.call(
+        config4,
+        config4.data,
+        config4.headers,
+        config4.transformRequest
       );
-      config3.headers = utils.merge(
-        config3.headers.common || {},
-        config3.headers[config3.method] || {},
-        config3.headers
+      config4.headers = utils.merge(
+        config4.headers.common || {},
+        config4.headers[config4.method] || {},
+        config4.headers
       );
       utils.forEach(
         ["delete", "get", "head", "post", "put", "patch", "common"],
         function cleanHeaderConfig(method) {
-          delete config3.headers[method];
+          delete config4.headers[method];
         }
       );
-      var adapter = config3.adapter || defaults2.adapter;
-      return adapter(config3).then(function onAdapterResolution(response) {
-        throwIfCancellationRequested2(config3);
+      var adapter = config4.adapter || defaults2.adapter;
+      return adapter(config4).then(function onAdapterResolution(response) {
+        throwIfCancellationRequested2(config4);
         response.data = transformData2.call(
-          config3,
+          config4,
           response.data,
           response.headers,
-          config3.transformResponse
+          config4.transformResponse
         );
         return response;
       }, function onAdapterRejection(reason) {
         if (!isCancel3(reason)) {
-          throwIfCancellationRequested2(config3);
+          throwIfCancellationRequested2(config4);
           if (reason && reason.response) {
             reason.response.data = transformData2.call(
-              config3,
+              config4,
               reason.response.data,
               reason.response.headers,
-              config3.transformResponse
+              config4.transformResponse
             );
           }
         }
@@ -10970,7 +10970,7 @@ var require_mergeConfig = __commonJS({
     var utils = require_utils5();
     module2.exports = function mergeConfig3(config1, config22) {
       config22 = config22 || {};
-      var config3 = {};
+      var config4 = {};
       function getMergedValue(target, source) {
         if (utils.isPlainObject(target) && utils.isPlainObject(source)) {
           return utils.merge(target, source);
@@ -11038,9 +11038,9 @@ var require_mergeConfig = __commonJS({
       utils.forEach(Object.keys(config1).concat(Object.keys(config22)), function computeConfigValue(prop) {
         var merge2 = mergeMap[prop] || mergeDeepProperties;
         var configValue = merge2(prop);
-        utils.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config3[prop] = configValue);
+        utils.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config4[prop] = configValue);
       });
-      return config3;
+      return config4;
     };
   }
 });
@@ -11124,22 +11124,22 @@ var require_Axios = __commonJS({
         response: new InterceptorManager2()
       };
     }
-    Axios3.prototype.request = function request(configOrUrl, config3) {
+    Axios3.prototype.request = function request(configOrUrl, config4) {
       if (typeof configOrUrl === "string") {
-        config3 = config3 || {};
-        config3.url = configOrUrl;
+        config4 = config4 || {};
+        config4.url = configOrUrl;
       } else {
-        config3 = configOrUrl || {};
+        config4 = configOrUrl || {};
       }
-      config3 = mergeConfig3(this.defaults, config3);
-      if (config3.method) {
-        config3.method = config3.method.toLowerCase();
+      config4 = mergeConfig3(this.defaults, config4);
+      if (config4.method) {
+        config4.method = config4.method.toLowerCase();
       } else if (this.defaults.method) {
-        config3.method = this.defaults.method.toLowerCase();
+        config4.method = this.defaults.method.toLowerCase();
       } else {
-        config3.method = "get";
+        config4.method = "get";
       }
-      var transitional2 = config3.transitional;
+      var transitional2 = config4.transitional;
       if (transitional2 !== void 0) {
         validator.assertOptions(transitional2, {
           silentJSONParsing: validators3.transitional(validators3.boolean),
@@ -11150,7 +11150,7 @@ var require_Axios = __commonJS({
       var requestInterceptorChain = [];
       var synchronousRequestInterceptors = true;
       this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-        if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config3) === false) {
+        if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config4) === false) {
           return;
         }
         synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
@@ -11165,13 +11165,13 @@ var require_Axios = __commonJS({
         var chain = [dispatchRequest2, void 0];
         Array.prototype.unshift.apply(chain, requestInterceptorChain);
         chain = chain.concat(responseInterceptorChain);
-        promise = Promise.resolve(config3);
+        promise = Promise.resolve(config4);
         while (chain.length) {
           promise = promise.then(chain.shift(), chain.shift());
         }
         return promise;
       }
-      var newConfig = config3;
+      var newConfig = config4;
       while (requestInterceptorChain.length) {
         var onFulfilled = requestInterceptorChain.shift();
         var onRejected = requestInterceptorChain.shift();
@@ -11192,22 +11192,22 @@ var require_Axios = __commonJS({
       }
       return promise;
     };
-    Axios3.prototype.getUri = function getUri(config3) {
-      config3 = mergeConfig3(this.defaults, config3);
-      return buildURL2(config3.url, config3.params, config3.paramsSerializer).replace(/^\?/, "");
+    Axios3.prototype.getUri = function getUri(config4) {
+      config4 = mergeConfig3(this.defaults, config4);
+      return buildURL2(config4.url, config4.params, config4.paramsSerializer).replace(/^\?/, "");
     };
     utils.forEach(["delete", "get", "head", "options"], function forEachMethodNoData3(method) {
-      Axios3.prototype[method] = function(url3, config3) {
-        return this.request(mergeConfig3(config3 || {}, {
+      Axios3.prototype[method] = function(url3, config4) {
+        return this.request(mergeConfig3(config4 || {}, {
           method,
           url: url3,
-          data: (config3 || {}).data
+          data: (config4 || {}).data
         }));
       };
     });
     utils.forEach(["post", "put", "patch"], function forEachMethodWithData3(method) {
-      Axios3.prototype[method] = function(url3, data, config3) {
-        return this.request(mergeConfig3(config3 || {}, {
+      Axios3.prototype[method] = function(url3, data, config4) {
+        return this.request(mergeConfig3(config4 || {}, {
           method,
           url: url3,
           data
@@ -22334,6 +22334,155 @@ var require_ini = __commonJS({
   }
 });
 
+// node_modules/dotenv/package.json
+var require_package2 = __commonJS({
+  "node_modules/dotenv/package.json"(exports, module2) {
+    module2.exports = {
+      name: "dotenv",
+      version: "16.0.3",
+      description: "Loads environment variables from .env file",
+      main: "lib/main.js",
+      types: "lib/main.d.ts",
+      exports: {
+        ".": {
+          require: "./lib/main.js",
+          types: "./lib/main.d.ts",
+          default: "./lib/main.js"
+        },
+        "./config": "./config.js",
+        "./config.js": "./config.js",
+        "./lib/env-options": "./lib/env-options.js",
+        "./lib/env-options.js": "./lib/env-options.js",
+        "./lib/cli-options": "./lib/cli-options.js",
+        "./lib/cli-options.js": "./lib/cli-options.js",
+        "./package.json": "./package.json"
+      },
+      scripts: {
+        "dts-check": "tsc --project tests/types/tsconfig.json",
+        lint: "standard",
+        "lint-readme": "standard-markdown",
+        pretest: "npm run lint && npm run dts-check",
+        test: "tap tests/*.js --100 -Rspec",
+        prerelease: "npm test",
+        release: "standard-version"
+      },
+      repository: {
+        type: "git",
+        url: "git://github.com/motdotla/dotenv.git"
+      },
+      keywords: [
+        "dotenv",
+        "env",
+        ".env",
+        "environment",
+        "variables",
+        "config",
+        "settings"
+      ],
+      readmeFilename: "README.md",
+      license: "BSD-2-Clause",
+      devDependencies: {
+        "@types/node": "^17.0.9",
+        decache: "^4.6.1",
+        dtslint: "^3.7.0",
+        sinon: "^12.0.1",
+        standard: "^16.0.4",
+        "standard-markdown": "^7.1.0",
+        "standard-version": "^9.3.2",
+        tap: "^15.1.6",
+        tar: "^6.1.11",
+        typescript: "^4.5.4"
+      },
+      engines: {
+        node: ">=12"
+      }
+    };
+  }
+});
+
+// node_modules/dotenv/lib/main.js
+var require_main = __commonJS({
+  "node_modules/dotenv/lib/main.js"(exports, module2) {
+    var fs = require("fs");
+    var path3 = require("path");
+    var os3 = require("os");
+    var packageJson = require_package2();
+    var version = packageJson.version;
+    var LINE = /(?:^|^)\s*(?:export\s+)?([\w.-]+)(?:\s*=\s*?|:\s+?)(\s*'(?:\\'|[^'])*'|\s*"(?:\\"|[^"])*"|\s*`(?:\\`|[^`])*`|[^#\r\n]+)?\s*(?:#.*)?(?:$|$)/mg;
+    function parse(src) {
+      const obj = {};
+      let lines = src.toString();
+      lines = lines.replace(/\r\n?/mg, "\n");
+      let match;
+      while ((match = LINE.exec(lines)) != null) {
+        const key = match[1];
+        let value = match[2] || "";
+        value = value.trim();
+        const maybeQuote = value[0];
+        value = value.replace(/^(['"`])([\s\S]*)\1$/mg, "$2");
+        if (maybeQuote === '"') {
+          value = value.replace(/\\n/g, "\n");
+          value = value.replace(/\\r/g, "\r");
+        }
+        obj[key] = value;
+      }
+      return obj;
+    }
+    function _log(message) {
+      console.log(`[dotenv@${version}][DEBUG] ${message}`);
+    }
+    function _resolveHome(envPath) {
+      return envPath[0] === "~" ? path3.join(os3.homedir(), envPath.slice(1)) : envPath;
+    }
+    function config4(options) {
+      let dotenvPath = path3.resolve(process.cwd(), ".env");
+      let encoding = "utf8";
+      const debug = Boolean(options && options.debug);
+      const override = Boolean(options && options.override);
+      if (options) {
+        if (options.path != null) {
+          dotenvPath = _resolveHome(options.path);
+        }
+        if (options.encoding != null) {
+          encoding = options.encoding;
+        }
+      }
+      try {
+        const parsed = DotenvModule.parse(fs.readFileSync(dotenvPath, { encoding }));
+        Object.keys(parsed).forEach(function(key) {
+          if (!Object.prototype.hasOwnProperty.call(process.env, key)) {
+            process.env[key] = parsed[key];
+          } else {
+            if (override === true) {
+              process.env[key] = parsed[key];
+            }
+            if (debug) {
+              if (override === true) {
+                _log(`"${key}" is already defined in \`process.env\` and WAS overwritten`);
+              } else {
+                _log(`"${key}" is already defined in \`process.env\` and was NOT overwritten`);
+              }
+            }
+          }
+        });
+        return { parsed };
+      } catch (e2) {
+        if (debug) {
+          _log(`Failed to load ${dotenvPath} ${e2.message}`);
+        }
+        return { error: e2 };
+      }
+    }
+    var DotenvModule = {
+      config: config4,
+      parse
+    };
+    module2.exports.config = DotenvModule.config;
+    module2.exports.parse = DotenvModule.parse;
+    module2.exports = DotenvModule;
+  }
+});
+
 // node_modules/@dqbd/tiktoken/lite/tiktoken_bg.cjs
 var require_tiktoken_bg = __commonJS({
   "node_modules/@dqbd/tiktoken/lite/tiktoken_bg.cjs"(exports, module2) {
@@ -24139,7 +24288,7 @@ var utils_default = {
 };
 
 // node_modules/axios/lib/core/AxiosError.js
-function AxiosError(message, code, config3, request, response) {
+function AxiosError(message, code, config4, request, response) {
   Error.call(this);
   if (Error.captureStackTrace) {
     Error.captureStackTrace(this, this.constructor);
@@ -24149,7 +24298,7 @@ function AxiosError(message, code, config3, request, response) {
   this.message = message;
   this.name = "AxiosError";
   code && (this.code = code);
-  config3 && (this.config = config3);
+  config4 && (this.config = config4);
   request && (this.request = request);
   response && (this.response = response);
 }
@@ -24190,14 +24339,14 @@ var descriptors2 = {};
 });
 Object.defineProperties(AxiosError, descriptors2);
 Object.defineProperty(prototype, "isAxiosError", { value: true });
-AxiosError.from = (error, code, config3, request, response, customProps) => {
+AxiosError.from = (error, code, config4, request, response, customProps) => {
   const axiosError = Object.create(prototype);
   utils_default.toFlatObject(error, axiosError, function filter2(obj) {
     return obj !== Error.prototype;
   }, (prop) => {
     return prop !== "isAxiosError";
   });
-  AxiosError.call(axiosError, error.message, code, config3, request, response);
+  AxiosError.call(axiosError, error.message, code, config4, request, response);
   axiosError.cause = error;
   axiosError.name = error.name;
   customProps && Object.assign(axiosError, customProps);
@@ -24872,12 +25021,12 @@ var AxiosHeaders_default = AxiosHeaders;
 
 // node_modules/axios/lib/core/transformData.js
 function transformData(fns, response) {
-  const config3 = this || defaults_default;
-  const context2 = response || config3;
+  const config4 = this || defaults_default;
+  const context2 = response || config4;
   const headers = AxiosHeaders_default.from(context2.headers);
   let data = context2.data;
   utils_default.forEach(fns, function transform(fn) {
-    data = fn.call(config3, data, headers.normalize(), response ? response.status : void 0);
+    data = fn.call(config4, data, headers.normalize(), response ? response.status : void 0);
   });
   headers.normalize();
   return data;
@@ -24889,8 +25038,8 @@ function isCancel(value) {
 }
 
 // node_modules/axios/lib/cancel/CanceledError.js
-function CanceledError(message, config3, request) {
-  AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config3, request);
+function CanceledError(message, config4, request) {
+  AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config4, request);
   this.name = "CanceledError";
 }
 utils_default.inherits(CanceledError, AxiosError_default, {
@@ -25397,21 +25546,21 @@ var wrapAsync = (asyncExecutor) => {
     asyncExecutor(_resolve, _reject, (onDoneHandler) => onDone = onDoneHandler).catch(_reject);
   });
 };
-var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
+var http_default = isHttpAdapterSupported && function httpAdapter(config4) {
   return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
-    let { data } = config3;
-    const { responseType, responseEncoding } = config3;
-    const method = config3.method.toUpperCase();
+    let { data } = config4;
+    const { responseType, responseEncoding } = config4;
+    const method = config4.method.toUpperCase();
     let isDone;
     let rejected = false;
     let req;
     const emitter = new import_events.default();
     const onFinished = () => {
-      if (config3.cancelToken) {
-        config3.cancelToken.unsubscribe(abort);
+      if (config4.cancelToken) {
+        config4.cancelToken.unsubscribe(abort);
       }
-      if (config3.signal) {
-        config3.signal.removeEventListener("abort", abort);
+      if (config4.signal) {
+        config4.signal.removeEventListener("abort", abort);
       }
       emitter.removeAllListeners();
     };
@@ -25423,16 +25572,16 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
       }
     });
     function abort(reason) {
-      emitter.emit("abort", !reason || reason.type ? new CanceledError_default(null, config3, req) : reason);
+      emitter.emit("abort", !reason || reason.type ? new CanceledError_default(null, config4, req) : reason);
     }
     emitter.once("abort", reject);
-    if (config3.cancelToken || config3.signal) {
-      config3.cancelToken && config3.cancelToken.subscribe(abort);
-      if (config3.signal) {
-        config3.signal.aborted ? abort() : config3.signal.addEventListener("abort", abort);
+    if (config4.cancelToken || config4.signal) {
+      config4.cancelToken && config4.cancelToken.subscribe(abort);
+      if (config4.signal) {
+        config4.signal.aborted ? abort() : config4.signal.addEventListener("abort", abort);
       }
     }
-    const fullPath = buildFullPath(config3.baseURL, config3.url);
+    const fullPath = buildFullPath(config4.baseURL, config4.url);
     const parsed = new URL(fullPath, "http://localhost");
     const protocol = parsed.protocol || supportedProtocols[0];
     if (protocol === "data:") {
@@ -25442,15 +25591,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
           status: 405,
           statusText: "method not allowed",
           headers: {},
-          config: config3
+          config: config4
         });
       }
       try {
-        convertedData = fromDataURI(config3.url, responseType === "blob", {
-          Blob: config3.env && config3.env.Blob
+        convertedData = fromDataURI(config4.url, responseType === "blob", {
+          Blob: config4.env && config4.env.Blob
         });
       } catch (err) {
-        throw AxiosError_default.from(err, AxiosError_default.ERR_BAD_REQUEST, config3);
+        throw AxiosError_default.from(err, AxiosError_default.ERR_BAD_REQUEST, config4);
       }
       if (responseType === "text") {
         convertedData = convertedData.toString(responseEncoding);
@@ -25465,21 +25614,21 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
         status: 200,
         statusText: "OK",
         headers: new AxiosHeaders_default(),
-        config: config3
+        config: config4
       });
     }
     if (supportedProtocols.indexOf(protocol) === -1) {
       return reject(new AxiosError_default(
         "Unsupported protocol " + protocol,
         AxiosError_default.ERR_BAD_REQUEST,
-        config3
+        config4
       ));
     }
-    const headers = AxiosHeaders_default.from(config3.headers).normalize();
+    const headers = AxiosHeaders_default.from(config4.headers).normalize();
     headers.set("User-Agent", "axios/" + VERSION, false);
-    const onDownloadProgress = config3.onDownloadProgress;
-    const onUploadProgress = config3.onUploadProgress;
-    const maxRate = config3.maxRate;
+    const onDownloadProgress = config4.onDownloadProgress;
+    const onUploadProgress = config4.onUploadProgress;
+    const maxRate = config4.maxRate;
     let maxUploadRate = void 0;
     let maxDownloadRate = void 0;
     if (utils_default.isSpecCompliantForm(data)) {
@@ -25513,15 +25662,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
         return reject(new AxiosError_default(
           "Data after transformation must be a string, an ArrayBuffer, a Buffer, or a Stream",
           AxiosError_default.ERR_BAD_REQUEST,
-          config3
+          config4
         ));
       }
       headers.setContentLength(data.length, false);
-      if (config3.maxBodyLength > -1 && data.length > config3.maxBodyLength) {
+      if (config4.maxBodyLength > -1 && data.length > config4.maxBodyLength) {
         return reject(new AxiosError_default(
           "Request body larger than maxBodyLength limit",
           AxiosError_default.ERR_BAD_REQUEST,
-          config3
+          config4
         ));
       }
     }
@@ -25547,9 +25696,9 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
       });
     }
     let auth = void 0;
-    if (config3.auth) {
-      const username = config3.auth.username || "";
-      const password = config3.auth.password || "";
+    if (config4.auth) {
+      const username = config4.auth.username || "";
+      const password = config4.auth.password || "";
       auth = username + ":" + password;
     }
     if (!auth && parsed.username) {
@@ -25562,13 +25711,13 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
     try {
       path3 = buildURL(
         parsed.pathname + parsed.search,
-        config3.params,
-        config3.paramsSerializer
+        config4.params,
+        config4.paramsSerializer
       ).replace(/^\?/, "");
     } catch (err) {
       const customErr = new Error(err.message);
-      customErr.config = config3;
-      customErr.url = config3.url;
+      customErr.config = config4;
+      customErr.url = config4.url;
       customErr.exists = true;
       return reject(customErr);
     }
@@ -25581,42 +25730,42 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
       path: path3,
       method,
       headers: headers.toJSON(),
-      agents: { http: config3.httpAgent, https: config3.httpsAgent },
+      agents: { http: config4.httpAgent, https: config4.httpsAgent },
       auth,
       protocol,
       beforeRedirect: dispatchBeforeRedirect,
       beforeRedirects: {}
     };
-    if (config3.socketPath) {
-      options.socketPath = config3.socketPath;
+    if (config4.socketPath) {
+      options.socketPath = config4.socketPath;
     } else {
       options.hostname = parsed.hostname;
       options.port = parsed.port;
-      setProxy(options, config3.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options.path);
+      setProxy(options, config4.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options.path);
     }
     let transport;
     const isHttpsRequest = isHttps.test(options.protocol);
-    options.agent = isHttpsRequest ? config3.httpsAgent : config3.httpAgent;
-    if (config3.transport) {
-      transport = config3.transport;
-    } else if (config3.maxRedirects === 0) {
+    options.agent = isHttpsRequest ? config4.httpsAgent : config4.httpAgent;
+    if (config4.transport) {
+      transport = config4.transport;
+    } else if (config4.maxRedirects === 0) {
       transport = isHttpsRequest ? import_https.default : import_http.default;
     } else {
-      if (config3.maxRedirects) {
-        options.maxRedirects = config3.maxRedirects;
+      if (config4.maxRedirects) {
+        options.maxRedirects = config4.maxRedirects;
       }
-      if (config3.beforeRedirect) {
-        options.beforeRedirects.config = config3.beforeRedirect;
+      if (config4.beforeRedirect) {
+        options.beforeRedirects.config = config4.beforeRedirect;
       }
       transport = isHttpsRequest ? httpsFollow : httpFollow;
     }
-    if (config3.maxBodyLength > -1) {
-      options.maxBodyLength = config3.maxBodyLength;
+    if (config4.maxBodyLength > -1) {
+      options.maxBodyLength = config4.maxBodyLength;
     } else {
       options.maxBodyLength = Infinity;
     }
-    if (config3.insecureHTTPParser) {
-      options.insecureHTTPParser = config3.insecureHTTPParser;
+    if (config4.insecureHTTPParser) {
+      options.insecureHTTPParser = config4.insecureHTTPParser;
     }
     req = transport.request(options, function handleResponse(res) {
       if (req.destroyed)
@@ -25637,7 +25786,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
       }
       let responseStream = res;
       const lastRequest = res.req || req;
-      if (config3.decompress !== false && res.headers["content-encoding"]) {
+      if (config4.decompress !== false && res.headers["content-encoding"]) {
         if (method === "HEAD" || res.statusCode === 204) {
           delete res.headers["content-encoding"];
         }
@@ -25670,7 +25819,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
         status: res.statusCode,
         statusText: res.statusMessage,
         headers: new AxiosHeaders_default(res.headers),
-        config: config3,
+        config: config4,
         request: lastRequest
       };
       if (responseType === "stream") {
@@ -25682,13 +25831,13 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
         responseStream.on("data", function handleStreamData(chunk) {
           responseBuffer.push(chunk);
           totalResponseBytes += chunk.length;
-          if (config3.maxContentLength > -1 && totalResponseBytes > config3.maxContentLength) {
+          if (config4.maxContentLength > -1 && totalResponseBytes > config4.maxContentLength) {
             rejected = true;
             responseStream.destroy();
             reject(new AxiosError_default(
-              "maxContentLength size of " + config3.maxContentLength + " exceeded",
+              "maxContentLength size of " + config4.maxContentLength + " exceeded",
               AxiosError_default.ERR_BAD_RESPONSE,
-              config3,
+              config4,
               lastRequest
             ));
           }
@@ -25698,9 +25847,9 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
             return;
           }
           const err = new AxiosError_default(
-            "maxContentLength size of " + config3.maxContentLength + " exceeded",
+            "maxContentLength size of " + config4.maxContentLength + " exceeded",
             AxiosError_default.ERR_BAD_RESPONSE,
-            config3,
+            config4,
             lastRequest
           );
           responseStream.destroy(err);
@@ -25709,7 +25858,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
         responseStream.on("error", function handleStreamError(err) {
           if (req.destroyed)
             return;
-          reject(AxiosError_default.from(err, null, config3, lastRequest));
+          reject(AxiosError_default.from(err, null, config4, lastRequest));
         });
         responseStream.on("end", function handleStreamEnd() {
           try {
@@ -25722,7 +25871,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
             }
             response.data = responseData;
           } catch (err) {
-            reject(AxiosError_default.from(err, null, config3, response.request, response));
+            reject(AxiosError_default.from(err, null, config4, response.request, response));
           }
           settle(resolve, reject, response);
         });
@@ -25739,18 +25888,18 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
       req.destroy(err);
     });
     req.on("error", function handleRequestError(err) {
-      reject(AxiosError_default.from(err, null, config3, req));
+      reject(AxiosError_default.from(err, null, config4, req));
     });
     req.on("socket", function handleRequestSocket(socket) {
       socket.setKeepAlive(true, 1e3 * 60);
     });
-    if (config3.timeout) {
-      const timeout = parseInt(config3.timeout, 10);
+    if (config4.timeout) {
+      const timeout = parseInt(config4.timeout, 10);
       if (isNaN(timeout)) {
         reject(new AxiosError_default(
           "error trying to parse `config.timeout` to int",
           AxiosError_default.ERR_BAD_OPTION_VALUE,
-          config3,
+          config4,
           req
         ));
         return;
@@ -25758,15 +25907,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
       req.setTimeout(timeout, function handleRequestTimeout() {
         if (isDone)
           return;
-        let timeoutErrorMessage = config3.timeout ? "timeout of " + config3.timeout + "ms exceeded" : "timeout exceeded";
-        const transitional2 = config3.transitional || transitional_default;
-        if (config3.timeoutErrorMessage) {
-          timeoutErrorMessage = config3.timeoutErrorMessage;
+        let timeoutErrorMessage = config4.timeout ? "timeout of " + config4.timeout + "ms exceeded" : "timeout exceeded";
+        const transitional2 = config4.transitional || transitional_default;
+        if (config4.timeoutErrorMessage) {
+          timeoutErrorMessage = config4.timeoutErrorMessage;
         }
         reject(new AxiosError_default(
           timeoutErrorMessage,
           transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-          config3,
+          config4,
           req
         ));
         abort();
@@ -25784,7 +25933,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config3) {
       });
       data.on("close", () => {
         if (!ended && !errored) {
-          abort(new CanceledError_default("Request stream has been aborted", config3, req));
+          abort(new CanceledError_default("Request stream has been aborted", config4, req));
         }
       });
       data.pipe(req);
@@ -25893,32 +26042,32 @@ function progressEventReducer(listener, isDownloadStream) {
   };
 }
 var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
-var xhr_default = isXHRAdapterSupported && function(config3) {
+var xhr_default = isXHRAdapterSupported && function(config4) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    let requestData = config3.data;
-    const requestHeaders = AxiosHeaders_default.from(config3.headers).normalize();
-    const responseType = config3.responseType;
+    let requestData = config4.data;
+    const requestHeaders = AxiosHeaders_default.from(config4.headers).normalize();
+    const responseType = config4.responseType;
     let onCanceled;
     function done() {
-      if (config3.cancelToken) {
-        config3.cancelToken.unsubscribe(onCanceled);
+      if (config4.cancelToken) {
+        config4.cancelToken.unsubscribe(onCanceled);
       }
-      if (config3.signal) {
-        config3.signal.removeEventListener("abort", onCanceled);
+      if (config4.signal) {
+        config4.signal.removeEventListener("abort", onCanceled);
       }
     }
     if (utils_default.isFormData(requestData) && (node_default.isStandardBrowserEnv || node_default.isStandardBrowserWebWorkerEnv)) {
       requestHeaders.setContentType(false);
     }
     let request = new XMLHttpRequest();
-    if (config3.auth) {
-      const username = config3.auth.username || "";
-      const password = config3.auth.password ? unescape(encodeURIComponent(config3.auth.password)) : "";
+    if (config4.auth) {
+      const username = config4.auth.username || "";
+      const password = config4.auth.password ? unescape(encodeURIComponent(config4.auth.password)) : "";
       requestHeaders.set("Authorization", "Basic " + btoa(username + ":" + password));
     }
-    const fullPath = buildFullPath(config3.baseURL, config3.url);
-    request.open(config3.method.toUpperCase(), buildURL(fullPath, config3.params, config3.paramsSerializer), true);
-    request.timeout = config3.timeout;
+    const fullPath = buildFullPath(config4.baseURL, config4.url);
+    request.open(config4.method.toUpperCase(), buildURL(fullPath, config4.params, config4.paramsSerializer), true);
+    request.timeout = config4.timeout;
     function onloadend() {
       if (!request) {
         return;
@@ -25932,7 +26081,7 @@ var xhr_default = isXHRAdapterSupported && function(config3) {
         status: request.status,
         statusText: request.statusText,
         headers: responseHeaders,
-        config: config3,
+        config: config4,
         request
       };
       settle(function _resolve(value) {
@@ -25961,31 +26110,31 @@ var xhr_default = isXHRAdapterSupported && function(config3) {
       if (!request) {
         return;
       }
-      reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config3, request));
+      reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config4, request));
       request = null;
     };
     request.onerror = function handleError() {
-      reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config3, request));
+      reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config4, request));
       request = null;
     };
     request.ontimeout = function handleTimeout() {
-      let timeoutErrorMessage = config3.timeout ? "timeout of " + config3.timeout + "ms exceeded" : "timeout exceeded";
-      const transitional2 = config3.transitional || transitional_default;
-      if (config3.timeoutErrorMessage) {
-        timeoutErrorMessage = config3.timeoutErrorMessage;
+      let timeoutErrorMessage = config4.timeout ? "timeout of " + config4.timeout + "ms exceeded" : "timeout exceeded";
+      const transitional2 = config4.transitional || transitional_default;
+      if (config4.timeoutErrorMessage) {
+        timeoutErrorMessage = config4.timeoutErrorMessage;
       }
       reject(new AxiosError_default(
         timeoutErrorMessage,
         transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-        config3,
+        config4,
         request
       ));
       request = null;
     };
     if (node_default.isStandardBrowserEnv) {
-      const xsrfValue = (config3.withCredentials || isURLSameOrigin_default(fullPath)) && config3.xsrfCookieName && cookies_default.read(config3.xsrfCookieName);
+      const xsrfValue = (config4.withCredentials || isURLSameOrigin_default(fullPath)) && config4.xsrfCookieName && cookies_default.read(config4.xsrfCookieName);
       if (xsrfValue) {
-        requestHeaders.set(config3.xsrfHeaderName, xsrfValue);
+        requestHeaders.set(config4.xsrfHeaderName, xsrfValue);
       }
     }
     requestData === void 0 && requestHeaders.setContentType(null);
@@ -25994,35 +26143,35 @@ var xhr_default = isXHRAdapterSupported && function(config3) {
         request.setRequestHeader(key, val);
       });
     }
-    if (!utils_default.isUndefined(config3.withCredentials)) {
-      request.withCredentials = !!config3.withCredentials;
+    if (!utils_default.isUndefined(config4.withCredentials)) {
+      request.withCredentials = !!config4.withCredentials;
     }
     if (responseType && responseType !== "json") {
-      request.responseType = config3.responseType;
+      request.responseType = config4.responseType;
     }
-    if (typeof config3.onDownloadProgress === "function") {
-      request.addEventListener("progress", progressEventReducer(config3.onDownloadProgress, true));
+    if (typeof config4.onDownloadProgress === "function") {
+      request.addEventListener("progress", progressEventReducer(config4.onDownloadProgress, true));
     }
-    if (typeof config3.onUploadProgress === "function" && request.upload) {
-      request.upload.addEventListener("progress", progressEventReducer(config3.onUploadProgress));
+    if (typeof config4.onUploadProgress === "function" && request.upload) {
+      request.upload.addEventListener("progress", progressEventReducer(config4.onUploadProgress));
     }
-    if (config3.cancelToken || config3.signal) {
+    if (config4.cancelToken || config4.signal) {
       onCanceled = (cancel) => {
         if (!request) {
           return;
         }
-        reject(!cancel || cancel.type ? new CanceledError_default(null, config3, request) : cancel);
+        reject(!cancel || cancel.type ? new CanceledError_default(null, config4, request) : cancel);
         request.abort();
         request = null;
       };
-      config3.cancelToken && config3.cancelToken.subscribe(onCanceled);
-      if (config3.signal) {
-        config3.signal.aborted ? onCanceled() : config3.signal.addEventListener("abort", onCanceled);
+      config4.cancelToken && config4.cancelToken.subscribe(onCanceled);
+      if (config4.signal) {
+        config4.signal.aborted ? onCanceled() : config4.signal.addEventListener("abort", onCanceled);
       }
     }
     const protocol = parseProtocol(fullPath);
     if (protocol && node_default.protocols.indexOf(protocol) === -1) {
-      reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config3));
+      reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config4));
       return;
     }
     request.send(requestData || null);
@@ -26075,41 +26224,41 @@ var adapters_default = {
 };
 
 // node_modules/axios/lib/core/dispatchRequest.js
-function throwIfCancellationRequested(config3) {
-  if (config3.cancelToken) {
-    config3.cancelToken.throwIfRequested();
+function throwIfCancellationRequested(config4) {
+  if (config4.cancelToken) {
+    config4.cancelToken.throwIfRequested();
   }
-  if (config3.signal && config3.signal.aborted) {
-    throw new CanceledError_default(null, config3);
+  if (config4.signal && config4.signal.aborted) {
+    throw new CanceledError_default(null, config4);
   }
 }
-function dispatchRequest(config3) {
-  throwIfCancellationRequested(config3);
-  config3.headers = AxiosHeaders_default.from(config3.headers);
-  config3.data = transformData.call(
-    config3,
-    config3.transformRequest
+function dispatchRequest(config4) {
+  throwIfCancellationRequested(config4);
+  config4.headers = AxiosHeaders_default.from(config4.headers);
+  config4.data = transformData.call(
+    config4,
+    config4.transformRequest
   );
-  if (["post", "put", "patch"].indexOf(config3.method) !== -1) {
-    config3.headers.setContentType("application/x-www-form-urlencoded", false);
+  if (["post", "put", "patch"].indexOf(config4.method) !== -1) {
+    config4.headers.setContentType("application/x-www-form-urlencoded", false);
   }
-  const adapter = adapters_default.getAdapter(config3.adapter || defaults_default.adapter);
-  return adapter(config3).then(function onAdapterResolution(response) {
-    throwIfCancellationRequested(config3);
+  const adapter = adapters_default.getAdapter(config4.adapter || defaults_default.adapter);
+  return adapter(config4).then(function onAdapterResolution(response) {
+    throwIfCancellationRequested(config4);
     response.data = transformData.call(
-      config3,
-      config3.transformResponse,
+      config4,
+      config4.transformResponse,
       response
     );
     response.headers = AxiosHeaders_default.from(response.headers);
     return response;
   }, function onAdapterRejection(reason) {
     if (!isCancel(reason)) {
-      throwIfCancellationRequested(config3);
+      throwIfCancellationRequested(config4);
       if (reason && reason.response) {
         reason.response.data = transformData.call(
-          config3,
-          config3.transformResponse,
+          config4,
+          config4.transformResponse,
           reason.response
         );
         reason.response.headers = AxiosHeaders_default.from(reason.response.headers);
@@ -26123,7 +26272,7 @@ function dispatchRequest(config3) {
 var headersToObject = (thing) => thing instanceof AxiosHeaders_default ? thing.toJSON() : thing;
 function mergeConfig(config1, config22) {
   config22 = config22 || {};
-  const config3 = {};
+  const config4 = {};
   function getMergedValue(target, source, caseless) {
     if (utils_default.isPlainObject(target) && utils_default.isPlainObject(source)) {
       return utils_default.merge.call({ caseless }, target, source);
@@ -26193,9 +26342,9 @@ function mergeConfig(config1, config22) {
   utils_default.forEach(Object.keys(config1).concat(Object.keys(config22)), function computeConfigValue(prop) {
     const merge2 = mergeMap[prop] || mergeDeepProperties;
     const configValue = merge2(config1[prop], config22[prop], prop);
-    utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config3[prop] = configValue);
+    utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config4[prop] = configValue);
   });
-  return config3;
+  return config4;
 }
 
 // node_modules/axios/lib/helpers/validator.js
@@ -26266,15 +26415,15 @@ var Axios = class {
       response: new InterceptorManager_default()
     };
   }
-  request(configOrUrl, config3) {
+  request(configOrUrl, config4) {
     if (typeof configOrUrl === "string") {
-      config3 = config3 || {};
-      config3.url = configOrUrl;
+      config4 = config4 || {};
+      config4.url = configOrUrl;
     } else {
-      config3 = configOrUrl || {};
+      config4 = configOrUrl || {};
     }
-    config3 = mergeConfig(this.defaults, config3);
-    const { transitional: transitional2, paramsSerializer, headers } = config3;
+    config4 = mergeConfig(this.defaults, config4);
+    const { transitional: transitional2, paramsSerializer, headers } = config4;
     if (transitional2 !== void 0) {
       validator_default.assertOptions(transitional2, {
         silentJSONParsing: validators2.transitional(validators2.boolean),
@@ -26288,11 +26437,11 @@ var Axios = class {
         serialize: validators2.function
       }, true);
     }
-    config3.method = (config3.method || this.defaults.method || "get").toLowerCase();
+    config4.method = (config4.method || this.defaults.method || "get").toLowerCase();
     let contextHeaders;
     contextHeaders = headers && utils_default.merge(
       headers.common,
-      headers[config3.method]
+      headers[config4.method]
     );
     contextHeaders && utils_default.forEach(
       ["delete", "get", "head", "post", "put", "patch", "common"],
@@ -26300,11 +26449,11 @@ var Axios = class {
         delete headers[method];
       }
     );
-    config3.headers = AxiosHeaders_default.concat(contextHeaders, headers);
+    config4.headers = AxiosHeaders_default.concat(contextHeaders, headers);
     const requestInterceptorChain = [];
     let synchronousRequestInterceptors = true;
     this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-      if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config3) === false) {
+      if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config4) === false) {
         return;
       }
       synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
@@ -26322,14 +26471,14 @@ var Axios = class {
       chain.unshift.apply(chain, requestInterceptorChain);
       chain.push.apply(chain, responseInterceptorChain);
       len = chain.length;
-      promise = Promise.resolve(config3);
+      promise = Promise.resolve(config4);
       while (i2 < len) {
         promise = promise.then(chain[i2++], chain[i2++]);
       }
       return promise;
     }
     len = requestInterceptorChain.length;
-    let newConfig = config3;
+    let newConfig = config4;
     i2 = 0;
     while (i2 < len) {
       const onFulfilled = requestInterceptorChain[i2++];
@@ -26353,25 +26502,25 @@ var Axios = class {
     }
     return promise;
   }
-  getUri(config3) {
-    config3 = mergeConfig(this.defaults, config3);
-    const fullPath = buildFullPath(config3.baseURL, config3.url);
-    return buildURL(fullPath, config3.params, config3.paramsSerializer);
+  getUri(config4) {
+    config4 = mergeConfig(this.defaults, config4);
+    const fullPath = buildFullPath(config4.baseURL, config4.url);
+    return buildURL(fullPath, config4.params, config4.paramsSerializer);
   }
 };
 utils_default.forEach(["delete", "get", "head", "options"], function forEachMethodNoData2(method) {
-  Axios.prototype[method] = function(url3, config3) {
-    return this.request(mergeConfig(config3 || {}, {
+  Axios.prototype[method] = function(url3, config4) {
+    return this.request(mergeConfig(config4 || {}, {
       method,
       url: url3,
-      data: (config3 || {}).data
+      data: (config4 || {}).data
     }));
   };
 });
 utils_default.forEach(["post", "put", "patch"], function forEachMethodWithData2(method) {
   function generateHTTPMethod(isForm) {
-    return function httpMethod(url3, data, config3) {
-      return this.request(mergeConfig(config3 || {}, {
+    return function httpMethod(url3, data, config4) {
+      return this.request(mergeConfig(config4 || {}, {
         method,
         headers: isForm ? {
           "Content-Type": "multipart/form-data"
@@ -26417,11 +26566,11 @@ var CancelToken = class {
       };
       return promise;
     };
-    executor(function cancel(message, config3, request) {
+    executor(function cancel(message, config4, request) {
       if (token.reason) {
         return;
       }
-      token.reason = new CanceledError_default(message, config3, request);
+      token.reason = new CanceledError_default(message, config4, request);
       resolvePromise(token.reason);
     });
   }
@@ -27399,6 +27548,8 @@ function getI18nLocal(value) {
 }
 
 // src/commands/config.ts
+var dotenv = __toESM(require_main(), 1);
+dotenv.config();
 var validateConfig = (key, condition, validationMessage) => {
   if (!condition) {
     ce(
@@ -27408,94 +27559,123 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OPENAI_API_KEY" /* OPENAI_API_KEY */](value) {
-    validateConfig("OPENAI_API_KEY" /* OPENAI_API_KEY */, value, "Cannot be empty");
+  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value) {
+    validateConfig("OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */, value, "Cannot be empty");
     validateConfig(
-      "OPENAI_API_KEY" /* OPENAI_API_KEY */,
+      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
       value.startsWith("sk-"),
       'Must start with "sk-"'
     );
     validateConfig(
-      "OPENAI_API_KEY" /* OPENAI_API_KEY */,
+      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
       value.length === 51,
       "Must be 51 characters long"
     );
     return value;
   },
-  ["description" /* description */](value) {
+  ["OCO_DESCRIPTION" /* OCO_DESCRIPTION */](value) {
     validateConfig(
-      "description" /* description */,
+      "OCO_DESCRIPTION" /* OCO_DESCRIPTION */,
       typeof value === "boolean",
       "Must be true or false"
     );
     return value;
   },
-  ["OPENAI_MAX_TOKENS" /* OPENAI_MAX_TOKENS */](value) {
+  ["OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */](value) {
     if (typeof value === "string") {
       value = parseInt(value);
       validateConfig(
-        "OPENAI_MAX_TOKENS" /* OPENAI_MAX_TOKENS */,
+        "OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */,
         !isNaN(value),
         "Must be a number"
       );
     }
     validateConfig(
-      "OPENAI_MAX_TOKENS" /* OPENAI_MAX_TOKENS */,
+      "OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */,
       typeof value === "number",
       "Must be a number"
     );
     return value;
   },
-  ["emoji" /* emoji */](value) {
+  ["OCO_EMOJI" /* OCO_EMOJI */](value) {
     validateConfig(
-      "emoji" /* emoji */,
+      "OCO_EMOJI" /* OCO_EMOJI */,
       typeof value === "boolean",
       "Must be true or false"
     );
     return value;
   },
-  ["language" /* language */](value) {
+  ["OCO_LANGUAGE" /* OCO_LANGUAGE */](value) {
     validateConfig(
-      "language" /* language */,
+      "OCO_LANGUAGE" /* OCO_LANGUAGE */,
       getI18nLocal(value),
       `${value} is not supported yet`
     );
     return getI18nLocal(value);
   },
-  ["OPENAI_BASE_PATH" /* OPENAI_BASE_PATH */](value) {
+  ["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */](value) {
     validateConfig(
-      "OPENAI_BASE_PATH" /* OPENAI_BASE_PATH */,
+      "OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */,
       typeof value === "string",
       "Must be string"
     );
     return value;
   },
-  ["model" /* model */](value) {
+  ["OCO_MODEL" /* OCO_MODEL */](value) {
     validateConfig(
-      "OPENAI_BASE_PATH" /* OPENAI_BASE_PATH */,
+      "OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */,
       value === "gpt-3.5-turbo" || value === "gpt-4",
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
+    );
+    return value;
+  },
+  ["OCO_EXCLUDE" /* OCO_EXCLUDE */](value) {
+    validateConfig(
+      "OCO_EXCLUDE" /* OCO_EXCLUDE */,
+      typeof value === "string",
+      `${value} is not a valid regexp`
     );
     return value;
   }
 };
 var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var getConfig = () => {
+  const configFromEnv = {
+    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
+    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS,
+    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
+    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION,
+    OCO_EMOJI: process.env.OCO_EMOJI,
+    OCO_MODEL: process.env.OCO_MODEL,
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
+    OCO_EXCLUDE: process.env.OCO_EXCLUDE
+  };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
-    return null;
+    return configFromEnv;
   const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
-  const config3 = (0, import_ini.parse)(configFile);
-  for (const configKey of Object.keys(config3)) {
-    const validValue = configValidators[configKey](
-      config3[configKey]
-    );
-    config3[configKey] = validValue;
+  const config4 = (0, import_ini.parse)(configFile);
+  for (const configKey of Object.keys(config4)) {
+    try {
+      const validator = configValidators[configKey];
+      const validValue = validator(
+        config4[configKey] ?? configFromEnv[configKey]
+      );
+      config4[configKey] = validValue;
+    } catch (error) {
+      ce(
+        `'${configKey}' name is invalid, it should be either 'OCO_${configKey.toUpperCase()}' or it doesn't exist.`
+      );
+      ce(
+        `Manually fix the '.env' file or global '~/.opencommit' config file.`
+      );
+      process.exit(1);
+    }
   }
-  return config3;
+  return config4;
 };
 var setConfig = (keyValues) => {
-  const config3 = getConfig() || {};
+  const config4 = getConfig() || {};
   for (const [configKey, configValue] of keyValues) {
     if (!configValidators.hasOwnProperty(configKey)) {
       throw new Error(`Unsupported config key: ${configKey}`);
@@ -27507,9 +27687,9 @@ var setConfig = (keyValues) => {
       parsedConfigValue = configValue;
     }
     const validValue = configValidators[configKey](parsedConfigValue);
-    config3[configKey] = validValue;
+    config4[configKey] = validValue;
   }
-  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config3), "utf8");
+  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config4), "utf8");
   ce(`${source_default.green("\u2714")} Config successfully set`);
 };
 var configCommand = G3(
@@ -27522,9 +27702,9 @@ var configCommand = G3(
     try {
       const { mode: mode2, keyValues } = argv._;
       if (mode2 === "get" /* get */) {
-        const config3 = getConfig() || {};
+        const config4 = getConfig() || {};
         for (const key of keyValues) {
-          ce(`${key}=${config3[key]}`);
+          ce(`${key}=${config4[key]}`);
         }
       } else if (mode2 === "set" /* set */) {
         await setConfig(
@@ -27543,10 +27723,10 @@ var configCommand = G3(
 );
 
 // src/api.ts
-var config = getConfig();
-var maxTokens = config?.OPENAI_MAX_TOKENS;
-var basePath = config?.OPENAI_BASE_PATH;
-var apiKey = config?.OPENAI_API_KEY;
+var config2 = getConfig();
+var maxTokens = config2?.OCO_OPENAI_MAX_TOKENS;
+var basePath = config2?.OCO_OPENAI_BASE_PATH;
+var apiKey = config2?.OCO_OPENAI_API_KEY;
 var [command, mode] = process.argv.slice(2);
 if (!apiKey && command !== "config" && mode !== "set" /* set */) {
   ae("opencommit");
@@ -27558,7 +27738,7 @@ if (!apiKey && command !== "config" && mode !== "set" /* set */) {
   );
   process.exit(1);
 }
-var MODEL = config?.model || "gpt-3.5-turbo";
+var MODEL = config2?.OCO_MODEL || "gpt-3.5-turbo";
 var OpenAi = class {
   openAiApiConfiguration = new import_openai.Configuration({
     apiKey
@@ -27577,7 +27757,7 @@ var OpenAi = class {
         messages,
         temperature: 0,
         top_p: 0.1,
-        max_tokens: maxTokens ?? 196
+        max_tokens: maxTokens ?? 500
       });
       const message = data.choices[0].message;
       return message?.content;
@@ -27632,14 +27812,14 @@ function mergeDiffs(arr, maxStringLength) {
 }
 
 // src/generateCommitMessageFromGitDiff.ts
-var config2 = getConfig();
-var translation = i18n[config2?.language || "en"];
+var config3 = getConfig();
+var translation = i18n[config3?.OCO_LANGUAGE || "en"];
 var INIT_MESSAGES_PROMPT = [
   {
     role: import_openai2.ChatCompletionRequestMessageRoleEnum.System,
     content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
-${config2?.emoji ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
-${config2?.description ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
+${config3?.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
+${config3?.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Lines must not be longer than 74 characters. Use ${translation.localLanguage} to answer.`
   },
   {
@@ -27671,9 +27851,9 @@ app.use((_, res, next) => {
   },
   {
     role: import_openai2.ChatCompletionRequestMessageRoleEnum.Assistant,
-    content: `${config2?.emoji ? "\u{1F41B} " : ""}${translation.commitFix}
-${config2?.emoji ? "\u2728 " : ""}${translation.commitFeat}
-${config2?.description ? translation.commitDescription : ""}`
+    content: `${config3?.OCO_EMOJI ? "\u{1F41B} " : ""}${translation.commitFix}
+${config3?.OCO_EMOJI ? "\u2728 " : ""}${translation.commitFeat}
+${config3?.OCO_DESCRIPTION ? translation.commitDescription : ""}`
   }
 ];
 var generateCommitMessageChatCompletionPrompt = (diff) => {
