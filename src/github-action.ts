@@ -1,7 +1,7 @@
 import core from '@actions/core';
 import github from '@actions/github';
 import { execa } from 'execa';
-import { intro, outro, spinner } from '@clack/prompts';
+import { intro, outro } from '@clack/prompts';
 import { PullRequestEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
 
@@ -54,10 +54,7 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
     return;
   }
 
-  const commitSpinner = spinner();
-  commitSpinner.start(
-    `Found ${commitsToImprove.length} commits with a message "oc", improving`
-  );
+  outro(`Found ${commitsToImprove.length} commits, improving`);
 
   const commitShas = commitsToImprove.map((commit) => commit.sha);
   const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
@@ -75,7 +72,14 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
     });
 
   outro('Starting interactive rebase: `$ rebase -i`.');
-  await execa('git', ['rebase', '-i', commitsToImprove.join(' ').trim()]);
+  await execa('git', [
+    'rebase',
+    '-i',
+    commitsToImprove
+      .map((commit) => commit.sha)
+      .join(' ')
+      .trim()
+  ]);
 
   for (const commit of commitsToImprove) {
     try {
@@ -88,7 +92,7 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
     } catch (error) {
       throw error;
     } finally {
-      commitSpinner.stop(
+      outro(
         '📝 Commit messages improved with an interactive rebase: `$ rebase -i`'
       );
     }
@@ -122,7 +126,7 @@ async function run(retries = 3) {
       });
 
       const commits = commitsResponse.data;
-      core.info('testing core.info');
+
       outro('testing outro');
 
       await improveCommitMessagesWithRebase(commits);
