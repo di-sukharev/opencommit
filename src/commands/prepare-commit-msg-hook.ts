@@ -17,6 +17,8 @@ export const prepareCommitMessageHook = async (
       );
     }
 
+    console.log({ commitSource });
+
     if (commitSource) return;
 
     if (isStageAllFlag) {

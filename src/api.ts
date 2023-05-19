@@ -11,9 +11,9 @@ import { CONFIG_MODES, getConfig } from './commands/config';
 
 const config = getConfig();
 
-let apiKey = config?.OPENAI_API_KEY;
-let basePath = config?.OPENAI_BASE_PATH;
 let maxTokens = config?.OPENAI_MAX_TOKENS;
+let basePath = config?.OPENAI_BASE_PATH;
+let apiKey = config?.OPENAI_API_KEY;
 
 const [command, mode] = process.argv.slice(2);
 
