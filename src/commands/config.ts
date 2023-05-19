@@ -67,7 +67,7 @@ export const configValidators = {
   [CONFIG_KEYS.OPENAI_MAX_TOKENS](value: any) {
     validateConfig(
       CONFIG_KEYS.OPENAI_MAX_TOKENS,
-      isNaN(+value),
+      typeof value === 'number' && !isNaN(+value),
       'Must be a number'
     );
 
