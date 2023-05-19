@@ -71,7 +71,7 @@ Interactive rebase (`rebase -i`) changes commit SHA, so commit history in remote
 3. Set the key to OpenCommit config:
 
    ```sh
-   opencommit config set OPENAI_API_KEY=<your_api_key>
+   opencommit config set OCO_OPENAI_API_KEY=<your_api_key>
    ```
 
    Your api key is stored locally in `~/.opencommit` config file.
@@ -92,7 +92,43 @@ git add <files...>
 oc
 ```
 
-## Features
+## Configuration
+
+### Local per repo configuration
+
+Create an `.env` file and add OpenCommit config variables there like this:
+
+```env
+OCO_OPENAI_API_KEY=<your openAI API token>
+OCO_OPENAI_MAX_TOKENS=<max response tokens from openAI API>
+OCO_OPENAI_BASE_PATH=<may be used to set proxy path to openAI api>
+OCO_DESCRIPTION=<postface a message with ~3 sentences description>
+OCO_EMOJI=<add GitMoji>
+OCO_MODEL=<either gpt-3.5-turbo or gpt-4>
+OCO_LANGUAGE=<locale, scroll to the bottom to see options>
+```
+
+### Global config for all repos
+
+Local config still has more priority as Global config, but you may set `OCO_MODEL` and `OCO_LOCALE` globally and set local configs for `OCO_EMOJI` and `OCO_DESCRIPTION` per repo which is more convenient.
+
+Simply run any of the variable above like this:
+
+```sh
+oc config set OCO_OPENAI_API_KEY=gpt-4
+```
+
+Configure [GitMoji](https://gitmoji.dev/) to preface a message.
+
+```sh
+oc config set OCO_EMOJI=true
+```
+
+To remove preface emoji:
+
+```sh
+oc config set OCO_EMOJI=false
+```
 
 ### Switch to GPT-4
 
@@ -101,73 +137,25 @@ By default OpenCommit uses GPT-3.5-turbo (ChatGPT).
 You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 
 ```sh
-oc config set model=gpt-4
+oc config set OCO_MODEL=gpt-4
 ```
 
-Make sure you do lowercase `gpt-4`.
+Make sure you do lowercase `gpt-4` and you have API access to the 4th model. Even if you have ChatGPT+ it doesn't necessarily mean that you have API access to GPT-4.
 
-### Preface commits with emoji 🤠
+## Locale configuration
 
-[GitMoji](https://gitmoji.dev/) convention is used.
-
-To add emoji:
-
-```sh
-oc config set emoji=true
-```
-
-To remove emoji:
-
-```sh
-oc config set emoji=false
-```
-
-### Postface commits with descriptions of changes
-
-To add descriptions:
-
-```sh
-oc config set description=true
-```
-
-To remove description:
-
-```sh
-oc config set description=false
-```
-
-### Configure openAI maxTokens param
-
-Default value for `maxTokens` is 196, sometimes you can get 400 error if request+response exceeds `maxToken` parameter.
-
-so you can increase it:
-
-```sh
-oc config set OPENAI_MAX_TOKENS=<number>
-```
-
-### Configure BASE_PATH for openAI api
-
-if you want to call GPT via proxy — you can change `BASE_PATH` parameter:
-
-```sh
-oc config set OPENAI_BASE_PATH=<string>
-```
-
-### Internationalization support
-
-To specify the language used to generate commit messages:
+To globally specify the language used to generate commit messages:
 
 ```sh
 # de, German ,Deutsch
-oc config set language=de
-oc config set language=German
-oc config set language=Deutsch
+oc config set OCO_LANGUAGE=de
+oc config set OCO_LANGUAGE=German
+oc config set OCO_LANGUAGE=Deutsch
 
 # fr, French, française
-oc config set language=fr
-oc config set language=French
-oc config set language=française
+oc config set OCO_LANGUAGE=fr
+oc config set OCO_LANGUAGE=French
+oc config set OCO_LANGUAGE=française
 ```
 
 The default language set is **English**  
@@ -200,7 +188,7 @@ This is useful for preventing opencommit from uploading artifacts and large file
 
 By default, opencommit ignores files matching: `*-lock.*` and `*.lock`
 
-## Git hook
+## Git hook (KILLER FEATURE)
 
 You can set OpenCommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with you IDE Source Control and allows you edit the message before commit.
 

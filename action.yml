@@ -8,5 +8,5 @@ inputs:
     required: true
 
 runs:
-  using: 'node12'
+  using: 'node18'
   main: 'out/github-action.cjs'

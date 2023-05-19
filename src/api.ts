@@ -11,9 +11,9 @@ import { CONFIG_MODES, getConfig } from './commands/config';
 
 const config = getConfig();
 
-let maxTokens = config?.OPENAI_MAX_TOKENS;
-let basePath = config?.OPENAI_BASE_PATH;
-let apiKey = config?.OPENAI_API_KEY;
+let maxTokens = config?.OCO_OPENAI_MAX_TOKENS;
+let basePath = config?.OCO_OPENAI_BASE_PATH;
+let apiKey = config?.OCO_OPENAI_API_KEY;
 
 const [command, mode] = process.argv.slice(2);
 
@@ -30,7 +30,7 @@ if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
   process.exit(1);
 }
 
-const MODEL = config?.model || 'gpt-3.5-turbo';
+const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
 
 class OpenAi {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
@@ -54,7 +54,7 @@ class OpenAi {
         messages,
         temperature: 0,
         top_p: 0.1,
-        max_tokens: maxTokens ?? 196
+        max_tokens: maxTokens ?? 500
       });
 
       const message = data.choices[0].message;

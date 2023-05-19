@@ -122,6 +122,8 @@ ${chalk.grey('——————————————————')}`
       }
     }
   } catch (error) {
+    commitSpinner.stop('📝 Commit message generated');
+
     const err = error as Error;
     outro(`${chalk.red('✖')} ${err?.message || err}`);
     process.exit(1);
