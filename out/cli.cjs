@@ -21720,7 +21720,8 @@ var OpenAi = class {
       const message = data.choices[0].message;
       return message?.content;
     } catch (error) {
-      ce(`${source_default.red("\u2716")} ${error}`);
+      const err = error;
+      ce(`${source_default.red("\u2716")} ${err?.message || err}`);
       if (axios_default.isAxiosError(error) && error.response?.status === 401) {
         const openAiError = error.response.data.error;
         if (openAiError?.message)

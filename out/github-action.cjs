@@ -27723,7 +27723,8 @@ var OpenAi = class {
       const message = data.choices[0].message;
       return message?.content;
     } catch (error) {
-      ce(`${source_default.red("\u2716")} ${error}`);
+      const err = error;
+      ce(`${source_default.red("\u2716")} ${err?.message || err}`);
       if (axios_default.isAxiosError(error) && error.response?.status === 401) {
         const openAiError = error.response.data.error;
         if (openAiError?.message)
@@ -27929,12 +27930,13 @@ async function improveCommitMessagesWithRebase(commits) {
   });
   ce("Done.");
   ce("Improving commit messages by diffs.");
-  const improvePromises = commitDiffs.map((commit) => {
-    console.log(124168723, { commit });
-    return generateCommitMessageByDiff(commit.diff);
-  });
+  const improvePromises = commitDiffs.map(
+    (commit) => generateCommitMessageByDiff(commit.diff)
+  );
+  console.log({ commitDiffs });
   const improvedMessagesBySha = await Promise.all(improvePromises).then((results) => {
     return results.reduce((acc, improvedMsg, i2) => {
+      console.log({ i: i2, sha: commitDiffs[i2].sha, improvedMsg });
       acc[commitDiffs[i2].sha] = improvedMsg;
       return acc;
     }, {});
@@ -27950,6 +27952,7 @@ async function improveCommitMessagesWithRebase(commits) {
   for (const commit of commitsToImprove) {
     try {
       const commitDiff = improvedMessagesBySha[commit.sha];
+      console.log({ commitDiff });
       await execa("git", ["commit", "--amend", "-m", commitDiff]);
       await execa("git", ["rebase", "--continue"]);
     } catch (error) {
