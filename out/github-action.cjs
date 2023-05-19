@@ -27933,11 +27933,7 @@ async function improveCommitMessagesWithRebase(commits) {
     throw error;
   });
   ce("Starting interactive rebase: `$ rebase -i`.");
-  await execa("git", [
-    "rebase",
-    "-i",
-    commitsToImprove.map((commit) => commit.sha).join(" ").trim()
-  ]);
+  await execa("git", ["rebase", "-i", commitsToImprove[0].parents[0].sha]);
   for (const commit of commitsToImprove) {
     try {
       const commitDiff = commitDiffBySha[commit.sha];
