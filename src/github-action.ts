@@ -137,19 +137,16 @@ async function improveCommitMessagesWithRebase({
 
   outro('Done.');
 
-  outro(`Starting interactive rebase: "$ rebase -i origin/${base}".`);
+  outro(
+    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}".`
+  );
 
   // fetch all commits inside the process
   await exec.exec('git', ['fetch', '--all']);
 
-  await exec.exec('git', ['checkout', source]);
-  await exec.exec('git', [
-    'merge',
-    '--allow-unrelated-histories',
-    `origin/${base}`
-  ]);
+  // await exec.exec('git', ['checkout', source]);
 
-  await exec.exec('git', ['rebase', '-i', `origin/${base}`], {
+  await exec.exec('git', ['rebase', '-i', commitsToImprove[0].sha], {
     env: {
       GIT_SEQUENCE_EDITOR: 'sed -i -e \'s/^pick/reword/g\' "$1"',
       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
@@ -197,9 +194,9 @@ async function run(retries = 3) {
 
   await exec.exec('git', ['log', '--oneline']);
 
-  await exec.exec('git', ['commit', '--amend', '-m', 'NEW_DAT_MSG']);
+  // await exec.exec('git', ['commit', '--amend', '-m', 'NEW_DAT_MSG']);
 
-  await exec.exec('git', ['push', '--force']);
+  // await exec.exec('git', ['push', '--force']);
 
   try {
     if (github.context.eventName === 'pull_request') {

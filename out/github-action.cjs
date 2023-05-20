@@ -27273,15 +27273,11 @@ async function improveCommitMessagesWithRebase({
   const improvedMessagesBySha = await improveMessagesInChunks();
   console.log({ improvedMessagesBySha });
   ce("Done.");
-  ce(`Starting interactive rebase: "$ rebase -i origin/${base}".`);
+  ce(
+    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}".`
+  );
   await import_exec.default.exec("git", ["fetch", "--all"]);
-  await import_exec.default.exec("git", ["checkout", source]);
-  await import_exec.default.exec("git", [
-    "merge",
-    "--allow-unrelated-histories",
-    `origin/${base}`
-  ]);
-  await import_exec.default.exec("git", ["rebase", "-i", `origin/${base}`], {
+  await import_exec.default.exec("git", ["rebase", "-i", commitsToImprove[0].sha], {
     env: {
       GIT_SEQUENCE_EDITOR: `sed -i -e 's/^pick/reword/g' "$1"`,
       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,
@@ -27313,8 +27309,6 @@ async function run(retries = 3) {
   await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["log", "--oneline"]);
-  await import_exec.default.exec("git", ["commit", "--amend", "-m", "NEW_DAT_MSG"]);
-  await import_exec.default.exec("git", ["push", "--force"]);
   try {
     if (import_github.default.context.eventName === "pull_request") {
       const baseBranch = import_github.default.context.payload.pull_request?.base.ref;
