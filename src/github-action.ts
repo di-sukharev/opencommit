@@ -128,7 +128,9 @@ async function improveCommitMessagesWithRebase(
   outro(`Current branch: ${stdout}`);
 
   outro(
-    `Starting interactive rebase: "$ rebase -i HEAD~${commitsToImprove.length}".`
+    `Starting interactive rebase: "$ rebase -i HEAD~${
+      commitsToImprove.length - 5
+    }".`
   );
 
   await execa('git', ['rebase', '-i', `HEAD~${commitsToImprove.length}`]);
