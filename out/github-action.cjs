@@ -27979,7 +27979,7 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
   ce(
     `Starting interactive rebase: "$ rebase -i HEAD~${commitsToImprove.length - 5}".`
   );
-  await execa("git", ["rebase", "-i", `HEAD~${commitsToImprove.length}`]);
+  await execa("git", ["rebase", "-i", `HEAD~${commitsToImprove.length - 5}`]);
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];

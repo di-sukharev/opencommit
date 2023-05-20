@@ -133,7 +133,7 @@ async function improveCommitMessagesWithRebase(
     }".`
   );
 
-  await execa('git', ['rebase', '-i', `HEAD~${commitsToImprove.length}`]);
+  await execa('git', ['rebase', '-i', `HEAD~${commitsToImprove.length - 5}`]);
 
   for (const commit of commitsToImprove) {
     try {
