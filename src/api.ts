@@ -11,6 +11,8 @@ import { CONFIG_MODES, getConfig } from './commands/config';
 
 const config = getConfig();
 
+console.log({ config });
+
 let maxTokens = config?.OCO_OPENAI_MAX_TOKENS;
 let basePath = config?.OCO_OPENAI_BASE_PATH;
 let apiKey = config?.OCO_OPENAI_API_KEY;
@@ -21,7 +23,7 @@ if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
   intro('opencommit');
 
   outro(
-    'OPENAI_API_KEY is not set, please run `oc config set OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`'
+    'OCO_OPENAI_API_KEY is not set, please run `oc config set OCO_OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`'
   );
   outro(
     'For help look into README https://github.com/di-sukharev/opencommit#setup'

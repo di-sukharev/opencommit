@@ -27685,6 +27685,7 @@ var configCommand = G3(
 
 // src/api.ts
 var config2 = getConfig();
+console.log({ config: config2 });
 var maxTokens = config2?.OCO_OPENAI_MAX_TOKENS;
 var basePath = config2?.OCO_OPENAI_BASE_PATH;
 var apiKey = config2?.OCO_OPENAI_API_KEY;
@@ -27692,7 +27693,7 @@ var [command, mode] = process.argv.slice(2);
 if (!apiKey && command !== "config" && mode !== "set" /* set */) {
   ae("opencommit");
   ce(
-    "OPENAI_API_KEY is not set, please run `oc config set OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`"
+    "OCO_OPENAI_API_KEY is not set, please run `oc config set OCO_OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`"
   );
   ce(
     "For help look into README https://github.com/di-sukharev/opencommit#setup"
