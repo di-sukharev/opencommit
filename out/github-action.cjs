@@ -27282,19 +27282,24 @@ async function improveCommitMessagesWithRebase({
   ]);
   await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
+  await import_exec.default.exec("git", ["checkout", source]);
+  await import_exec.default.exec("git", ["rebase", "-i", `${commitsToImprove[0].sha}^`], {
+    env: {
+      GIT_SEQUENCE_EDITOR: `sed -i -e 's/^pick/reword/g' "$GIT_SEQUENCE_EDITOR"`,
+      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,
+      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+    }
+  });
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
-      await import_exec.default.exec("git", ["checkout", commit.sha]);
       await import_exec.default.exec("git", ["commit", "--amend", "-m", improvedMessage]);
-      ce("Commit improved \u{1F31E}");
+      await import_exec.default.exec("git", ["rebase", "--continue"]);
+      ce(`SHA: ${commit.sha} commit improved \u{1F31E}`);
     } catch (error) {
       throw error;
     }
   }
-  const lastCommit = commits[0];
-  await import_exec.default.exec("git", ["checkout", source]);
-  await import_exec.default.exec("git", ["rebase", lastCommit.sha]);
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["push", "origin", `+${source}`]);
   ce("Done \u23F1\uFE0F");

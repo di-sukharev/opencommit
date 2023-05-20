@@ -150,27 +150,33 @@ async function improveCommitMessagesWithRebase({
   // fetch all commits inside the process
   await exec.exec('git', ['fetch', '--all']);
 
+  await exec.exec('git', ['checkout', source]);
+
+  await exec.exec('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`], {
+    env: {
+      GIT_SEQUENCE_EDITOR:
+        'sed -i -e \'s/^pick/reword/g\' "$GIT_SEQUENCE_EDITOR"',
+      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
+      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+    }
+  });
+
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
-      // Checkout the commit
-      await exec.exec('git', ['checkout', commit.sha]);
-
-      // Amend the commit message
       await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
+      await exec.exec('git', ['rebase', '--continue']);
 
-      outro('Commit improved 🌞');
-      // await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
-      // await exec.exec('git', ['rebase', '--continue']);
+      outro(`SHA: ${commit.sha} commit improved 🌞`);
     } catch (error) {
       throw error;
     }
   }
 
-  // Once all commits have been amended, you'll need to rebase the original branch onto the last amended commit
-  const lastCommit = commits[0];
-  await exec.exec('git', ['checkout', source]);
-  await exec.exec('git', ['rebase', lastCommit.sha]);
+  // // Once all commits have been amended, you'll need to rebase the original branch onto the last amended commit
+  // const lastCommit = commits[0];
+  // await exec.exec('git', ['checkout', source]);
+  // await exec.exec('git', ['rebase', lastCommit.sha]);
 
   outro('Force pushing interactively rebased commits into remote origin.');
 
