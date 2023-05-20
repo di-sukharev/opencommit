@@ -6,6 +6,7 @@ import { PullRequestEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
 import { sleep } from './utils/sleep';
 import { randomIntFromInterval } from './utils/randomIntFromInterval';
+import { unlinkSync, writeFileSync } from 'fs';
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -156,13 +157,29 @@ async function improveCommitMessagesWithRebase({
   await exec.exec('git', ['fetch', '--all']);
   await exec.exec('git', ['pull']);
 
-  await exec.exec('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`], {
-    env: {
-      GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
-      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
-      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  commitsToImprove.forEach((commit) =>
+    writeFileSync(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha])
+  );
+
+  await exec.exec(
+    'git',
+    [
+      'rebase',
+      '-i',
+      `${commitsToImprove[0].sha}^`,
+      '--exec',
+      'git commit --amend -F $(git rev-parse HEAD).txt'
+    ],
+    {
+      env: {
+        GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
+        GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
+        GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+      }
     }
-  });
+  );
+
+  commitsToImprove.forEach((commit) => unlinkSync(`./${commit.sha}.txt`));
 
   // async function changeCommitMessages(
   //   commitsToUpdate: DiffAndImprovedMessage[]
@@ -191,17 +208,17 @@ async function improveCommitMessagesWithRebase({
 
   // await changeCommitMessages(diffsAndImprovedMessages);
 
-  for (const commit of commitsToImprove) {
-    try {
-      const improvedMessage = improvedMessagesBySha[commit.sha];
-      outro(`SHA: ${commit.sha} improving...`);
-      await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
-      await exec.exec('git', ['rebase', '--continue']);
-      outro(`SHA: ${commit.sha} commit improved.`);
-    } catch (error) {
-      throw error;
-    }
-  }
+  // for (const commit of commitsToImprove) {
+  //   try {
+  //     const improvedMessage = improvedMessagesBySha[commit.sha];
+  //     outro(`SHA: ${commit.sha} improving...`);
+  //     await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
+  //     await exec.exec('git', ['rebase', '--continue']);
+  //     outro(`SHA: ${commit.sha} commit improved.`);
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
   // // Once all commits have been amended, you'll need to rebase the original branch onto the last amended commit
   // const lastCommit = commits[0];

@@ -27190,6 +27190,7 @@ function randomIntFromInterval(min, max) {
 }
 
 // src/github-action.ts
+var import_fs2 = require("fs");
 var GITHUB_TOKEN = import_core3.default.getInput("GITHUB_TOKEN");
 var pattern = import_core3.default.getInput("pattern");
 var octokit = import_github.default.getOctokit(GITHUB_TOKEN);
@@ -27279,24 +27280,27 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["pull"]);
-  await import_exec.default.exec("git", ["rebase", "-i", `${commitsToImprove[0].sha}^`], {
-    env: {
-      GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
-      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,
-      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  commitsToImprove.forEach(
+    (commit) => (0, import_fs2.writeFileSync)(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha])
+  );
+  await import_exec.default.exec(
+    "git",
+    [
+      "rebase",
+      "-i",
+      `${commitsToImprove[0].sha}^`,
+      "--exec",
+      "git commit --amend -F $(git rev-parse HEAD).txt"
+    ],
+    {
+      env: {
+        GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
+        GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,
+        GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+      }
     }
-  });
-  for (const commit of commitsToImprove) {
-    try {
-      const improvedMessage = improvedMessagesBySha[commit.sha];
-      ce(`SHA: ${commit.sha} improving...`);
-      await import_exec.default.exec("git", ["commit", "--amend", "-m", improvedMessage]);
-      await import_exec.default.exec("git", ["rebase", "--continue"]);
-      ce(`SHA: ${commit.sha} commit improved.`);
-    } catch (error) {
-      throw error;
-    }
-  }
+  );
+  commitsToImprove.forEach((commit) => (0, import_fs2.unlinkSync)(`./${commit.sha}.txt`));
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["push", "origin", `+${source}`]);
   ce("Done \u23F1\uFE0F");
