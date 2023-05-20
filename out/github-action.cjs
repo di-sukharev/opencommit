@@ -27936,7 +27936,7 @@ async function improveCommitMessagesWithRebase(commits) {
     (commit) => generateCommitMessageByDiff(commit.diff)
   );
   async function improveMessagesInChunks() {
-    const chunkSize = improvePromises.length % 2 === 0 ? 2 : 3;
+    const chunkSize = improvePromises.length % 2 === 0 ? 4 : 3;
     let improvedMessagesBySha2 = {};
     for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
       console.log({ i: i2, improvedMessagesBySha: improvedMessagesBySha2 });
