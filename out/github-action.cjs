@@ -27191,6 +27191,9 @@ function randomIntFromInterval(min, max) {
 
 // src/github-action.ts
 var import_fs2 = require("fs");
+var import_util3 = require("util");
+var import_child_process = require("child_process");
+var execPromise = (0, import_util3.promisify)(import_child_process.exec);
 var GITHUB_TOKEN = import_core3.default.getInput("GITHUB_TOKEN");
 var pattern = import_core3.default.getInput("pattern");
 var octokit = import_github.default.getOctokit(GITHUB_TOKEN);
@@ -27284,9 +27287,8 @@ async function improveCommitMessagesWithRebase({
     ce(`creating -F file for ${commit.sha}`);
     (0, import_fs2.writeFileSync)(`./commit-${i2}.txt`, improvedMessagesBySha[commit.sha]);
   });
-  const done = await import_exec.default.exec(
-    `echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(($(cat count.txt) + 1)) > count.txt"`,
-    [],
+  await execPromise(
+    `echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(( $(cat count.txt) + 1 )) > count.txt"`,
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
@@ -27295,7 +27297,6 @@ async function improveCommitMessagesWithRebase({
       }
     }
   );
-  ce(`!!!done: ${done}`);
   commitsToImprove.forEach((_commit, i2) => (0, import_fs2.unlinkSync)(`./commit-${i2}.txt`));
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["status"]);

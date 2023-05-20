@@ -7,6 +7,9 @@ import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff'
 import { sleep } from './utils/sleep';
 import { randomIntFromInterval } from './utils/randomIntFromInterval';
 import { unlinkSync, writeFileSync } from 'fs';
+import { promisify } from 'util';
+import { exec as cpExec } from 'child_process';
+const execPromise = promisify(cpExec);
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -163,9 +166,20 @@ async function improveCommitMessagesWithRebase({
   });
   // echo 0 > count.txt && git rebase <sha>^ --exec "git commit --amend -F \$(cat count.txt).txt && echo \$((\$(cat count.txt) + 1)) > count.txt"
 
-  const done = await exec.exec(
-    `echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(($(cat count.txt) + 1)) > count.txt"`,
-    [],
+  // const done = await exec.exec(
+  //   `echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(($(cat count.txt) + 1)) > count.txt"`,
+  //   [],
+  //   {
+  //     env: {
+  //       GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
+  //       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
+  //       GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  //     }
+  //   }
+  // );
+
+  await execPromise(
+    `echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(( $(cat count.txt) + 1 )) > count.txt"`,
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
@@ -192,7 +206,7 @@ async function improveCommitMessagesWithRebase({
   //   }
   // );
 
-  outro(`!!!done: ${done}`);
+  // outro(`!!!done: ${done}`);
 
   commitsToImprove.forEach((_commit, i) => unlinkSync(`./commit-${i}.txt`));
 
