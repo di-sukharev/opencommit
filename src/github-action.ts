@@ -252,8 +252,10 @@ async function improveCommitMessagesWithRebase({
 
   outro('Force pushing interactively rebased commits into remote origin.');
 
+  await exec.exec('git', ['status']);
+
   // Force push the rebased commits
-  await exec.exec('git', ['push', 'origin', `+${source}`]);
+  await exec.exec('git', ['push', 'origin', `--force`]);
 
   outro('Done ⏱️');
 }
