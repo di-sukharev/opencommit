@@ -199,7 +199,7 @@ async function run(retries = 3) {
 
   await exec.exec('git', ['commit', '--amend', '-m', 'NEW_DAT_MSG']);
 
-  await exec.exec('git', ['push', 'origin/master', '--force']);
+  await exec.exec('git', ['push', '--force']);
 
   try {
     if (github.context.eventName === 'pull_request') {
