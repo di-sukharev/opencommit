@@ -119,7 +119,8 @@ async function improveCommitMessagesWithRebase({
         await sleep(sleepFor);
       } catch (error) {
         outro(error as string);
-        outro('Retrying');
+        outro('Retrying after sleeping for 5s');
+        await sleep(5000);
         step -= chunkSize;
       }
     }

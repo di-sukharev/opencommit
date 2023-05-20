@@ -27971,7 +27971,8 @@ async function improveCommitMessagesWithRebase({
         await sleep(sleepFor);
       } catch (error) {
         ce(error);
-        ce("Retrying");
+        ce("Retrying after sleeping for 5s");
+        await sleep(5e3);
         step -= chunkSize;
       }
     }
