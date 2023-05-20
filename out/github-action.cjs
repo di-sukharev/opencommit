@@ -27937,7 +27937,7 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
     ce("Done.");
   }
   async function improveMessagesInChunks() {
-    const chunkSize = diffs.length % 2 === 0 ? 4 : 3;
+    const chunkSize = diffs.length % 2 === 0 ? 2 : 3;
     ce(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
     const improvePromises = diffs.map(
       (commit) => generateCommitMessageByDiff(commit.diff)
