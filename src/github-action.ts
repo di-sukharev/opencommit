@@ -59,7 +59,7 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
 
   outro('Fetching commit diffs by SHAs.');
-  const commitDiffs: { sha: string; diff: string }[] = await Promise.all(
+  const commitDiffsAndSHAs: { sha: string; diff: string }[] = await Promise.all(
     diffPromises
   ).catch((error) => {
     outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
@@ -68,22 +68,23 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   outro('Done.');
 
   outro('Improving commit messages by diffs.');
-  const improvePromises = commitDiffs.map((commit) =>
+  const improvePromises = commitDiffsAndSHAs.map((commit) =>
     generateCommitMessageByDiff(commit.diff)
   );
 
-  // send chunks of 3 diffs in parallel, because openAI restricts too many requests at once with 429 error
+  // send chunks of diffs in parallel, because openAI restricts too many requests at once with 429 error
   async function improveMessagesInChunks() {
     const chunkSize = improvePromises.length % 2 === 0 ? 4 : 3;
-    console.log({ chunkSize, improvePromisesLength: improvePromises.length });
+
     let improvedMessagesBySha: MessageBySha = {};
     for (let i = 0; i < improvePromises.length; i += chunkSize) {
       const promises = improvePromises.slice(i, i + chunkSize);
-      console.log({ i, promises, improvedMessagesBySha });
+
       await Promise.all(promises)
         .then((results) => {
           return results.reduce((acc, improvedMsg, i) => {
-            acc[commitDiffs[i].sha] = improvedMsg;
+            const index = Object.keys(improvedMessagesBySha).length;
+            acc[commitDiffsAndSHAs[index + i].sha] = improvedMsg;
 
             return acc;
           }, improvedMessagesBySha);
@@ -94,7 +95,7 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
         });
 
       // openAI errors with 429 code (too many requests) so lets sleep a bit
-      const sleepFor = 1000 + 100 * i;
+      const sleepFor = 1000 + 100 * (i === 0 ? 0 : i - chunkSize);
       outro(`Sleeping for ${sleepFor}`);
       await sleep(sleepFor);
     }
@@ -167,8 +168,11 @@ async function run(retries = 3) {
       );
     }
   } catch (error: any) {
-    if (retries) run(--retries);
-    else core.setFailed(error?.message || error);
+    const err = error?.message || error;
+    outro(err);
+    // if (retries) run(--retries);
+    // else core.setFailed(error?.message || error);
+    core.setFailed(err);
   }
 }
 

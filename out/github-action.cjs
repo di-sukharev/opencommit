@@ -27929,7 +27929,7 @@ async function improveCommitMessagesWithRebase(commits) {
   const commitShas = commitsToImprove.map((commit) => commit.sha);
   const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
   ce("Fetching commit diffs by SHAs.");
-  const commitDiffs = await Promise.all(
+  const commitDiffsAndSHAs = await Promise.all(
     diffPromises
   ).catch((error) => {
     ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
@@ -27937,26 +27937,25 @@ async function improveCommitMessagesWithRebase(commits) {
   });
   ce("Done.");
   ce("Improving commit messages by diffs.");
-  const improvePromises = commitDiffs.map(
+  const improvePromises = commitDiffsAndSHAs.map(
     (commit) => generateCommitMessageByDiff(commit.diff)
   );
   async function improveMessagesInChunks() {
     const chunkSize = improvePromises.length % 2 === 0 ? 4 : 3;
-    console.log({ chunkSize, improvePromisesLength: improvePromises.length });
     let improvedMessagesBySha2 = {};
     for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
       const promises = improvePromises.slice(i2, i2 + chunkSize);
-      console.log({ i: i2, promises, improvedMessagesBySha: improvedMessagesBySha2 });
       await Promise.all(promises).then((results) => {
         return results.reduce((acc, improvedMsg, i3) => {
-          acc[commitDiffs[i3].sha] = improvedMsg;
+          const index = Object.keys(improvedMessagesBySha2).length;
+          acc[commitDiffsAndSHAs[index + i3].sha] = improvedMsg;
           return acc;
         }, improvedMessagesBySha2);
       }).catch((error) => {
         ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
         throw error;
       });
-      const sleepFor = 1e3 + 100 * i2;
+      const sleepFor = 1e3 + 100 * (i2 === 0 ? 0 : i2 - chunkSize);
       ce(`Sleeping for ${sleepFor}`);
       await sleep(sleepFor);
     }
@@ -28012,10 +28011,9 @@ async function run(retries = 3) {
       );
     }
   } catch (error) {
-    if (retries)
-      run(--retries);
-    else
-      import_core4.default.setFailed(error?.message || error);
+    const err = error?.message || error;
+    ce(err);
+    import_core4.default.setFailed(err);
   }
 }
 run();
