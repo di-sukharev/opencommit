@@ -98,8 +98,10 @@ async function improveCommitMessagesWithRebase(
           throw error;
         });
 
+      outro(`Improved ${improvedMessagesBySha.length} commits.`);
       // openAI errors with 429 code (too many requests) so lets sleep a bit
       const sleepFor = 1000 + 100 * (i === 0 ? 0 : i - chunkSize);
+
       outro(`Sleeping for ${sleepFor}`);
       await sleep(sleepFor);
     }
@@ -122,14 +124,14 @@ async function improveCommitMessagesWithRebase(
 
   outro('Done.');
 
-  outro(
-    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`
-  );
-
   const { stdout } = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
   outro(`Current branch: ${stdout}`);
 
-  await execa('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`]);
+  outro(
+    `Starting interactive rebase: "$ rebase -i HEAD~${commitsToImprove.length}".`
+  );
+
+  await execa('git', ['rebase', '-i', `HEAD~${commitsToImprove.length}`]);
 
   for (const commit of commitsToImprove) {
     try {

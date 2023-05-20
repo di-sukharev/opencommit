@@ -27955,6 +27955,7 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
         ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
         throw error;
       });
+      ce(`Improved ${improvedMessagesBySha2.length} commits.`);
       const sleepFor = 1e3 + 100 * (i2 === 0 ? 0 : i2 - chunkSize);
       ce(`Sleeping for ${sleepFor}`);
       await sleep(sleepFor);
@@ -27972,12 +27973,12 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
   }
   console.log({ improvedMessagesBySha });
   ce("Done.");
-  ce(
-    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`
-  );
   const { stdout } = await execa("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
   ce(`Current branch: ${stdout}`);
-  await execa("git", ["rebase", "-i", `${commitsToImprove[0].sha}^`]);
+  ce(
+    `Starting interactive rebase: "$ rebase -i HEAD~${commitsToImprove.length}".`
+  );
+  await execa("git", ["rebase", "-i", `HEAD~${commitsToImprove.length}`]);
   for (const commit of commitsToImprove) {
     try {
       const commitDiff = improvedMessagesBySha[commit.sha];
