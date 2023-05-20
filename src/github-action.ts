@@ -190,13 +190,6 @@ async function run(retries = 3) {
   ]);
   await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
 
-  await exec.exec('git', ['fetch', '--all']);
-  await exec.exec('git', ['pull']);
-
-  await exec.exec('git', ['status']);
-
-  await exec.exec('git', ['log', '--oneline']);
-
   // await exec.exec('git', ['commit', '--amend', '-m', 'NEW_DAT_MSG']);
 
   // await exec.exec('git', ['push', '--force']);
@@ -226,6 +219,14 @@ async function run(retries = 3) {
       });
 
       const commits = commitsResponse.data;
+
+      // --- TEST ---
+      await exec.exec('git', ['checkout', sourceBranch]);
+      await exec.exec('git', ['fetch', '--all']);
+      await exec.exec('git', ['pull']);
+      await exec.exec('git', ['status']);
+      await exec.exec('git', ['log', '--oneline']);
+      // --- TEST ---
 
       await improveCommitMessagesWithRebase({
         commits,

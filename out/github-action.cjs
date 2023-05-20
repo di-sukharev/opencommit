@@ -27309,10 +27309,6 @@ async function run(retries = 3) {
     `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
   ]);
   await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
-  await import_exec.default.exec("git", ["fetch", "--all"]);
-  await import_exec.default.exec("git", ["pull"]);
-  await import_exec.default.exec("git", ["status"]);
-  await import_exec.default.exec("git", ["log", "--oneline"]);
   try {
     if (import_github.default.context.eventName === "pull_request") {
       const baseBranch = import_github.default.context.payload.pull_request?.base.ref;
@@ -27335,6 +27331,11 @@ async function run(retries = 3) {
         pull_number: payload.pull_request.number
       });
       const commits = commitsResponse.data;
+      await import_exec.default.exec("git", ["checkout", sourceBranch]);
+      await import_exec.default.exec("git", ["fetch", "--all"]);
+      await import_exec.default.exec("git", ["pull"]);
+      await import_exec.default.exec("git", ["status"]);
+      await import_exec.default.exec("git", ["log", "--oneline"]);
       await improveCommitMessagesWithRebase({
         commits,
         base: baseBranch,
