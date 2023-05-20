@@ -136,7 +136,8 @@ async function improveCommitMessagesWithRebase({
 
   outro(`Starting interactive rebase: "$ rebase -i ${base}".`);
 
-  await execa('git', ['rebase', '-i', base]);
+  await execa('git', ['fetch', `--all`]);
+  await execa('git', ['rebase', '-i', `origin/${base}`]);
 
   for (const commit of commitsToImprove) {
     try {
