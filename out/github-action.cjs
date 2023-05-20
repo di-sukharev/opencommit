@@ -26971,7 +26971,6 @@ var configCommand = G3(
 
 // src/api.ts
 var config2 = getConfig();
-console.log({ config: config2 });
 var maxTokens = config2?.OCO_OPENAI_MAX_TOKENS;
 var basePath = config2?.OCO_OPENAI_BASE_PATH;
 var apiKey = config2?.OCO_OPENAI_API_KEY;
@@ -27285,7 +27284,7 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", ["rebase", "-i", `origin/${base}`], {
     env: {
-      GIT_SEQUENCE_EDITOR: `sed -i -e 's/^pick/reword/g' "$GIT_SEQUENCE_EDITOR"`,
+      GIT_SEQUENCE_EDITOR: `sed -i -e 's/^pick/reword/g' "$1"`,
       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,
       GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
     }

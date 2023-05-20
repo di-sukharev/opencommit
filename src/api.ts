@@ -11,8 +11,6 @@ import { CONFIG_MODES, getConfig } from './commands/config';
 
 const config = getConfig();
 
-console.log({ config });
-
 let maxTokens = config?.OCO_OPENAI_MAX_TOKENS;
 let basePath = config?.OCO_OPENAI_BASE_PATH;
 let apiKey = config?.OCO_OPENAI_API_KEY;

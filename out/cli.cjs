@@ -21683,7 +21683,6 @@ var {
 // src/api.ts
 var import_openai = __toESM(require_dist(), 1);
 var config2 = getConfig();
-console.log({ config: config2 });
 var maxTokens = config2?.OCO_OPENAI_MAX_TOKENS;
 var basePath = config2?.OCO_OPENAI_BASE_PATH;
 var apiKey = config2?.OCO_OPENAI_API_KEY;
