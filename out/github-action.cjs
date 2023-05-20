@@ -27919,25 +27919,25 @@ async function getCommitDiff(commitSha) {
   );
   return { sha: commitSha, diff: diffResponse.data };
 }
-async function improveCommitMessagesWithRebase(commits) {
+async function improveCommitMessagesWithRebase(commits, diffs) {
   let commitsToImprove = pattern ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message)) : commits;
   if (!commitsToImprove.length) {
     ce("No new commits found.");
     return;
   }
   ce(`Found ${commitsToImprove.length} commits to improve.`);
-  const commitShas = commitsToImprove.map((commit) => commit.sha);
-  const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
-  ce("Fetching commit diffs by SHAs.");
-  const commitDiffsAndSHAs = await Promise.all(
-    diffPromises
-  ).catch((error) => {
-    ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-    throw error;
-  });
-  ce("Done.");
+  if (!diffs) {
+    const commitShas = commitsToImprove.map((commit) => commit.sha);
+    const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
+    ce("Fetching commit diffs by SHAs.");
+    diffs = await Promise.all(diffPromises).catch((error) => {
+      ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+      throw error;
+    });
+    ce("Done.");
+  }
   ce("Improving commit messages by diffs.");
-  const improvePromises = commitDiffsAndSHAs.map(
+  const improvePromises = diffs.map(
     (commit) => generateCommitMessageByDiff(commit.diff)
   );
   async function improveMessagesInChunks() {
@@ -27948,7 +27948,7 @@ async function improveCommitMessagesWithRebase(commits) {
       await Promise.all(promises).then((results) => {
         return results.reduce((acc, improvedMsg, i3) => {
           const index = Object.keys(improvedMessagesBySha2).length;
-          acc[commitDiffsAndSHAs[index + i3].sha] = improvedMsg;
+          acc[diffs[index + i3].sha] = improvedMsg;
           return acc;
         }, improvedMessagesBySha2);
       }).catch((error) => {
@@ -27961,14 +27961,21 @@ async function improveCommitMessagesWithRebase(commits) {
     }
     return improvedMessagesBySha2;
   }
-  const improvedMessagesBySha = await improveMessagesInChunks();
+  let improvedMessagesBySha = {};
+  try {
+    improvedMessagesBySha = await improveMessagesInChunks();
+  } catch (error) {
+    ce(error);
+    ce("retrying");
+    await improveCommitMessagesWithRebase(commits, diffs);
+    return;
+  }
   console.log({ improvedMessagesBySha });
   ce("Done.");
   ce(
     `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`
   );
-  await execa("git", ["fetch", "origin", "master"]);
-  await execa("git", ["rebase", "-i", commitsToImprove[0].parents[0].sha]);
+  await execa("git", ["rebase", "-i", `${commitsToImprove[0].sha}^`]);
   for (const commit of commitsToImprove) {
     try {
       const commitDiff = improvedMessagesBySha[commit.sha];
