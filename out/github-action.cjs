@@ -28010,7 +28010,7 @@ async function improveCommitMessagesWithRebase({
   await execa("git", ["checkout", source]);
   await execa("git", ["rebase", lastCommit.sha]);
   ce("Force pushing interactively rebased commits into remote origin.");
-  await execa("git", ["push", "origin", `+${context.ref}`]);
+  await execa("git", ["push", "origin", `+${source}`]);
   ce("Done \u23F1\uFE0F");
 }
 async function run(retries = 3) {
