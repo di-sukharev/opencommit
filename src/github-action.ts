@@ -157,18 +157,24 @@ async function improveCommitMessagesWithRebase({
   await exec.exec('git', ['fetch', '--all']);
   await exec.exec('git', ['pull']);
 
-  commitsToImprove.forEach((commit) => {
+  commitsToImprove.forEach((commit, i) => {
     outro(`creating -F file for ${commit.sha}`);
-    writeFileSync(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha]);
+    writeFileSync(`./commit-${i}.txt`, improvedMessagesBySha[commit.sha]);
   });
+  // echo 0 > count.txt && git rebase <sha>^ --exec "git commit --amend -F \$(cat count.txt).txt && echo \$((\$(cat count.txt) + 1)) > count.txt"
 
-  const done = await exec.exec(
-    'git',
+  const done1 = await exec.exec(
+    'echo',
     [
+      '0',
+      '>',
+      'count.txt',
+      '&&',
+      'git',
       'rebase',
       `${commitsToImprove[0].sha}^`,
       '--exec',
-      'git commit --amend -F $(git rev-parse HEAD).txt'
+      'git commit --amend -F commit-$(cat count.txt).txt && echo $(($(cat count.txt) + 1)) > count.txt'
     ],
     {
       env: {
@@ -179,7 +185,24 @@ async function improveCommitMessagesWithRebase({
     }
   );
 
-  outro(`!!!done: ${done}`);
+  // const done = await exec.exec(
+  //   'git',
+  //   [
+  //     'rebase',
+  //     `${commitsToImprove[0].sha}^`,
+  //     '--exec',
+  //     'git commit --amend -F $(git rev-parse HEAD).txt'
+  //   ],
+  //   {
+  //     env: {
+  //       GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
+  //       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
+  //       GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  //     }
+  //   }
+  // );
+
+  outro(`!!!done: ${done1}`);
 
   commitsToImprove.forEach((commit) => unlinkSync(`./${commit.sha}.txt`));
 
