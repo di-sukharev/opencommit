@@ -27955,7 +27955,7 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
         ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
         throw error;
       });
-      const sleepFor = 2e3 + 100 * (i2 / chunkSize);
+      const sleepFor = 3e3 + 200 * (i2 / chunkSize);
       ce(
         `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
       );

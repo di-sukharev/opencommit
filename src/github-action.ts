@@ -98,7 +98,7 @@ async function improveCommitMessagesWithRebase(
         });
 
       // openAI errors with 429 code (too many requests) so lets sleep a bit
-      const sleepFor = 2000 + 100 * (i / chunkSize);
+      const sleepFor = 3000 + 200 * (i / chunkSize);
 
       outro(
         `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
