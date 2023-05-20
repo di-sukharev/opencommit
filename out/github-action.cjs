@@ -27295,7 +27295,7 @@ async function improveCommitMessagesWithRebase({
     sha: commit.sha,
     improvedMessage: improvedMessagesBySha[commit.sha]
   }));
-  changeCommitMessages(diffsAndImprovedMessages);
+  await changeCommitMessages(diffsAndImprovedMessages);
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["push", "origin", `+${source}`]);
   ce("Done \u23F1\uFE0F");

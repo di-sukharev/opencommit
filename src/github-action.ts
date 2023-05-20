@@ -189,7 +189,7 @@ async function improveCommitMessagesWithRebase({
       improvedMessage: improvedMessagesBySha[commit.sha]
     }));
 
-  changeCommitMessages(diffsAndImprovedMessages);
+  await changeCommitMessages(diffsAndImprovedMessages);
 
   // for (const commit of commitsToImprove) {
   //   try {
