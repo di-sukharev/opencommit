@@ -21714,7 +21714,7 @@ var OpenAi = class {
       messages,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: maxTokens ?? 500
+      max_tokens: maxTokens || 500
     };
     try {
       const { data } = await this.openAI.createChatCompletion(params);
