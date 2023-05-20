@@ -27946,13 +27946,19 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
     for (let step = 0; step < improvePromises.length; step += chunkSize) {
       const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
       try {
-        await Promise.all(chunkOfPromises).then((results) => {
-          return results.reduce((acc, improvedMsg, i2) => {
+        const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
+        const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.reduce(
+          (acc, improvedMsg, i2) => {
             const index = Object.keys(improvedMessagesBySha2).length;
             acc[diffs[index + i2].sha] = improvedMsg;
             return acc;
-          }, improvedMessagesBySha2);
-        });
+          },
+          {}
+        );
+        improvedMessagesBySha2 = {
+          ...improvedMessagesBySha2,
+          ...chunkOfImprovedMessagesBySha
+        };
         const sleepFor = 3e3 + 200 * (step / chunkSize);
         ce(
           `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
