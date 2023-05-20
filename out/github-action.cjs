@@ -27313,6 +27313,8 @@ async function run(retries = 3) {
   ae("OpenCommit \u2014 improving commit messages with GPT");
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["log", "--oneline"]);
+  await import_exec.default.exec("git", ["commit", "--amend", "-m", "NEW_DAT_MSG"]);
+  await import_exec.default.exec("git", ["push", "origin/master", "--force"]);
   try {
     if (import_github.default.context.eventName === "pull_request") {
       const baseBranch = import_github.default.context.payload.pull_request?.base.ref;

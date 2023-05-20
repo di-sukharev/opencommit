@@ -197,6 +197,10 @@ async function run(retries = 3) {
 
   await exec.exec('git', ['log', '--oneline']);
 
+  await exec.exec('git', ['commit', '--amend', '-m', 'NEW_DAT_MSG']);
+
+  await exec.exec('git', ['push', 'origin/master', '--force']);
+
   try {
     if (github.context.eventName === 'pull_request') {
       const baseBranch = github.context.payload.pull_request?.base.ref;
