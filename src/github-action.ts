@@ -154,7 +154,8 @@ async function improveCommitMessagesWithRebase({
         'rebase',
         '-i',
         `origin/${base}`,
-        `"--exec git commit --amend --no-edit -F ${tempFilePath}"`
+        '--exec',
+        `"git commit --amend --no-edit -F ${tempFilePath}"`
       ]);
 
       unlinkSync(tempFilePath);

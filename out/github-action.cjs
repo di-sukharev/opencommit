@@ -28002,7 +28002,8 @@ async function improveCommitMessagesWithRebase({
         "rebase",
         "-i",
         `origin/${base}`,
-        `"--exec git commit --amend --no-edit -F ${tempFilePath}"`
+        "--exec",
+        `"git commit --amend --no-edit -F ${tempFilePath}"`
       ]);
       (0, import_fs2.unlinkSync)(tempFilePath);
       ce("Commit improved \u{1F31E}");
