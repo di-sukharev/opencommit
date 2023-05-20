@@ -27935,21 +27935,25 @@ async function improveCommitMessagesWithRebase(commits) {
   const improvePromises = commitDiffs.map(
     (commit) => generateCommitMessageByDiff(commit.diff)
   );
-  let improvedMessagesBySha = {};
-  const chunkSize = improvePromises.length % 2 === 0 ? 2 : 3;
-  for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
-    console.log({ i: i2, improvedMessagesBySha });
-    const promises = improvePromises.slice(i2, i2 + chunkSize);
-    await Promise.all(promises).then((results) => {
-      return results.reduce((acc, improvedMsg, i3) => {
-        acc[commitDiffs[i3].sha] = improvedMsg;
-        return acc;
-      }, improvedMessagesBySha);
-    }).catch((error) => {
-      ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-      throw error;
-    });
+  async function improveMessagesInChunks() {
+    const chunkSize = improvePromises.length % 2 === 0 ? 2 : 3;
+    let improvedMessagesBySha2 = {};
+    for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
+      console.log({ i: i2, improvedMessagesBySha: improvedMessagesBySha2 });
+      const promises = improvePromises.slice(i2, i2 + chunkSize);
+      await Promise.all(promises).then((results) => {
+        return results.reduce((acc, improvedMsg, i3) => {
+          acc[commitDiffs[i3].sha] = improvedMsg;
+          return acc;
+        }, improvedMessagesBySha2);
+      }).catch((error) => {
+        ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+        throw error;
+      });
+    }
+    return improvedMessagesBySha2;
   }
+  const improvedMessagesBySha = await improveMessagesInChunks();
   console.log({ improvedMessagesBySha });
   ce("Done.");
   ce(
