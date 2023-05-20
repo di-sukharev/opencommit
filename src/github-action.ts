@@ -4,6 +4,7 @@ import { execa } from 'execa';
 import { intro, outro } from '@clack/prompts';
 import { PullRequestEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
+import { sleep } from './utils/sleep';
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -91,6 +92,9 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
           outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
           throw error;
         });
+
+      // openAI errors with 429 code (too many requests) so lets sleep a bit
+      await sleep(1000);
     }
 
     return improvedMessagesBySha;

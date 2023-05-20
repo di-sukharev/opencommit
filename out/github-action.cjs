@@ -27893,6 +27893,11 @@ function getCommitMsgsPromisesFromFileDiffs(diff, maxDiffLength) {
   return commitMessagePromises;
 }
 
+// src/utils/sleep.ts
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // src/github-action.ts
 var GITHUB_TOKEN = import_core4.default.getInput("GITHUB_TOKEN");
 var pattern = import_core4.default.getInput("pattern");
@@ -27951,6 +27956,7 @@ async function improveCommitMessagesWithRebase(commits) {
         ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
         throw error;
       });
+      await sleep(1e3);
     }
     return improvedMessagesBySha2;
   }
