@@ -27309,6 +27309,8 @@ async function run(retries = 3) {
     `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
   ]);
   await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
+  await import_exec.default.exec("git", ["fetch", "--all"]);
+  await import_exec.default.exec("git", ["pull"]);
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["log", "--oneline"]);
   try {

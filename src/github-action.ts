@@ -190,6 +190,9 @@ async function run(retries = 3) {
   ]);
   await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
 
+  await exec.exec('git', ['fetch', '--all']);
+  await exec.exec('git', ['pull']);
+
   await exec.exec('git', ['status']);
 
   await exec.exec('git', ['log', '--oneline']);
