@@ -94,8 +94,9 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
         });
 
       // openAI errors with 429 code (too many requests) so lets sleep a bit
-      outro('Sleeping for 1s');
-      await sleep(1000 + 100 * i);
+      const sleepFor = 1000 + 100 * i;
+      outro(`Sleeping for ${sleepFor}`);
+      await sleep(sleepFor);
     }
 
     return improvedMessagesBySha;
