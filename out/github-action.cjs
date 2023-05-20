@@ -27919,7 +27919,12 @@ async function getCommitDiff(commitSha) {
   );
   return { sha: commitSha, diff: diffResponse.data };
 }
-async function improveCommitMessagesWithRebase(commits, diffs) {
+async function improveCommitMessagesWithRebase({
+  commits,
+  diffs,
+  source,
+  base
+}) {
   let commitsToImprove = pattern ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message)) : commits;
   if (!commitsToImprove.length) {
     ce("No new commits found.");
@@ -27975,10 +27980,8 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
   const improvedMessagesBySha = await improveMessagesInChunks();
   console.log({ improvedMessagesBySha });
   ce("Done.");
-  ce(
-    `Starting interactive rebase: "$ rebase -i HEAD~${commitsToImprove.length - 5}".`
-  );
-  await execa("git", ["rebase", "-i", `HEAD~${commitsToImprove.length - 5}`]);
+  ce(`Starting interactive rebase: "$ rebase -i ${base}".`);
+  await execa("git", ["rebase", "-i", base]);
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
@@ -28004,7 +28007,7 @@ async function run(retries = 3) {
       const baseBranch = import_github.default.context.payload.pull_request?.base.ref;
       const sourceBranch = import_github.default.context.payload.pull_request?.head.ref;
       ce(
-        `Pull Request from source: (${sourceBranch}) to base: (${baseBranch})`
+        `Processing commits in a Pull Request from source: (${sourceBranch}) to base: (${baseBranch})`
       );
       if (import_github.default.context.payload.action === "opened")
         ce("Pull Request action: opened");
@@ -28021,7 +28024,11 @@ async function run(retries = 3) {
         pull_number: payload.pull_request.number
       });
       const commits = commitsResponse.data;
-      await improveCommitMessagesWithRebase(commits);
+      await improveCommitMessagesWithRebase({
+        commits,
+        base: baseBranch,
+        source: sourceBranch
+      });
     } else {
       ce("Wrong action.");
       import_core4.default.error(

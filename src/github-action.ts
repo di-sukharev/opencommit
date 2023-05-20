@@ -42,10 +42,17 @@ async function getCommitDiff(commitSha: string) {
   return { sha: commitSha, diff: diffResponse.data };
 }
 
-async function improveCommitMessagesWithRebase(
-  commits: CommitsArray,
-  diffs?: { sha: string; diff: string }[]
-): Promise<void> {
+async function improveCommitMessagesWithRebase({
+  commits,
+  diffs,
+  source,
+  base
+}: {
+  commits: CommitsArray;
+  diffs?: { sha: string; diff: string }[];
+  base: string;
+  source: string;
+}): Promise<void> {
   let commitsToImprove = pattern
     ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message))
     : commits;
@@ -126,13 +133,9 @@ async function improveCommitMessagesWithRebase(
 
   outro('Done.');
 
-  outro(
-    `Starting interactive rebase: "$ rebase -i HEAD~${
-      commitsToImprove.length - 5
-    }".`
-  );
+  outro(`Starting interactive rebase: "$ rebase -i ${base}".`);
 
-  await execa('git', ['rebase', '-i', `HEAD~${commitsToImprove.length - 5}`]);
+  await execa('git', ['rebase', '-i', base]);
 
   for (const commit of commitsToImprove) {
     try {
@@ -167,7 +170,7 @@ async function run(retries = 3) {
       const baseBranch = github.context.payload.pull_request?.base.ref;
       const sourceBranch = github.context.payload.pull_request?.head.ref;
       outro(
-        `Pull Request from source: (${sourceBranch}) to base: (${baseBranch})`
+        `Processing commits in a Pull Request from source: (${sourceBranch}) to base: (${baseBranch})`
       );
       if (github.context.payload.action === 'opened')
         outro('Pull Request action: opened');
@@ -188,7 +191,11 @@ async function run(retries = 3) {
 
       const commits = commitsResponse.data;
 
-      await improveCommitMessagesWithRebase(commits);
+      await improveCommitMessagesWithRebase({
+        commits,
+        base: baseBranch,
+        source: sourceBranch
+      });
     } else {
       outro('Wrong action.');
       core.error(
