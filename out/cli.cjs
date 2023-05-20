@@ -16333,6 +16333,7 @@ var package_default = {
   },
   dependencies: {
     "@actions/core": "^1.10.0",
+    "@actions/exec": "^1.1.1",
     "@actions/github": "^5.1.1",
     "@clack/prompts": "^0.6.1",
     "@dqbd/tiktoken": "^1.0.2",

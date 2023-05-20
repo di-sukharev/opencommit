@@ -1,6 +1,6 @@
 import core from '@actions/core';
 import github from '@actions/github';
-import { execa } from 'execa';
+import exec from '@actions/exec';
 import { intro, outro } from '@clack/prompts';
 import { PullRequestEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
@@ -140,28 +140,28 @@ async function improveCommitMessagesWithRebase({
   outro(`Starting interactive rebase: "$ rebase -i ${base}".`);
 
   // Set the Git identity
-  await execa('git', [
+  await exec.exec('git', [
     'config',
     'user.email',
     `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
   ]);
-  await execa('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
+  await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
 
   // fetch all commits inside the process
-  await execa('git', ['fetch', '--all']);
+  await exec.exec('git', ['fetch', '--all']);
 
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
       // Checkout the commit
-      await execa('git', ['checkout', commit.sha]);
+      await exec.exec('git', ['checkout', commit.sha]);
 
       // Amend the commit message
-      await execa('git', ['commit', '--amend', '-m', improvedMessage]);
+      await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
 
       outro('Commit improved 🌞');
-      // await execa('git', ['commit', '--amend', '-m', improvedMessage]);
-      // await execa('git', ['rebase', '--continue']);
+      // await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
+      // await exec.exec('git', ['rebase', '--continue']);
     } catch (error) {
       throw error;
     }
@@ -169,13 +169,13 @@ async function improveCommitMessagesWithRebase({
 
   // Once all commits have been amended, you'll need to rebase the original branch onto the last amended commit
   const lastCommit = commits[0];
-  await execa('git', ['checkout', source]); // replace 'master' with your branch name
-  await execa('git', ['rebase', lastCommit.sha]);
+  await exec.exec('git', ['checkout', source]);
+  await exec.exec('git', ['rebase', lastCommit.sha]);
 
   outro('Force pushing interactively rebased commits into remote origin.');
 
   // Force push the rebased commits
-  await execa('git', ['push', 'origin', `+${source}`]);
+  await exec.exec('git', ['push', 'origin', `+${source}`]);
 
   outro('Done ⏱️');
 }
