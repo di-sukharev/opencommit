@@ -27936,10 +27936,10 @@ async function improveCommitMessagesWithRebase(commits) {
     (commit) => generateCommitMessageByDiff(commit.diff)
   );
   let improvedMessagesBySha = {};
-  const step = 3;
-  for (let i2 = 0; i2 < improvePromises.length; i2 + step) {
+  const chunkSize = improvePromises.length % 2 === 0 ? 2 : 3;
+  for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
     console.log({ i: i2, improvedMessagesBySha });
-    const promises = improvePromises.slice(i2, step);
+    const promises = improvePromises.slice(i2, i2 + chunkSize);
     await Promise.all(promises).then((results) => {
       return results.reduce((acc, improvedMsg, i3) => {
         acc[commitDiffs[i3].sha] = improvedMsg;

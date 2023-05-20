@@ -72,11 +72,11 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   );
 
   let improvedMessagesBySha: MessageBySha = {};
-  // send batches of 3 diffs in parallel, because openAI restricts too many requests at once with 429 error
-  const step = 3;
-  for (let i = 0; i < improvePromises.length; i + step) {
+  // send chunks of 3 diffs in parallel, because openAI restricts too many requests at once with 429 error
+  const chunkSize = improvePromises.length % 2 === 0 ? 2 : 3;
+  for (let i = 0; i < improvePromises.length; i += chunkSize) {
     console.log({ i, improvedMessagesBySha });
-    const promises = improvePromises.slice(i, step);
+    const promises = improvePromises.slice(i, i + chunkSize);
     await Promise.all(promises)
       .then((results) => {
         return results.reduce((acc, improvedMsg, i) => {
