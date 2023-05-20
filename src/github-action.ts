@@ -157,11 +157,12 @@ async function improveCommitMessagesWithRebase({
   await exec.exec('git', ['fetch', '--all']);
   await exec.exec('git', ['pull']);
 
-  commitsToImprove.forEach((commit) =>
-    writeFileSync(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha])
-  );
+  commitsToImprove.forEach((commit) => {
+    outro(`creating -F file for ${commit.sha}`);
+    writeFileSync(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha]);
+  });
 
-  await exec.exec(
+  const done = await exec.exec(
     'git',
     [
       'rebase',
@@ -177,6 +178,8 @@ async function improveCommitMessagesWithRebase({
       }
     }
   );
+
+  outro(`!!!done: ${done}`);
 
   commitsToImprove.forEach((commit) => unlinkSync(`./${commit.sha}.txt`));
 

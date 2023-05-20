@@ -27280,10 +27280,11 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["pull"]);
-  commitsToImprove.forEach(
-    (commit) => (0, import_fs2.writeFileSync)(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha])
-  );
-  await import_exec.default.exec(
+  commitsToImprove.forEach((commit) => {
+    ce(`creating -F file for ${commit.sha}`);
+    (0, import_fs2.writeFileSync)(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha]);
+  });
+  const done = await import_exec.default.exec(
     "git",
     [
       "rebase",
@@ -27299,6 +27300,7 @@ async function improveCommitMessagesWithRebase({
       }
     }
   );
+  ce(`!!!done: ${done}`);
   commitsToImprove.forEach((commit) => (0, import_fs2.unlinkSync)(`./${commit.sha}.txt`));
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["push", "origin", `+${source}`]);
