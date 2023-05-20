@@ -27279,23 +27279,24 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["pull"]);
-  async function changeCommitMessages(commitsToUpdate) {
-    const messageFilterScript = commitsToUpdate.map(
-      (commit) => `if [ "$GIT_COMMIT" = "${commit.sha}" ]; then echo "${commit.improvedMessage}"; else cat; fi`
-    ).join(" | ");
-    await import_exec.default.exec("git", [
-      "filter-branch",
-      "--msg-filter",
-      messageFilterScript,
-      "--",
-      "--all"
-    ]);
+  await import_exec.default.exec("git", ["rebase", "-i", `${commitsToImprove[0].sha}^`], {
+    env: {
+      GIT_SEQUENCE_EDITOR: 'sed -i "" -e "s/^pick/reword/g"',
+      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,
+      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+    }
+  });
+  for (const commit of commitsToImprove) {
+    try {
+      const improvedMessage = improvedMessagesBySha[commit.sha];
+      ce(`SHA: ${commit.sha} improving...`);
+      await import_exec.default.exec("git", ["commit", "--amend", "-m", improvedMessage]);
+      await import_exec.default.exec("git", ["rebase", "--continue"]);
+      ce(`SHA: ${commit.sha} commit improved.`);
+    } catch (error) {
+      throw error;
+    }
   }
-  const diffsAndImprovedMessages = commitsToImprove.map((commit) => ({
-    sha: commit.sha,
-    improvedMessage: improvedMessagesBySha[commit.sha]
-  }));
-  await changeCommitMessages(diffsAndImprovedMessages);
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["push", "origin", `+${source}`]);
   ce("Done \u23F1\uFE0F");
@@ -27335,7 +27336,6 @@ async function run(retries = 3) {
       await import_exec.default.exec("git", ["pull"]);
       await import_exec.default.exec("git", ["status"]);
       await import_exec.default.exec("git", ["log", "--oneline"]);
-      await import_exec.default.exec("sed", ["-v"]);
       await improveCommitMessagesWithRebase({
         commits,
         base: baseBranch,
