@@ -5,6 +5,8 @@ import { intro, outro } from '@clack/prompts';
 import { PullRequestEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
 import { sleep } from './utils/sleep';
+import { unlinkSync, writeFileSync } from 'fs';
+import path from 'path';
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -136,17 +138,32 @@ async function improveCommitMessagesWithRebase({
 
   outro(`Starting interactive rebase: "$ rebase -i ${base}".`);
 
-  await execa('git', ['fetch', `--all`]);
-  await execa('git', ['rebase', '-i', `origin/${base}`]);
-
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
+      const tempFilePath = path.join('/tmp', `${commit.sha}.txt`);
+
+      writeFileSync(tempFilePath, improvedMessage);
 
       console.log({ sha: commit.sha, improvedMessage });
 
-      await execa('git', ['commit', '--amend', '-m', improvedMessage]);
-      await execa('git', ['rebase', '--continue']);
+      await execa('git', [
+        'rebase',
+        '-i',
+        `origin/${base}`,
+        '--exec',
+        'git',
+        'commit',
+        '--amend',
+        '--no-edit',
+        '-F',
+        tempFilePath
+      ]);
+
+      unlinkSync(tempFilePath);
+
+      // await execa('git', ['commit', '--amend', '-m', improvedMessage]);
+      // await execa('git', ['rebase', '--continue']);
     } catch (error) {
       throw error;
     } finally {
