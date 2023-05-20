@@ -71,14 +71,13 @@ async function improveCommitMessagesWithRebase(
     outro('Done.');
   }
 
-  outro('Improving commit messages by diffs.');
-  const improvePromises = diffs.map((commit) =>
-    generateCommitMessageByDiff(commit.diff)
-  );
-
   // send chunks of diffs in parallel, because openAI restricts too many requests at once with 429 error
   async function improveMessagesInChunks() {
-    const chunkSize = improvePromises.length % 2 === 0 ? 4 : 3;
+    const chunkSize = diffs!.length % 2 === 0 ? 4 : 3;
+    outro(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
+    const improvePromises = diffs!.map((commit) =>
+      generateCommitMessageByDiff(commit.diff)
+    );
 
     let improvedMessagesBySha: MessageBySha = {};
     for (let i = 0; i < improvePromises.length; i += chunkSize) {
@@ -135,11 +134,11 @@ async function improveCommitMessagesWithRebase(
 
   for (const commit of commitsToImprove) {
     try {
-      const commitDiff = improvedMessagesBySha[commit.sha];
+      const improvedMessage = improvedMessagesBySha[commit.sha];
 
-      console.log({ commitDiff });
+      console.log({ sha: commit.sha, improvedMessage });
 
-      await execa('git', ['commit', '--amend', '-m', commitDiff]);
+      await execa('git', ['commit', '--amend', '-m', improvedMessage]);
       await execa('git', ['rebase', '--continue']);
     } catch (error) {
       throw error;

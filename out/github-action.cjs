@@ -27936,12 +27936,12 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
     });
     ce("Done.");
   }
-  ce("Improving commit messages by diffs.");
-  const improvePromises = diffs.map(
-    (commit) => generateCommitMessageByDiff(commit.diff)
-  );
   async function improveMessagesInChunks() {
-    const chunkSize = improvePromises.length % 2 === 0 ? 4 : 3;
+    const chunkSize = diffs.length % 2 === 0 ? 4 : 3;
+    ce(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
+    const improvePromises = diffs.map(
+      (commit) => generateCommitMessageByDiff(commit.diff)
+    );
     let improvedMessagesBySha2 = {};
     for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
       const promises = improvePromises.slice(i2, i2 + chunkSize);
@@ -27981,9 +27981,9 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
   await execa("git", ["rebase", "-i", `HEAD~${commitsToImprove.length}`]);
   for (const commit of commitsToImprove) {
     try {
-      const commitDiff = improvedMessagesBySha[commit.sha];
-      console.log({ commitDiff });
-      await execa("git", ["commit", "--amend", "-m", commitDiff]);
+      const improvedMessage = improvedMessagesBySha[commit.sha];
+      console.log({ sha: commit.sha, improvedMessage });
+      await execa("git", ["commit", "--amend", "-m", improvedMessage]);
       await execa("git", ["rebase", "--continue"]);
     } catch (error) {
       throw error;
