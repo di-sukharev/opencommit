@@ -79,7 +79,7 @@ class OpenAi {
         );
       }
 
-      process.exit(1);
+      throw err;
     }
   };
 }

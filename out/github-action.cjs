@@ -27735,7 +27735,7 @@ var OpenAi = class {
           "For help look into README https://github.com/di-sukharev/opencommit#setup"
         );
       }
-      process.exit(1);
+      throw err;
     }
   };
 };
