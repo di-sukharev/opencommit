@@ -142,9 +142,9 @@ async function improveCommitMessagesWithRebase({
   );
 
   // fetch all commits inside the process
+  await exec.exec('git', ['checkout', source]);
   await exec.exec('git', ['fetch', '--all']);
-
-  // await exec.exec('git', ['checkout', source]);
+  await exec.exec('git', ['pull']);
 
   await exec.exec('git', ['rebase', '-i', commitsToImprove[0].sha], {
     env: {
