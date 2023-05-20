@@ -27944,8 +27944,8 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
     );
     let improvedMessagesBySha2 = {};
     for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
-      const promises = improvePromises.slice(i2, i2 + chunkSize);
-      await Promise.all(promises).then((results) => {
+      const chunkOfPromises = improvePromises.slice(i2, i2 + chunkSize);
+      await Promise.all(chunkOfPromises).then((results) => {
         return results.reduce((acc, improvedMsg, i3) => {
           const index = Object.keys(improvedMessagesBySha2).length;
           acc[diffs[index + i3].sha] = improvedMsg;
@@ -27955,9 +27955,10 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
         ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
         throw error;
       });
-      ce(`Improved ${improvedMessagesBySha2.length} commits.`);
-      const sleepFor = 1e3 + 100 * (i2 === 0 ? 0 : i2 - chunkSize);
-      ce(`Sleeping for ${sleepFor}`);
+      const sleepFor = 2e3 + 100 * (i2 / chunkSize);
+      ce(
+        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
+      );
       await sleep(sleepFor);
     }
     return improvedMessagesBySha2;

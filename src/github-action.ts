@@ -81,9 +81,9 @@ async function improveCommitMessagesWithRebase(
 
     let improvedMessagesBySha: MessageBySha = {};
     for (let i = 0; i < improvePromises.length; i += chunkSize) {
-      const promises = improvePromises.slice(i, i + chunkSize);
+      const chunkOfPromises = improvePromises.slice(i, i + chunkSize);
 
-      await Promise.all(promises)
+      await Promise.all(chunkOfPromises)
         .then((results) => {
           return results.reduce((acc, improvedMsg, i) => {
             const index = Object.keys(improvedMessagesBySha).length;
@@ -97,11 +97,12 @@ async function improveCommitMessagesWithRebase(
           throw error;
         });
 
-      outro(`Improved ${improvedMessagesBySha.length} commits.`);
       // openAI errors with 429 code (too many requests) so lets sleep a bit
-      const sleepFor = 1000 + 100 * (i === 0 ? 0 : i - chunkSize);
+      const sleepFor = 2000 + 100 * (i / chunkSize);
 
-      outro(`Sleeping for ${sleepFor}`);
+      outro(
+        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
+      );
       await sleep(sleepFor);
     }
 
