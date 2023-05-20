@@ -73,7 +73,7 @@ async function improveCommitMessagesWithRebase(
 
   // send chunks of diffs in parallel, because openAI restricts too many requests at once with 429 error
   async function improveMessagesInChunks() {
-    const chunkSize = 1;
+    const chunkSize = diffs!.length % 2 === 0 ? 4 : 3;
     outro(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
     const improvePromises = diffs!.map((commit) =>
       generateCommitMessageByDiff(commit.diff)
@@ -166,13 +166,17 @@ async function run(retries = 3) {
     if (github.context.eventName === 'pull_request') {
       const baseBranch = github.context.payload.pull_request?.base.ref;
       const sourceBranch = github.context.payload.pull_request?.head.ref;
-      outro('Pull Request opened');
-
+      outro(
+        `Pull Request from source: (${sourceBranch}) to base: (${baseBranch})`
+      );
       if (github.context.payload.action === 'opened')
-        outro(`Pull Request opened from ${sourceBranch} to ${baseBranch}`);
+        outro('Pull Request action: opened');
       else if (github.context.payload.action === 'synchronize')
-        outro('New commits are pushed');
-      else return outro('Unhandled action: ' + github.context.payload.action);
+        outro('Pull Request action: synchronize');
+      else
+        return outro(
+          'Pull Request unhandled action: ' + github.context.payload.action
+        );
 
       const payload = github.context.payload as PullRequestEvent;
 

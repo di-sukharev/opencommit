@@ -27937,7 +27937,7 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
     ce("Done.");
   }
   async function improveMessagesInChunks() {
-    const chunkSize = 1;
+    const chunkSize = diffs.length % 2 === 0 ? 4 : 3;
     ce(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
     const improvePromises = diffs.map(
       (commit) => generateCommitMessageByDiff(commit.diff)
@@ -28003,13 +28003,17 @@ async function run(retries = 3) {
     if (import_github.default.context.eventName === "pull_request") {
       const baseBranch = import_github.default.context.payload.pull_request?.base.ref;
       const sourceBranch = import_github.default.context.payload.pull_request?.head.ref;
-      ce("Pull Request opened");
+      ce(
+        `Pull Request from source: (${sourceBranch}) to base: (${baseBranch})`
+      );
       if (import_github.default.context.payload.action === "opened")
-        ce(`Pull Request opened from ${sourceBranch} to ${baseBranch}`);
+        ce("Pull Request action: opened");
       else if (import_github.default.context.payload.action === "synchronize")
-        ce("New commits are pushed");
+        ce("Pull Request action: synchronize");
       else
-        return ce("Unhandled action: " + import_github.default.context.payload.action);
+        return ce(
+          "Pull Request unhandled action: " + import_github.default.context.payload.action
+        );
       const payload = import_github.default.context.payload;
       const commitsResponse = await octokit.rest.pulls.listCommits({
         owner,
