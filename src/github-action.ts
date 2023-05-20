@@ -148,7 +148,7 @@ async function improveCommitMessagesWithRebase({
 
   await exec.exec('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`], {
     env: {
-      GIT_SEQUENCE_EDITOR: 'sed -i "" -e "s/^pick/reword/g"',
+      GIT_SEQUENCE_EDITOR: `node -e "const fs = require('fs'); const filePath = process.argv[1]; const file = fs.readFileSync(filePath, 'utf8'); const newFile = file.replace(/pick/g, 'reword'); fs.writeFileSync(filePath, newFile);"`,
       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
       GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
     }
