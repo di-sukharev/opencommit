@@ -5,8 +5,6 @@ import { intro, outro } from '@clack/prompts';
 import { PullRequestEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
 import { sleep } from './utils/sleep';
-import { unlinkSync, writeFileSync } from 'fs';
-import path from 'path';
 import { randomIntFromInterval } from './utils/randomIntFromInterval';
 
 // This should be a token with access to your repository scoped in as a secret.
@@ -141,6 +139,15 @@ async function improveCommitMessagesWithRebase({
 
   outro(`Starting interactive rebase: "$ rebase -i ${base}".`);
 
+  // Set the Git identity
+  await execa('git', [
+    'config',
+    'user.email',
+    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  ]);
+  await execa('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
+
+  // fetch all commits inside the process
   await execa('git', ['fetch', '--all']);
 
   for (const commit of commitsToImprove) {

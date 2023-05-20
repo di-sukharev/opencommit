@@ -27989,6 +27989,12 @@ async function improveCommitMessagesWithRebase({
   console.log({ improvedMessagesBySha });
   ce("Done.");
   ce(`Starting interactive rebase: "$ rebase -i ${base}".`);
+  await execa("git", [
+    "config",
+    "user.email",
+    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  ]);
+  await execa("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
   await execa("git", ["fetch", "--all"]);
   for (const commit of commitsToImprove) {
     try {
