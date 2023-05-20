@@ -163,20 +163,9 @@ async function improveCommitMessagesWithRebase({
   });
   // echo 0 > count.txt && git rebase <sha>^ --exec "git commit --amend -F \$(cat count.txt).txt && echo \$((\$(cat count.txt) + 1)) > count.txt"
 
-  const done1 = await exec.exec(
-    'echo',
-    [
-      '0',
-      '>',
-      'count.txt',
-      '&&',
-      'git',
-      'rebase',
-      '-i',
-      `${commitsToImprove[0].sha}^`,
-      '--exec',
-      'git commit --amend -F commit-$(cat count.txt).txt && echo $(($(cat count.txt) + 1)) > count.txt'
-    ],
+  const done = await exec.exec(
+    'echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(($(cat count.txt) + 1)) > count.txt"',
+    [],
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
@@ -203,7 +192,7 @@ async function improveCommitMessagesWithRebase({
   //   }
   // );
 
-  outro(`!!!done: ${done1}`);
+  outro(`!!!done: ${done}`);
 
   commitsToImprove.forEach((_commit, i) => unlinkSync(`./commit-${i}.txt`));
 
