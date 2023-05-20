@@ -27288,7 +27288,7 @@ async function improveCommitMessagesWithRebase({
     (0, import_fs2.writeFileSync)(`./commit-${i2}.txt`, improvedMessagesBySha[commit.sha]);
   });
   await execPromise(
-    `echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(( $(cat count.txt) + 1 )) > count.txt"`,
+    `echo 0 > count.txt && git rebase ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(( $(cat count.txt) + 1 )) > count.txt"`,
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
