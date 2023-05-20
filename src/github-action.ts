@@ -165,7 +165,6 @@ async function improveCommitMessagesWithRebase({
     'git',
     [
       'rebase',
-      '-i',
       `${commitsToImprove[0].sha}^`,
       '--exec',
       'git commit --amend -F $(git rev-parse HEAD).txt'
