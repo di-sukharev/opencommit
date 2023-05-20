@@ -204,7 +204,7 @@ async function improveCommitMessagesWithRebase({
 
   outro(`!!!done: ${done1}`);
 
-  commitsToImprove.forEach((commit) => unlinkSync(`./${commit.sha}.txt`));
+  commitsToImprove.forEach((_commit, i) => unlinkSync(`./commit-${i}.txt`));
 
   // async function changeCommitMessages(
   //   commitsToUpdate: DiffAndImprovedMessage[]
