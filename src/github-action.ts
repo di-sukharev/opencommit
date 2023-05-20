@@ -138,7 +138,7 @@ async function improveCommitMessagesWithRebase({
   outro('Done.');
 
   outro(
-    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}".`
+    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}^".`
   );
 
   // fetch all commits inside the process
@@ -146,7 +146,7 @@ async function improveCommitMessagesWithRebase({
   await exec.exec('git', ['fetch', '--all']);
   await exec.exec('git', ['pull']);
 
-  await exec.exec('git', ['rebase', '-i', commitsToImprove[0].sha], {
+  await exec.exec('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`], {
     env: {
       GIT_SEQUENCE_EDITOR: 'sed -i -e \'s/^pick/reword/g\' "$1"',
       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
