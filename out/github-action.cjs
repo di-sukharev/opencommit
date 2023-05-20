@@ -27311,32 +27311,8 @@ async function improveCommitMessagesWithRebase({
 }
 async function run(retries = 3) {
   ae("OpenCommit \u2014 improving commit messages with GPT");
-  let my1Output = "";
-  let my1Error = "";
-  await import_exec.default.exec("git", ["status"], {
-    listeners: {
-      stdout: (data) => {
-        my1Output += data.toString();
-      },
-      stderr: (data) => {
-        my1Error += data.toString();
-      }
-    }
-  });
-  console.log({ my1Output, my1Error });
-  let my2Output = "";
-  let my2Error = "";
-  await import_exec.default.exec("git", ["status"], {
-    listeners: {
-      stdout: (data) => {
-        my2Output += data.toString();
-      },
-      stderr: (data) => {
-        my2Error += data.toString();
-      }
-    }
-  });
-  console.log({ my2Output, my2Error });
+  await import_exec.default.exec("git", ["status"]);
+  await import_exec.default.exec("git", ["log", "--oneline"]);
   try {
     if (import_github.default.context.eventName === "pull_request") {
       const baseBranch = import_github.default.context.payload.pull_request?.base.ref;
