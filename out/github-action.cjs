@@ -27712,17 +27712,19 @@ var OpenAi = class {
     this.openAI = new import_openai.OpenAIApi(this.openAiApiConfiguration);
   }
   generateCommitMessage = async (messages) => {
+    const params = {
+      model: MODEL,
+      messages,
+      temperature: 0,
+      top_p: 0.1,
+      max_tokens: maxTokens ?? 500
+    };
     try {
-      const { data } = await this.openAI.createChatCompletion({
-        model: MODEL,
-        messages,
-        temperature: 0,
-        top_p: 0.1,
-        max_tokens: maxTokens ?? 500
-      });
+      const { data } = await this.openAI.createChatCompletion(params);
       const message = data.choices[0].message;
       return message?.content;
     } catch (error) {
+      ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
       const err = error;
       ce(`${source_default.red("\u2716")} ${err?.message || err}`);
       if (axios_default.isAxiosError(error) && error.response?.status === 401) {

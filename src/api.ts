@@ -48,19 +48,22 @@ class OpenAi {
   public generateCommitMessage = async (
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> => {
+    const params = {
+      model: MODEL,
+      messages,
+      temperature: 0,
+      top_p: 0.1,
+      max_tokens: maxTokens ?? 500
+    };
     try {
-      const { data } = await this.openAI.createChatCompletion({
-        model: MODEL,
-        messages,
-        temperature: 0,
-        top_p: 0.1,
-        max_tokens: maxTokens ?? 500
-      });
+      const { data } = await this.openAI.createChatCompletion(params);
 
       const message = data.choices[0].message;
 
       return message?.content;
     } catch (error) {
+      outro(`${chalk.red('✖')} ${JSON.stringify(params)}`);
+
       const err = error as Error;
       outro(`${chalk.red('✖')} ${err?.message || err}`);
 
