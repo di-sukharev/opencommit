@@ -27292,9 +27292,10 @@ async function improveCommitMessagesWithRebase({
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
+      ce(`SHA: ${commit.sha} improving...`);
       await import_exec.default.exec("git", ["commit", "--amend", "-m", improvedMessage]);
       await import_exec.default.exec("git", ["rebase", "--continue"]);
-      ce(`SHA: ${commit.sha} commit improved \u{1F31E}`);
+      ce(`SHA: ${commit.sha} commit improved.`);
     } catch (error) {
       throw error;
     }

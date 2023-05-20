@@ -163,10 +163,10 @@ async function improveCommitMessagesWithRebase({
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
+      outro(`SHA: ${commit.sha} improving...`);
       await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
       await exec.exec('git', ['rebase', '--continue']);
-
-      outro(`SHA: ${commit.sha} commit improved 🌞`);
+      outro(`SHA: ${commit.sha} commit improved.`);
     } catch (error) {
       throw error;
     }
