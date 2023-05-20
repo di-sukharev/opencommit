@@ -193,6 +193,37 @@ async function improveCommitMessagesWithRebase({
 async function run(retries = 3) {
   intro('OpenCommit — improving commit messages with GPT');
 
+  let my1Output = '';
+  let my1Error = '';
+
+  await exec.exec('git', ['status'], {
+    listeners: {
+      stdout: (data: Buffer) => {
+        my1Output += data.toString();
+      },
+      stderr: (data: Buffer) => {
+        my1Error += data.toString();
+      }
+    }
+  });
+  console.log({ my1Output, my1Error });
+
+  let my2Output = '';
+  let my2Error = '';
+
+  await exec.exec('git', ['status'], {
+    listeners: {
+      stdout: (data: Buffer) => {
+        my2Output += data.toString();
+      },
+      stderr: (data: Buffer) => {
+        my2Error += data.toString();
+      }
+    }
+  });
+
+  console.log({ my2Output, my2Error });
+
   try {
     if (github.context.eventName === 'pull_request') {
       const baseBranch = github.context.payload.pull_request?.base.ref;
