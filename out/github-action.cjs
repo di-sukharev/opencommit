@@ -28002,21 +28002,12 @@ async function improveCommitMessagesWithRebase({
         "rebase",
         "-i",
         `origin/${base}`,
-        "--exec",
-        "git",
-        "commit",
-        "--amend",
-        "--no-edit",
-        "-F",
-        tempFilePath
+        `"--exec git commit --amend --no-edit -F ${tempFilePath}"`
       ]);
       (0, import_fs2.unlinkSync)(tempFilePath);
+      ce("Commit improved \u{1F31E}");
     } catch (error) {
       throw error;
-    } finally {
-      ce(
-        "\u{1F4DD} Commit messages improved with an interactive rebase: `$ rebase -i`"
-      );
     }
   }
   ce("Force pushing interactively rebased commits into remote origin.");

@@ -154,25 +154,16 @@ async function improveCommitMessagesWithRebase({
         'rebase',
         '-i',
         `origin/${base}`,
-        '--exec',
-        'git',
-        'commit',
-        '--amend',
-        '--no-edit',
-        '-F',
-        tempFilePath
+        `"--exec git commit --amend --no-edit -F ${tempFilePath}"`
       ]);
 
       unlinkSync(tempFilePath);
 
+      outro('Commit improved 🌞');
       // await execa('git', ['commit', '--amend', '-m', improvedMessage]);
       // await execa('git', ['rebase', '--continue']);
     } catch (error) {
       throw error;
-    } finally {
-      outro(
-        '📝 Commit messages improved with an interactive rebase: `$ rebase -i`'
-      );
     }
   }
 
