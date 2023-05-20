@@ -112,6 +112,8 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
   outro(
     `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`
   );
+
+  await execa('git', ['fetch', 'origin', 'master']);
   await execa('git', ['rebase', '-i', commitsToImprove[0].parents[0].sha]);
 
   for (const commit of commitsToImprove) {
