@@ -27935,17 +27935,21 @@ async function improveCommitMessagesWithRebase(commits) {
   const improvePromises = commitDiffs.map(
     (commit) => generateCommitMessageByDiff(commit.diff)
   );
-  console.log({ commitDiffs });
-  const improvedMessagesBySha = await Promise.all(improvePromises).then((results) => {
-    return results.reduce((acc, improvedMsg, i2) => {
-      console.log({ i: i2, sha: commitDiffs[i2].sha, improvedMsg });
-      acc[commitDiffs[i2].sha] = improvedMsg;
-      return acc;
-    }, {});
-  }).catch((error) => {
-    ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-    throw error;
-  });
+  let improvedMessagesBySha = {};
+  const step = 3;
+  for (let i2 = 0; i2 < improvePromises.length; i2 + step) {
+    const promises = improvePromises.slice(i2, step);
+    await Promise.all(promises).then((results) => {
+      return results.reduce((acc, improvedMsg, i3) => {
+        acc[commitDiffs[i3].sha] = improvedMsg;
+        return acc;
+      }, improvedMessagesBySha);
+    }).catch((error) => {
+      ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+      throw error;
+    });
+  }
+  console.log({ improvedMessagesBySha });
   ce("Done.");
   ce(
     `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`

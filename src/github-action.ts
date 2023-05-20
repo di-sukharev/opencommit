@@ -71,20 +71,27 @@ async function improveCommitMessagesWithRebase(commits: CommitsArray) {
     generateCommitMessageByDiff(commit.diff)
   );
 
-  console.log({ commitDiffs });
+  let improvedMessagesBySha: MessageBySha = {};
+  // send batches of 3 diffs in parallel, because openAI restricts too many requests at once with 429 error
+  const step = 3;
+  for (let i = 0; i < improvePromises.length; i + step) {
+    const promises = improvePromises.slice(i, step);
+    await Promise.all(promises)
+      .then((results) => {
+        return results.reduce((acc, improvedMsg, i) => {
+          acc[commitDiffs[i].sha] = improvedMsg;
 
-  const improvedMessagesBySha: MessageBySha = await Promise.all(improvePromises)
-    .then((results) => {
-      return results.reduce((acc, improvedMsg, i) => {
-        console.log({ i, sha: commitDiffs[i].sha, improvedMsg });
-        acc[commitDiffs[i].sha] = improvedMsg;
-        return acc;
-      }, {} as MessageBySha);
-    })
-    .catch((error) => {
-      outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-      throw error;
-    });
+          return acc;
+        }, improvedMessagesBySha);
+      })
+      .catch((error) => {
+        outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+        throw error;
+      });
+  }
+
+  console.log({ improvedMessagesBySha });
+
   outro('Done.');
 
   outro(
