@@ -141,25 +141,16 @@ async function improveCommitMessagesWithRebase({
 
   outro(`Starting interactive rebase: "$ rebase -i ${base}".`);
 
+  await execa('git', ['fetch', '--all']);
+
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
-      const tempFilePath = path.join('/tmp', `${commit.sha}.txt`);
+      // Checkout the commit
+      await execa('git', ['checkout', commit.sha]);
 
-      writeFileSync(tempFilePath, improvedMessage);
-
-      console.log({ sha: commit.sha, improvedMessage });
-
-      await execa('git', ['fetch', '--all']);
-      await execa('git', [
-        'rebase',
-        '-i',
-        `origin/${base}`,
-        '--exec',
-        `"git commit --amend --no-edit -F ${tempFilePath}"`
-      ]);
-
-      unlinkSync(tempFilePath);
+      // Amend the commit message
+      await execa('git', ['commit', '--amend', '-m', improvedMessage]);
 
       outro('Commit improved 🌞');
       // await execa('git', ['commit', '--amend', '-m', improvedMessage]);
@@ -168,6 +159,11 @@ async function improveCommitMessagesWithRebase({
       throw error;
     }
   }
+
+  // Once all commits have been amended, you'll need to rebase the original branch onto the last amended commit
+  const lastCommit = commits[0];
+  await execa('git', ['checkout', source]); // replace 'master' with your branch name
+  await execa('git', ['rebase', lastCommit.sha]);
 
   outro('Force pushing interactively rebased commits into remote origin.');
 

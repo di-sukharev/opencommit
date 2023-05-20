@@ -1944,7 +1944,7 @@ var require_path_utils = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.toPlatformPath = exports.toWin32Path = exports.toPosixPath = void 0;
-    var path4 = __importStar(require("path"));
+    var path3 = __importStar(require("path"));
     function toPosixPath(pth) {
       return pth.replace(/[\\]/g, "/");
     }
@@ -1954,7 +1954,7 @@ var require_path_utils = __commonJS({
     }
     exports.toWin32Path = toWin32Path;
     function toPlatformPath(pth) {
-      return pth.replace(/[/\\]/g, path4.sep);
+      return pth.replace(/[/\\]/g, path3.sep);
     }
     exports.toPlatformPath = toPlatformPath;
   }
@@ -2025,7 +2025,7 @@ var require_core = __commonJS({
     var file_command_1 = require_file_command();
     var utils_1 = require_utils();
     var os3 = __importStar(require("os"));
-    var path4 = __importStar(require("path"));
+    var path3 = __importStar(require("path"));
     var oidc_utils_1 = require_oidc_utils();
     var ExitCode;
     (function(ExitCode2) {
@@ -2053,7 +2053,7 @@ var require_core = __commonJS({
       } else {
         command_1.issueCommand("add-path", {}, inputPath);
       }
-      process.env["PATH"] = `${inputPath}${path4.delimiter}${process.env["PATH"]}`;
+      process.env["PATH"] = `${inputPath}${path3.delimiter}${process.env["PATH"]}`;
     }
     exports.addPath = addPath;
     function getInput(name, options) {
@@ -2205,8 +2205,8 @@ var require_context = __commonJS({
           if (fs_1.existsSync(process.env.GITHUB_EVENT_PATH)) {
             this.payload = JSON.parse(fs_1.readFileSync(process.env.GITHUB_EVENT_PATH, { encoding: "utf8" }));
           } else {
-            const path4 = process.env.GITHUB_EVENT_PATH;
-            process.stdout.write(`GITHUB_EVENT_PATH ${path4} does not exist${os_1.EOL}`);
+            const path3 = process.env.GITHUB_EVENT_PATH;
+            process.stdout.write(`GITHUB_EVENT_PATH ${path3} does not exist${os_1.EOL}`);
           }
         }
         this.eventName = process.env.GITHUB_EVENT_NAME;
@@ -3524,14 +3524,14 @@ var require_url_state_machine = __commonJS({
       return url3.replace(/\u0009|\u000A|\u000D/g, "");
     }
     function shortenPath(url3) {
-      const path4 = url3.path;
-      if (path4.length === 0) {
+      const path3 = url3.path;
+      if (path3.length === 0) {
         return;
       }
-      if (url3.scheme === "file" && path4.length === 1 && isNormalizedWindowsDriveLetter(path4[0])) {
+      if (url3.scheme === "file" && path3.length === 1 && isNormalizedWindowsDriveLetter(path3[0])) {
         return;
       }
-      path4.pop();
+      path3.pop();
     }
     function includesCredentials(url3) {
       return url3.username !== "" || url3.password !== "";
@@ -7618,7 +7618,7 @@ var require_windows = __commonJS({
     module2.exports = isexe;
     isexe.sync = sync;
     var fs = require("fs");
-    function checkPathExt(path4, options) {
+    function checkPathExt(path3, options) {
       var pathext = options.pathExt !== void 0 ? options.pathExt : process.env.PATHEXT;
       if (!pathext) {
         return true;
@@ -7629,25 +7629,25 @@ var require_windows = __commonJS({
       }
       for (var i2 = 0; i2 < pathext.length; i2++) {
         var p2 = pathext[i2].toLowerCase();
-        if (p2 && path4.substr(-p2.length).toLowerCase() === p2) {
+        if (p2 && path3.substr(-p2.length).toLowerCase() === p2) {
           return true;
         }
       }
       return false;
     }
-    function checkStat(stat, path4, options) {
+    function checkStat(stat, path3, options) {
       if (!stat.isSymbolicLink() && !stat.isFile()) {
         return false;
       }
-      return checkPathExt(path4, options);
+      return checkPathExt(path3, options);
     }
-    function isexe(path4, options, cb) {
-      fs.stat(path4, function(er, stat) {
-        cb(er, er ? false : checkStat(stat, path4, options));
+    function isexe(path3, options, cb) {
+      fs.stat(path3, function(er, stat) {
+        cb(er, er ? false : checkStat(stat, path3, options));
       });
     }
-    function sync(path4, options) {
-      return checkStat(fs.statSync(path4), path4, options);
+    function sync(path3, options) {
+      return checkStat(fs.statSync(path3), path3, options);
     }
   }
 });
@@ -7658,13 +7658,13 @@ var require_mode = __commonJS({
     module2.exports = isexe;
     isexe.sync = sync;
     var fs = require("fs");
-    function isexe(path4, options, cb) {
-      fs.stat(path4, function(er, stat) {
+    function isexe(path3, options, cb) {
+      fs.stat(path3, function(er, stat) {
         cb(er, er ? false : checkStat(stat, options));
       });
     }
-    function sync(path4, options) {
-      return checkStat(fs.statSync(path4), options);
+    function sync(path3, options) {
+      return checkStat(fs.statSync(path3), options);
     }
     function checkStat(stat, options) {
       return stat.isFile() && checkMode(stat, options);
@@ -7697,7 +7697,7 @@ var require_isexe = __commonJS({
     }
     module2.exports = isexe;
     isexe.sync = sync;
-    function isexe(path4, options, cb) {
+    function isexe(path3, options, cb) {
       if (typeof options === "function") {
         cb = options;
         options = {};
@@ -7707,7 +7707,7 @@ var require_isexe = __commonJS({
           throw new TypeError("callback not provided");
         }
         return new Promise(function(resolve, reject) {
-          isexe(path4, options || {}, function(er, is) {
+          isexe(path3, options || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
@@ -7716,7 +7716,7 @@ var require_isexe = __commonJS({
           });
         });
       }
-      core2(path4, options || {}, function(er, is) {
+      core2(path3, options || {}, function(er, is) {
         if (er) {
           if (er.code === "EACCES" || options && options.ignoreErrors) {
             er = null;
@@ -7726,9 +7726,9 @@ var require_isexe = __commonJS({
         cb(er, is);
       });
     }
-    function sync(path4, options) {
+    function sync(path3, options) {
       try {
-        return core2.sync(path4, options || {});
+        return core2.sync(path3, options || {});
       } catch (er) {
         if (options && options.ignoreErrors || er.code === "EACCES") {
           return false;
@@ -7744,7 +7744,7 @@ var require_isexe = __commonJS({
 var require_which = __commonJS({
   "node_modules/which/which.js"(exports, module2) {
     var isWindows = process.platform === "win32" || process.env.OSTYPE === "cygwin" || process.env.OSTYPE === "msys";
-    var path4 = require("path");
+    var path3 = require("path");
     var COLON = isWindows ? ";" : ":";
     var isexe = require_isexe();
     var getNotFoundError = (cmd) => Object.assign(new Error(`not found: ${cmd}`), { code: "ENOENT" });
@@ -7780,7 +7780,7 @@ var require_which = __commonJS({
           return opt.all && found.length ? resolve(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i2];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
-        const pCmd = path4.join(pathPart, cmd);
+        const pCmd = path3.join(pathPart, cmd);
         const p2 = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
         resolve(subStep(p2, i2, 0));
       });
@@ -7807,7 +7807,7 @@ var require_which = __commonJS({
       for (let i2 = 0; i2 < pathEnv.length; i2++) {
         const ppRaw = pathEnv[i2];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
-        const pCmd = path4.join(pathPart, cmd);
+        const pCmd = path3.join(pathPart, cmd);
         const p2 = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
         for (let j2 = 0; j2 < pathExt.length; j2++) {
           const cur = p2 + pathExt[j2];
@@ -7855,7 +7855,7 @@ var require_path_key = __commonJS({
 var require_resolveCommand = __commonJS({
   "node_modules/cross-spawn/lib/util/resolveCommand.js"(exports, module2) {
     "use strict";
-    var path4 = require("path");
+    var path3 = require("path");
     var which = require_which();
     var getPathKey = require_path_key();
     function resolveCommandAttempt(parsed, withoutPathExt) {
@@ -7873,7 +7873,7 @@ var require_resolveCommand = __commonJS({
       try {
         resolved = which.sync(parsed.command, {
           path: env2[getPathKey({ env: env2 })],
-          pathExt: withoutPathExt ? path4.delimiter : void 0
+          pathExt: withoutPathExt ? path3.delimiter : void 0
         });
       } catch (e2) {
       } finally {
@@ -7882,7 +7882,7 @@ var require_resolveCommand = __commonJS({
         }
       }
       if (resolved) {
-        resolved = path4.resolve(hasCustomCwd ? parsed.options.cwd : "", resolved);
+        resolved = path3.resolve(hasCustomCwd ? parsed.options.cwd : "", resolved);
       }
       return resolved;
     }
@@ -7936,8 +7936,8 @@ var require_shebang_command = __commonJS({
       if (!match) {
         return null;
       }
-      const [path4, argument] = match[0].replace(/#! ?/, "").split(" ");
-      const binary = path4.split("/").pop();
+      const [path3, argument] = match[0].replace(/#! ?/, "").split(" ");
+      const binary = path3.split("/").pop();
       if (binary === "env") {
         return argument;
       }
@@ -7972,7 +7972,7 @@ var require_readShebang = __commonJS({
 var require_parse2 = __commonJS({
   "node_modules/cross-spawn/lib/parse.js"(exports, module2) {
     "use strict";
-    var path4 = require("path");
+    var path3 = require("path");
     var resolveCommand = require_resolveCommand();
     var escape = require_escape();
     var readShebang = require_readShebang();
@@ -7997,7 +7997,7 @@ var require_parse2 = __commonJS({
       const needsShell = !isExecutableRegExp.test(commandFile);
       if (parsed.options.forceShell || needsShell) {
         const needsDoubleEscapeMetaChars = isCmdShimRegExp.test(commandFile);
-        parsed.command = path4.normalize(parsed.command);
+        parsed.command = path3.normalize(parsed.command);
         parsed.command = escape.command(parsed.command);
         parsed.args = parsed.args.map((arg) => escape.argument(arg, needsDoubleEscapeMetaChars));
         const shellCommand = [parsed.command].concat(parsed.args).join(" ");
@@ -8903,14 +8903,14 @@ var require_cookies = __commonJS({
     var utils = require_utils5();
     module2.exports = utils.isStandardBrowserEnv() ? function standardBrowserEnv3() {
       return {
-        write: function write(name, value, expires, path4, domain, secure) {
+        write: function write(name, value, expires, path3, domain, secure) {
           var cookie = [];
           cookie.push(name + "=" + encodeURIComponent(value));
           if (utils.isNumber(expires)) {
             cookie.push("expires=" + new Date(expires).toGMTString());
           }
-          if (utils.isString(path4)) {
-            cookie.push("path=" + path4);
+          if (utils.isString(path3)) {
+            cookie.push("path=" + path3);
           }
           if (utils.isString(domain)) {
             cookie.push("domain=" + domain);
@@ -21453,11 +21453,11 @@ var require_mime_types = __commonJS({
       }
       return exts[0];
     }
-    function lookup(path4) {
-      if (!path4 || typeof path4 !== "string") {
+    function lookup(path3) {
+      if (!path3 || typeof path3 !== "string") {
         return false;
       }
-      var extension2 = extname("x." + path4).toLowerCase().substr(1);
+      var extension2 = extname("x." + path3).toLowerCase().substr(1);
       if (!extension2) {
         return false;
       }
@@ -21714,7 +21714,7 @@ var require_form_data = __commonJS({
   "node_modules/form-data/lib/form_data.js"(exports, module2) {
     var CombinedStream = require_combined_stream();
     var util2 = require("util");
-    var path4 = require("path");
+    var path3 = require("path");
     var http2 = require("http");
     var https2 = require("https");
     var parseUrl = require("url").parse;
@@ -21839,11 +21839,11 @@ var require_form_data = __commonJS({
     FormData3.prototype._getContentDisposition = function(value, options) {
       var filename, contentDisposition;
       if (typeof options.filepath === "string") {
-        filename = path4.normalize(options.filepath).replace(/\\/g, "/");
+        filename = path3.normalize(options.filepath).replace(/\\/g, "/");
       } else if (options.filename || value.name || value.path) {
-        filename = path4.basename(options.filename || value.name || value.path);
+        filename = path3.basename(options.filename || value.name || value.path);
       } else if (value.readable && value.hasOwnProperty("httpVersion")) {
-        filename = path4.basename(value.client._httpMessage.path || "");
+        filename = path3.basename(value.client._httpMessage.path || "");
       }
       if (filename) {
         contentDisposition = 'filename="' + filename + '"';
@@ -22404,7 +22404,7 @@ var require_package2 = __commonJS({
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports, module2) {
     var fs = require("fs");
-    var path4 = require("path");
+    var path3 = require("path");
     var os3 = require("os");
     var packageJson = require_package2();
     var version = packageJson.version;
@@ -22432,10 +22432,10 @@ var require_main = __commonJS({
       console.log(`[dotenv@${version}][DEBUG] ${message}`);
     }
     function _resolveHome(envPath) {
-      return envPath[0] === "~" ? path4.join(os3.homedir(), envPath.slice(1)) : envPath;
+      return envPath[0] === "~" ? path3.join(os3.homedir(), envPath.slice(1)) : envPath;
     }
     function config4(options) {
-      let dotenvPath = path4.resolve(process.cwd(), ".env");
+      let dotenvPath = path3.resolve(process.cwd(), ".env");
       let encoding = "utf8";
       const debug = Boolean(options && options.debug);
       const override = Boolean(options && options.override);
@@ -22807,13 +22807,13 @@ var require_tiktoken = __commonJS({
     var wasm = require_tiktoken_bg();
     var imports = {};
     imports["./tiktoken_bg.js"] = wasm;
-    var path4 = require("path");
+    var path3 = require("path");
     var fs = require("fs");
-    var candidates = __dirname.split(path4.sep).reduce((memo, _2, index, array) => {
-      const prefix = array.slice(0, index + 1).join(path4.sep) + path4.sep;
-      if (!prefix.includes("node_modules" + path4.sep)) {
+    var candidates = __dirname.split(path3.sep).reduce((memo, _2, index, array) => {
+      const prefix = array.slice(0, index + 1).join(path3.sep) + path3.sep;
+      if (!prefix.includes("node_modules" + path3.sep)) {
         memo.unshift(
-          path4.join(
+          path3.join(
             prefix,
             "node_modules",
             "@dqbd",
@@ -22825,7 +22825,7 @@ var require_tiktoken = __commonJS({
       }
       return memo;
     }, []);
-    candidates.unshift(path4.join(__dirname, "./tiktoken_bg.wasm"));
+    candidates.unshift(path3.join(__dirname, "./tiktoken_bg.wasm"));
     var bytes = null;
     for (const candidate of candidates) {
       try {
@@ -22905,9 +22905,9 @@ function npmRunPath(options = {}) {
 }
 function npmRunPathEnv({ env: env2 = import_node_process.default.env, ...options } = {}) {
   env2 = { ...env2 };
-  const path4 = pathKey({ env: env2 });
-  options.path = env2[path4];
-  env2[path4] = npmRunPath(options);
+  const path3 = pathKey({ env: env2 });
+  options.path = env2[path3];
+  env2[path3] = npmRunPath(options);
   return env2;
 }
 
@@ -24326,10 +24326,10 @@ function isVisitable(thing) {
 function removeBrackets(key) {
   return utils_default.endsWith(key, "[]") ? key.slice(0, -2) : key;
 }
-function renderKey(path4, key, dots) {
-  if (!path4)
+function renderKey(path3, key, dots) {
+  if (!path3)
     return key;
-  return path4.concat(key).map(function each(token, i2) {
+  return path3.concat(key).map(function each(token, i2) {
     token = removeBrackets(token);
     return !dots && i2 ? "[" + token + "]" : token;
   }).join(dots ? "." : "");
@@ -24375,9 +24375,9 @@ function toFormData(obj, formData, options) {
     }
     return value;
   }
-  function defaultVisitor(value, key, path4) {
+  function defaultVisitor(value, key, path3) {
     let arr = value;
-    if (value && !path4 && typeof value === "object") {
+    if (value && !path3 && typeof value === "object") {
       if (utils_default.endsWith(key, "{}")) {
         key = metaTokens ? key : key.slice(0, -2);
         value = JSON.stringify(value);
@@ -24395,7 +24395,7 @@ function toFormData(obj, formData, options) {
     if (isVisitable(value)) {
       return true;
     }
-    formData.append(renderKey(path4, key, dots), convertValue(value));
+    formData.append(renderKey(path3, key, dots), convertValue(value));
     return false;
   }
   const stack = [];
@@ -24404,11 +24404,11 @@ function toFormData(obj, formData, options) {
     convertValue,
     isVisitable
   });
-  function build(value, path4) {
+  function build(value, path3) {
     if (utils_default.isUndefined(value))
       return;
     if (stack.indexOf(value) !== -1) {
-      throw Error("Circular reference detected in " + path4.join("."));
+      throw Error("Circular reference detected in " + path3.join("."));
     }
     stack.push(value);
     utils_default.forEach(value, function each(el, key) {
@@ -24416,11 +24416,11 @@ function toFormData(obj, formData, options) {
         formData,
         el,
         utils_default.isString(key) ? key.trim() : key,
-        path4,
+        path3,
         exposedHelpers
       );
       if (result === true) {
-        build(el, path4 ? path4.concat(key) : [key]);
+        build(el, path3 ? path3.concat(key) : [key]);
       }
     });
     stack.pop();
@@ -24551,7 +24551,7 @@ var node_default = {
 // node_modules/axios/lib/helpers/toURLEncodedForm.js
 function toURLEncodedForm(data, options) {
   return toFormData_default(data, new node_default.classes.URLSearchParams(), Object.assign({
-    visitor: function(value, key, path4, helpers) {
+    visitor: function(value, key, path3, helpers) {
       if (node_default.isNode && utils_default.isBuffer(value)) {
         this.append(key, value.toString("base64"));
         return false;
@@ -24580,10 +24580,10 @@ function arrayToObject(arr) {
   return obj;
 }
 function formDataToJSON(formData) {
-  function buildPath(path4, value, target, index) {
-    let name = path4[index++];
+  function buildPath(path3, value, target, index) {
+    let name = path3[index++];
     const isNumericKey = Number.isFinite(+name);
-    const isLast = index >= path4.length;
+    const isLast = index >= path3.length;
     name = !name && utils_default.isArray(target) ? target.length : name;
     if (isLast) {
       if (utils_default.hasOwnProp(target, name)) {
@@ -24596,7 +24596,7 @@ function formDataToJSON(formData) {
     if (!target[name] || !utils_default.isObject(target[name])) {
       target[name] = [];
     }
-    const result = buildPath(path4, value, target[name], index);
+    const result = buildPath(path3, value, target[name], index);
     if (result && utils_default.isArray(target[name])) {
       target[name] = arrayToObject(target[name]);
     }
@@ -25668,9 +25668,9 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config4) {
       auth = urlUsername + ":" + urlPassword;
     }
     auth && headers.delete("authorization");
-    let path4;
+    let path3;
     try {
-      path4 = buildURL(
+      path3 = buildURL(
         parsed.pathname + parsed.search,
         config4.params,
         config4.paramsSerializer
@@ -25688,7 +25688,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config4) {
       false
     );
     const options = {
-      path: path4,
+      path: path3,
       method,
       headers: headers.toJSON(),
       agents: { http: config4.httpAgent, https: config4.httpsAgent },
@@ -25907,14 +25907,14 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config4) {
 // node_modules/axios/lib/helpers/cookies.js
 var cookies_default = node_default.isStandardBrowserEnv ? function standardBrowserEnv() {
   return {
-    write: function write(name, value, expires, path4, domain, secure) {
+    write: function write(name, value, expires, path3, domain, secure) {
       const cookie = [];
       cookie.push(name + "=" + encodeURIComponent(value));
       if (utils_default.isNumber(expires)) {
         cookie.push("expires=" + new Date(expires).toGMTString());
       }
-      if (utils_default.isString(path4)) {
-        cookie.push("path=" + path4);
+      if (utils_default.isString(path3)) {
+        cookie.push("path=" + path3);
       }
       if (utils_default.isString(domain)) {
         cookie.push("domain=" + domain);
@@ -27899,10 +27899,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// src/github-action.ts
-var import_fs2 = require("fs");
-var import_path2 = __toESM(require("path"), 1);
-
 // src/utils/randomIntFromInterval.ts
 function randomIntFromInterval(min, max) {
   return Math.floor(Math.random() * (max - min + 1) + min);
@@ -27993,26 +27989,20 @@ async function improveCommitMessagesWithRebase({
   console.log({ improvedMessagesBySha });
   ce("Done.");
   ce(`Starting interactive rebase: "$ rebase -i ${base}".`);
+  await execa("git", ["fetch", "--all"]);
   for (const commit of commitsToImprove) {
     try {
       const improvedMessage = improvedMessagesBySha[commit.sha];
-      const tempFilePath = import_path2.default.join("/tmp", `${commit.sha}.txt`);
-      (0, import_fs2.writeFileSync)(tempFilePath, improvedMessage);
-      console.log({ sha: commit.sha, improvedMessage });
-      await execa("git", ["fetch", "--all"]);
-      await execa("git", [
-        "rebase",
-        "-i",
-        `origin/${base}`,
-        "--exec",
-        `"git commit --amend --no-edit -F ${tempFilePath}"`
-      ]);
-      (0, import_fs2.unlinkSync)(tempFilePath);
+      await execa("git", ["checkout", commit.sha]);
+      await execa("git", ["commit", "--amend", "-m", improvedMessage]);
       ce("Commit improved \u{1F31E}");
     } catch (error) {
       throw error;
     }
   }
+  const lastCommit = commits[0];
+  await execa("git", ["checkout", source]);
+  await execa("git", ["rebase", lastCommit.sha]);
   ce("Force pushing interactively rebased commits into remote origin.");
   await execa("git", ["push", "origin", `+${context.ref}`]);
   ce("Done \u23F1\uFE0F");
