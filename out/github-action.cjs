@@ -27282,7 +27282,11 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["checkout", source]);
-  await import_exec.default.exec("git", ["merge", `origin/${base}`]);
+  await import_exec.default.exec("git", [
+    "merge",
+    `origin/${base}`,
+    "--allow-unrelated-histories"
+  ]);
   await import_exec.default.exec("git", ["rebase", "-i", `origin/${base}`], {
     env: {
       GIT_SEQUENCE_EDITOR: `sed -i -e 's/^pick/reword/g' "$1"`,
