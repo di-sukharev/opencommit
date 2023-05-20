@@ -27957,7 +27957,7 @@ async function improveCommitMessagesWithRebase(commits) {
         throw error;
       });
       ce("Sleeping for 1s");
-      await sleep(1e3);
+      await sleep(1e3 + 100 * i2);
     }
     return improvedMessagesBySha2;
   }
