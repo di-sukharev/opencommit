@@ -43,6 +43,16 @@ async function getCommitDiff(commitSha: string) {
   return { sha: commitSha, diff: diffResponse.data };
 }
 
+interface DiffAndSHA {
+  sha: string;
+  diff: string;
+}
+
+interface DiffAndImprovedMessage {
+  sha: string;
+  improvedMessage: string;
+}
+
 async function improveCommitMessagesWithRebase({
   commits,
   diffs,
@@ -50,7 +60,7 @@ async function improveCommitMessagesWithRebase({
   base
 }: {
   commits: CommitsArray;
-  diffs?: { sha: string; diff: string }[];
+  diffs?: DiffAndSHA[];
   base: string;
   source: string;
 }): Promise<void> {
@@ -146,25 +156,52 @@ async function improveCommitMessagesWithRebase({
   await exec.exec('git', ['fetch', '--all']);
   await exec.exec('git', ['pull']);
 
-  await exec.exec('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`], {
-    env: {
-      GIT_SEQUENCE_EDITOR: `node -e "const fs = require('fs'); const filePath = process.argv[1]; const file = fs.readFileSync(filePath, 'utf8'); const newFile = file.replace(/pick/g, 'reword'); fs.writeFileSync(filePath, newFile);"`,
-      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
-      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-    }
-  });
+  // await exec.exec('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`], {
+  //   env: {
+  //     GIT_SEQUENCE_EDITOR: `node -e "const fs = require('fs'); const filePath = process.argv[1]; const file = fs.readFileSync(filePath, 'utf8'); const newFile = file.replace(/pick/g, 'reword'); fs.writeFileSync(filePath, newFile);"`,
+  //     GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
+  //     GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  //   }
+  // });
 
-  for (const commit of commitsToImprove) {
-    try {
-      const improvedMessage = improvedMessagesBySha[commit.sha];
-      outro(`SHA: ${commit.sha} improving...`);
-      await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
-      await exec.exec('git', ['rebase', '--continue']);
-      outro(`SHA: ${commit.sha} commit improved.`);
-    } catch (error) {
-      throw error;
-    }
+  async function changeCommitMessages(
+    commitsToUpdate: DiffAndImprovedMessage[]
+  ) {
+    const messageFilterScript = commitsToUpdate
+      .map(
+        (commit: DiffAndImprovedMessage) =>
+          `if [ "$GIT_COMMIT" = "${commit.sha}" ]; then echo "${commit.improvedMessage}"; else cat; fi`
+      )
+      .join(' | ');
+
+    await exec.exec('git', [
+      'filter-branch',
+      '--msg-filter',
+      messageFilterScript,
+      '--',
+      '--all'
+    ]);
   }
+
+  const diffsAndImprovedMessages: DiffAndImprovedMessage[] =
+    commitsToImprove.map((commit) => ({
+      sha: commit.sha,
+      improvedMessage: improvedMessagesBySha[commit.sha]
+    }));
+
+  changeCommitMessages(diffsAndImprovedMessages);
+
+  // for (const commit of commitsToImprove) {
+  //   try {
+  //     const improvedMessage = improvedMessagesBySha[commit.sha];
+  //     outro(`SHA: ${commit.sha} improving...`);
+  //     await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
+  //     await exec.exec('git', ['rebase', '--continue']);
+  //     outro(`SHA: ${commit.sha} commit improved.`);
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
   // // Once all commits have been amended, you'll need to rebase the original branch onto the last amended commit
   // const lastCommit = commits[0];
