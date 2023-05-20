@@ -27284,8 +27284,8 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", [
     "merge",
-    `origin/${base}`,
-    "--allow-unrelated-histories"
+    "--allow-unrelated-histories",
+    `origin/${base}`
   ]);
   await import_exec.default.exec("git", ["rebase", "-i", `origin/${base}`], {
     env: {

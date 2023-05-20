@@ -153,8 +153,8 @@ async function improveCommitMessagesWithRebase({
   await exec.exec('git', ['checkout', source]);
   await exec.exec('git', [
     'merge',
-    `origin/${base}`,
-    '--allow-unrelated-histories'
+    '--allow-unrelated-histories',
+    `origin/${base}`
   ]);
 
   await exec.exec('git', ['rebase', '-i', `origin/${base}`], {
