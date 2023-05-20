@@ -221,8 +221,8 @@ async function run(retries = 3) {
       const commits = commitsResponse.data;
 
       // --- TEST ---
-      await exec.exec('git', ['checkout', sourceBranch]);
       await exec.exec('git', ['fetch', '--all']);
+      await exec.exec('git', ['checkout', `origin/${sourceBranch}`]);
       await exec.exec('git', ['pull']);
       await exec.exec('git', ['status']);
       await exec.exec('git', ['log', '--oneline']);
