@@ -27938,6 +27938,7 @@ async function improveCommitMessagesWithRebase(commits) {
   let improvedMessagesBySha = {};
   const step = 3;
   for (let i2 = 0; i2 < improvePromises.length; i2 + step) {
+    console.log({ i: i2, improvedMessagesBySha });
     const promises = improvePromises.slice(i2, step);
     await Promise.all(promises).then((results) => {
       return results.reduce((acc, improvedMsg, i3) => {
