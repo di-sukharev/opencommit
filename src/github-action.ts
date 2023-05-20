@@ -73,7 +73,7 @@ async function improveCommitMessagesWithRebase(
 
   // send chunks of diffs in parallel, because openAI restricts too many requests at once with 429 error
   async function improveMessagesInChunks() {
-    const chunkSize = diffs!.length % 2 === 0 ? 2 : 3;
+    const chunkSize = 1;
     outro(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
     const improvePromises = diffs!.map((commit) =>
       generateCommitMessageByDiff(commit.diff)
