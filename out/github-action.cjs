@@ -27901,6 +27901,13 @@ function sleep(ms) {
 // src/github-action.ts
 var import_fs2 = require("fs");
 var import_path2 = __toESM(require("path"), 1);
+
+// src/utils/randomIntFromInterval.ts
+function randomIntFromInterval(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+// src/github-action.ts
 var GITHUB_TOKEN = import_core4.default.getInput("GITHUB_TOKEN");
 var pattern = import_core4.default.getInput("pattern");
 var octokit = import_github.default.getOctokit(GITHUB_TOKEN);
@@ -27966,15 +27973,16 @@ async function improveCommitMessagesWithRebase({
           ...improvedMessagesBySha2,
           ...chunkOfImprovedMessagesBySha
         };
-        const sleepFor = 3e3 + 200 * (step / chunkSize);
+        const sleepFor = 3e3 + 200 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
         ce(
           `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
         );
         await sleep(sleepFor);
       } catch (error) {
         ce(error);
-        ce("Retrying after sleeping for 5s");
-        await sleep(5e3);
+        const sleepFor = 5e3 + 1e3 * randomIntFromInterval(1, 5);
+        ce(`Retrying after sleeping for ${sleepFor}`);
+        await sleep(sleepFor);
         step -= chunkSize;
       }
     }

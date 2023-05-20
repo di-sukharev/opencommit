@@ -7,6 +7,7 @@ import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff'
 import { sleep } from './utils/sleep';
 import { unlinkSync, writeFileSync } from 'fs';
 import path from 'path';
+import { randomIntFromInterval } from './utils/randomIntFromInterval';
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -112,7 +113,8 @@ async function improveCommitMessagesWithRebase({
         };
 
         // openAI errors with 429 code (too many requests) so lets sleep a bit
-        const sleepFor = 3000 + 200 * (step / chunkSize);
+        const sleepFor =
+          3000 + 200 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
 
         outro(
           `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
@@ -121,8 +123,9 @@ async function improveCommitMessagesWithRebase({
         await sleep(sleepFor);
       } catch (error) {
         outro(error as string);
-        outro('Retrying after sleeping for 5s');
-        await sleep(5000);
+        const sleepFor = 5000 + 1000 * randomIntFromInterval(1, 5);
+        outro(`Retrying after sleeping for ${sleepFor}`);
+        await sleep(sleepFor);
         step -= chunkSize;
       }
     }
