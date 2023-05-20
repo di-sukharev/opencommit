@@ -27975,7 +27975,8 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
   ce(
     `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].parents[0].sha}".`
   );
-  await execa("git", ["fetch", "origin", "master"]);
+  const { stdout } = await execa("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
+  ce(`Current branch: ${stdout}`);
   await execa("git", ["rebase", "-i", `${commitsToImprove[0].sha}^`]);
   for (const commit of commitsToImprove) {
     try {
