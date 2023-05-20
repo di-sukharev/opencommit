@@ -126,9 +126,6 @@ async function improveCommitMessagesWithRebase(
 
   outro('Done.');
 
-  const { stdout } = await execa('git', ['rev-parse', '--abbrev-ref', 'HEAD']);
-  outro(`Current branch: ${stdout}`);
-
   outro(
     `Starting interactive rebase: "$ rebase -i HEAD~${
       commitsToImprove.length - 5
@@ -167,8 +164,12 @@ async function run(retries = 3) {
 
   try {
     if (github.context.eventName === 'pull_request') {
+      const baseBranch = github.context.payload.pull_request?.base.ref;
+      const sourceBranch = github.context.payload.pull_request?.head.ref;
+      outro('Pull Request opened');
+
       if (github.context.payload.action === 'opened')
-        outro('Pull Request opened');
+        outro(`Pull Request opened from ${sourceBranch} to ${baseBranch}`);
       else if (github.context.payload.action === 'synchronize')
         outro('New commits are pushed');
       else return outro('Unhandled action: ' + github.context.payload.action);

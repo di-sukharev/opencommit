@@ -27975,8 +27975,6 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
   const improvedMessagesBySha = await improveMessagesInChunks();
   console.log({ improvedMessagesBySha });
   ce("Done.");
-  const { stdout } = await execa("git", ["rev-parse", "--abbrev-ref", "HEAD"]);
-  ce(`Current branch: ${stdout}`);
   ce(
     `Starting interactive rebase: "$ rebase -i HEAD~${commitsToImprove.length - 5}".`
   );
@@ -28003,8 +28001,11 @@ async function run(retries = 3) {
   ae("OpenCommit \u2014 improving commit messages with GPT");
   try {
     if (import_github.default.context.eventName === "pull_request") {
+      const baseBranch = import_github.default.context.payload.pull_request?.base.ref;
+      const sourceBranch = import_github.default.context.payload.pull_request?.head.ref;
+      ce("Pull Request opened");
       if (import_github.default.context.payload.action === "opened")
-        ce("Pull Request opened");
+        ce(`Pull Request opened from ${sourceBranch} to ${baseBranch}`);
       else if (import_github.default.context.payload.action === "synchronize")
         ce("New commits are pushed");
       else
