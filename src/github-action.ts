@@ -139,14 +139,6 @@ async function improveCommitMessagesWithRebase({
 
   outro(`Starting interactive rebase: "$ rebase -i origin/${base}".`);
 
-  // Set the Git identity
-  await exec.exec('git', [
-    'config',
-    'user.email',
-    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-  ]);
-  await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
-
   // fetch all commits inside the process
   await exec.exec('git', ['fetch', '--all']);
 
@@ -192,6 +184,14 @@ async function improveCommitMessagesWithRebase({
 
 async function run(retries = 3) {
   intro('OpenCommit — improving commit messages with GPT');
+
+  // Set the Git identity
+  await exec.exec('git', [
+    'config',
+    'user.email',
+    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  ]);
+  await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
 
   await exec.exec('git', ['status']);
 

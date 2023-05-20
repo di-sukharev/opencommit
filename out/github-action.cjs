@@ -27274,12 +27274,6 @@ async function improveCommitMessagesWithRebase({
   console.log({ improvedMessagesBySha });
   ce("Done.");
   ce(`Starting interactive rebase: "$ rebase -i origin/${base}".`);
-  await import_exec.default.exec("git", [
-    "config",
-    "user.email",
-    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-  ]);
-  await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", [
@@ -27311,6 +27305,12 @@ async function improveCommitMessagesWithRebase({
 }
 async function run(retries = 3) {
   ae("OpenCommit \u2014 improving commit messages with GPT");
+  await import_exec.default.exec("git", [
+    "config",
+    "user.email",
+    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+  ]);
+  await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["log", "--oneline"]);
   await import_exec.default.exec("git", ["commit", "--amend", "-m", "NEW_DAT_MSG"]);
