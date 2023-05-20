@@ -27274,7 +27274,7 @@ async function improveCommitMessagesWithRebase({
   const improvedMessagesBySha = await improveMessagesInChunks();
   console.log({ improvedMessagesBySha });
   ce("Done.");
-  ce(`Starting interactive rebase: "$ rebase -i ${base}".`);
+  ce(`Starting interactive rebase: "$ rebase -i origin/${base}".`);
   await import_exec.default.exec("git", [
     "config",
     "user.email",
@@ -27283,7 +27283,7 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["checkout", source]);
-  await import_exec.default.exec("git", ["rebase", "-i", `${commitsToImprove[0].sha}^`], {
+  await import_exec.default.exec("git", ["rebase", "-i", `origin/${base}`], {
     env: {
       GIT_SEQUENCE_EDITOR: `sed -i -e 's/^pick/reword/g' "$GIT_SEQUENCE_EDITOR"`,
       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,

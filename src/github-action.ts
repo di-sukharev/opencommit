@@ -137,7 +137,7 @@ async function improveCommitMessagesWithRebase({
 
   outro('Done.');
 
-  outro(`Starting interactive rebase: "$ rebase -i ${base}".`);
+  outro(`Starting interactive rebase: "$ rebase -i origin/${base}".`);
 
   // Set the Git identity
   await exec.exec('git', [
@@ -152,7 +152,7 @@ async function improveCommitMessagesWithRebase({
 
   await exec.exec('git', ['checkout', source]);
 
-  await exec.exec('git', ['rebase', '-i', `${commitsToImprove[0].sha}^`], {
+  await exec.exec('git', ['rebase', '-i', `origin/${base}`], {
     env: {
       GIT_SEQUENCE_EDITOR:
         'sed -i -e \'s/^pick/reword/g\' "$GIT_SEQUENCE_EDITOR"',
