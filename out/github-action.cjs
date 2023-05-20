@@ -27998,6 +27998,7 @@ async function improveCommitMessagesWithRebase({
       const tempFilePath = import_path2.default.join("/tmp", `${commit.sha}.txt`);
       (0, import_fs2.writeFileSync)(tempFilePath, improvedMessage);
       console.log({ sha: commit.sha, improvedMessage });
+      await execa("git", ["fetch", "--all"]);
       await execa("git", [
         "rebase",
         "-i",

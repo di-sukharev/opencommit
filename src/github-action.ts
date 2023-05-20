@@ -150,6 +150,7 @@ async function improveCommitMessagesWithRebase({
 
       console.log({ sha: commit.sha, improvedMessage });
 
+      await execa('git', ['fetch', '--all']);
       await execa('git', [
         'rebase',
         '-i',
