@@ -27956,6 +27956,7 @@ async function improveCommitMessagesWithRebase(commits) {
         ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
         throw error;
       });
+      ce("Sleeping for 1s");
       await sleep(1e3);
     }
     return improvedMessagesBySha2;
