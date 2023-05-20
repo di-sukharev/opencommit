@@ -27945,33 +27945,28 @@ async function improveCommitMessagesWithRebase(commits, diffs) {
     let improvedMessagesBySha2 = {};
     for (let i2 = 0; i2 < improvePromises.length; i2 += chunkSize) {
       const chunkOfPromises = improvePromises.slice(i2, i2 + chunkSize);
-      await Promise.all(chunkOfPromises).then((results) => {
-        return results.reduce((acc, improvedMsg, i3) => {
-          const index = Object.keys(improvedMessagesBySha2).length;
-          acc[diffs[index + i3].sha] = improvedMsg;
-          return acc;
-        }, improvedMessagesBySha2);
-      }).catch((error) => {
-        ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-        throw error;
-      });
-      const sleepFor = 3e3 + 200 * (i2 / chunkSize);
-      ce(
-        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
-      );
-      await sleep(sleepFor);
+      try {
+        await Promise.all(chunkOfPromises).then((results) => {
+          return results.reduce((acc, improvedMsg, i3) => {
+            const index = Object.keys(improvedMessagesBySha2).length;
+            acc[diffs[index + i3].sha] = improvedMsg;
+            return acc;
+          }, improvedMessagesBySha2);
+        });
+        const sleepFor = 3e3 + 200 * (i2 / chunkSize);
+        ce(
+          `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
+        );
+        await sleep(sleepFor);
+      } catch (error) {
+        ce(error);
+        ce("Retrying");
+        i2 -= chunkSize;
+      }
     }
     return improvedMessagesBySha2;
   }
-  let improvedMessagesBySha = {};
-  try {
-    improvedMessagesBySha = await improveMessagesInChunks();
-  } catch (error) {
-    ce(error);
-    ce("retrying");
-    await improveCommitMessagesWithRebase(commits, diffs);
-    return;
-  }
+  const improvedMessagesBySha = await improveMessagesInChunks();
   console.log({ improvedMessagesBySha });
   ce("Done.");
   const { stdout } = await execa("git", ["rev-parse", "--abbrev-ref", "HEAD"]);

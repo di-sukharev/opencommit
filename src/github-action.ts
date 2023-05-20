@@ -83,42 +83,34 @@ async function improveCommitMessagesWithRebase(
     for (let i = 0; i < improvePromises.length; i += chunkSize) {
       const chunkOfPromises = improvePromises.slice(i, i + chunkSize);
 
-      await Promise.all(chunkOfPromises)
-        .then((results) => {
+      try {
+        await Promise.all(chunkOfPromises).then((results) => {
           return results.reduce((acc, improvedMsg, i) => {
             const index = Object.keys(improvedMessagesBySha).length;
             acc[diffs![index + i].sha] = improvedMsg;
 
             return acc;
           }, improvedMessagesBySha);
-        })
-        .catch((error) => {
-          outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-          throw error;
         });
 
-      // openAI errors with 429 code (too many requests) so lets sleep a bit
-      const sleepFor = 3000 + 200 * (i / chunkSize);
+        // openAI errors with 429 code (too many requests) so lets sleep a bit
+        const sleepFor = 3000 + 200 * (i / chunkSize);
 
-      outro(
-        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
-      );
-      await sleep(sleepFor);
+        outro(
+          `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
+        );
+        await sleep(sleepFor);
+      } catch (error) {
+        outro(error as string);
+        outro('Retrying');
+        i -= chunkSize;
+      }
     }
 
     return improvedMessagesBySha;
   }
 
-  let improvedMessagesBySha: MessageBySha = {};
-
-  try {
-    improvedMessagesBySha = await improveMessagesInChunks();
-  } catch (error) {
-    outro(error as string);
-    outro('retrying');
-    await improveCommitMessagesWithRebase(commits, diffs);
-    return;
-  }
+  const improvedMessagesBySha: MessageBySha = await improveMessagesInChunks();
 
   console.log({ improvedMessagesBySha });
 
