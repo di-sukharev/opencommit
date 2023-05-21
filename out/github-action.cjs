@@ -27287,6 +27287,7 @@ async function improveCommitMessagesWithRebase({
     ce(`creating -F file for ${commit.sha}`);
     (0, import_fs2.writeFileSync)(`./commit-${i2}.txt`, improvedMessagesBySha[commit.sha]);
   });
+  (0, import_fs2.writeFileSync)(`./count.txt`, "0");
   (0, import_fs2.writeFileSync)(
     `./rebase-exec.sh`,
     `

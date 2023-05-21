@@ -178,6 +178,8 @@ async function improveCommitMessagesWithRebase({
   //   }
   // );
 
+  writeFileSync(`./count.txt`, '0');
+
   writeFileSync(
     `./rebase-exec.sh`,
     `
