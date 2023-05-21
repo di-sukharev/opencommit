@@ -137,7 +137,7 @@ async function improveCommitMessagesWithRebase({
         await sleep(sleepFor);
       } catch (error) {
         outro(error as string);
-        const sleepFor = 5000 + 1000 * randomIntFromInterval(1, 5);
+        const sleepFor = 20000 + 1000 * randomIntFromInterval(1, 5);
         outro(`Retrying after sleeping for ${sleepFor}`);
         await sleep(sleepFor);
         step -= chunkSize;

@@ -27266,7 +27266,7 @@ async function improveCommitMessagesWithRebase({
         await sleep(sleepFor);
       } catch (error) {
         ce(error);
-        const sleepFor = 5e3 + 1e3 * randomIntFromInterval(1, 5);
+        const sleepFor = 2e4 + 1e3 * randomIntFromInterval(1, 5);
         ce(`Retrying after sleeping for ${sleepFor}`);
         await sleep(sleepFor);
         step -= chunkSize;
