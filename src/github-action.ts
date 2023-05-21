@@ -155,18 +155,11 @@ async function improveCommitMessages(commits: CommitsArray): Promise<void> {
     createCommitMessageFile(msg, i)
   );
 
-  // todo: unlink
   writeFileSync(`./count.txt`, '0');
 
-  // todo: unlink
   writeFileSync(
-    `./rebase-exec.sh`,
-    `
-#!/bin/bash
-count=$(cat count.txt)
-git commit --amend -F commit-$count.txt
-echo $(( count + 1 )) > count.txt
-          `
+    './rebase-exec.sh',
+    '#!/bin/bash count=$(cat count.txt) git commit --amend -F commit-$count.txt echo $(( count + 1 )) > count.txt'
   );
 
   await exec.exec(`chmod +x ./rebase-exec.sh`);
@@ -186,6 +179,9 @@ echo $(( count + 1 )) > count.txt
   const deleteCommitMessageFile = (index: number) =>
     unlinkSync(`./commit-${index}.txt`);
   commitsToImprove.forEach((_commit, i) => deleteCommitMessageFile(i));
+
+  unlinkSync('./count.txt');
+  unlinkSync('./rebase-exec.sh');
 
   outro('Force pushing non-interactively rebased commits into remote origin.');
 
@@ -235,10 +231,8 @@ async function run(retries = 3) {
 
       const commits = commitsResponse.data;
 
-      // --- TEST ---
       await exec.exec('git', ['status']);
       await exec.exec('git', ['log', '--oneline']);
-      // --- TEST ---
 
       await improveCommitMessages(commits);
     } else {

@@ -27279,13 +27279,8 @@ async function improveCommitMessages(commits) {
   );
   (0, import_fs2.writeFileSync)(`./count.txt`, "0");
   (0, import_fs2.writeFileSync)(
-    `./rebase-exec.sh`,
-    `
-#!/bin/bash
-count=$(cat count.txt)
-git commit --amend -F commit-$count.txt
-echo $(( count + 1 )) > count.txt
-          `
+    "./rebase-exec.sh",
+    "#!/bin/bash count=$(cat count.txt) git commit --amend -F commit-$count.txt echo $(( count + 1 )) > count.txt"
   );
   await import_exec.default.exec(`chmod +x ./rebase-exec.sh`);
   await import_exec.default.exec(
@@ -27301,6 +27296,8 @@ echo $(( count + 1 )) > count.txt
   );
   const deleteCommitMessageFile = (index) => (0, import_fs2.unlinkSync)(`./commit-${index}.txt`);
   commitsToImprove.forEach((_commit, i2) => deleteCommitMessageFile(i2));
+  (0, import_fs2.unlinkSync)("./count.txt");
+  (0, import_fs2.unlinkSync)("./rebase-exec.sh");
   ce("Force pushing non-interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["push", "origin", `--force`]);
