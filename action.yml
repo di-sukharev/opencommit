@@ -1,5 +1,5 @@
-name: 'OpenCommit'
-description: 'Replaces lame commit messages with meaningful AI-generated messages when you push to remote 🤯🔫'
+name: 'OpenCommit — improve commits with AI 🤯🔫'
+description: 'Replaces lame commit messages with meaningful AI-generated messages when you push to remote'
 author: 'https://github.com/di-sukharev'
 repo: 'https://github.com/di-sukharev/opencommit/tree/github-action'
 keywords:
