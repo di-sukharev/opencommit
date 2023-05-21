@@ -19,8 +19,7 @@ export enum CONFIG_KEYS {
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_MODEL = 'OCO_MODEL',
-  OCO_LANGUAGE = 'OCO_LANGUAGE',
-  OCO_EXCLUDE = 'OCO_EXCLUDE'
+  OCO_LANGUAGE = 'OCO_LANGUAGE'
 }
 
 export enum CONFIG_MODES {
@@ -123,15 +122,6 @@ export const configValidators = {
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
-  },
-
-  [CONFIG_KEYS.OCO_EXCLUDE](value: any) {
-    validateConfig(
-      CONFIG_KEYS.OCO_EXCLUDE,
-      typeof value === 'string',
-      `${value} is not a valid regexp`
-    );
-    return value;
   }
 };
 
@@ -144,14 +134,15 @@ const configPath = pathJoin(homedir(), '.opencommit');
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS,
+    OCO_OPENAI_MAX_TOKENS: Number(process.env.OCO_OPENAI_MAX_TOKENS),
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION,
-    OCO_EMOJI: process.env.OCO_EMOJI,
+    OCO_DESCRIPTION: Boolean(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: Boolean(process.env.OCO_EMOJI),
     OCO_MODEL: process.env.OCO_MODEL,
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
-    OCO_EXCLUDE: process.env.OCO_EXCLUDE
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE
   };
+
+  console.log({ configFromEnv });
 
   const configExists = existsSync(configPath);
   if (!configExists) return configFromEnv;

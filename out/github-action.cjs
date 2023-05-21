@@ -23227,8 +23227,8 @@ var isBlob = kindOfTest("Blob");
 var isFileList = kindOfTest("FileList");
 var isStream = (val) => isObject(val) && isFunction(val.pipe);
 var isFormData = (thing) => {
-  const pattern2 = "[object FormData]";
-  return thing && (typeof FormData === "function" && thing instanceof FormData || toString.call(thing) === pattern2 || isFunction(thing.toString) && thing.toString() === pattern2);
+  const pattern = "[object FormData]";
+  return thing && (typeof FormData === "function" && thing instanceof FormData || toString.call(thing) === pattern || isFunction(thing.toString) && thing.toString() === pattern);
 };
 var isURLSearchParams = kindOfTest("URLSearchParams");
 var trim = (str) => str.trim ? str.trim() : str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, "");
@@ -26875,28 +26875,20 @@ var configValidators = {
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
-  },
-  ["OCO_EXCLUDE" /* OCO_EXCLUDE */](value) {
-    validateConfig(
-      "OCO_EXCLUDE" /* OCO_EXCLUDE */,
-      typeof value === "string",
-      `${value} is not a valid regexp`
-    );
-    return value;
   }
 };
 var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var getConfig = () => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS,
+    OCO_OPENAI_MAX_TOKENS: Number(process.env.OCO_OPENAI_MAX_TOKENS),
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION,
-    OCO_EMOJI: process.env.OCO_EMOJI,
+    OCO_DESCRIPTION: Boolean(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: Boolean(process.env.OCO_EMOJI),
     OCO_MODEL: process.env.OCO_MODEL,
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
-    OCO_EXCLUDE: process.env.OCO_EXCLUDE
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE
   };
+  console.log({ configFromEnv });
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
     return configFromEnv;
@@ -27192,7 +27184,6 @@ function randomIntFromInterval(min, max) {
 // src/github-action.ts
 var import_fs2 = require("fs");
 var GITHUB_TOKEN = import_core3.default.getInput("GITHUB_TOKEN");
-var pattern = import_core3.default.getInput("pattern");
 var octokit = import_github.default.getOctokit(GITHUB_TOKEN);
 var context = import_github.default.context;
 var owner = context.repo.owner;
@@ -27253,8 +27244,7 @@ var getDiffsBySHAs = async (SHAs) => {
   });
   return diffs;
 };
-async function improveCommitMessages(commits) {
-  let commitsToImprove = pattern ? commits.filter((commit) => new RegExp(pattern).test(commit.message)) : commits;
+async function improveCommitMessages(commitsToImprove) {
   if (commitsToImprove.length) {
     ce(`Found ${commitsToImprove.length} commits to improve.`);
   } else {

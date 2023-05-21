@@ -57,11 +57,12 @@ jobs:
       - uses: di-sukharev/opencommit@github-action
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          OCO_OPENAI_API_KEY: ${{ secrets.OCO_OPENAI_API_KEY }}
 
         env:
-          # only improve messages that match the regexp, e.g. ^fix$
-          pattern: ''
+          # set openAI api key in repo actions secrets,
+          # for openAI keys go to: https://platform.openai.com/account/api-keys
+          # for repo secret go to: <your_repo_url>/settings/secrets/actions
+          OCO_OPENAI_API_KEY: ${{ secrets.OCO_OPENAI_API_KEY }}
 
           # customization
           OCO_OPENAI_MAX_TOKENS: 500
@@ -69,7 +70,7 @@ jobs:
           OCO_DESCRIPTION: false
           OCO_EMOJI: false
           OCO_MODEL: gpt-3.5-turbo
-          OCO_LANGUAGE: De
+          OCO_LANGUAGE: en
 ```
 
 That is it. Now when you push to any branch in your repo — all NEW commits are being improved by never-tired-AI.

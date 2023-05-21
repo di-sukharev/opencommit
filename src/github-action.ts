@@ -13,7 +13,6 @@ import { unlinkSync, writeFileSync } from 'fs';
 // GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 // https://help.github.com/en/actions/automating-your-workflow-with-github-actions/authenticating-with-the-github_token#about-the-github_token-secret
 const GITHUB_TOKEN = core.getInput('GITHUB_TOKEN');
-const pattern = core.getInput('pattern');
 const octokit = github.getOctokit(GITHUB_TOKEN);
 const context = github.context;
 const owner = context.repo.owner;
@@ -113,12 +112,8 @@ const getDiffsBySHAs = async (SHAs: string[]) => {
 };
 
 async function improveCommitMessages(
-  commits: { id: string; message: string }[]
+  commitsToImprove: { id: string; message: string }[]
 ): Promise<void> {
-  let commitsToImprove = pattern
-    ? commits.filter((commit) => new RegExp(pattern).test(commit.message))
-    : commits;
-
   if (commitsToImprove.length) {
     outro(`Found ${commitsToImprove.length} commits to improve.`);
   } else {

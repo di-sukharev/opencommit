@@ -17679,28 +17679,20 @@ var configValidators = {
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
-  },
-  ["OCO_EXCLUDE" /* OCO_EXCLUDE */](value) {
-    validateConfig(
-      "OCO_EXCLUDE" /* OCO_EXCLUDE */,
-      typeof value === "string",
-      `${value} is not a valid regexp`
-    );
-    return value;
   }
 };
 var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var getConfig = () => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS,
+    OCO_OPENAI_MAX_TOKENS: Number(process.env.OCO_OPENAI_MAX_TOKENS),
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION,
-    OCO_EMOJI: process.env.OCO_EMOJI,
+    OCO_DESCRIPTION: Boolean(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: Boolean(process.env.OCO_EMOJI),
     OCO_MODEL: process.env.OCO_MODEL,
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
-    OCO_EXCLUDE: process.env.OCO_EXCLUDE
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE
   };
+  console.log({ configFromEnv });
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
     return configFromEnv;
