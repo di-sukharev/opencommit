@@ -27259,7 +27259,7 @@ async function improveCommitMessagesWithRebase({
           ...improvedMessagesBySha2,
           ...chunkOfImprovedMessagesBySha
         };
-        const sleepFor = 1e3 + 200 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
+        const sleepFor = 1e3 * randomIntFromInterval(1, 5) + 100 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
         ce(
           `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
         );
