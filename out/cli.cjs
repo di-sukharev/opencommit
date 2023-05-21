@@ -16314,7 +16314,7 @@ var package_default = {
     start: "node ./out/cli.cjs",
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
-    deploy: "npm run build && npm version patch && npm publish --tag latest",
+    deploy: "npm run build && git add . && git commit -m 'build' && git push",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src"
   },

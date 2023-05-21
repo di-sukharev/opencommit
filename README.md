@@ -20,45 +20,67 @@ All the commits in this repo are done with OpenCommit — look into [the commits
 
 ## Setup OpenCommit as a Github Action
 
-OpenCommit is now available as a GitHub Action which automatically improves all new commits messages looking into their diffs!
+OpenCommit is now available as a GitHub Action which automatically improves all new commits messages when you push to remote!
 
-Open a Pull Request and OpenCommit will do the job for you on every push of all the new changes.
+This is great if you want to make sure all of the commits in all of repository branches are meaningful and not lame like `fix1` or `done2`.
 
 ### Automatic 1 click setup
 
-You can simply setup the action automatically by downloading it on the GitHub Marketplace.
+You can simply [setup the action automatically via the GitHub Marketplace](TODO).
 
 ### Manual 3 clicks setup
 
 Create a file `.github/workflows/opencommit.yml` with contents below:
 
 ```yml
-on: [pull_request]
-    types: [opened, synchronize]
-    branches-ignore:
-      - master
-      - dev
-      - main
-      - development
-      - release
-      - release-candidate
-      - <YOUR_OTHER_BRANCHES_TO_EXCLUDE>
+name: 'OpenCommit'
+
+on:
+  push:
+    # this list of branches is often enough,
+    # but you may still ignore other public branches
+    branches-ignore: [main master dev development release]
+
 jobs:
-  build:
+  opencommit:
+    name: OpenCommit
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
-    - uses: actions/checkout@v3
-    - uses: di-sukharev/opencommit@master
-      with:
-        # pattern: only improve messages that match the regexp, e.g. ^fix$
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: di-sukharev/opencommit@github-action
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OCO_OPENAI_API_KEY: ${{ secrets.OCO_OPENAI_API_KEY }}
+
+        env:
+          # only improve messages that match the regexp, e.g. ^fix$
+          pattern: ''
+
+          # customization
+          OCO_OPENAI_MAX_TOKENS: 500
+          OCO_OPENAI_BASE_PATH: ''
+          OCO_DESCRIPTION: false
+          OCO_EMOJI: false
+          OCO_MODEL: gpt-3.5-turbo
+          OCO_LANGUAGE: De
 ```
 
-Make sure you exclude public collaboration branches in `branches-ignore`, so OpenCommit does not interactive rebase commits there when improving the messages.
+That is it. Now when you push to any branch in your repo — all NEW commits are being improved by never-tired-AI.
 
-Interactive rebase (`rebase -i`) changes commit SHA, so commit history in remote becomes different with your local branch history. It's ok when you work on the branch alone, but may be inconvenient for other collaborators due to history conflicts when pulling new changes.
+Make sure you exclude public collaboration branches (`main`, `dev`, `etc`) in `branches-ignore`, so OpenCommit does not rebase commits there when improving the messages.
+
+Interactive rebase (`rebase -i`) changes commit SHA, so commit history in remote becomes different with your local branch history. It's ok when you work on the branch alone, but may be inconvenient for other collaborators.
 
 ## Setup OpenCommit as a CLI
+
+You can use OpenCommit by simply running it via CLI like this `oc`. 2 seconds and your staged changes are committed with a meaningful message.
 
 1. Install OpenCommit globally to use in any repository:
 
