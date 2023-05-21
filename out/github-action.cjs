@@ -26883,12 +26883,11 @@ var getConfig = () => {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_OPENAI_MAX_TOKENS: Number(process.env.OCO_OPENAI_MAX_TOKENS),
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_DESCRIPTION: Boolean(process.env.OCO_DESCRIPTION),
-    OCO_EMOJI: Boolean(process.env.OCO_EMOJI),
+    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
+    OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_LANGUAGE: process.env.OCO_LANGUAGE
   };
-  console.log({ configFromEnv });
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
     return configFromEnv;
