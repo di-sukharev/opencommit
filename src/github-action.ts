@@ -126,7 +126,7 @@ async function improveCommitMessagesWithRebase({
 
         // openAI errors with 429 code (too many requests) so lets sleep a bit
         const sleepFor =
-          3000 + 200 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
+          1000 + 200 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
 
         outro(
           `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
@@ -152,7 +152,7 @@ async function improveCommitMessagesWithRebase({
   outro('Done.');
 
   outro(
-    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}^".`
+    `Starting non-interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}^".`
   );
 
   // fetch all commits inside the process
@@ -164,19 +164,6 @@ async function improveCommitMessagesWithRebase({
     outro(`creating -F file for ${commit.sha}`);
     writeFileSync(`./commit-${i}.txt`, improvedMessagesBySha[commit.sha]);
   });
-  // echo 0 > count.txt && git rebase <sha>^ --exec "git commit --amend -F \$(cat count.txt).txt && echo \$((\$(cat count.txt) + 1)) > count.txt"
-
-  // const done = await exec.exec(
-  //   `echo 0 > count.txt && git rebase -i ${commitsToImprove[0].sha}^ --exec "git commit --amend -F commit-$(cat count.txt).txt && echo $(($(cat count.txt) + 1)) > count.txt"`,
-  //   [],
-  //   {
-  //     env: {
-  //       GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
-  //       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
-  //       GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-  //     }
-  //   }
-  // );
 
   // todo: unlink
   writeFileSync(`./count.txt`, '0');
@@ -205,72 +192,9 @@ echo $(( count + 1 )) > count.txt
     }
   );
 
-  // const done = await exec.exec(
-  //   'git',
-  //   [
-  //     'rebase',
-  //     `${commitsToImprove[0].sha}^`,
-  //     '--exec',
-  //     'git commit --amend -F $(git rev-parse HEAD).txt'
-  //   ],
-  //   {
-  //     env: {
-  //       GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
-  //       GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
-  //       GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-  //     }
-  //   }
-  // );
-
-  // outro(`!!!done: ${done}`);
-
   commitsToImprove.forEach((_commit, i) => unlinkSync(`./commit-${i}.txt`));
 
-  // async function changeCommitMessages(
-  //   commitsToUpdate: DiffAndImprovedMessage[]
-  // ) {
-  //   const messageFilterScript = commitsToUpdate
-  //     .map(
-  //       (commit: DiffAndImprovedMessage) =>
-  //         `if [ "$GIT_COMMIT" = "${commit.sha}" ]; then echo "${commit.improvedMessage}"; else cat; fi`
-  //     )
-  //     .join(' | ');
-
-  //   await exec.exec('git', [
-  //     'filter-branch',
-  //     '--msg-filter',
-  //     messageFilterScript,
-  //     '--',
-  //     '--all'
-  //   ]);
-  // }
-
-  // const diffsAndImprovedMessages: DiffAndImprovedMessage[] =
-  //   commitsToImprove.map((commit) => ({
-  //     sha: commit.sha,
-  //     improvedMessage: improvedMessagesBySha[commit.sha]
-  //   }));
-
-  // await changeCommitMessages(diffsAndImprovedMessages);
-
-  // for (const commit of commitsToImprove) {
-  //   try {
-  //     const improvedMessage = improvedMessagesBySha[commit.sha];
-  //     outro(`SHA: ${commit.sha} improving...`);
-  //     await exec.exec('git', ['commit', '--amend', '-m', improvedMessage]);
-  //     await exec.exec('git', ['rebase', '--continue']);
-  //     outro(`SHA: ${commit.sha} commit improved.`);
-  //   } catch (error) {
-  //     throw error;
-  //   }
-  // }
-
-  // // Once all commits have been amended, you'll need to rebase the original branch onto the last amended commit
-  // const lastCommit = commits[0];
-  // await exec.exec('git', ['checkout', source]);
-  // await exec.exec('git', ['rebase', lastCommit.sha]);
-
-  outro('Force pushing interactively rebased commits into remote origin.');
+  outro('Force pushing non-interactively rebased commits into remote origin.');
 
   await exec.exec('git', ['status']);
 
@@ -289,11 +213,8 @@ async function run(retries = 3) {
     'user.email',
     `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
   ]);
+
   await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
-
-  // await exec.exec('git', ['commit', '--amend', '-m', 'NEW_DAT_MSG']);
-
-  // await exec.exec('git', ['push', '--force']);
 
   try {
     if (github.context.eventName === 'pull_request') {

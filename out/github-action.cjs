@@ -27259,7 +27259,7 @@ async function improveCommitMessagesWithRebase({
           ...improvedMessagesBySha2,
           ...chunkOfImprovedMessagesBySha
         };
-        const sleepFor = 3e3 + 200 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
+        const sleepFor = 1e3 + 200 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
         ce(
           `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
         );
@@ -27278,7 +27278,7 @@ async function improveCommitMessagesWithRebase({
   console.log({ improvedMessagesBySha });
   ce("Done.");
   ce(
-    `Starting interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}^".`
+    `Starting non-interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}^".`
   );
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
@@ -27309,7 +27309,7 @@ echo $(( count + 1 )) > count.txt
     }
   );
   commitsToImprove.forEach((_commit, i2) => (0, import_fs2.unlinkSync)(`./commit-${i2}.txt`));
-  ce("Force pushing interactively rebased commits into remote origin.");
+  ce("Force pushing non-interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["push", "origin", `--force`]);
   ce("Done \u23F1\uFE0F");
