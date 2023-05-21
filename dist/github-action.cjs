@@ -27298,7 +27298,7 @@ async function improveCommitMessages(commits) {
   commitsToImprove.forEach((_commit, i2) => deleteCommitMessageFile(i2));
   (0, import_fs2.unlinkSync)("./count.txt");
   (0, import_fs2.unlinkSync)("./rebase-exec.sh");
-  ce("Force pushing non-interactively rebased commits into remote origin.");
+  ce("Force pushing non-interactively rebased commits into remote.");
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["push", `--force`]);
   ce("Done \u{1F9D9}");

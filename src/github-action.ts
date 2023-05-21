@@ -175,7 +175,7 @@ async function improveCommitMessages(
   unlinkSync('./count.txt');
   unlinkSync('./rebase-exec.sh');
 
-  outro('Force pushing non-interactively rebased commits into remote origin.');
+  outro('Force pushing non-interactively rebased commits into remote.');
 
   await exec.exec('git', ['status']);
 

@@ -9,4 +9,4 @@ inputs:
 
 runs:
   using: 'node16'
-  main: 'out/github-action.cjs'
+  main: 'dist/github-action.cjs'

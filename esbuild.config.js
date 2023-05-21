@@ -14,7 +14,7 @@ await build({
   bundle: true,
   platform: 'node',
   format: 'cjs',
-  outfile: './out/github-action.cjs'
+  outfile: './dist/github-action.cjs'
 });
 
 const wasmFile = fs.readFileSync(
