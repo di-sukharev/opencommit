@@ -16273,7 +16273,7 @@ function G3(t, e2) {
 var package_default = {
   name: "opencommit",
   version: "2.0.15",
-  description: "GPT CLI to auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
+  description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
     "chatgpt",
@@ -16314,7 +16314,7 @@ var package_default = {
     start: "node ./out/cli.cjs",
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
-    deploy: "npm run build && git add . && git commit -m 'build' && git push",
+    deploy: "npm run build && npm version patch && npm publish --tag latest",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src"
   },

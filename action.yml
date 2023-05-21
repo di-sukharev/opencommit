@@ -1,6 +1,20 @@
-name: 'OpenCommit GitHub Action'
-description: 'Checks commit messages and replaces "oc" with a smart and impressive AI generated message 🤯🔫'
+name: 'OpenCommit'
+description: 'Replaces lame commit messages with meaningful AI-generated messages when you push to remote 🤯🔫'
 author: 'https://github.com/di-sukharev'
+repo: 'https://github.com/di-sukharev/opencommit/tree/github-action'
+keywords:
+  [
+    'git',
+    'chatgpt',
+    'gpt',
+    'ai',
+    'openai',
+    'opencommit',
+    'aicommit',
+    'aicommits',
+    'gptcommit',
+    'commit'
+  ]
 
 inputs:
   GITHUB_TOKEN:

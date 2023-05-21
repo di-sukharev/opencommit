@@ -1,7 +1,7 @@
 {
   "name": "opencommit",
   "version": "2.0.15",
-  "description": "GPT CLI to auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
+  "description": "Auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
     "chatgpt",
@@ -42,7 +42,7 @@
     "start": "node ./out/cli.cjs",
     "dev": "ts-node ./src/cli.ts",
     "build": "rimraf out && node esbuild.config.js",
-    "deploy": "npm run build && git add . && git commit -m 'build' && git push",
+    "deploy": "npm run build && npm version patch && npm publish --tag latest",
     "lint": "eslint src --ext ts && tsc --noEmit",
     "format": "prettier --write src"
   },
