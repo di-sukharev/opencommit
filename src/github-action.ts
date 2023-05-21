@@ -178,8 +178,10 @@ async function improveCommitMessagesWithRebase({
   //   }
   // );
 
+  // todo: unlink
   writeFileSync(`./count.txt`, '0');
 
+  // todo: unlink
   writeFileSync(
     `./rebase-exec.sh`,
     `
