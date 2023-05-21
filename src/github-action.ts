@@ -2,7 +2,7 @@ import core from '@actions/core';
 import github from '@actions/github';
 import exec from '@actions/exec';
 import { intro, outro } from '@clack/prompts';
-import { PullRequestEvent } from '@octokit/webhooks-types';
+import { PullRequestEvent, PushEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
 import { sleep } from './utils/sleep';
 import { randomIntFromInterval } from './utils/randomIntFromInterval';
@@ -159,7 +159,10 @@ async function improveCommitMessages(commits: CommitsArray): Promise<void> {
 
   writeFileSync(
     './rebase-exec.sh',
-    '#!/bin/bash; count=$(cat count.txt); git commit --amend -F commit-$count.txt; echo $(( count + 1 )) > count.txt'
+    `#!/bin/bash
+    count=$(cat count.txt)
+    git commit --amend -F commit-$count.txt
+    echo $(( count + 1 )) > count.txt`
   );
 
   await exec.exec(`chmod +x ./rebase-exec.sh`);
@@ -204,41 +207,47 @@ async function run(retries = 3) {
   ]);
 
   await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
+  await exec.exec('git', ['status']);
+  await exec.exec('git', ['log', '--oneline']);
+
+  // const commitsResponse = await octokit.rest.repos.listCommits({
+  //   owner,
+  //   repo,
+  //   sha: 'todo-branch-name'
+  // });
+
+  // const commits = commitsResponse.data;
 
   try {
-    if (github.context.eventName === 'pull_request') {
-      const baseBranch = github.context.payload.pull_request?.base.ref;
-      const sourceBranch = github.context.payload.pull_request?.head.ref;
-      outro(
-        `Processing commits in a Pull Request from source: (${sourceBranch}) to base: (${baseBranch})`
-      );
-      if (github.context.payload.action === 'opened')
-        outro('Pull Request action: opened');
-      else if (github.context.payload.action === 'synchronize')
-        outro('Pull Request action: synchronize');
-      else
-        return outro(
-          'Pull Request unhandled action: ' + github.context.payload.action
-        );
+    if (github.context.eventName === 'push') {
+      outro(`Processing commits in a Push event`);
 
-      const payload = github.context.payload as PullRequestEvent;
+      const payload = github.context.payload as PushEvent;
 
-      const commitsResponse = await octokit.rest.pulls.listCommits({
-        owner,
-        repo,
-        pull_number: payload.pull_request.number
-      });
+      const commits = payload.commits;
 
-      const commits = commitsResponse.data;
+      console.log(123123, { commits });
 
       await exec.exec('git', ['status']);
       await exec.exec('git', ['log', '--oneline']);
 
-      await improveCommitMessages(commits);
+      // await improveCommitMessages(commits);
+    } else if (github.context.eventName === 'pull_request') {
+      // const baseBranch = github.context.payload.pull_request?.base.ref;
+      // const sourceBranch = github.context.payload.pull_request?.head.ref;
+
+      if (github.context.payload.action === 'opened') {
+        outro('Pull Request action: opened. Not yet implemented.');
+      } else if (github.context.payload.action === 'synchronize') {
+        outro('Pull Request action: synchronize. Not yet implemented.');
+      } else
+        return outro(
+          'Pull Request unhandled action: ' + github.context.payload.action
+        );
     } else {
       outro('Wrong action.');
       core.error(
-        `OpenCommit was called on ${github.context.payload.action}. OpenCommit is not supposed to be used on actions other from "pull_request.opened" and "pull_request.synchronize".`
+        `OpenCommit was called on ${github.context.payload.action}. OpenCommit is supposed to be used on "push" action.`
       );
     }
   } catch (error: any) {
