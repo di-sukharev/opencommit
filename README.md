@@ -5,7 +5,7 @@
     <h4 align="center">Follow the bird <a href="https://twitter.com/io_Y_oi"><img src="https://img.shields.io/twitter/follow/io_Y_oi?style=flat&label=io_Y_oi&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
     </h4>
   </div>
-	<h2>GPT CLI to auto-generate impressive commits in 1 second</h2>
+	<h2>Auto-generate meaningful commits in 1 second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
 </div>
@@ -18,7 +18,7 @@
 
 All the commits in this repo are done with OpenCommit — look into [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emoji and long commit description text is configurable.
 
-## Setup OpenCommit as a Github Action
+## Setup OpenCommit as a Github Action 🔥
 
 OpenCommit is now available as a GitHub Action which automatically improves all new commits messages when you push to remote!
 
@@ -26,7 +26,7 @@ This is great if you want to make sure all of the commits in all of repository b
 
 ### Automatic 1 click setup
 
-You can simply [setup the action automatically via the GitHub Marketplace](TODO).
+You can simply [setup the action automatically via the GitHub Marketplace](https://github.com/marketplace/actions/opencommit-improve-commits-with-ai).
 
 ### Manual 3 clicks setup
 
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: di-sukharev/opencommit@github-action
+      - uses: di-sukharev/opencommit@github-action-v1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
