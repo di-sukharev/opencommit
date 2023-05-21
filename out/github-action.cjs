@@ -27283,13 +27283,21 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["pull"]);
-  commitsToImprove.forEach((commit) => {
+  commitsToImprove.forEach((commit, i2) => {
     ce(`creating -F file for ${commit.sha}`);
-    (0, import_fs2.writeFileSync)(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha]);
+    (0, import_fs2.writeFileSync)(`./commit-${i2}.txt`, improvedMessagesBySha[commit.sha]);
   });
-  (0, import_fs2.writeFileSync)(`./rebase-exec.sh`, "cat .git/rebase-merge/stopped-sha");
+  (0, import_fs2.writeFileSync)(
+    `./rebase-exec.sh`,
+    `
+#!/bin/bash
+count=$(cat count.txt)
+git commit --amend -F commit-$count.txt
+echo $(( count + 1 )) > count.txt
+        `
+  );
   await execPromise(
-    `git rebase ${commitsToImprove[0].sha}^ --exec "git commit --amend -F ./rebase-exec.sh"`,
+    `git rebase ${commitsToImprove[0].sha}^ --exec "./rebase-exec.sh"`,
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
@@ -27298,7 +27306,7 @@ async function improveCommitMessagesWithRebase({
       }
     }
   );
-  commitsToImprove.forEach((commit) => (0, import_fs2.unlinkSync)(`./${commit.sha}.txt`));
+  commitsToImprove.forEach((_commit, i2) => (0, import_fs2.unlinkSync)(`./commit-${i2}.txt`));
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["push", "origin", `--force`]);

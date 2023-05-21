@@ -160,9 +160,9 @@ async function improveCommitMessagesWithRebase({
   await exec.exec('git', ['fetch', '--all']);
   await exec.exec('git', ['pull']);
 
-  commitsToImprove.forEach((commit) => {
+  commitsToImprove.forEach((commit, i) => {
     outro(`creating -F file for ${commit.sha}`);
-    writeFileSync(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha]);
+    writeFileSync(`./commit-${i}.txt`, improvedMessagesBySha[commit.sha]);
   });
   // echo 0 > count.txt && git rebase <sha>^ --exec "git commit --amend -F \$(cat count.txt).txt && echo \$((\$(cat count.txt) + 1)) > count.txt"
 
@@ -178,10 +178,18 @@ async function improveCommitMessagesWithRebase({
   //   }
   // );
 
-  writeFileSync(`./rebase-exec.sh`, 'cat .git/rebase-merge/stopped-sha');
+  writeFileSync(
+    `./rebase-exec.sh`,
+    `
+#!/bin/bash
+count=$(cat count.txt)
+git commit --amend -F commit-$count.txt
+echo $(( count + 1 )) > count.txt
+        `
+  );
 
   await execPromise(
-    `git rebase ${commitsToImprove[0].sha}^ --exec "git commit --amend -F ./rebase-exec.sh"`,
+    `git rebase ${commitsToImprove[0].sha}^ --exec "./rebase-exec.sh"`,
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
@@ -210,7 +218,7 @@ async function improveCommitMessagesWithRebase({
 
   // outro(`!!!done: ${done}`);
 
-  commitsToImprove.forEach((commit) => unlinkSync(`./${commit.sha}.txt`));
+  commitsToImprove.forEach((_commit, i) => unlinkSync(`./commit-${i}.txt`));
 
   // async function changeCommitMessages(
   //   commitsToUpdate: DiffAndImprovedMessage[]
