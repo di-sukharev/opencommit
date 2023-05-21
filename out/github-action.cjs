@@ -27308,9 +27308,9 @@ echo $(( count + 1 )) > count.txt
         GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
       },
       listeners: {
-        stderr: (data) => {
+        stderr: async (data) => {
           ce(`Error: ${data.toString()}`);
-          import_exec.default.exec("git", ["rebase", "abort"]);
+          await import_exec.default.exec("git", ["rebase", "abort"]);
         }
       }
     }
