@@ -27280,10 +27280,7 @@ async function improveCommitMessages(commits) {
   (0, import_fs2.writeFileSync)(`./count.txt`, "0");
   (0, import_fs2.writeFileSync)(
     "./rebase-exec.sh",
-    `#!/bin/bash
-    count=$(cat count.txt)
-    git commit --amend -F commit-$count.txt
-    echo $(( count + 1 )) > count.txt`
+    "#!/bin/bash; count=$(cat count.txt); git commit --amend -F commit-$count.txt; echo $(( count + 1 )) > count.txt"
   );
   await import_exec.default.exec(`chmod +x ./rebase-exec.sh`);
   await import_exec.default.exec(
