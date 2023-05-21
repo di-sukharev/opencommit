@@ -159,7 +159,7 @@ async function improveCommitMessages(commits: CommitsArray): Promise<void> {
 
   writeFileSync(
     './rebase-exec.sh',
-    '#!/bin/bash count=$(cat count.txt) git commit --amend -F commit-$count.txt echo $(( count + 1 )) > count.txt'
+    `#!/bin/bash ; count=$(cat count.txt) ; git commit --amend -F commit-$count.txt ; echo $(( count + 1 )) > count.txt`
   );
 
   await exec.exec(`chmod +x ./rebase-exec.sh`);
