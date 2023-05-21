@@ -1,9 +1,7 @@
 node_modules/
 coverage/
-out/
 temp/
 build/
-dist/
 application.log
 .DS_Store
 /*.env

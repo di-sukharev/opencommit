@@ -1,14 +1,24 @@
-import { build } from 'esbuild'
-import fs from 'fs'    
+import { build } from 'esbuild';
+import fs from 'fs';
 
 await build({
-    entryPoints: ['./src/cli.ts'],
-    bundle: true,
-    platform: 'node',
-    format: 'cjs',
-    outfile: './out/cli.cjs',
+  entryPoints: ['./src/cli.ts'],
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  outfile: './out/cli.cjs'
 });
 
-const wasmFile = fs.readFileSync('./node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm')
+await build({
+  entryPoints: ['./src/github-action.ts'],
+  bundle: true,
+  platform: 'node',
+  format: 'cjs',
+  outfile: './out/github-action.cjs'
+});
 
-fs.writeFileSync('./out/tiktoken_bg.wasm', wasmFile)
+const wasmFile = fs.readFileSync(
+  './node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm'
+);
+
+fs.writeFileSync('./out/tiktoken_bg.wasm', wasmFile);
