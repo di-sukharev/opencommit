@@ -27287,8 +27287,9 @@ async function improveCommitMessagesWithRebase({
     ce(`creating -F file for ${commit.sha}`);
     (0, import_fs2.writeFileSync)(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha]);
   });
+  (0, import_fs2.writeFileSync)(`./rebase-exec.sh`, "cat .git/rebase-merge/stopped-sha");
   await execPromise(
-    `git rebase ${commitsToImprove[0].sha}^ --exec "git commit --amend -F $(cat .git/rebase-merge/stopped-sha).txt"`,
+    `git rebase ${commitsToImprove[0].sha}^ --exec "git commit --amend -F ./rebase-exec.sh"`,
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
