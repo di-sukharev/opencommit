@@ -27230,14 +27230,14 @@ async function improveMessagesInChunks(diffsAndSHAs) {
         }
       );
       improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
-      const sleepFor = 1e3 * randomIntFromInterval(1, 5) + 100 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
+      const sleepFor = 1e3 * randomIntFromInterval(1, 5) + 100 * randomIntFromInterval(1, 5);
       ce(
         `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
       );
       await sleep(sleepFor);
     } catch (error) {
       ce(error);
-      const sleepFor = 2e4 + 1e3 * randomIntFromInterval(1, 5);
+      const sleepFor = 6e4 + 1e3 * randomIntFromInterval(1, 5);
       ce(`Retrying after sleeping for ${sleepFor}`);
       await sleep(sleepFor);
       step -= chunkSize;
@@ -27248,7 +27248,7 @@ async function improveMessagesInChunks(diffsAndSHAs) {
 var getDiffsBySHAs = async (SHAs) => {
   const diffPromises = SHAs.map((sha) => getCommitDiff(sha));
   const diffs = await Promise.all(diffPromises).catch((error) => {
-    ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+    ce(`Error in Promise.all(getCommitDiffs(SHAs)): ${error}.`);
     throw error;
   });
   return diffs;
@@ -27300,37 +27300,22 @@ async function improveCommitMessages(commits) {
   (0, import_fs2.unlinkSync)("./rebase-exec.sh");
   ce("Force pushing non-interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["status"]);
-  await import_exec.default.exec("git", ["push", "origin", `--force`]);
+  await import_exec.default.exec("git", ["push", `--force`]);
   ce("Done \u{1F9D9}");
 }
-async function run(retries = 3) {
-  ae("OpenCommit \u2014 improving commit messages with GPT");
-  await import_exec.default.exec("git", [
-    "config",
-    "user.email",
-    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-  ]);
-  await import_exec.default.exec("git", ["config", "user.name", process.env.GITHUB_ACTOR]);
-  await import_exec.default.exec("git", ["status"]);
-  await import_exec.default.exec("git", ["log", "--oneline"]);
+async function run() {
+  ae("OpenCommit \u2014 improving lame commit messages");
   try {
     if (import_github.default.context.eventName === "push") {
       ce(`Processing commits in a Push event`);
       const payload = import_github.default.context.payload;
       const commits = payload.commits;
-      console.log(123123, { commits });
+      if (payload.pusher.email)
+        await import_exec.default.exec("git", ["config", "user.email", payload.pusher.email]);
+      await import_exec.default.exec("git", ["config", "user.name", payload.pusher.name]);
       await import_exec.default.exec("git", ["status"]);
       await import_exec.default.exec("git", ["log", "--oneline"]);
       await improveCommitMessages(commits);
-    } else if (import_github.default.context.eventName === "pull_request") {
-      if (import_github.default.context.payload.action === "opened") {
-        ce("Pull Request action: opened. Not yet implemented.");
-      } else if (import_github.default.context.payload.action === "synchronize") {
-        ce("Pull Request action: synchronize. Not yet implemented.");
-      } else
-        return ce(
-          "Pull Request unhandled action: " + import_github.default.context.payload.action
-        );
     } else {
       ce("Wrong action.");
       import_core3.default.error(
@@ -27339,7 +27324,6 @@ async function run(retries = 3) {
     }
   } catch (error) {
     const err = error?.message || error;
-    ce(err);
     import_core3.default.setFailed(err);
   }
 }

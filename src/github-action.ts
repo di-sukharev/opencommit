@@ -47,8 +47,8 @@ interface MsgAndSHA {
   msg: string;
 }
 
-// send 3-4 size chunks of diffs in parallel,
-// because openAI restricts too many requests at once with 429 error
+// send only 3-4 size chunks of diffs in steps,
+// because openAI restricts "too many requests" at once with 429 error
 async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
   const chunkSize = diffsAndSHAs!.length % 2 === 0 ? 4 : 3;
   outro(`Improving commit messages in chunks of ${chunkSize}.`);
@@ -61,7 +61,6 @@ async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
     const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
 
     try {
-      // TODO: refactor to Promise.allSettled, to only retry rejected promises
       const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
 
       const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map(
@@ -75,11 +74,10 @@ async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
 
       improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
 
-      // openAI errors with 429 code (too many requests) so lets sleep a bit
+      // sometimes openAI errors with 429 code (too many requests),
+      // so lets sleep a bit
       const sleepFor =
-        1000 * randomIntFromInterval(1, 5) +
-        100 * (step / chunkSize) +
-        100 * randomIntFromInterval(1, 5);
+        1000 * randomIntFromInterval(1, 5) + 100 * randomIntFromInterval(1, 5);
 
       outro(
         `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
@@ -89,9 +87,9 @@ async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
     } catch (error) {
       outro(error as string);
 
-      // if sleeping in try block doesn't work,
-      // openAI wants at least 20 seconds before next request
-      const sleepFor = 20000 + 1000 * randomIntFromInterval(1, 5);
+      // if sleeping in try block still fails with 429,
+      // openAI wants at least 1 minute before next request
+      const sleepFor = 60000 + 1000 * randomIntFromInterval(1, 5);
       outro(`Retrying after sleeping for ${sleepFor}`);
       await sleep(sleepFor);
 
@@ -107,7 +105,7 @@ const getDiffsBySHAs = async (SHAs: string[]) => {
   const diffPromises = SHAs.map((sha) => getCommitDiff(sha));
 
   const diffs = await Promise.all(diffPromises).catch((error) => {
-    outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+    outro(`Error in Promise.all(getCommitDiffs(SHAs)): ${error}.`);
     throw error;
   });
 
@@ -182,32 +180,13 @@ async function improveCommitMessages(
   await exec.exec('git', ['status']);
 
   // Force push the rebased commits
-  await exec.exec('git', ['push', 'origin', `--force`]);
+  await exec.exec('git', ['push', `--force`]);
 
   outro('Done 🧙');
 }
 
-async function run(retries = 3) {
-  intro('OpenCommit — improving commit messages with GPT');
-
-  // Set the Git identity
-  await exec.exec('git', [
-    'config',
-    'user.email',
-    `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-  ]);
-
-  await exec.exec('git', ['config', 'user.name', process.env.GITHUB_ACTOR!]);
-  await exec.exec('git', ['status']);
-  await exec.exec('git', ['log', '--oneline']);
-
-  // const commitsResponse = await octokit.rest.repos.listCommits({
-  //   owner,
-  //   repo,
-  //   sha: 'todo-branch-name'
-  // });
-
-  // const commits = commitsResponse.data;
+async function run() {
+  intro('OpenCommit — improving lame commit messages');
 
   try {
     if (github.context.eventName === 'push') {
@@ -217,24 +196,16 @@ async function run(retries = 3) {
 
       const commits = payload.commits;
 
-      console.log(123123, { commits });
+      // Set local Git user identity for future git history manipulations
+      if (payload.pusher.email)
+        await exec.exec('git', ['config', 'user.email', payload.pusher.email]);
+
+      await exec.exec('git', ['config', 'user.name', payload.pusher.name]);
 
       await exec.exec('git', ['status']);
       await exec.exec('git', ['log', '--oneline']);
 
       await improveCommitMessages(commits);
-    } else if (github.context.eventName === 'pull_request') {
-      // const baseBranch = github.context.payload.pull_request?.base.ref;
-      // const sourceBranch = github.context.payload.pull_request?.head.ref;
-
-      if (github.context.payload.action === 'opened') {
-        outro('Pull Request action: opened. Not yet implemented.');
-      } else if (github.context.payload.action === 'synchronize') {
-        outro('Pull Request action: synchronize. Not yet implemented.');
-      } else
-        return outro(
-          'Pull Request unhandled action: ' + github.context.payload.action
-        );
     } else {
       outro('Wrong action.');
       core.error(
@@ -243,9 +214,6 @@ async function run(retries = 3) {
     }
   } catch (error: any) {
     const err = error?.message || error;
-    outro(err);
-    // if (retries) run(--retries);
-    // else core.setFailed(error?.message || error);
     core.setFailed(err);
   }
 }
