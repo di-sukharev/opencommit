@@ -188,6 +188,8 @@ echo $(( count + 1 )) > count.txt
         `
   );
 
+  await exec.exec(`chmod +x ./rebase-exec.sh`);
+
   await execPromise(
     `git rebase ${commitsToImprove[0].sha}^ --exec "./rebase-exec.sh"`,
     {

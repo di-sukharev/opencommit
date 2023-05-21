@@ -27296,6 +27296,7 @@ git commit --amend -F commit-$count.txt
 echo $(( count + 1 )) > count.txt
         `
   );
+  await import_exec.default.exec(`chmod +x ./rebase-exec.sh`);
   await execPromise(
     `git rebase ${commitsToImprove[0].sha}^ --exec "./rebase-exec.sh"`,
     {
