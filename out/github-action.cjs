@@ -27297,7 +27297,7 @@ async function improveCommitMessagesWithRebase({
       }
     }
   );
-  commitsToImprove.forEach((_commit, i2) => (0, import_fs2.unlinkSync)(`./commit-${i2}.txt`));
+  commitsToImprove.forEach((commit) => (0, import_fs2.unlinkSync)(`./${commit.sha}.txt`));
   ce("Force pushing interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["push", "origin", `--force`]);
