@@ -30,7 +30,6 @@ type CommitsArray = CommitsData['data'];
 
 type SHA = string;
 type Diff = string;
-type MessageBySha = Record<SHA, Diff>;
 
 async function getCommitDiff(commitSha: string) {
   const diffResponse = await octokit.request<string>(
@@ -48,115 +47,113 @@ async function getCommitDiff(commitSha: string) {
 }
 
 interface DiffAndSHA {
-  sha: string;
-  diff: string;
+  sha: SHA;
+  diff: Diff;
 }
 
-interface DiffAndImprovedMessage {
-  sha: string;
-  improvedMessage: string;
+interface MsgAndSHA {
+  sha: SHA;
+  msg: string;
 }
 
-async function improveCommitMessagesWithRebase({
-  commits,
-  diffs,
-  source,
-  base
-}: {
-  commits: CommitsArray;
-  diffs?: DiffAndSHA[];
-  base: string;
-  source: string;
-}): Promise<void> {
+type MessageBySHA = Record<SHA, string>;
+
+// send 3-4 size chunks of diffs in parallel,
+// because openAI restricts too many requests at once with 429 error
+async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
+  const chunkSize = diffsAndSHAs!.length % 2 === 0 ? 4 : 3;
+  outro(`Improving commit messages in chunks of ${chunkSize}.`);
+  const improvePromises = diffsAndSHAs!.map((commit) =>
+    generateCommitMessageByDiff(commit.diff)
+  );
+
+  let improvedMessagesAndSHAs: MsgAndSHA[] = [];
+  for (let step = 0; step < improvePromises.length; step += chunkSize) {
+    const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
+
+    try {
+      // TODO: refactor to Promise.allSettled, to only retry rejected promises
+      const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
+
+      const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map(
+        (improvedMsg, i) => {
+          const index = improvedMessagesAndSHAs.length;
+          const sha = diffsAndSHAs![index + i].sha;
+
+          return { sha, msg: improvedMsg };
+        }
+      );
+
+      improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
+
+      // openAI errors with 429 code (too many requests) so lets sleep a bit
+      const sleepFor =
+        1000 * randomIntFromInterval(1, 5) +
+        100 * (step / chunkSize) +
+        100 * randomIntFromInterval(1, 5);
+
+      outro(
+        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
+      );
+
+      await sleep(sleepFor);
+    } catch (error) {
+      outro(error as string);
+
+      // if sleeping in try block doesn't work,
+      // openAI wants at least 20 seconds before next request
+      const sleepFor = 20000 + 1000 * randomIntFromInterval(1, 5);
+      outro(`Retrying after sleeping for ${sleepFor}`);
+      await sleep(sleepFor);
+
+      // go to previous step
+      step -= chunkSize;
+    }
+  }
+
+  return improvedMessagesAndSHAs;
+}
+
+const getDiffsBySHAs = async (SHAs: string[]) => {
+  const diffPromises = SHAs.map((sha) => getCommitDiff(sha));
+
+  const diffs = await Promise.all(diffPromises).catch((error) => {
+    outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+    throw error;
+  });
+
+  return diffs;
+};
+
+async function improveCommitMessages(commits: CommitsArray): Promise<void> {
   let commitsToImprove = pattern
     ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message))
     : commits;
 
-  if (!commitsToImprove.length) {
+  if (commitsToImprove.length) {
+    outro(`Found ${commitsToImprove.length} commits to improve.`);
+  } else {
     outro('No new commits found.');
-
     return;
   }
 
-  outro(`Found ${commitsToImprove.length} commits to improve.`);
-
-  if (!diffs) {
-    const commitShas = commitsToImprove.map((commit) => commit.sha);
-    const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
-
-    outro('Fetching commit diffs by SHAs.');
-    diffs = await Promise.all(diffPromises).catch((error) => {
-      outro(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-      throw error;
-    });
-
-    outro('Done.');
-  }
-
-  // send chunks of diffs in parallel, because openAI restricts too many requests at once with 429 error
-  async function improveMessagesInChunks() {
-    const chunkSize = diffs!.length % 2 === 0 ? 4 : 3;
-    outro(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
-    const improvePromises = diffs!.map((commit) =>
-      generateCommitMessageByDiff(commit.diff)
-    );
-
-    let improvedMessagesBySha: MessageBySha = {};
-    for (let step = 0; step < improvePromises.length; step += chunkSize) {
-      const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
-
-      try {
-        // TODO: refactor to Promise.allSettled, to only retry rejected promises
-        const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
-
-        const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.reduce(
-          (acc, improvedMsg, i) => {
-            const index = Object.keys(improvedMessagesBySha).length;
-            acc[diffs![index + i].sha] = improvedMsg;
-
-            return acc;
-          },
-          {} as MessageBySha
-        );
-
-        improvedMessagesBySha = {
-          ...improvedMessagesBySha,
-          ...chunkOfImprovedMessagesBySha
-        };
-
-        // openAI errors with 429 code (too many requests) so lets sleep a bit
-        const sleepFor =
-          1000 * randomIntFromInterval(1, 5) +
-          100 * (step / chunkSize) +
-          100 * randomIntFromInterval(1, 5);
-
-        outro(
-          `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
-        );
-
-        await sleep(sleepFor);
-      } catch (error) {
-        outro(error as string);
-        const sleepFor = 20000 + 1000 * randomIntFromInterval(1, 5);
-        outro(`Retrying after sleeping for ${sleepFor}`);
-        await sleep(sleepFor);
-        step -= chunkSize;
-      }
-    }
-
-    return improvedMessagesBySha;
-  }
-
-  const improvedMessagesBySha: MessageBySha = await improveMessagesInChunks();
-
-  console.log({ improvedMessagesBySha });
-
+  outro('Fetching commit diffs by SHAs.');
+  const commitSHAsToImprove = commitsToImprove.map((commit) => commit.sha);
+  const diffsWithSHAs = await getDiffsBySHAs(commitSHAsToImprove);
   outro('Done.');
 
-  commitsToImprove.forEach((commit, i) => {
-    outro(`creating -F file for ${commit.sha}`);
-    writeFileSync(`./commit-${i}.txt`, improvedMessagesBySha[commit.sha]);
-  });
+  const improvedMessagesWithSHAs = await improveMessagesInChunks(diffsWithSHAs);
+
+  console.log(
+    `Improved ${improvedMessagesWithSHAs.length} commits: `,
+    improvedMessagesWithSHAs
+  );
+
+  const createCommitMessageFile = (message: string, index: number) =>
+    writeFileSync(`./commit-${index}.txt`, message);
+  improvedMessagesWithSHAs.forEach(({ msg }, i) =>
+    createCommitMessageFile(msg, i)
+  );
 
   // todo: unlink
   writeFileSync(`./count.txt`, '0');
@@ -186,7 +183,9 @@ echo $(( count + 1 )) > count.txt
     }
   );
 
-  commitsToImprove.forEach((_commit, i) => unlinkSync(`./commit-${i}.txt`));
+  const deleteCommitMessageFile = (index: number) =>
+    unlinkSync(`./commit-${index}.txt`);
+  commitsToImprove.forEach((_commit, i) => deleteCommitMessageFile(i));
 
   outro('Force pushing non-interactively rebased commits into remote origin.');
 
@@ -195,7 +194,7 @@ echo $(( count + 1 )) > count.txt
   // Force push the rebased commits
   await exec.exec('git', ['push', 'origin', `--force`]);
 
-  outro('Done ⏱️');
+  outro('Done 🧙');
 }
 
 async function run(retries = 3) {
@@ -241,10 +240,8 @@ async function run(retries = 3) {
       await exec.exec('git', ['log', '--oneline']);
       // --- TEST ---
 
-      await improveCommitMessagesWithRebase({
-        commits,
-        base: baseBranch,
-        source: sourceBranch
+      await improveCommitMessages({
+        commits
       });
     } else {
       outro('Wrong action.');

@@ -27214,73 +27214,69 @@ async function getCommitDiff(commitSha) {
   );
   return { sha: commitSha, diff: diffResponse.data };
 }
-async function improveCommitMessagesWithRebase({
-  commits,
-  diffs,
-  source,
-  base
-}) {
+async function improveMessagesInChunks(diffsAndSHAs) {
+  const chunkSize = diffsAndSHAs.length % 2 === 0 ? 4 : 3;
+  ce(`Improving commit messages in chunks of ${chunkSize}.`);
+  const improvePromises = diffsAndSHAs.map(
+    (commit) => generateCommitMessageByDiff(commit.diff)
+  );
+  let improvedMessagesAndSHAs = [];
+  for (let step = 0; step < improvePromises.length; step += chunkSize) {
+    const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
+    try {
+      const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
+      const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map(
+        (improvedMsg, i2) => {
+          const index = improvedMessagesAndSHAs.length;
+          const sha = diffsAndSHAs[index + i2].sha;
+          return { sha, msg: improvedMsg };
+        }
+      );
+      improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
+      const sleepFor = 1e3 * randomIntFromInterval(1, 5) + 100 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
+      ce(
+        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
+      );
+      await sleep(sleepFor);
+    } catch (error) {
+      ce(error);
+      const sleepFor = 2e4 + 1e3 * randomIntFromInterval(1, 5);
+      ce(`Retrying after sleeping for ${sleepFor}`);
+      await sleep(sleepFor);
+      step -= chunkSize;
+    }
+  }
+  return improvedMessagesAndSHAs;
+}
+var getDiffsBySHAs = async (SHAs) => {
+  const diffPromises = SHAs.map((sha) => getCommitDiff(sha));
+  const diffs = await Promise.all(diffPromises).catch((error) => {
+    ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+    throw error;
+  });
+  return diffs;
+};
+async function improveCommitMessages(commits) {
   let commitsToImprove = pattern ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message)) : commits;
-  if (!commitsToImprove.length) {
+  if (commitsToImprove.length) {
+    ce(`Found ${commitsToImprove.length} commits to improve.`);
+  } else {
     ce("No new commits found.");
     return;
   }
-  ce(`Found ${commitsToImprove.length} commits to improve.`);
-  if (!diffs) {
-    const commitShas = commitsToImprove.map((commit) => commit.sha);
-    const diffPromises = commitShas.map((sha) => getCommitDiff(sha));
-    ce("Fetching commit diffs by SHAs.");
-    diffs = await Promise.all(diffPromises).catch((error) => {
-      ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
-      throw error;
-    });
-    ce("Done.");
-  }
-  async function improveMessagesInChunks() {
-    const chunkSize = diffs.length % 2 === 0 ? 4 : 3;
-    ce(`Improving commit messages with GPT in chunks of ${chunkSize}.`);
-    const improvePromises = diffs.map(
-      (commit) => generateCommitMessageByDiff(commit.diff)
-    );
-    let improvedMessagesBySha2 = {};
-    for (let step = 0; step < improvePromises.length; step += chunkSize) {
-      const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
-      try {
-        const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
-        const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.reduce(
-          (acc, improvedMsg, i2) => {
-            const index = Object.keys(improvedMessagesBySha2).length;
-            acc[diffs[index + i2].sha] = improvedMsg;
-            return acc;
-          },
-          {}
-        );
-        improvedMessagesBySha2 = {
-          ...improvedMessagesBySha2,
-          ...chunkOfImprovedMessagesBySha
-        };
-        const sleepFor = 1e3 * randomIntFromInterval(1, 5) + 100 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
-        ce(
-          `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
-        );
-        await sleep(sleepFor);
-      } catch (error) {
-        ce(error);
-        const sleepFor = 2e4 + 1e3 * randomIntFromInterval(1, 5);
-        ce(`Retrying after sleeping for ${sleepFor}`);
-        await sleep(sleepFor);
-        step -= chunkSize;
-      }
-    }
-    return improvedMessagesBySha2;
-  }
-  const improvedMessagesBySha = await improveMessagesInChunks();
-  console.log({ improvedMessagesBySha });
+  ce("Fetching commit diffs by SHAs.");
+  const commitSHAsToImprove = commitsToImprove.map((commit) => commit.sha);
+  const diffsWithSHAs = await getDiffsBySHAs(commitSHAsToImprove);
   ce("Done.");
-  commitsToImprove.forEach((commit, i2) => {
-    ce(`creating -F file for ${commit.sha}`);
-    (0, import_fs2.writeFileSync)(`./commit-${i2}.txt`, improvedMessagesBySha[commit.sha]);
-  });
+  const improvedMessagesWithSHAs = await improveMessagesInChunks(diffsWithSHAs);
+  console.log(
+    `Improved ${improvedMessagesWithSHAs.length} commits: `,
+    improvedMessagesWithSHAs
+  );
+  const createCommitMessageFile = (message, index) => (0, import_fs2.writeFileSync)(`./commit-${index}.txt`, message);
+  improvedMessagesWithSHAs.forEach(
+    ({ msg }, i2) => createCommitMessageFile(msg, i2)
+  );
   (0, import_fs2.writeFileSync)(`./count.txt`, "0");
   (0, import_fs2.writeFileSync)(
     `./rebase-exec.sh`,
@@ -27303,11 +27299,12 @@ echo $(( count + 1 )) > count.txt
       }
     }
   );
-  commitsToImprove.forEach((_commit, i2) => (0, import_fs2.unlinkSync)(`./commit-${i2}.txt`));
+  const deleteCommitMessageFile = (index) => (0, import_fs2.unlinkSync)(`./commit-${index}.txt`);
+  commitsToImprove.forEach((_commit, i2) => deleteCommitMessageFile(i2));
   ce("Force pushing non-interactively rebased commits into remote origin.");
   await import_exec.default.exec("git", ["status"]);
   await import_exec.default.exec("git", ["push", "origin", `--force`]);
-  ce("Done \u23F1\uFE0F");
+  ce("Done \u{1F9D9}");
 }
 async function run(retries = 3) {
   ae("OpenCommit \u2014 improving commit messages with GPT");
@@ -27341,10 +27338,8 @@ async function run(retries = 3) {
       const commits = commitsResponse.data;
       await import_exec.default.exec("git", ["status"]);
       await import_exec.default.exec("git", ["log", "--oneline"]);
-      await improveCommitMessagesWithRebase({
-        commits,
-        base: baseBranch,
-        source: sourceBranch
+      await improveCommitMessages({
+        commits
       });
     } else {
       ce("Wrong action.");
