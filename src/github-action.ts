@@ -240,9 +240,7 @@ async function run(retries = 3) {
       await exec.exec('git', ['log', '--oneline']);
       // --- TEST ---
 
-      await improveCommitMessages({
-        commits
-      });
+      await improveCommitMessages(commits);
     } else {
       outro('Wrong action.');
       core.error(

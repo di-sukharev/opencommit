@@ -27338,9 +27338,7 @@ async function run(retries = 3) {
       const commits = commitsResponse.data;
       await import_exec.default.exec("git", ["status"]);
       await import_exec.default.exec("git", ["log", "--oneline"]);
-      await improveCommitMessages({
-        commits
-      });
+      await improveCommitMessages(commits);
     } else {
       ce("Wrong action.");
       import_core3.default.error(
