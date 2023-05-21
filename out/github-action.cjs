@@ -27298,8 +27298,9 @@ echo $(( count + 1 )) > count.txt
           `
   );
   await import_exec.default.exec(`chmod +x ./rebase-exec.sh`);
-  await execPromise(
-    `git rebase ${commitsToImprove[0].sha}^ --exec "./rebase-exec.sh"`,
+  await import_exec.default.exec(
+    "git",
+    ["rebase", `${commitsToImprove[0].sha}^`, "--exec", "./rebase-exec.sh"],
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
