@@ -24,16 +24,10 @@ OpenCommit is now available as a GitHub Action which automatically improves all 
 
 This is great if you want to make sure all of the commits in all of repository branches are meaningful and not lame like `fix1` or `done2`.
 
-### Automatic 1 click setup
-
-You can simply [setup the action automatically via the GitHub Marketplace](https://github.com/marketplace/actions/opencommit-improve-commits-with-ai).
-
-### Manual 3 clicks setup
-
 Create a file `.github/workflows/opencommit.yml` with contents below:
 
 ```yml
-name: 'OpenCommit'
+name: 'OpenCommit Action'
 
 on:
   push:
