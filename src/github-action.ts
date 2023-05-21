@@ -153,15 +153,6 @@ async function improveCommitMessagesWithRebase({
 
   outro('Done.');
 
-  outro(
-    `Starting non-interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}^".`
-  );
-
-  // fetch all commits inside the process
-  await exec.exec('git', ['checkout', source]);
-  await exec.exec('git', ['fetch', '--all']);
-  await exec.exec('git', ['pull']);
-
   commitsToImprove.forEach((commit, i) => {
     outro(`creating -F file for ${commit.sha}`);
     writeFileSync(`./commit-${i}.txt`, improvedMessagesBySha[commit.sha]);
@@ -246,9 +237,6 @@ async function run(retries = 3) {
       const commits = commitsResponse.data;
 
       // --- TEST ---
-      await exec.exec('git', ['checkout', sourceBranch]);
-      await exec.exec('git', ['fetch', '--all']);
-      await exec.exec('git', ['pull']);
       await exec.exec('git', ['status']);
       await exec.exec('git', ['log', '--oneline']);
       // --- TEST ---

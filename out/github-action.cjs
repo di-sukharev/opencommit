@@ -27277,12 +27277,6 @@ async function improveCommitMessagesWithRebase({
   const improvedMessagesBySha = await improveMessagesInChunks();
   console.log({ improvedMessagesBySha });
   ce("Done.");
-  ce(
-    `Starting non-interactive rebase: "$ rebase -i ${commitsToImprove[0].sha}^".`
-  );
-  await import_exec.default.exec("git", ["checkout", source]);
-  await import_exec.default.exec("git", ["fetch", "--all"]);
-  await import_exec.default.exec("git", ["pull"]);
   commitsToImprove.forEach((commit, i2) => {
     ce(`creating -F file for ${commit.sha}`);
     (0, import_fs2.writeFileSync)(`./commit-${i2}.txt`, improvedMessagesBySha[commit.sha]);
@@ -27345,9 +27339,6 @@ async function run(retries = 3) {
         pull_number: payload.pull_request.number
       });
       const commits = commitsResponse.data;
-      await import_exec.default.exec("git", ["checkout", sourceBranch]);
-      await import_exec.default.exec("git", ["fetch", "--all"]);
-      await import_exec.default.exec("git", ["pull"]);
       await import_exec.default.exec("git", ["status"]);
       await import_exec.default.exec("git", ["log", "--oneline"]);
       await improveCommitMessagesWithRebase({
