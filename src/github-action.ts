@@ -2,14 +2,11 @@ import core from '@actions/core';
 import github from '@actions/github';
 import exec from '@actions/exec';
 import { intro, outro } from '@clack/prompts';
-import { PullRequestEvent, PushEvent } from '@octokit/webhooks-types';
+import { PushEvent } from '@octokit/webhooks-types';
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
 import { sleep } from './utils/sleep';
 import { randomIntFromInterval } from './utils/randomIntFromInterval';
 import { unlinkSync, writeFileSync } from 'fs';
-import { promisify } from 'util';
-import { exec as cpExec } from 'child_process';
-const execPromise = promisify(cpExec);
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -21,12 +18,6 @@ const octokit = github.getOctokit(GITHUB_TOKEN);
 const context = github.context;
 const owner = context.repo.owner;
 const repo = context.repo.repo;
-
-type ListCommitsResponse = ReturnType<typeof octokit.rest.pulls.listCommits>;
-
-type CommitsData = ListCommitsResponse extends Promise<infer T> ? T : never;
-
-type CommitsArray = CommitsData['data'];
 
 type SHA = string;
 type Diff = string;
@@ -55,8 +46,6 @@ interface MsgAndSHA {
   sha: SHA;
   msg: string;
 }
-
-type MessageBySHA = Record<SHA, string>;
 
 // send 3-4 size chunks of diffs in parallel,
 // because openAI restricts too many requests at once with 429 error
@@ -125,9 +114,11 @@ const getDiffsBySHAs = async (SHAs: string[]) => {
   return diffs;
 };
 
-async function improveCommitMessages(commits: CommitsArray): Promise<void> {
+async function improveCommitMessages(
+  commits: { id: string; message: string }[]
+): Promise<void> {
   let commitsToImprove = pattern
-    ? commits.filter(({ commit }) => new RegExp(pattern).test(commit.message))
+    ? commits.filter((commit) => new RegExp(pattern).test(commit.message))
     : commits;
 
   if (commitsToImprove.length) {
@@ -138,7 +129,7 @@ async function improveCommitMessages(commits: CommitsArray): Promise<void> {
   }
 
   outro('Fetching commit diffs by SHAs.');
-  const commitSHAsToImprove = commitsToImprove.map((commit) => commit.sha);
+  const commitSHAsToImprove = commitsToImprove.map((commit) => commit.id);
   const diffsWithSHAs = await getDiffsBySHAs(commitSHAsToImprove);
   outro('Done.');
 
@@ -169,7 +160,7 @@ async function improveCommitMessages(commits: CommitsArray): Promise<void> {
 
   await exec.exec(
     'git',
-    ['rebase', `${commitsToImprove[0].sha}^`, '--exec', './rebase-exec.sh'],
+    ['rebase', `${commitsToImprove[0].id}^`, '--exec', './rebase-exec.sh'],
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
@@ -231,7 +222,7 @@ async function run(retries = 3) {
       await exec.exec('git', ['status']);
       await exec.exec('git', ['log', '--oneline']);
 
-      // await improveCommitMessages(commits);
+      await improveCommitMessages(commits);
     } else if (github.context.eventName === 'pull_request') {
       // const baseBranch = github.context.payload.pull_request?.base.ref;
       // const sourceBranch = github.context.payload.pull_request?.head.ref;

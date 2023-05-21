@@ -27045,6 +27045,22 @@ function tokenCount(content) {
   return tokens.length;
 }
 
+// src/utils/mergeDiffs.ts
+function mergeDiffs(arr, maxStringLength) {
+  const mergedArr = [];
+  let currentItem = arr[0];
+  for (const item of arr.slice(1)) {
+    if (tokenCount(currentItem + item) <= maxStringLength) {
+      currentItem += item;
+    } else {
+      mergedArr.push(currentItem);
+      currentItem = item;
+    }
+  }
+  mergedArr.push(currentItem);
+  return mergedArr;
+}
+
 // src/generateCommitMessageFromGitDiff.ts
 var config3 = getConfig();
 var translation = i18n[config3?.OCO_LANGUAGE || "en"];
@@ -27090,21 +27106,203 @@ ${config3?.OCO_EMOJI ? "\u2728 " : ""}${translation.commitFeat}
 ${config3?.OCO_DESCRIPTION ? translation.commitDescription : ""}`
   }
 ];
+var generateCommitMessageChatCompletionPrompt = (diff) => {
+  const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
+  chatContextAsCompletionRequest.push({
+    role: import_openai2.ChatCompletionRequestMessageRoleEnum.User,
+    content: diff
+  });
+  return chatContextAsCompletionRequest;
+};
 var INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
   (msg) => tokenCount(msg.content) + 4
 ).reduce((a2, b) => a2 + b, 0);
 var MAX_REQ_TOKENS = 3e3 - INIT_MESSAGES_PROMPT_LENGTH;
+var generateCommitMessageByDiff = async (diff) => {
+  try {
+    if (tokenCount(diff) >= MAX_REQ_TOKENS) {
+      const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(
+        diff,
+        MAX_REQ_TOKENS
+      );
+      const commitMessages = await Promise.all(commitMessagePromises);
+      return commitMessages.join("\n\n");
+    } else {
+      const messages = generateCommitMessageChatCompletionPrompt(diff);
+      const commitMessage = await api.generateCommitMessage(messages);
+      if (!commitMessage)
+        throw new Error("EMPTY_MESSAGE" /* emptyMessage */);
+      return commitMessage;
+    }
+  } catch (error) {
+    throw error;
+  }
+};
+function getMessagesPromisesByChangesInFile(fileDiff, separator, maxChangeLength) {
+  const hunkHeaderSeparator = "@@ ";
+  const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
+  const mergedChanges = mergeDiffs(
+    fileDiffByLines.map((line) => hunkHeaderSeparator + line),
+    maxChangeLength
+  );
+  const lineDiffsWithHeader = mergedChanges.map(
+    (change) => fileHeader + change
+  );
+  const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map((lineDiff) => {
+    const messages = generateCommitMessageChatCompletionPrompt(
+      separator + lineDiff
+    );
+    return api.generateCommitMessage(messages);
+  });
+  return commitMsgsFromFileLineDiffs;
+}
+function getCommitMsgsPromisesFromFileDiffs(diff, maxDiffLength) {
+  const separator = "diff --git ";
+  const diffByFiles = diff.split(separator).slice(1);
+  const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
+  const commitMessagePromises = [];
+  for (const fileDiff of mergedFilesDiffs) {
+    if (tokenCount(fileDiff) >= maxDiffLength) {
+      const messagesPromises = getMessagesPromisesByChangesInFile(
+        fileDiff,
+        separator,
+        maxDiffLength
+      );
+      commitMessagePromises.push(...messagesPromises);
+    } else {
+      const messages = generateCommitMessageChatCompletionPrompt(
+        separator + fileDiff
+      );
+      commitMessagePromises.push(api.generateCommitMessage(messages));
+    }
+  }
+  return commitMessagePromises;
+}
+
+// src/utils/sleep.ts
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// src/utils/randomIntFromInterval.ts
+function randomIntFromInterval(min, max) {
+  return Math.floor(Math.random() * (max - min + 1) + min);
+}
 
 // src/github-action.ts
-var import_util3 = require("util");
-var import_child_process = require("child_process");
-var execPromise = (0, import_util3.promisify)(import_child_process.exec);
+var import_fs2 = require("fs");
 var GITHUB_TOKEN = import_core3.default.getInput("GITHUB_TOKEN");
 var pattern = import_core3.default.getInput("pattern");
 var octokit = import_github.default.getOctokit(GITHUB_TOKEN);
 var context = import_github.default.context;
 var owner = context.repo.owner;
 var repo = context.repo.repo;
+async function getCommitDiff(commitSha) {
+  const diffResponse = await octokit.request(
+    "GET /repos/{owner}/{repo}/commits/{ref}",
+    {
+      owner,
+      repo,
+      ref: commitSha,
+      headers: {
+        Accept: "application/vnd.github.v3.diff"
+      }
+    }
+  );
+  return { sha: commitSha, diff: diffResponse.data };
+}
+async function improveMessagesInChunks(diffsAndSHAs) {
+  const chunkSize = diffsAndSHAs.length % 2 === 0 ? 4 : 3;
+  ce(`Improving commit messages in chunks of ${chunkSize}.`);
+  const improvePromises = diffsAndSHAs.map(
+    (commit) => generateCommitMessageByDiff(commit.diff)
+  );
+  let improvedMessagesAndSHAs = [];
+  for (let step = 0; step < improvePromises.length; step += chunkSize) {
+    const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
+    try {
+      const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
+      const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map(
+        (improvedMsg, i2) => {
+          const index = improvedMessagesAndSHAs.length;
+          const sha = diffsAndSHAs[index + i2].sha;
+          return { sha, msg: improvedMsg };
+        }
+      );
+      improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
+      const sleepFor = 1e3 * randomIntFromInterval(1, 5) + 100 * (step / chunkSize) + 100 * randomIntFromInterval(1, 5);
+      ce(
+        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
+      );
+      await sleep(sleepFor);
+    } catch (error) {
+      ce(error);
+      const sleepFor = 2e4 + 1e3 * randomIntFromInterval(1, 5);
+      ce(`Retrying after sleeping for ${sleepFor}`);
+      await sleep(sleepFor);
+      step -= chunkSize;
+    }
+  }
+  return improvedMessagesAndSHAs;
+}
+var getDiffsBySHAs = async (SHAs) => {
+  const diffPromises = SHAs.map((sha) => getCommitDiff(sha));
+  const diffs = await Promise.all(diffPromises).catch((error) => {
+    ce(`error in Promise.all(getCommitDiffs(SHAs)): ${error}`);
+    throw error;
+  });
+  return diffs;
+};
+async function improveCommitMessages(commits) {
+  let commitsToImprove = pattern ? commits.filter((commit) => new RegExp(pattern).test(commit.message)) : commits;
+  if (commitsToImprove.length) {
+    ce(`Found ${commitsToImprove.length} commits to improve.`);
+  } else {
+    ce("No new commits found.");
+    return;
+  }
+  ce("Fetching commit diffs by SHAs.");
+  const commitSHAsToImprove = commitsToImprove.map((commit) => commit.id);
+  const diffsWithSHAs = await getDiffsBySHAs(commitSHAsToImprove);
+  ce("Done.");
+  const improvedMessagesWithSHAs = await improveMessagesInChunks(diffsWithSHAs);
+  console.log(
+    `Improved ${improvedMessagesWithSHAs.length} commits: `,
+    improvedMessagesWithSHAs
+  );
+  const createCommitMessageFile = (message, index) => (0, import_fs2.writeFileSync)(`./commit-${index}.txt`, message);
+  improvedMessagesWithSHAs.forEach(
+    ({ msg }, i2) => createCommitMessageFile(msg, i2)
+  );
+  (0, import_fs2.writeFileSync)(`./count.txt`, "0");
+  (0, import_fs2.writeFileSync)(
+    "./rebase-exec.sh",
+    `#!/bin/bash
+    count=$(cat count.txt)
+    git commit --amend -F commit-$count.txt
+    echo $(( count + 1 )) > count.txt`
+  );
+  await import_exec.default.exec(`chmod +x ./rebase-exec.sh`);
+  await import_exec.default.exec(
+    "git",
+    ["rebase", `${commitsToImprove[0].id}^`, "--exec", "./rebase-exec.sh"],
+    {
+      env: {
+        GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
+        GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR,
+        GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+      }
+    }
+  );
+  const deleteCommitMessageFile = (index) => (0, import_fs2.unlinkSync)(`./commit-${index}.txt`);
+  commitsToImprove.forEach((_commit, i2) => deleteCommitMessageFile(i2));
+  (0, import_fs2.unlinkSync)("./count.txt");
+  (0, import_fs2.unlinkSync)("./rebase-exec.sh");
+  ce("Force pushing non-interactively rebased commits into remote origin.");
+  await import_exec.default.exec("git", ["status"]);
+  await import_exec.default.exec("git", ["push", "origin", `--force`]);
+  ce("Done \u{1F9D9}");
+}
 async function run(retries = 3) {
   ae("OpenCommit \u2014 improving commit messages with GPT");
   await import_exec.default.exec("git", [
@@ -27123,6 +27321,7 @@ async function run(retries = 3) {
       console.log(123123, { commits });
       await import_exec.default.exec("git", ["status"]);
       await import_exec.default.exec("git", ["log", "--oneline"]);
+      await improveCommitMessages(commits);
     } else if (import_github.default.context.eventName === "pull_request") {
       if (import_github.default.context.payload.action === "opened") {
         ce("Pull Request action: opened. Not yet implemented.");
