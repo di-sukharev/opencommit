@@ -27283,21 +27283,12 @@ async function improveCommitMessagesWithRebase({
   await import_exec.default.exec("git", ["checkout", source]);
   await import_exec.default.exec("git", ["fetch", "--all"]);
   await import_exec.default.exec("git", ["pull"]);
-  commitsToImprove.forEach((commit, i2) => {
+  commitsToImprove.forEach((commit) => {
     ce(`creating -F file for ${commit.sha}`);
-    (0, import_fs2.writeFileSync)(`./commit-${i2}.txt`, improvedMessagesBySha[commit.sha]);
+    (0, import_fs2.writeFileSync)(`./${commit.sha}.txt`, improvedMessagesBySha[commit.sha]);
   });
-  (0, import_fs2.writeFileSync)(
-    `./rebase-exec.sh`,
-    `
-#!/bin/bash
-count=$(cat count.txt)
-git commit --amend -F commit-$count.txt
-echo $(( count + 1 )) > count.txt
-        `
-  );
   await execPromise(
-    `git rebase ${commitsToImprove[0].sha}^ --exec "./rebase-exec.sh"`,
+    `git rebase ${commitsToImprove[0].sha}^ --exec "git commit --amend -F $(cat .git/rebase-merge/stopped-sha).txt"`,
     {
       env: {
         GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
