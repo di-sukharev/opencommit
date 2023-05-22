@@ -1,6 +1,5 @@
 import { execa } from 'execa';
 import {
-  GenerateCommitMessageErrorEnum,
   generateCommitMessageByDiff
 } from '../generateCommitMessageFromGitDiff';
 import {
