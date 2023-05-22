@@ -3,7 +3,7 @@ import fs from 'fs';
 import os from 'os';
 import {
   GenerateCommitMessageErrorEnum,
-  generateCommitMessageWithChatCompletion
+  generateCommitMessageByDiff
 } from '../generateCommitMessageFromGitDiff';
 import {
   assertGitRepo,
@@ -37,85 +37,77 @@ const generateCommitMessageFromGitDiff = async (
 
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
-  const commitMessage = await generateCommitMessageWithChatCompletion(diff);
+  try {
+    const commitMessage = await generateCommitMessageByDiff(diff);
 
-  // TODO: show proper error messages
-  if (typeof commitMessage !== 'string') {
-    const errorMessages = {
-      [GenerateCommitMessageErrorEnum.emptyMessage]:
-        'empty openAI response, weird, try again',
-      [GenerateCommitMessageErrorEnum.internalError]:
-        'internal error, try again',
-      [GenerateCommitMessageErrorEnum.tooMuchTokens]:
-        'too much tokens in git diff, stage and commit files in parts'
-    };
+    commitSpinner.stop('📝 Commit message generated');
 
-    outro(`${chalk.red('✖')} ${errorMessages[commitMessage.error]}`);
-    process.exit(1);
-  }
-
-  commitSpinner.stop('📝 Commit message generated');
-
-  outro(
-    `Commit message:
+    outro(
+      `Commit message:
 ${chalk.grey('——————————————————')}
 ${commitMessage}
 ${chalk.grey('——————————————————')}`
   );
   
-  const promptUserConfirm = async(commitText: string ) => {
+    const promptUserConfirm = async(commitText: string ) => {
 
-    const isCommitConfirmedByUser = await select({
-      message: 'Confirm the commit message',
-      options: [
-        {value: "yes", label: "Yes"},
-        {value: "no", label: "No"},
-        {value: "edit", label: "Edit"}
-      ]
-      
-    });
+      const isCommitConfirmedByUser = await select({
+        message: 'Confirm the commit message',
+        options: [
+          {value: "yes", label: "Yes"},
+          {value: "no", label: "No"},
+          {value: "edit", label: "Edit"}
+        ]
+        
+      });
 
-    if (isCommitConfirmedByUser == "yes" && !isCancel(isCommitConfirmedByUser)) {
-      const { stdout } = await execa('git', [
-        'commit',
-        '-m',
-        commitText,
-        ...extraArgs
-      ]);
+      if (isCommitConfirmedByUser == "yes" && !isCancel(isCommitConfirmedByUser)) {
+        const { stdout } = await execa('git', [
+          'commit',
+          '-m',
+          commitText,
+          ...extraArgs
+        ]);
 
-      outro(`${chalk.green('✔')} successfully committed`);
+        outro(`${chalk.green('✔')} successfully committed`);
 
-      outro(stdout);
-      
-      const remotes = await getGitRemotes();
+        outro(stdout);
+        
+        const remotes = await getGitRemotes();
 
-      if (!remotes.length) {
-        const { stdout } = await execa('git', ['push']);
-        if (stdout) outro(stdout);
-        process.exit(0);
-      }
-
-      if (remotes.length === 1) {
-        const isPushConfirmedByUser = await confirm({
-          message: 'Do you want to run `git push`?'
-        });
-
-        if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
-          const pushSpinner = spinner();
-
-          pushSpinner.start(`Running \`git push ${remotes[0]}\``);
-
-          const { stdout } = await execa('git', [
-            'push',
-            '--verbose',
-            remotes[0]
-          ]);
-
-          pushSpinner.stop(
-            `${chalk.green('✔')} successfully pushed all commits to ${remotes[0]}`
-          );
-
+        if (!remotes.length) {
+          const { stdout } = await execa('git', ['push']);
           if (stdout) outro(stdout);
+          process.exit(0);
+        }
+
+        if (remotes.length === 1) {
+          const isPushConfirmedByUser = await confirm({
+            message: 'Do you want to run `git push`?'
+          });
+
+          if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
+            const pushSpinner = spinner();
+
+            pushSpinner.start(`Running \`git push ${remotes[0]}\``);
+
+            const { stdout } = await execa('git', [
+              'push',
+              '--verbose',
+              remotes[0]
+            ]);
+
+            pushSpinner.stop(
+              `${chalk.green('✔')} Successfully pushed all commits to ${
+                remotes[0]
+              }`
+            );
+
+            if (stdout) outro(stdout);
+          } else {
+              outro('`git push` aborted');
+              process.exit(0);
+          }
         } else {
           const selectedRemote = (await select({
             message: 'Choose a remote to push to',
@@ -124,83 +116,89 @@ ${chalk.grey('——————————————————')}`
 
           if (!isCancel(selectedRemote)) {
             const pushSpinner = spinner();
+
             pushSpinner.start(`Running \`git push ${selectedRemote}\``);
+
             const { stdout } = await execa('git', ['push', selectedRemote]);
+
             pushSpinner.stop(
               `${chalk.green(
                 '✔'
-              )} successfully pushed all commits to ${selectedRemote}`
+              )} Successfully pushed all commits to ${selectedRemote}`
             );
 
             if (stdout) outro(stdout);
-          } else {
-            outro('`git push` aborted');
-            process.exit(0);
           }
         }
-      }
-    } else if (isCommitConfirmedByUser == "edit" && !isCancel(isCommitConfirmedByUser)) {
+      } else if (isCommitConfirmedByUser == "edit" && !isCancel(isCommitConfirmedByUser)) {
 
-      let defaultEditor = '' 
-      let defaultOpenCommand
-      let linuxTermFlag = ''
+        let defaultEditor = '' 
+        let defaultOpenCommand
+        let linuxTermFlag = ''
 
-      switch (os.platform()) {
-        case 'darwin':
-          defaultOpenCommand = 'open'
-          break
-        case 'win32':        
-          defaultOpenCommand = 'start'
-          break
-        case 'linux':
-          defaultEditor = process.env.EDITOR || ''
-          if ( 
-            defaultEditor == 'vi'    || 
-            defaultEditor == 'vim'   || 
-            defaultEditor == 'nvim'  || 
-            defaultEditor == 'nano'  || 
-            defaultEditor == 'micro' || 
-            defaultEditor == 'emacs'
-          ) {
-            defaultOpenCommand = 'x-terminal-emulator'
-            linuxTermFlag = '-e'
+        switch (os.platform()) {
+          case 'darwin':
+            defaultOpenCommand = 'open'
             break
-          } else {
-            defaultOpenCommand = 'xdg-open'
-            defaultEditor = ''
+          case 'win32':        
+            defaultOpenCommand = 'start'
             break
-          }
-      }     
+          case 'linux':
+            defaultEditor = process.env.EDITOR || ''
+            if ( 
+              defaultEditor == 'vi'    || 
+              defaultEditor == 'vim'   || 
+              defaultEditor == 'nvim'  || 
+              defaultEditor == 'nano'  || 
+              defaultEditor == 'micro' || 
+              defaultEditor == 'emacs'
+            ) {
+              defaultOpenCommand = 'x-terminal-emulator'
+              linuxTermFlag = '-e'
+              break
+            } else {
+              defaultOpenCommand = 'xdg-open'
+              defaultEditor = ''
+              break
+            }
+        }     
 
-      fs.writeFileSync('tmp_commit.txt', commitText);
+        fs.writeFileSync('tmp_commit.txt', commitText);
 
-      outro('🙏 Please close the file when you are done editing it.')
+        outro('🙏 Please close the file when you are done editing it.')
 
-      const { } = await execa(`${defaultOpenCommand}`, [linuxTermFlag, defaultEditor, 'tmp_commit.txt']);
+        const { } = await execa(`${defaultOpenCommand}`, [linuxTermFlag, defaultEditor, 'tmp_commit.txt']);
 
-      process.stdin.resume();
-      
-      const updatedCommitMessage = fs.readFileSync('tmp_commit.txt', 'utf-8');
-      const updatedCommitMessageTrimmed = updatedCommitMessage.trim()
+        process.stdin.resume();
+        
+        const updatedCommitMessage = fs.readFileSync('tmp_commit.txt', 'utf-8');
+        const updatedCommitMessageTrimmed = updatedCommitMessage.trim()
 
-      fs.unlinkSync('tmp_commit.txt');
+        fs.unlinkSync('tmp_commit.txt');
 
-    outro(
-      `Commit message:
-${chalk.grey('——————————————————')}
-${updatedCommitMessageTrimmed}
-${chalk.grey('——————————————————')}`
-    )
+      outro(
+        `Commit message:
+${  chalk.grey('——————————————————')}
+${  updatedCommitMessageTrimmed}
+${  chalk.grey('——————————————————')}`
+      )
 
-      await promptUserConfirm(updatedCommitMessage)
+        await promptUserConfirm(updatedCommitMessage)
 
-    } else if (isCommitConfirmedByUser == "no" && !isCancel(isCommitConfirmedByUser)) {
-      outro(`👋 exiting`);
-    } 
+      } else if (isCommitConfirmedByUser == "no" && !isCancel(isCommitConfirmedByUser)) {
+        outro(`👋 exiting`);
+      } else outro(`${chalk.gray('✖')} process cancelled`);
+    }
+    
+    await promptUserConfirm(commitMessage)
+  } catch (error) {
+    commitSpinner.stop('📝 Commit message generated');
+
+    const err = error as Error;
+    outro(`${chalk.red('✖')} ${err?.message || err}`);
+    process.exit(1);
   }
-  
-  await promptUserConfirm(commitMessage)
-};
+}
 
 export async function commit(
   extraArgs: string[] = [],
