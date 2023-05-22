@@ -74,9 +74,6 @@ export enum GenerateCommitMessageErrorEnum {
   emptyMessage = 'EMPTY_MESSAGE'
 }
 
-interface GenerateCommitMessageError {
-  error: GenerateCommitMessageErrorEnum;
-}
 
 const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
   (msg) => tokenCount(msg.content) + 4
