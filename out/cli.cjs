@@ -16272,7 +16272,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "2.0.16",
+  version: "2.0.17",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -16315,6 +16315,7 @@ var package_default = {
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
     deploy: "npm run build && npm version patch && npm publish --tag latest",
+    "build:push": "npm run build && git add . && git commit -m 'build' && git push",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src"
   },
@@ -17643,7 +17644,7 @@ var configValidators = {
     }
     validateConfig(
       "OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */,
-      typeof value === "number",
+      value ? typeof value === "number" : void 0,
       "Must be a number"
     );
     return value;
@@ -17674,8 +17675,8 @@ var configValidators = {
   },
   ["OCO_MODEL" /* OCO_MODEL */](value) {
     validateConfig(
-      "OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */,
-      value === "gpt-3.5-turbo" || value === "gpt-4",
+      "OCO_MODEL" /* OCO_MODEL */,
+      ["gpt-3.5-turbo", "gpt-4"].includes(value),
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
@@ -17685,12 +17686,12 @@ var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var getConfig = () => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: Number(process.env.OCO_OPENAI_MAX_TOKENS),
+    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS ? Number(process.env.OCO_OPENAI_MAX_TOKENS) : void 0,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL,
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE
+    OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo",
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en"
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -17698,6 +17699,10 @@ var getConfig = () => {
   const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
   const config4 = (0, import_ini.parse)(configFile);
   for (const configKey of Object.keys(config4)) {
+    if (!config4[configKey] || ["null", "undefined"].includes(config4[configKey])) {
+      config4[configKey] = void 0;
+      continue;
+    }
     try {
       const validator = configValidators[configKey];
       const validValue = validator(
