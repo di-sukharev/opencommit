@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: di-sukharev/opencommit@github-action-v1.0.1
+      - uses: di-sukharev/opencommit@github-action-v1.0.4
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
