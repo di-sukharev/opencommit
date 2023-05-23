@@ -9,15 +9,15 @@ import { i18n, I18nLocals } from './i18n';
 import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
-const translation = i18n[(config?.language as I18nLocals) || 'en'];
+const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];
 
 const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
   {
     role: ChatCompletionRequestMessageRoleEnum.System,
     // prettier-ignore
     content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
-${config?.emoji? 'Use GitMoji convention to preface the commit.': 'Do not preface the commit with anything.'}
-${config?.description  ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.': "Don't add any descriptions to the commit, only commit message."}
+${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.': 'Do not preface the commit with anything.'}
+${config?.OCO_DESCRIPTION  ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.': "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Lines must not be longer than 74 characters. Use ${translation.localLanguage} to answer.`
   },
   {
@@ -49,9 +49,9 @@ app.use((_, res, next) => {
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.Assistant,
-    content: `${config?.emoji ? '🐛 ' : ''}${translation.commitFix}
-${config?.emoji ? '✨ ' : ''}${translation.commitFeat}
-${config?.description ? translation.commitDescription : ''}`
+    content: `${config?.OCO_EMOJI ? '🐛 ' : ''}${translation.commitFix}
+${config?.OCO_EMOJI ? '✨ ' : ''}${translation.commitFeat}
+${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
   }
 ];
 
@@ -74,19 +74,16 @@ export enum GenerateCommitMessageErrorEnum {
   emptyMessage = 'EMPTY_MESSAGE'
 }
 
-interface GenerateCommitMessageError {
-  error: GenerateCommitMessageErrorEnum;
-}
 
 const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
   (msg) => tokenCount(msg.content) + 4
 ).reduce((a, b) => a + b, 0);
 
-const MAX_REQ_TOKENS = 3900 - INIT_MESSAGES_PROMPT_LENGTH;
+const MAX_REQ_TOKENS = 3000 - INIT_MESSAGES_PROMPT_LENGTH;
 
-export const generateCommitMessageWithChatCompletion = async (
+export const generateCommitMessageByDiff = async (
   diff: string
-): Promise<string | GenerateCommitMessageError> => {
+): Promise<string> => {
   try {
     if (tokenCount(diff) >= MAX_REQ_TOKENS) {
       const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(
@@ -103,12 +100,12 @@ export const generateCommitMessageWithChatCompletion = async (
       const commitMessage = await api.generateCommitMessage(messages);
 
       if (!commitMessage)
-        return { error: GenerateCommitMessageErrorEnum.emptyMessage };
+        throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);
 
       return commitMessage;
     }
   } catch (error) {
-    return { error: GenerateCommitMessageErrorEnum.internalError };
+    throw error;
   }
 };
 

@@ -8,15 +8,19 @@ import chalk from 'chalk';
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
 
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
 export enum CONFIG_KEYS {
-  OPENAI_API_KEY = 'OPENAI_API_KEY',
-  OPENAI_MAX_TOKENS = 'OPENAI_MAX_TOKENS',
-  OPENAI_BASE_PATH = 'OPENAI_BASE_PATH',
-  description = 'description',
-  emoji = 'emoji',
-  model = 'model',
-  language = 'language',
-  prefix = 'prefix'
+  OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
+  OCO_OPENAI_MAX_TOKENS = 'OCO_OPENAI_MAX_TOKENS',
+  OCO_OPENAI_BASE_PATH = 'OCO_OPENAI_BASE_PATH',
+  OCO_DESCRIPTION = 'OCO_DESCRIPTION',
+  OCO_EMOJI = 'OCO_EMOJI',
+  OCO_MODEL = 'OCO_MODEL',
+  OCO_LANGUAGE = 'OCO_LANGUAGE',
+  OCO_PREFIX = 'OCO_PREFIX'
 }
 
 export enum CONFIG_MODES {
@@ -39,15 +43,15 @@ const validateConfig = (
 };
 
 export const configValidators = {
-  [CONFIG_KEYS.OPENAI_API_KEY](value: any) {
-    validateConfig(CONFIG_KEYS.OPENAI_API_KEY, value, 'Cannot be empty');
+  [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any) {
+    validateConfig(CONFIG_KEYS.OCO_OPENAI_API_KEY, value, 'Cannot be empty');
     validateConfig(
-      CONFIG_KEYS.OPENAI_API_KEY,
+      CONFIG_KEYS.OCO_OPENAI_API_KEY,
       value.startsWith('sk-'),
       'Must start with "sk-"'
     );
     validateConfig(
-      CONFIG_KEYS.OPENAI_API_KEY,
+      CONFIG_KEYS.OCO_OPENAI_API_KEY,
       value.length === 51,
       'Must be 51 characters long'
     );
@@ -55,9 +59,9 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.description](value: any) {
+  [CONFIG_KEYS.OCO_DESCRIPTION](value: any) {
     validateConfig(
-      CONFIG_KEYS.description,
+      CONFIG_KEYS.OCO_DESCRIPTION,
       typeof value === 'boolean',
       'Must be true or false'
     );
@@ -65,19 +69,28 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OPENAI_MAX_TOKENS](value: any) {
+  [CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS](value: any) {
+    // If the value is a string, convert it to a number.
+    if (typeof value === 'string') {
+      value = parseInt(value);
+      validateConfig(
+        CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
+        !isNaN(value),
+        'Must be a number'
+      );
+    }
     validateConfig(
-      CONFIG_KEYS.OPENAI_MAX_TOKENS,
-      typeof value === 'number',
+      CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
+      value ? typeof value === 'number' : undefined,
       'Must be a number'
     );
 
     return value;
   },
 
-  [CONFIG_KEYS.emoji](value: any) {
+  [CONFIG_KEYS.OCO_EMOJI](value: any) {
     validateConfig(
-      CONFIG_KEYS.emoji,
+      CONFIG_KEYS.OCO_EMOJI,
       typeof value === 'boolean',
       'Must be true or false'
     );
@@ -85,36 +98,36 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.language](value: any) {
+  [CONFIG_KEYS.OCO_LANGUAGE](value: any) {
     validateConfig(
-      CONFIG_KEYS.language,
+      CONFIG_KEYS.OCO_LANGUAGE,
       getI18nLocal(value),
       `${value} is not supported yet`
     );
     return getI18nLocal(value);
   },
 
-  [CONFIG_KEYS.OPENAI_BASE_PATH](value: any) {
+  [CONFIG_KEYS.OCO_OPENAI_BASE_PATH](value: any) {
     validateConfig(
-      CONFIG_KEYS.OPENAI_BASE_PATH,
-      typeof value == 'string',
-      `${value} is not supported yet`
+      CONFIG_KEYS.OCO_OPENAI_BASE_PATH,
+      typeof value === 'string',
+      'Must be string'
     );
     return value;
   },
 
-  [CONFIG_KEYS.model](value: any) {
+  [CONFIG_KEYS.OCO_MODEL](value: any) {
     validateConfig(
-      CONFIG_KEYS.OPENAI_BASE_PATH,
-      value === 'gpt-3.5-turbo' || value === 'gpt-4',
+      CONFIG_KEYS.OCO_MODEL,
+      ['gpt-3.5-turbo', 'gpt-4'].includes(value),
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
   },
 
-  [CONFIG_KEYS.prefix](value: any) {
+  [CONFIG_KEYS.OCO_PREFIX](value: any) {
     validateConfig(
-      CONFIG_KEYS.prefix,
+      CONFIG_KEYS.OCO_PREFIX,
       true,
       'Cannot be empty'
     );
@@ -130,18 +143,43 @@ export type ConfigType = {
 const configPath = pathJoin(homedir(), '.opencommit');
 
 export const getConfig = (): ConfigType | null => {
+  const configFromEnv = {
+    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
+    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS ? Number(process.env.OCO_OPENAI_MAX_TOKENS) : undefined,
+    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
+    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
+    OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
+    OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo',
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en'
+  };
+
   const configExists = existsSync(configPath);
-  if (!configExists) return null;
+  if (!configExists) return configFromEnv;
 
   const configFile = readFileSync(configPath, 'utf8');
   const config = iniParse(configFile);
 
   for (const configKey of Object.keys(config)) {
-    const validValue = configValidators[configKey as CONFIG_KEYS](
-      config[configKey]
-    );
+    if (!config[configKey] || ['null', 'undefined'].includes(config[configKey])) {
+      config[configKey] = undefined;
+      continue;
+    }
+    try {
+      const validator = configValidators[configKey as CONFIG_KEYS];
+      const validValue = validator(
+        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS]
+      );
 
-    config[configKey] = validValue;
+      config[configKey] = validValue;
+    } catch (error) {
+      outro(
+        `'${configKey}' name is invalid, it should be either 'OCO_${configKey.toUpperCase()}' or it doesn't exist.`
+      );
+      outro(
+        `Manually fix the '.env' file or global '~/.opencommit' config file.`
+      );
+      process.exit(1);
+    }
   }
 
   return config;
@@ -170,7 +208,7 @@ export const setConfig = (keyValues: [key: string, value: string][]) => {
 
   writeFileSync(configPath, iniStringify(config), 'utf8');
 
-  outro(`${chalk.green('✔')} config successfully set`);
+  outro(`${chalk.green('✔')} Config successfully set`);
 };
 
 export const configCommand = command(
