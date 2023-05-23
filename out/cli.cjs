@@ -16289,7 +16289,6 @@ var package_default = {
   main: "cli.js",
   bin: {
     opencommit: "./out/cli.cjs",
-    oc: "./out/cli.cjs",
     oco: "./out/cli.cjs"
   },
   repository: {
@@ -16904,7 +16903,7 @@ ${import_picocolors.default.magenta("\u25CB")}  ${t}
     let i2 = 0, c3 = 0;
     n = setInterval(() => {
       let l = C3[i2];
-      process.stdout.write(import_sisteransi2.cursor.move(-999, -1)), process.stdout.write(`${import_picocolors.default.magenta(l)}  ${t}${Math.floor(c3) >= 1 ? ".".repeat(Math.floor(c3)).slice(0, 3) : ""}   
+      process.stdout.write(import_sisteransi2.cursor.move(-999, -1)), process.stdout.write(`${import_picocolors.default.magenta(l)}  ${t}${Math.floor(c3) >= 1 ? ".".repeat(Math.floor(c3)).slice(0, 3) : ""}
 `), i2 = i2 === C3.length - 1 ? 0 : i2 + 1, c3 = c3 === C3.length ? 0 : c3 + 0.125;
     }, s);
   }, stop(t = "") {
@@ -21789,18 +21788,18 @@ index ad4db42..f3b18a9 100644
 @@ -10,7 +10,7 @@
 import {
   initWinstonLogger();
-  
+
   const app = express();
  -const port = 7799;
  +const PORT = 7799;
-  
+
   app.use(express.json());
-  
+
 @@ -34,6 +34,6 @@
 app.use((_, res, next) => {
   // ROUTES
   app.use(PROTECTED_ROUTER_URL, protectedRouter);
-  
+
  -app.listen(port, () => {
  -  console.log(\`Server listening on port \${port}\`);
  +app.listen(process.env.PORT || PORT, () => {
@@ -21903,7 +21902,7 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
       if (changedFiles)
         await gitAdd({ files: changedFiles });
       else {
-        ce("No changes detected, write some code and run `oc` again");
+        ce("No changes detected, write some code and run `oco` again");
         process.exit(1);
       }
     }
@@ -22037,7 +22036,7 @@ async function commit(extraArgs2 = [], isStageAllFlag = false) {
     if (changedFiles2)
       await gitAdd({ files: changedFiles2 });
     else {
-      ce("No changes detected, write some code and run `oc` again");
+      ce("No changes detected, write some code and run `oco` again");
       process.exit(1);
     }
   }
