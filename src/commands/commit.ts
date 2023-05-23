@@ -16,7 +16,8 @@ import {
   isCancel,
   intro,
   multiselect,
-  select
+  select,
+  text
 } from '@clack/prompts';
 import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
@@ -35,7 +36,7 @@ const generateCommitMessageFromGitDiff = async (
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
   try {
-    const commitMessage = await generateCommitMessageByDiff(diff);
+    let commitMessage = await generateCommitMessageByDiff(diff);
 
     commitSpinner.stop('📝 Commit message generated');
 
@@ -46,11 +47,23 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser = await confirm({
-      message: 'Confirm the commit message?'
+    const userAction = await select({
+      message: 'Confirm the commit message?',
+      options: [
+        { value: 'Yes', label: 'Yes' },
+        { value: 'No', label: 'No' },
+        { value: 'Edit', label: 'Edit' }
+      ]
     });
 
-    if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
+    if (userAction === 'Edit') {
+      commitMessage = await text({
+        message: 'Please edit the commit message:',
+        initialValue: commitMessage
+      });
+    }
+
+    if (userAction === 'Yes' || userAction === 'Edit') {
       const { stdout } = await execa('git', [
         'commit',
         '-m',
