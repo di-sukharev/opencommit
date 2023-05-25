@@ -22,6 +22,8 @@ export enum CONFIG_KEYS {
   OCO_LANGUAGE = 'OCO_LANGUAGE'
 }
 
+export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
+
 export enum CONFIG_MODES {
   get = 'get',
   set = 'set'
