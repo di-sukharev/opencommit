@@ -7,7 +7,9 @@ import {
   OpenAIApi
 } from 'openai';
 
-import { CONFIG_MODES, getConfig } from './commands/config';
+import {CONFIG_MODES, DEFAULT_MODEL_TOKEN_LIMIT, getConfig} from './commands/config';
+import {tokenCount} from './utils/tokenCount';
+import {GenerateCommitMessageErrorEnum} from './generateCommitMessageFromGitDiff';
 
 const config = getConfig();
 
@@ -56,6 +58,14 @@ class OpenAi {
       max_tokens: maxTokens || 500
     };
     try {
+      const REQUEST_TOKENS = messages.map(
+          (msg) => tokenCount(msg.content) + 4
+      ).reduce((a, b) => a + b, 0);
+
+      if (REQUEST_TOKENS > (DEFAULT_MODEL_TOKEN_LIMIT - maxTokens)) {
+        throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
+      }
+
       const { data } = await this.openAI.createChatCompletion(params);
 
       const message = data.choices[0].message;
