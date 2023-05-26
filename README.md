@@ -37,6 +37,7 @@ on:
 
 jobs:
   opencommit:
+    timeout-minutes: 10
     name: OpenCommit
     runs-on: ubuntu-latest
     permissions: write-all
