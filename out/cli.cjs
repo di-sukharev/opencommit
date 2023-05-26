@@ -16272,7 +16272,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "2.0.19",
+  version: "2.1.0",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -16313,7 +16313,7 @@ var package_default = {
     start: "node ./out/cli.cjs",
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
-    deploy: "npm run build && npm version patch && npm publish --tag latest",
+    deploy: "npm run build && npm version patch && git push origin --tags && npm publish --tag latest",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src"
@@ -21732,6 +21732,17 @@ var OpenAi = class {
     }
   };
 };
+var getOpenCommitLatestVersion = async () => {
+  try {
+    const { data } = await axios_default.get(
+      "https://unpkg.com/opencommit/package.json"
+    );
+    return data.version;
+  } catch (_6) {
+    ce("Error while getting the latest version of opencommit");
+    return void 0;
+  }
+};
 var api = new OpenAi();
 
 // src/utils/tokenCount.ts
@@ -22094,6 +22105,25 @@ ${stagedFiles.map((file) => `  ${file}`).join("\n")}`
   process.exit(0);
 }
 
+// src/utils/checkIsLatestVersion.ts
+var checkIsLatestVersion = async () => {
+  const latestVersion = await getOpenCommitLatestVersion();
+  if (latestVersion) {
+    const currentVersion = package_default.version;
+    if (currentVersion !== latestVersion) {
+      console.warn(
+        source_default.yellow(
+          `
+You are not using the latest stable version of OpenCommit with new features and bug fixes.
+Current version: ${currentVersion}. Latest version: ${latestVersion}.
+\u{1F680} To update run: npm i -g opencommit@latest.
+        `
+        )
+      );
+    }
+  }
+};
+
 // src/cli.ts
 var extraArgs = process.argv.slice(2);
 Z2(
@@ -22106,6 +22136,7 @@ Z2(
     help: { description: package_default.description }
   },
   async () => {
+    await checkIsLatestVersion();
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
