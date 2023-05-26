@@ -16272,7 +16272,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "2.0.18",
+  version: "2.0.19",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -16903,7 +16903,7 @@ ${import_picocolors.default.magenta("\u25CB")}  ${t}
     let i2 = 0, c3 = 0;
     n = setInterval(() => {
       let l = C3[i2];
-      process.stdout.write(import_sisteransi2.cursor.move(-999, -1)), process.stdout.write(`${import_picocolors.default.magenta(l)}  ${t}${Math.floor(c3) >= 1 ? ".".repeat(Math.floor(c3)).slice(0, 3) : ""}
+      process.stdout.write(import_sisteransi2.cursor.move(-999, -1)), process.stdout.write(`${import_picocolors.default.magenta(l)}  ${t}${Math.floor(c3) >= 1 ? ".".repeat(Math.floor(c3)).slice(0, 3) : ""}   
 `), i2 = i2 === C3.length - 1 ? 0 : i2 + 1, c3 = c3 === C3.length ? 0 : c3 + 0.125;
     }, s);
   }, stop(t = "") {
@@ -21685,7 +21685,7 @@ var [command, mode] = process.argv.slice(2);
 if (!apiKey && command !== "config" && mode !== "set" /* set */) {
   ae("opencommit");
   ce(
-    "OCO_OPENAI_API_KEY is not set, please run `oc config set OCO_OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`"
+    "OCO_OPENAI_API_KEY is not set, please run `oco config set OCO_OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`"
   );
   ce(
     "For help look into README https://github.com/di-sukharev/opencommit#setup"
@@ -21788,18 +21788,18 @@ index ad4db42..f3b18a9 100644
 @@ -10,7 +10,7 @@
 import {
   initWinstonLogger();
-
+  
   const app = express();
  -const port = 7799;
  +const PORT = 7799;
-
+  
   app.use(express.json());
-
+  
 @@ -34,6 +34,6 @@
 app.use((_, res, next) => {
   // ROUTES
   app.use(PROTECTED_ROUTER_URL, protectedRouter);
-
+  
  -app.listen(port, () => {
  -  console.log(\`Server listening on port \${port}\`);
  +app.listen(process.env.PORT || PORT, () => {
