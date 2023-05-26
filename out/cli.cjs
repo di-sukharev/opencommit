@@ -16272,7 +16272,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "2.2.9",
+  version: "2.2.10",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -21734,9 +21734,7 @@ var OpenAi = class {
       max_tokens: maxTokens || 500
     };
     try {
-      const REQUEST_TOKENS = messages.map(
-        (msg) => tokenCount(msg.content) + 4
-      ).reduce((a2, b5) => a2 + b5, 0);
+      const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a2, b5) => a2 + b5, 0);
       if (REQUEST_TOKENS > DEFAULT_MODEL_TOKEN_LIMIT - maxTokens) {
         throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
       }
@@ -21761,10 +21759,8 @@ var OpenAi = class {
 };
 var getOpenCommitLatestVersion = async () => {
   try {
-    const { data } = await axios_default.get(
-      "https://unpkg.com/opencommit/package.json"
-    );
-    return data.version;
+    const { stdout } = await execa("npm", ["view", "opencommit", "version"]);
+    return stdout;
   } catch (_6) {
     ce("Error while getting the latest version of opencommit");
     return void 0;
