@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "2.2.4",
+  "version": "2.2.3",
   "description": "Auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
@@ -41,9 +41,8 @@
     "start": "node ./out/cli.cjs",
     "dev": "ts-node ./src/cli.ts",
     "build": "rimraf out && node esbuild.config.js",
-    "deploy": "npm run build:push && npm version patch && npm run postversion",
+    "deploy": "npm version patch && npm run build:push && git push --tags && npm publish --tag latest",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
-    "postversion": "npm run build && git add . && git commit --amend --no-edit && git push && git push --tags && npm publish --tag latest",
     "lint": "eslint src --ext ts && tsc --noEmit",
     "format": "prettier --write src"
   },
