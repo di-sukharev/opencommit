@@ -16272,7 +16272,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "2.2.8",
+  version: "2.2.9",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -22157,7 +22157,7 @@ var checkIsLatestVersion = async () => {
   if (latestVersion) {
     const currentVersion = package_default.version;
     if (currentVersion !== latestVersion) {
-      console.warn(
+      ce(
         source_default.yellow(
           `
 You are not using the latest stable version of OpenCommit with new features and bug fixes.
