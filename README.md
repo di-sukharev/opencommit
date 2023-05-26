@@ -107,7 +107,7 @@ You can also use the `oco` shortcut:
 
 ```sh
 git add <files...>
-oc
+oco
 ```
 
 ## Configuration
