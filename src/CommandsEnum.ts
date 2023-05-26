@@ -1,4 +1,4 @@
 export enum COMMANDS {
-  hook = 'hook',
-  config = 'config'
+  config = 'config',
+  hook = 'hook'
 }
