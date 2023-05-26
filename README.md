@@ -76,7 +76,7 @@ Interactive rebase (`rebase -i`) changes commit SHA, so commit history in remote
 
 ## Setup OpenCommit as a CLI
 
-You can use OpenCommit by simply running it via CLI like this `oc`. 2 seconds and your staged changes are committed with a meaningful message.
+You can use OpenCommit by simply running it via CLI like this `oco`. 2 seconds and your staged changes are committed with a meaningful message.
 
 1. Install OpenCommit globally to use in any repository:
 
@@ -103,7 +103,7 @@ git add <files...>
 opencommit
 ```
 
-You can also use the `oc` shortcut:
+You can also use the `oco` shortcut:
 
 ```sh
 git add <files...>
@@ -133,19 +133,19 @@ Local config still has more priority as Global config, but you may set `OCO_MODE
 Simply run any of the variable above like this:
 
 ```sh
-oc config set OCO_OPENAI_API_KEY=gpt-4
+oco config set OCO_OPENAI_API_KEY=gpt-4
 ```
 
 Configure [GitMoji](https://gitmoji.dev/) to preface a message.
 
 ```sh
-oc config set OCO_EMOJI=true
+oco config set OCO_EMOJI=true
 ```
 
 To remove preface emoji:
 
 ```sh
-oc config set OCO_EMOJI=false
+oco config set OCO_EMOJI=false
 ```
 
 ### Switch to GPT-4
@@ -155,7 +155,7 @@ By default OpenCommit uses GPT-3.5-turbo (ChatGPT).
 You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 
 ```sh
-oc config set OCO_MODEL=gpt-4
+oco config set OCO_MODEL=gpt-4
 ```
 
 Make sure you do lowercase `gpt-4` and you have API access to the 4th model. Even if you have ChatGPT+ it doesn't necessarily mean that you have API access to GPT-4.
@@ -166,25 +166,25 @@ To globally specify the language used to generate commit messages:
 
 ```sh
 # de, German ,Deutsch
-oc config set OCO_LANGUAGE=de
-oc config set OCO_LANGUAGE=German
-oc config set OCO_LANGUAGE=Deutsch
+oco config set OCO_LANGUAGE=de
+oco config set OCO_LANGUAGE=German
+oco config set OCO_LANGUAGE=Deutsch
 
 # fr, French, française
-oc config set OCO_LANGUAGE=fr
-oc config set OCO_LANGUAGE=French
-oc config set OCO_LANGUAGE=française
+oco config set OCO_LANGUAGE=fr
+oco config set OCO_LANGUAGE=French
+oco config set OCO_LANGUAGE=française
 ```
 
-The default language set is **English**  
+The default language set is **English**
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
 ### Git flags
 
-The `opencommit` or `oc` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oc`.
+The `opencommit` or `oco` commands can be used in place of the `git commit -m "${generatedMessage}"` command. This means that any regular flags that are used with the `git commit` command will also be applied when using `opencommit` or `oco`.
 
 ```sh
-oc --no-verify
+oco --no-verify
 ```
 
 is translated to :
@@ -213,13 +213,13 @@ You can set OpenCommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/gi
 To set the hook:
 
 ```sh
-oc hook set
+oco hook set
 ```
 
 To unset the hook:
 
 ```sh
-oc hook unset
+oco hook unset
 ```
 
 To use the hook:
