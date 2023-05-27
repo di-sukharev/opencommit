@@ -21827,10 +21827,8 @@ var OpenAi = class {
     try {
       const { data } = await this.openAI.createChatCompletion(params);
       const message = data.choices[0].message;
-      const prefix = generatePrefix();
-      const usePrefix = prefix != void 0 && prefix?.trim() != "";
-      const finalMessage = (usePrefix ? prefix + " " : "") + (message?.content || "");
-      return finalMessage;
+      const fullMessage = stitchMessageWithPrefix(message?.content);
+      return fullMessage;
     } catch (error) {
       ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
       const err = error;
@@ -21847,6 +21845,11 @@ var OpenAi = class {
     }
   };
 };
+function stitchMessageWithPrefix(message) {
+  const prefix = generatePrefix();
+  const usePrefix = prefix != void 0 && prefix?.trim() != "";
+  return (usePrefix ? prefix + " " : "") + (message || "");
+}
 function generatePrefix() {
   const prefix = config2?.OCO_PREFIX;
   if (prefix === void 0) {
