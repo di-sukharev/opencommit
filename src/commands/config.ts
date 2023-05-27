@@ -128,11 +128,11 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_PREFIX](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_PREFIX,
-      true,
-      'Cannot be empty'
+      validatePrefix(value),
+      'Invalid Prefix'
     );
     return value;
-  }
+  }  
 
 };
 
@@ -150,7 +150,8 @@ export const getConfig = (): ConfigType | null => {
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo',
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en'
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
+    OCO_PREFIX: process.env.OCO_PREFEIX || ''
   };
 
   const configExists = existsSync(configPath);
@@ -241,3 +242,36 @@ export const configCommand = command(
     }
   }
 );
+
+ 
+function validatePrefix(prefix: any): boolean {
+
+  if (typeof prefix !== 'string') {
+    outro('Prefix is not a string.');
+    return false;
+  }
+
+  const isTryingToBeRegex = prefix.match(/^\/.*\/.*|^\^(\(.*\))$/)
+
+  if (!isTryingToBeRegex) {
+    return true
+  }
+  
+  if (!isRegex(prefix)) {
+    outro('This Regex format is not supported, please use the classic /*/ foramt')
+    return false;
+  }
+
+  return true;
+}
+
+function isRegex(str: string): boolean {
+  try {
+    new RegExp(str);
+  } catch(e) {
+    if (e instanceof SyntaxError) {
+      return false;
+    }
+  }
+  return true;
+}
