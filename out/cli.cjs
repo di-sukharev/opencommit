@@ -17684,8 +17684,8 @@ var configValidators = {
   ["OCO_PREFIX" /* OCO_PREFIX */](value) {
     validateConfig(
       "OCO_PREFIX" /* OCO_PREFIX */,
-      true,
-      "Cannot be empty"
+      validatePrefix(value),
+      "Invalid Prefix"
     );
     return value;
   }
@@ -17699,7 +17699,8 @@ var getConfig = () => {
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo",
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en"
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
+    OCO_PREFIX: process.env.OCO_PREFEIX || ""
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -17776,6 +17777,31 @@ var configCommand = G3(
     }
   }
 );
+function validatePrefix(prefix) {
+  if (typeof prefix !== "string") {
+    ce("Prefix is not a string.");
+    return false;
+  }
+  const isTryingToBeRegex = prefix.match(/^\/.*\/.*|^\^(\(.*\))$/);
+  if (!isTryingToBeRegex) {
+    return true;
+  }
+  if (!isRegex(prefix)) {
+    ce("This Regex format is not supported, please use the classic /*/ foramt");
+    return false;
+  }
+  return true;
+}
+function isRegex(str) {
+  try {
+    new RegExp(str);
+  } catch (e2) {
+    if (e2 instanceof SyntaxError) {
+      return false;
+    }
+  }
+  return true;
+}
 
 // src/commands/githook.ts
 var import_promises = __toESM(require("fs/promises"), 1);
@@ -21826,7 +21852,7 @@ function generatePrefix() {
   if (prefix === void 0) {
     return void 0;
   }
-  const prefixIsRegexString = prefix.startsWith("/") && prefix.endsWith("/");
+  const prefixIsRegexString = prefix.match(/\/.*\/*/);
   if (prefixIsRegexString) {
     try {
       return generatePrefixFromRegex(prefix);
