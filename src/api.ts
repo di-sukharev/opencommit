@@ -60,13 +60,9 @@ class OpenAi {
       const { data } = await this.openAI.createChatCompletion(params);
 
       const message = data.choices[0].message;
+      const fullMessage = stitchMessageWithPrefix(message?.content)
 
-      const prefix = generatePrefix();
-      const usePrefix = prefix != undefined && prefix?.trim() != ""
-
-      const finalMessage = (usePrefix ? prefix + ' ' : '') + (message?.content || '')
-
-      return finalMessage;
+      return fullMessage;
 
     } catch (error) {
       outro(`${chalk.red('✖')} ${JSON.stringify(params)}`);
@@ -89,6 +85,12 @@ class OpenAi {
       throw err;
     }
   };
+}
+
+function stitchMessageWithPrefix(message: string | undefined){
+  const prefix = generatePrefix();
+  const usePrefix = prefix != undefined && prefix?.trim() != ""
+  return (usePrefix ? prefix + ' ' : '') + (message || '')
 }
 
 export const getOpenCommitLatestVersion = async (): Promise<
