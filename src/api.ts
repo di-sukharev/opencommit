@@ -112,7 +112,9 @@ function generatePrefix(): string | undefined {
     return undefined;
   }
 
-  const prefixIsRegexString = prefix.startsWith('/') && prefix.endsWith('/');
+
+  // Prefix is limited to /*/ regex expressions
+  const prefixIsRegexString = prefix.match(/\/.*\/*/)
 
   if (prefixIsRegexString) {
     try {
