@@ -16272,7 +16272,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "2.0.17",
+  version: "2.0.19",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -16289,7 +16289,6 @@ var package_default = {
   main: "cli.js",
   bin: {
     opencommit: "./out/cli.cjs",
-    oc: "./out/cli.cjs",
     oco: "./out/cli.cjs"
   },
   repository: {
@@ -21797,7 +21796,7 @@ var [command, mode] = process.argv.slice(2);
 if (!apiKey && command !== "config" && mode !== "set" /* set */) {
   ae("opencommit");
   ce(
-    "OCO_OPENAI_API_KEY is not set, please run `oc config set OCO_OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`"
+    "OCO_OPENAI_API_KEY is not set, please run `oco config set OCO_OPENAI_API_KEY=<your token>. Make sure you add payment details, so API works.`"
   );
   ce(
     "For help look into README https://github.com/di-sukharev/opencommit#setup"
@@ -22058,7 +22057,7 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
       if (changedFiles)
         await gitAdd({ files: changedFiles });
       else {
-        ce("No changes detected, write some code and run `oc` again");
+        ce("No changes detected, write some code and run `oco` again");
         process.exit(1);
       }
     }
@@ -22192,7 +22191,7 @@ async function commit(extraArgs2 = [], isStageAllFlag = false) {
     if (changedFiles2)
       await gitAdd({ files: changedFiles2 });
     else {
-      ce("No changes detected, write some code and run `oc` again");
+      ce("No changes detected, write some code and run `oco` again");
       process.exit(1);
     }
   }

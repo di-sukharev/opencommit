@@ -23,6 +23,8 @@ export enum CONFIG_KEYS {
   OCO_PREFIX = 'OCO_PREFIX'
 }
 
+export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
+
 export enum CONFIG_MODES {
   get = 'get',
   set = 'set'
