@@ -6,6 +6,7 @@ import { existsSync } from 'fs';
 import chalk from 'chalk';
 import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../CommandsEnum.js';
+import { execa } from 'execa';
 
 const HOOK_NAME = 'prepare-commit-msg';
 const DEFAULT_SYMLINK_URL = path.join('.git', 'hooks', HOOK_NAME);
@@ -15,7 +16,14 @@ const getHooksPath = async (): Promise<string> => {
     const hooksPath = await getCoreHooksPath();
     return path.join(hooksPath, HOOK_NAME);
   } catch (error) {
-    return DEFAULT_SYMLINK_URL;
+    try {
+      // Git < 2.9 will throw error. Hence, alternative hook path query for Git < 2.9
+      // This works for submodules too.
+      const { stdout } = await execa("git", ["rev-parse", "--git-path", "hooks"]);
+      return path.join(stdout, HOOK_NAME);
+    } catch (error) {
+      return DEFAULT_SYMLINK_URL;
+    }
   }
 };
 

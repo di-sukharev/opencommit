@@ -992,11 +992,11 @@ var require_signals = __commonJS({
 // node_modules/signal-exit/index.js
 var require_signal_exit = __commonJS({
   "node_modules/signal-exit/index.js"(exports, module2) {
-    var process5 = global.process;
-    var processOk = function(process6) {
-      return process6 && typeof process6 === "object" && typeof process6.removeListener === "function" && typeof process6.emit === "function" && typeof process6.reallyExit === "function" && typeof process6.listeners === "function" && typeof process6.kill === "function" && typeof process6.pid === "number" && typeof process6.on === "function";
+    var process6 = global.process;
+    var processOk = function(process7) {
+      return process7 && typeof process7 === "object" && typeof process7.removeListener === "function" && typeof process7.emit === "function" && typeof process7.reallyExit === "function" && typeof process7.listeners === "function" && typeof process7.kill === "function" && typeof process7.pid === "number" && typeof process7.on === "function";
     };
-    if (!processOk(process5)) {
+    if (!processOk(process6)) {
       module2.exports = function() {
         return function() {
         };
@@ -1004,15 +1004,15 @@ var require_signal_exit = __commonJS({
     } else {
       assert = require("assert");
       signals = require_signals();
-      isWin = /^win/i.test(process5.platform);
+      isWin = /^win/i.test(process6.platform);
       EE = require("events");
       if (typeof EE !== "function") {
         EE = EE.EventEmitter;
       }
-      if (process5.__signal_exit_emitter__) {
-        emitter = process5.__signal_exit_emitter__;
+      if (process6.__signal_exit_emitter__) {
+        emitter = process6.__signal_exit_emitter__;
       } else {
-        emitter = process5.__signal_exit_emitter__ = new EE();
+        emitter = process6.__signal_exit_emitter__ = new EE();
         emitter.count = 0;
         emitter.emitted = {};
       }
@@ -1049,12 +1049,12 @@ var require_signal_exit = __commonJS({
         loaded = false;
         signals.forEach(function(sig) {
           try {
-            process5.removeListener(sig, sigListeners[sig]);
+            process6.removeListener(sig, sigListeners[sig]);
           } catch (er) {
           }
         });
-        process5.emit = originalProcessEmit;
-        process5.reallyExit = originalProcessReallyExit;
+        process6.emit = originalProcessEmit;
+        process6.reallyExit = originalProcessReallyExit;
         emitter.count -= 1;
       };
       module2.exports.unload = unload;
@@ -1071,7 +1071,7 @@ var require_signal_exit = __commonJS({
           if (!processOk(global.process)) {
             return;
           }
-          var listeners = process5.listeners(sig);
+          var listeners = process6.listeners(sig);
           if (listeners.length === emitter.count) {
             unload();
             emit("exit", null, sig);
@@ -1079,7 +1079,7 @@ var require_signal_exit = __commonJS({
             if (isWin && sig === "SIGHUP") {
               sig = "SIGINT";
             }
-            process5.kill(process5.pid, sig);
+            process6.kill(process6.pid, sig);
           }
         };
       });
@@ -1095,35 +1095,35 @@ var require_signal_exit = __commonJS({
         emitter.count += 1;
         signals = signals.filter(function(sig) {
           try {
-            process5.on(sig, sigListeners[sig]);
+            process6.on(sig, sigListeners[sig]);
             return true;
           } catch (er) {
             return false;
           }
         });
-        process5.emit = processEmit;
-        process5.reallyExit = processReallyExit;
+        process6.emit = processEmit;
+        process6.reallyExit = processReallyExit;
       };
       module2.exports.load = load;
-      originalProcessReallyExit = process5.reallyExit;
+      originalProcessReallyExit = process6.reallyExit;
       processReallyExit = function processReallyExit2(code) {
         if (!processOk(global.process)) {
           return;
         }
-        process5.exitCode = code || 0;
-        emit("exit", process5.exitCode, null);
-        emit("afterexit", process5.exitCode, null);
-        originalProcessReallyExit.call(process5, process5.exitCode);
+        process6.exitCode = code || 0;
+        emit("exit", process6.exitCode, null);
+        emit("afterexit", process6.exitCode, null);
+        originalProcessReallyExit.call(process6, process6.exitCode);
       };
-      originalProcessEmit = process5.emit;
+      originalProcessEmit = process6.emit;
       processEmit = function processEmit2(ev, arg) {
         if (ev === "exit" && processOk(global.process)) {
           if (arg !== void 0) {
-            process5.exitCode = arg;
+            process6.exitCode = arg;
           }
           var ret = originalProcessEmit.apply(this, arguments);
-          emit("exit", process5.exitCode, null);
-          emit("afterexit", process5.exitCode, null);
+          emit("exit", process6.exitCode, null);
+          emit("afterexit", process6.exitCode, null);
           return ret;
         } else {
           return originalProcessEmit.apply(this, arguments);
@@ -16229,8 +16229,8 @@ function x2(t, e2, r2, n) {
       b3(h4, w3(c3), m4, u2);
     Object.assign(l._, h4);
   }
-  const $4 = { ...l, showVersion: f3, showHelp: u2 };
-  return typeof r2 == "function" && r2($4), { command: t, ...$4 };
+  const $5 = { ...l, showVersion: f3, showHelp: u2 };
+  return typeof r2 == "function" && r2($5), { command: t, ...$5 };
 }
 function z2(t, e2) {
   const r2 = /* @__PURE__ */ new Map();
@@ -16864,8 +16864,8 @@ ${import_picocolors.default.gray(a)}` : ""}`;
 `).map((i2, c3) => c3 === 0 ? `${import_picocolors.default.yellow(o)}  ${import_picocolors.default.yellow(i2)}` : `   ${i2}`).join(`
 `);
         return s + import_picocolors.default.yellow(a) + "  " + this.options.map((i2, c3) => {
-          const l = this.value.includes(i2.value), $4 = c3 === this.cursor;
-          return $4 && l ? n(i2, "active-selected") : l ? n(i2, "selected") : n(i2, $4 ? "active" : "inactive");
+          const l = this.value.includes(i2.value), $5 = c3 === this.cursor;
+          return $5 && l ? n(i2, "active-selected") : l ? n(i2, "selected") : n(i2, $5 ? "active" : "inactive");
         }).join(`
 ${import_picocolors.default.yellow(a)}  `) + `
 ` + t + `
@@ -17774,10 +17774,10 @@ var import_promises = __toESM(require("fs/promises"), 1);
 var import_path2 = __toESM(require("path"), 1);
 
 // node_modules/execa/index.js
-var import_node_buffer = require("node:buffer");
+var import_node_buffer2 = require("node:buffer");
 var import_node_path2 = __toESM(require("node:path"), 1);
-var import_node_child_process = __toESM(require("node:child_process"), 1);
-var import_node_process5 = __toESM(require("node:process"), 1);
+var import_node_child_process3 = __toESM(require("node:child_process"), 1);
+var import_node_process6 = __toESM(require("node:process"), 1);
 var import_cross_spawn = __toESM(require_cross_spawn(), 1);
 
 // node_modules/strip-final-newline/index.js
@@ -17917,19 +17917,17 @@ var onetime_default = onetime;
 var import_node_os3 = require("node:os");
 
 // node_modules/human-signals/build/src/realtime.js
-var getRealtimeSignals = function() {
+var getRealtimeSignals = () => {
   const length = SIGRTMAX - SIGRTMIN + 1;
   return Array.from({ length }, getRealtimeSignal);
 };
-var getRealtimeSignal = function(value, index) {
-  return {
-    name: `SIGRT${index + 1}`,
-    number: SIGRTMIN + index,
-    action: "terminate",
-    description: "Application-specific signal (realtime)",
-    standard: "posix"
-  };
-};
+var getRealtimeSignal = (value, index) => ({
+  name: `SIGRT${index + 1}`,
+  number: SIGRTMIN + index,
+  action: "terminate",
+  description: "Application-specific signal (realtime)",
+  standard: "posix"
+});
 var SIGRTMIN = 34;
 var SIGRTMAX = 64;
 
@@ -18210,19 +18208,19 @@ var SIGNALS = [
 ];
 
 // node_modules/human-signals/build/src/signals.js
-var getSignals = function() {
+var getSignals = () => {
   const realtimeSignals = getRealtimeSignals();
   const signals = [...SIGNALS, ...realtimeSignals].map(normalizeSignal);
   return signals;
 };
-var normalizeSignal = function({
+var normalizeSignal = ({
   name,
   number: defaultNumber,
   description,
   action,
   forced = false,
   standard
-}) {
+}) => {
   const {
     signals: { [name]: constantSignal }
   } = import_node_os2.constants;
@@ -18232,11 +18230,11 @@ var normalizeSignal = function({
 };
 
 // node_modules/human-signals/build/src/main.js
-var getSignalsByName = function() {
+var getSignalsByName = () => {
   const signals = getSignals();
   return Object.fromEntries(signals.map(getSignalByName));
 };
-var getSignalByName = function({
+var getSignalByName = ({
   name,
   number,
   description,
@@ -18244,20 +18242,15 @@ var getSignalByName = function({
   action,
   forced,
   standard
-}) {
-  return [
-    name,
-    { name, number, description, supported, action, forced, standard }
-  ];
-};
+}) => [name, { name, number, description, supported, action, forced, standard }];
 var signalsByName = getSignalsByName();
-var getSignalsByNumber = function() {
+var getSignalsByNumber = () => {
   const signals = getSignals();
   const length = SIGRTMAX + 1;
   const signalsA = Array.from({ length }, (value, number) => getSignalByNumber(number, signals));
   return Object.assign({}, ...signalsA);
 };
-var getSignalByNumber = function(number, signals) {
+var getSignalByNumber = (number, signals) => {
   const signal = findSignalByNumber(number, signals);
   if (signal === void 0) {
     return {};
@@ -18275,7 +18268,7 @@ var getSignalByNumber = function(number, signals) {
     }
   };
 };
-var findSignalByNumber = function(number, signals) {
+var findSignalByNumber = (number, signals) => {
   const signal = signals.find(({ name }) => import_node_os3.constants.signals[name] === number);
   if (signal !== void 0) {
     return signal;
@@ -18452,15 +18445,82 @@ var setExitHandler = async (spawned, { cleanup, detached }, timedPromise) => {
   });
 };
 
+// node_modules/execa/lib/pipe.js
+var import_node_fs = require("node:fs");
+var import_node_child_process = require("node:child_process");
+
 // node_modules/is-stream/index.js
 function isStream(stream4) {
   return stream4 !== null && typeof stream4 === "object" && typeof stream4.pipe === "function";
 }
+function isWritableStream(stream4) {
+  return isStream(stream4) && stream4.writable !== false && typeof stream4._write === "function" && typeof stream4._writableState === "object";
+}
+
+// node_modules/execa/lib/pipe.js
+var isExecaChildProcess = (target) => target instanceof import_node_child_process.ChildProcess && typeof target.then === "function";
+var pipeToTarget = (spawned, streamName, target) => {
+  if (typeof target === "string") {
+    spawned[streamName].pipe((0, import_node_fs.createWriteStream)(target));
+    return spawned;
+  }
+  if (isWritableStream(target)) {
+    spawned[streamName].pipe(target);
+    return spawned;
+  }
+  if (!isExecaChildProcess(target)) {
+    throw new TypeError("The second argument must be a string, a stream or an Execa child process.");
+  }
+  if (!isWritableStream(target.stdin)) {
+    throw new TypeError("The target child process's stdin must be available.");
+  }
+  spawned[streamName].pipe(target.stdin);
+  return target;
+};
+var addPipeMethods = (spawned) => {
+  if (spawned.stdout !== null) {
+    spawned.pipeStdout = pipeToTarget.bind(void 0, spawned, "stdout");
+  }
+  if (spawned.stderr !== null) {
+    spawned.pipeStderr = pipeToTarget.bind(void 0, spawned, "stderr");
+  }
+  if (spawned.all !== void 0) {
+    spawned.pipeAll = pipeToTarget.bind(void 0, spawned, "all");
+  }
+};
 
 // node_modules/execa/lib/stream.js
+var import_node_fs2 = require("node:fs");
 var import_get_stream = __toESM(require_get_stream(), 1);
 var import_merge_stream = __toESM(require_merge_stream(), 1);
-var handleInput = (spawned, input) => {
+var validateInputOptions = (input) => {
+  if (input !== void 0) {
+    throw new TypeError("The `input` and `inputFile` options cannot be both set.");
+  }
+};
+var getInputSync = ({ input, inputFile }) => {
+  if (typeof inputFile !== "string") {
+    return input;
+  }
+  validateInputOptions(input);
+  return (0, import_node_fs2.readFileSync)(inputFile);
+};
+var handleInputSync = (options) => {
+  const input = getInputSync(options);
+  if (isStream(input)) {
+    throw new TypeError("The `input` option cannot be a stream in sync mode");
+  }
+  return input;
+};
+var getInput = ({ input, inputFile }) => {
+  if (typeof inputFile !== "string") {
+    return input;
+  }
+  validateInputOptions(input);
+  return (0, import_node_fs2.createReadStream)(inputFile);
+};
+var handleInput = (spawned, options) => {
+  const input = getInput(options);
   if (input === void 0) {
     return;
   }
@@ -18531,7 +18591,6 @@ var mergePromise = (spawned, promise) => {
     const value = typeof promise === "function" ? (...args) => Reflect.apply(descriptor.value, promise(), args) : descriptor.value.bind(promise);
     Reflect.defineProperty(spawned, property, { ...descriptor, value });
   }
-  return spawned;
 };
 var getSpawnedPromise = (spawned) => new Promise((resolve, reject) => {
   spawned.on("exit", (exitCode, signal) => {
@@ -18548,6 +18607,8 @@ var getSpawnedPromise = (spawned) => new Promise((resolve, reject) => {
 });
 
 // node_modules/execa/lib/command.js
+var import_node_buffer = require("node:buffer");
+var import_node_child_process2 = require("node:child_process");
 var normalizeArgs = (file, args = []) => {
   if (!Array.isArray(args)) {
     return [file];
@@ -18564,11 +18625,80 @@ var escapeArg = (arg) => {
 };
 var joinCommand = (file, args) => normalizeArgs(file, args).join(" ");
 var getEscapedCommand = (file, args) => normalizeArgs(file, args).map((arg) => escapeArg(arg)).join(" ");
+var SPACES_REGEXP = / +/g;
+var parseExpression = (expression) => {
+  const typeOfExpression = typeof expression;
+  if (typeOfExpression === "string") {
+    return expression;
+  }
+  if (typeOfExpression === "number") {
+    return String(expression);
+  }
+  if (typeOfExpression === "object" && expression !== null && !(expression instanceof import_node_child_process2.ChildProcess) && "stdout" in expression) {
+    const typeOfStdout = typeof expression.stdout;
+    if (typeOfStdout === "string") {
+      return expression.stdout;
+    }
+    if (import_node_buffer.Buffer.isBuffer(expression.stdout)) {
+      return expression.stdout.toString();
+    }
+    throw new TypeError(`Unexpected "${typeOfStdout}" stdout in template expression`);
+  }
+  throw new TypeError(`Unexpected "${typeOfExpression}" in template expression`);
+};
+var concatTokens = (tokens, nextTokens, isNew) => isNew || tokens.length === 0 || nextTokens.length === 0 ? [...tokens, ...nextTokens] : [
+  ...tokens.slice(0, -1),
+  `${tokens[tokens.length - 1]}${nextTokens[0]}`,
+  ...nextTokens.slice(1)
+];
+var parseTemplate = ({ templates, expressions, tokens, index, template }) => {
+  const templateString = template ?? templates.raw[index];
+  const templateTokens = templateString.split(SPACES_REGEXP).filter(Boolean);
+  const newTokens = concatTokens(
+    tokens,
+    templateTokens,
+    templateString.startsWith(" ")
+  );
+  if (index === expressions.length) {
+    return newTokens;
+  }
+  const expression = expressions[index];
+  const expressionTokens = Array.isArray(expression) ? expression.map((expression2) => parseExpression(expression2)) : [parseExpression(expression)];
+  return concatTokens(
+    newTokens,
+    expressionTokens,
+    templateString.endsWith(" ")
+  );
+};
+var parseTemplates = (templates, expressions) => {
+  let tokens = [];
+  for (const [index, template] of templates.entries()) {
+    tokens = parseTemplate({ templates, expressions, tokens, index, template });
+  }
+  return tokens;
+};
+
+// node_modules/execa/lib/verbose.js
+var import_node_util = require("node:util");
+var import_node_process5 = __toESM(require("node:process"), 1);
+var verboseDefault = (0, import_node_util.debuglog)("execa").enabled;
+var padField = (field, padding) => String(field).padStart(padding, "0");
+var getTimestamp = () => {
+  const date = new Date();
+  return `${padField(date.getHours(), 2)}:${padField(date.getMinutes(), 2)}:${padField(date.getSeconds(), 2)}.${padField(date.getMilliseconds(), 3)}`;
+};
+var logCommand = (escapedCommand, { verbose }) => {
+  if (!verbose) {
+    return;
+  }
+  import_node_process5.default.stderr.write(`[${getTimestamp()}] ${escapedCommand}
+`);
+};
 
 // node_modules/execa/index.js
 var DEFAULT_MAX_BUFFER = 1e3 * 1e3 * 100;
 var getEnv = ({ env: envOption, extendEnv, preferLocal, localDir, execPath }) => {
-  const env2 = extendEnv ? { ...import_node_process5.default.env, ...envOption } : envOption;
+  const env2 = extendEnv ? { ...import_node_process6.default.env, ...envOption } : envOption;
   if (preferLocal) {
     return npmRunPathEnv({ env: env2, cwd: localDir, execPath });
   }
@@ -18585,24 +18715,25 @@ var handleArguments = (file, args, options = {}) => {
     stripFinalNewline: true,
     extendEnv: true,
     preferLocal: false,
-    localDir: options.cwd || import_node_process5.default.cwd(),
-    execPath: import_node_process5.default.execPath,
+    localDir: options.cwd || import_node_process6.default.cwd(),
+    execPath: import_node_process6.default.execPath,
     encoding: "utf8",
     reject: true,
     cleanup: true,
     all: false,
     windowsHide: true,
+    verbose: verboseDefault,
     ...options
   };
   options.env = getEnv(options);
   options.stdio = normalizeStdio(options);
-  if (import_node_process5.default.platform === "win32" && import_node_path2.default.basename(file, ".exe") === "cmd") {
+  if (import_node_process6.default.platform === "win32" && import_node_path2.default.basename(file, ".exe") === "cmd") {
     args.unshift("/q");
   }
   return { file, args, options, parsed };
 };
 var handleOutput = (options, value, error) => {
-  if (typeof value !== "string" && !import_node_buffer.Buffer.isBuffer(value)) {
+  if (typeof value !== "string" && !import_node_buffer2.Buffer.isBuffer(value)) {
     return error === void 0 ? void 0 : "";
   }
   if (options.stripFinalNewline) {
@@ -18614,12 +18745,13 @@ function execa(file, args, options) {
   const parsed = handleArguments(file, args, options);
   const command2 = joinCommand(file, args);
   const escapedCommand = getEscapedCommand(file, args);
+  logCommand(escapedCommand, parsed.options);
   validateTimeout(parsed.options);
   let spawned;
   try {
-    spawned = import_node_child_process.default.spawn(parsed.file, parsed.args, parsed.options);
+    spawned = import_node_child_process3.default.spawn(parsed.file, parsed.args, parsed.options);
   } catch (error) {
-    const dummySpawned = new import_node_child_process.default.ChildProcess();
+    const dummySpawned = new import_node_child_process3.default.ChildProcess();
     const errorPromise = Promise.reject(makeError({
       error,
       stdout: "",
@@ -18632,7 +18764,8 @@ function execa(file, args, options) {
       isCanceled: false,
       killed: false
     }));
-    return mergePromise(dummySpawned, errorPromise);
+    mergePromise(dummySpawned, errorPromise);
+    return dummySpawned;
   }
   const spawnedPromise = getSpawnedPromise(spawned);
   const timedPromise = setupTimeout(spawned, parsed.options, spawnedPromise);
@@ -18679,10 +18812,92 @@ function execa(file, args, options) {
     };
   };
   const handlePromiseOnce = onetime_default(handlePromise);
-  handleInput(spawned, parsed.options.input);
+  handleInput(spawned, parsed.options);
   spawned.all = makeAllStream(spawned, parsed.options);
-  return mergePromise(spawned, handlePromiseOnce);
+  addPipeMethods(spawned);
+  mergePromise(spawned, handlePromiseOnce);
+  return spawned;
 }
+function execaSync(file, args, options) {
+  const parsed = handleArguments(file, args, options);
+  const command2 = joinCommand(file, args);
+  const escapedCommand = getEscapedCommand(file, args);
+  logCommand(escapedCommand, parsed.options);
+  const input = handleInputSync(parsed.options);
+  let result;
+  try {
+    result = import_node_child_process3.default.spawnSync(parsed.file, parsed.args, { ...parsed.options, input });
+  } catch (error) {
+    throw makeError({
+      error,
+      stdout: "",
+      stderr: "",
+      all: "",
+      command: command2,
+      escapedCommand,
+      parsed,
+      timedOut: false,
+      isCanceled: false,
+      killed: false
+    });
+  }
+  const stdout = handleOutput(parsed.options, result.stdout, result.error);
+  const stderr = handleOutput(parsed.options, result.stderr, result.error);
+  if (result.error || result.status !== 0 || result.signal !== null) {
+    const error = makeError({
+      stdout,
+      stderr,
+      error: result.error,
+      signal: result.signal,
+      exitCode: result.status,
+      command: command2,
+      escapedCommand,
+      parsed,
+      timedOut: result.error && result.error.code === "ETIMEDOUT",
+      isCanceled: false,
+      killed: result.signal !== null
+    });
+    if (!parsed.options.reject) {
+      return error;
+    }
+    throw error;
+  }
+  return {
+    command: command2,
+    escapedCommand,
+    exitCode: 0,
+    stdout,
+    stderr,
+    failed: false,
+    timedOut: false,
+    isCanceled: false,
+    killed: false
+  };
+}
+var normalizeScriptStdin = ({ input, inputFile, stdio }) => input === void 0 && inputFile === void 0 && stdio === void 0 ? { stdin: "inherit" } : {};
+var normalizeScriptOptions = (options = {}) => ({
+  preferLocal: true,
+  ...normalizeScriptStdin(options),
+  ...options
+});
+function create$(options) {
+  function $5(templatesOrOptions, ...expressions) {
+    if (!Array.isArray(templatesOrOptions)) {
+      return create$({ ...options, ...templatesOrOptions });
+    }
+    const [file, ...args] = parseTemplates(templatesOrOptions, expressions);
+    return execa(file, args, normalizeScriptOptions(options));
+  }
+  $5.sync = (templates, ...expressions) => {
+    if (!Array.isArray(templates)) {
+      throw new TypeError("Please use $(options).sync`command` instead of $.sync(options)`command`.");
+    }
+    const [file, ...args] = parseTemplates(templates, expressions);
+    return execaSync(file, args, normalizeScriptOptions(options));
+  };
+  return $5;
+}
+var $4 = create$();
 
 // src/utils/git.ts
 var import_fs2 = require("fs");
@@ -18781,7 +18996,12 @@ var getHooksPath = async () => {
     const hooksPath = await getCoreHooksPath();
     return import_path2.default.join(hooksPath, HOOK_NAME);
   } catch (error) {
-    return DEFAULT_SYMLINK_URL;
+    try {
+      const { stdout } = await execa("git", ["rev-parse", "--git-path", "hooks"]);
+      return import_path2.default.join(stdout, HOOK_NAME);
+    } catch (error2) {
+      return DEFAULT_SYMLINK_URL;
+    }
   }
 };
 var isHookCalled = async () => {
@@ -18910,8 +19130,8 @@ var isBlob = kindOfTest("Blob");
 var isFileList = kindOfTest("FileList");
 var isStream2 = (val) => isObject(val) && isFunction(val.pipe);
 var isFormData = (thing) => {
-  const pattern = "[object FormData]";
-  return thing && (typeof FormData === "function" && thing instanceof FormData || toString.call(thing) === pattern || isFunction(thing.toString) && thing.toString() === pattern);
+  let kind;
+  return thing && (typeof FormData === "function" && thing instanceof FormData || isFunction(thing.append) && ((kind = kindOf(thing)) === "formdata" || kind === "object" && isFunction(thing.toString) && thing.toString() === "[object FormData]"));
 };
 var isURLSearchParams = kindOfTest("URLSearchParams");
 var trim = (str) => str.trim ? str.trim() : str.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, "");
@@ -19165,6 +19385,8 @@ var toJSONObject = (obj) => {
   };
   return visit(obj, 0);
 };
+var isAsyncFn = kindOfTest("AsyncFunction");
+var isThenable = (thing) => thing && (isObject(thing) || isFunction(thing)) && isFunction(thing.then) && isFunction(thing.catch);
 var utils_default = {
   isArray,
   isArrayBuffer,
@@ -19214,7 +19436,9 @@ var utils_default = {
   ALPHABET,
   generateString,
   isSpecCompliantForm,
-  toJSONObject
+  toJSONObject,
+  isAsyncFn,
+  isThenable
 };
 
 // node_modules/axios/lib/core/AxiosError.js
@@ -19757,9 +19981,7 @@ function parseTokens(str) {
   }
   return tokens;
 }
-function isValidHeaderName(str) {
-  return /^[-_a-zA-Z]+$/.test(str.trim());
-}
+var isValidHeaderName = (str) => /^[-_a-zA-Z0-9^`|~,!#$%&'*+.]+$/.test(str.trim());
 function matchHeaderValue(context, value, header, filter2, isHeaderNameFilter) {
   if (utils_default.isFunction(filter2)) {
     return filter2.call(this, value, header);
@@ -20020,7 +20242,7 @@ var import_follow_redirects = __toESM(require_follow_redirects(), 1);
 var import_zlib = __toESM(require("zlib"), 1);
 
 // node_modules/axios/lib/env/data.js
-var VERSION = "1.3.4";
+var VERSION = "1.4.0";
 
 // node_modules/axios/lib/helpers/parseProtocol.js
 function parseProtocol(url3) {
@@ -20398,6 +20620,21 @@ var ZlibHeaderTransformStream = class extends import_stream4.default.Transform {
 };
 var ZlibHeaderTransformStream_default = ZlibHeaderTransformStream;
 
+// node_modules/axios/lib/helpers/callbackify.js
+var callbackify = (fn, reducer) => {
+  return utils_default.isAsyncFn(fn) ? function(...args) {
+    const cb = args.pop();
+    fn.apply(this, args).then((value) => {
+      try {
+        reducer ? cb(null, ...reducer(value)) : cb(null, value);
+      } catch (err) {
+        cb(err);
+      }
+    }, cb);
+  } : fn;
+};
+var callbackify_default = callbackify;
+
 // node_modules/axios/lib/adapters/http.js
 var zlibOptions = {
   flush: import_zlib.default.constants.Z_SYNC_FLUSH,
@@ -20478,12 +20715,22 @@ var wrapAsync = (asyncExecutor) => {
 };
 var http_default = isHttpAdapterSupported && function httpAdapter(config4) {
   return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
-    let { data } = config4;
+    let { data, lookup, family } = config4;
     const { responseType, responseEncoding } = config4;
     const method = config4.method.toUpperCase();
     let isDone;
     let rejected = false;
     let req;
+    if (lookup && utils_default.isAsyncFn(lookup)) {
+      lookup = callbackify_default(lookup, (entry) => {
+        if (utils_default.isString(entry)) {
+          entry = [entry, entry.indexOf(".") < 0 ? 6 : 4];
+        } else if (!utils_default.isArray(entry)) {
+          throw new TypeError("lookup async function must return an array [ip: string, family: number]]");
+        }
+        return entry;
+      });
+    }
     const emitter = new import_events.default();
     const onFinished = () => {
       if (config4.cancelToken) {
@@ -20663,6 +20910,8 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config4) {
       agents: { http: config4.httpAgent, https: config4.httpsAgent },
       auth,
       protocol,
+      family,
+      lookup,
       beforeRedirect: dispatchBeforeRedirect,
       beforeRedirects: {}
     };
@@ -20986,8 +21235,12 @@ var xhr_default = isXHRAdapterSupported && function(config4) {
         config4.signal.removeEventListener("abort", onCanceled);
       }
     }
-    if (utils_default.isFormData(requestData) && (node_default.isStandardBrowserEnv || node_default.isStandardBrowserWebWorkerEnv)) {
-      requestHeaders.setContentType(false);
+    if (utils_default.isFormData(requestData)) {
+      if (node_default.isStandardBrowserEnv || node_default.isStandardBrowserWebWorkerEnv) {
+        requestHeaders.setContentType(false);
+      } else {
+        requestHeaders.setContentType("multipart/form-data;", false);
+      }
     }
     let request = new XMLHttpRequest();
     if (config4.auth) {
@@ -21269,7 +21522,7 @@ function mergeConfig(config1, config22) {
     validateStatus: mergeDirectKeys,
     headers: (a2, b5) => mergeDeepProperties(headersToObject(a2), headersToObject(b5), true)
   };
-  utils_default.forEach(Object.keys(config1).concat(Object.keys(config22)), function computeConfigValue(prop) {
+  utils_default.forEach(Object.keys(Object.assign({}, config1, config22)), function computeConfigValue(prop) {
     const merge2 = mergeMap[prop] || mergeDeepProperties;
     const configValue = merge2(config1[prop], config22[prop], prop);
     utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config4[prop] = configValue);
@@ -21361,11 +21614,17 @@ var Axios = class {
         clarifyTimeoutError: validators2.transitional(validators2.boolean)
       }, false);
     }
-    if (paramsSerializer !== void 0) {
-      validator_default.assertOptions(paramsSerializer, {
-        encode: validators2.function,
-        serialize: validators2.function
-      }, true);
+    if (paramsSerializer != null) {
+      if (utils_default.isFunction(paramsSerializer)) {
+        config4.paramsSerializer = {
+          serialize: paramsSerializer
+        };
+      } else {
+        validator_default.assertOptions(paramsSerializer, {
+          encode: validators2.function,
+          serialize: validators2.function
+        }, true);
+      }
     }
     config4.method = (config4.method || this.defaults.method || "get").toLowerCase();
     let contextHeaders;
