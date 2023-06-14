@@ -120,7 +120,7 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_MODEL](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      ['gpt-3.5-turbo', 'gpt-4'].includes(value),
+      ['gpt-3.5-turbo', 'gpt-3.5-turbo-0613', 'gpt-4'].includes(value),
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
@@ -136,7 +136,9 @@ const configPath = pathJoin(homedir(), '.opencommit');
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS ? Number(process.env.OCO_OPENAI_MAX_TOKENS) : undefined,
+    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS
+      ? Number(process.env.OCO_OPENAI_MAX_TOKENS)
+      : undefined,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
@@ -151,7 +153,10 @@ export const getConfig = (): ConfigType | null => {
   const config = iniParse(configFile);
 
   for (const configKey of Object.keys(config)) {
-    if (!config[configKey] || ['null', 'undefined'].includes(config[configKey])) {
+    if (
+      !config[configKey] ||
+      ['null', 'undefined'].includes(config[configKey])
+    ) {
       config[configKey] = undefined;
       continue;
     }
