@@ -6,6 +6,7 @@ import packageJSON from '../package.json' assert { type: 'json' };
 import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
+import { commitlintConfigCommand } from './commands/commitlint';
 import { commit } from './commands/commit';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 
@@ -15,7 +16,7 @@ cli(
   {
     version: packageJSON.version,
     name: 'opencommit',
-    commands: [configCommand, hookCommand],
+    commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {},
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
     help: { description: packageJSON.description }
