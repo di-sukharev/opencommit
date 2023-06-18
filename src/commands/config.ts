@@ -19,7 +19,8 @@ export enum CONFIG_KEYS {
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_MODEL = 'OCO_MODEL',
-  OCO_LANGUAGE = 'OCO_LANGUAGE'
+  OCO_LANGUAGE = 'OCO_LANGUAGE',
+  OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE'
 }
 
 export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
@@ -124,6 +125,16 @@ export const configValidators = {
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
+  },
+
+  [CONFIG_KEYS.OCO_PROMPT_MODULE](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_PROMPT_MODULE,
+      ['conventional-commit', '@commitlint'].includes(value),
+      `${value} is not supported yet, use '@commitlint' or 'conventional-commit' (default)`
+    );
+
+    return value;
   }
 };
 
@@ -136,12 +147,15 @@ const configPath = pathJoin(homedir(), '.opencommit');
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS ? Number(process.env.OCO_OPENAI_MAX_TOKENS) : undefined,
+    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS
+      ? Number(process.env.OCO_OPENAI_MAX_TOKENS)
+      : undefined,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo',
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en'
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit'
   };
 
   const configExists = existsSync(configPath);
@@ -151,7 +165,10 @@ export const getConfig = (): ConfigType | null => {
   const config = iniParse(configFile);
 
   for (const configKey of Object.keys(config)) {
-    if (!config[configKey] || ['null', 'undefined'].includes(config[configKey])) {
+    if (
+      !config[configKey] ||
+      ['null', 'undefined'].includes(config[configKey])
+    ) {
       config[configKey] = undefined;
       continue;
     }
