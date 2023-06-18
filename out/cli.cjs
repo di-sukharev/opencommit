@@ -16400,7 +16400,7 @@ var package_default = {
   ],
   main: "cli.js",
   bin: {
-    opencommit: "./out/cli.cjs",
+    "opencommit-dev": "./out/cli.cjs",
     oco: "./out/cli.cjs"
   },
   repository: {
@@ -22038,8 +22038,8 @@ JSON Output Format:
 - Description should not be more than 74 characters.
 
 Additional Details:
-- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix. The issue number for this bug fix is #123.
-- Allowing the server to listen on a port specified through the environment variable is considered a new feature. The issue number for this new feature is #124.
+- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix. 
+- Allowing the server to listen on a port specified through the environment variable is considered a new feature. 
 
 Example Git Diff is to follow:`
   },
