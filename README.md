@@ -124,6 +124,7 @@ OCO_DESCRIPTION=<postface a message with ~3 sentences description>
 OCO_EMOJI=<add GitMoji>
 OCO_MODEL=<either gpt-3.5-turbo or gpt-4>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
+OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, example: '$msg'>
 ```
 
 ### Global config for all repos
@@ -192,6 +193,14 @@ is translated to :
 ```sh
 git commit -m "${generatedMessage}" --no-verify
 ```
+
+To include a message in the generated message, you can utilize the template function! For instance:
+
+```sh
+oco '$msg #205’
+```
+
+> opencommit examines placeholders in the parameters, allowing you to append additional information before and after the placeholders, such as the relevant Issue or Pull Request. Similarly, you have the option to customize the OCO_MESSAGE_TEMPLATE_PLACEHOLDER configuration item, for example, simplifying it to $m!"
 
 ### Ignore files
 
