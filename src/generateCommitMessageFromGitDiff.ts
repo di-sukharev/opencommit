@@ -5,65 +5,27 @@ import {
 import { api } from './api';
 import { DEFAULT_MODEL_TOKEN_LIMIT, getConfig } from './commands/config';
 import { mergeDiffs } from './utils/mergeDiffs';
-import { i18n, I18nLocals } from './i18n';
 import { tokenCount } from './utils/tokenCount';
+import { getMainCommitPrompt } from './prompts';
 
 const config = getConfig();
-const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];
 
-const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
-  {
-    role: ChatCompletionRequestMessageRoleEnum.System,
-    // prettier-ignore
-    content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
-${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.' : 'Do not preface the commit with anything.'}
-${config?.OCO_DESCRIPTION ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.' : "Don't add any descriptions to the commit, only commit message."}
-Use the present tense. Lines must not be longer than 74 characters. Use ${translation.localLanguage} to answer.`
-  },
-  {
-    role: ChatCompletionRequestMessageRoleEnum.User,
-    content: `diff --git a/src/server.ts b/src/server.ts
-index ad4db42..f3b18a9 100644
---- a/src/server.ts
-+++ b/src/server.ts
-@@ -10,7 +10,7 @@
-import {
-  initWinstonLogger();
-  
-  const app = express();
- -const port = 7799;
- +const PORT = 7799;
-  
-  app.use(express.json());
-  
-@@ -34,6 +34,6 @@
-app.use((_, res, next) => {
-  // ROUTES
-  app.use(PROTECTED_ROUTER_URL, protectedRouter);
-  
- -app.listen(port, () => {
- -  console.log(\`Server listening on port \${port}\`);
- +app.listen(process.env.PORT || PORT, () => {
- +  console.log(\`Server listening on port \${PORT}\`);
-  });`
-  },
-  {
-    role: ChatCompletionRequestMessageRoleEnum.Assistant,
-    content: `${config?.OCO_EMOJI ? '🐛 ' : ''}${translation.commitFix}
-${config?.OCO_EMOJI ? '✨ ' : ''}${translation.commitFeat}
-${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
-  }
-];
-
-const generateCommitMessageChatCompletionPrompt = (
+const generateCommitMessageChatCompletionPrompt = async (
   diff: string
-): Array<ChatCompletionRequestMessage> => {
+): Promise<Array<ChatCompletionRequestMessage>> => {
+  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
+
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
 
   chatContextAsCompletionRequest.push({
     role: ChatCompletionRequestMessageRoleEnum.User,
     content: diff
   });
+
+  // fs.writeFile(
+  //   `.commitlint-debug`,
+  //   JSON.stringify(chatContextAsCompletionRequest, null, 2)
+  // );
 
   return chatContextAsCompletionRequest;
 };
@@ -74,16 +36,18 @@ export enum GenerateCommitMessageErrorEnum {
   emptyMessage = 'EMPTY_MESSAGE'
 }
 
-const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
-  (msg) => tokenCount(msg.content) + 4
-).reduce((a, b) => a + b, 0);
-
 const ADJUSTMENT_FACTOR = 20;
 
 export const generateCommitMessageByDiff = async (
   diff: string
 ): Promise<string> => {
   try {
+    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
+
+    const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
+      (msg) => tokenCount(msg.content) + 4
+    ).reduce((a, b) => a + b, 0);
+
     const MAX_REQUEST_TOKENS =
       DEFAULT_MODEL_TOKEN_LIMIT -
       ADJUSTMENT_FACTOR -
@@ -91,7 +55,7 @@ export const generateCommitMessageByDiff = async (
       config?.OCO_OPENAI_MAX_TOKENS;
 
     if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
-      const commitMessagePromises = getCommitMsgsPromisesFromFileDiffs(
+      const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
         diff,
         MAX_REQUEST_TOKENS
       );
@@ -104,7 +68,7 @@ export const generateCommitMessageByDiff = async (
 
       return commitMessages.join('\n\n');
     } else {
-      const messages = generateCommitMessageChatCompletionPrompt(diff);
+      const messages = await generateCommitMessageChatCompletionPrompt(diff);
 
       const commitMessage = await api.generateCommitMessage(messages);
 
@@ -144,13 +108,15 @@ function getMessagesPromisesByChangesInFile(
     }
   }
 
-  const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map((lineDiff) => {
-    const messages = generateCommitMessageChatCompletionPrompt(
-      separator + lineDiff
-    );
+  const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map(
+    async (lineDiff) => {
+      const messages = await generateCommitMessageChatCompletionPrompt(
+        separator + lineDiff
+      );
 
-    return api.generateCommitMessage(messages);
-  });
+      return api.generateCommitMessage(messages);
+    }
+  );
 
   return commitMsgsFromFileLineDiffs;
 }
@@ -187,10 +153,10 @@ function splitDiff(diff: string, maxChangeLength: number) {
   return splitDiffs;
 }
 
-export function getCommitMsgsPromisesFromFileDiffs(
+export const getCommitMsgsPromisesFromFileDiffs = async (
   diff: string,
   maxDiffLength: number
-) {
+) => {
   const separator = 'diff --git ';
 
   const diffByFiles = diff.split(separator).slice(1);
@@ -211,7 +177,7 @@ export function getCommitMsgsPromisesFromFileDiffs(
 
       commitMessagePromises.push(...messagesPromises);
     } else {
-      const messages = generateCommitMessageChatCompletionPrompt(
+      const messages = await generateCommitMessageChatCompletionPrompt(
         separator + fileDiff
       );
 
@@ -220,7 +186,7 @@ export function getCommitMsgsPromisesFromFileDiffs(
   }
 
   return commitMessagePromises;
-}
+};
 
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
