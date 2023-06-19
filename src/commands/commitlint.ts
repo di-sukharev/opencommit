@@ -1,11 +1,10 @@
 import { command } from 'cleye';
 import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
-import { COMMANDS } from '../CommandsEnum';
-import fs from 'fs/promises';
 
-import { COMMITLINT_LLM_CONFIG_PATH } from '../modules/commitlint/constants';
+import { COMMANDS } from '../CommandsEnum';
 import { configureCommitlintIntegration } from '../modules/commitlint/config';
+import { getCommitlintLLMConfig } from '../modules/commitlint/utils';
 
 export enum CONFIG_MODES {
   get = 'get',
@@ -23,7 +22,7 @@ export const commitlintConfigCommand = command(
       const { mode } = argv._;
 
       if (mode === CONFIG_MODES.get) {
-        const commitLintConfig = await fs.readFile(COMMITLINT_LLM_CONFIG_PATH);
+        const commitLintConfig = await getCommitlintLLMConfig();
 
         outro(commitLintConfig.toString());
       } else if (mode === CONFIG_MODES.force) {
