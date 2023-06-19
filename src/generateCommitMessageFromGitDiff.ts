@@ -22,11 +22,6 @@ const generateCommitMessageChatCompletionPrompt = async (
     content: diff
   });
 
-  // fs.writeFile(
-  //   `.commitlint-debug`,
-  //   JSON.stringify(chatContextAsCompletionRequest, null, 2)
-  // );
-
   return chatContextAsCompletionRequest;
 };
 
