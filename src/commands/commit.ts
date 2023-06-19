@@ -1,4 +1,16 @@
+import chalk from 'chalk';
 import { execa } from 'execa';
+
+import {
+  confirm,
+  intro,
+  isCancel,
+  multiselect,
+  outro,
+  select,
+  spinner
+} from '@clack/prompts';
+
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import {
   assertGitRepo,
@@ -7,18 +19,8 @@ import {
   getStagedFiles,
   gitAdd
 } from '../utils/git';
-import {
-  spinner,
-  confirm,
-  outro,
-  isCancel,
-  intro,
-  multiselect,
-  select
-} from '@clack/prompts';
-import { getConfig } from '../commands/config';
-import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
+import { getConfig } from './config';
 
 const config = getConfig();
 

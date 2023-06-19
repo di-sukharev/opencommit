@@ -2,11 +2,12 @@ import {
   ChatCompletionRequestMessage,
   ChatCompletionRequestMessageRoleEnum
 } from 'openai';
+
 import { api } from './api';
 import { DEFAULT_MODEL_TOKEN_LIMIT, getConfig } from './commands/config';
+import { getMainCommitPrompt } from './prompts';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
-import { getMainCommitPrompt } from './prompts';
 
 const config = getConfig();
 

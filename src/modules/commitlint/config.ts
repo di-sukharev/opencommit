@@ -1,15 +1,14 @@
 import { spinner } from '@clack/prompts';
 
 import { api } from '../../api';
-import { i18n, I18nLocals } from '../../i18n';
 import { getConfig } from '../../commands/config';
-
-import { CommitlintLLMConfig } from './types';
+import { i18n, I18nLocals } from '../../i18n';
 import { COMMITLINT_LLM_CONFIG_PATH } from './constants';
-import { getCommitLintPWDConfig } from './pwd-commitlint';
-import * as utils from './utils';
 import { computeHash } from './crypto';
-import { inferPromptsFromCommitlintConfig, commitlintPrompts } from './prompts';
+import { commitlintPrompts, inferPromptsFromCommitlintConfig } from './prompts';
+import { getCommitLintPWDConfig } from './pwd-commitlint';
+import { CommitlintLLMConfig } from './types';
+import * as utils from './utils';
 
 const config = getConfig();
 const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];

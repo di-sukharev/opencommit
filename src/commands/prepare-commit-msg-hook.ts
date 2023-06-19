@@ -1,9 +1,11 @@
-import fs from 'fs/promises';
 import chalk from 'chalk';
+import fs from 'fs/promises';
+
 import { intro, outro, spinner } from '@clack/prompts';
+
+import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { getConfig } from './config';
-import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 
 const [messageFilePath, commitSource] = process.argv.slice(2);
 
