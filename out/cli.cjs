@@ -380,7 +380,7 @@ var require_package = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports, module2) {
-    var fs5 = require("fs");
+    var fs4 = require("fs");
     var path5 = require("path");
     var os3 = require("os");
     var packageJson = require_package();
@@ -425,7 +425,7 @@ var require_main = __commonJS({
         }
       }
       try {
-        const parsed = DotenvModule.parse(fs5.readFileSync(dotenvPath, { encoding }));
+        const parsed = DotenvModule.parse(fs4.readFileSync(dotenvPath, { encoding }));
         Object.keys(parsed).forEach(function(key) {
           if (!Object.prototype.hasOwnProperty.call(process.env, key)) {
             process.env[key] = parsed[key];
@@ -465,7 +465,7 @@ var require_windows = __commonJS({
   "node_modules/isexe/windows.js"(exports, module2) {
     module2.exports = isexe;
     isexe.sync = sync;
-    var fs5 = require("fs");
+    var fs4 = require("fs");
     function checkPathExt(path5, options) {
       var pathext = options.pathExt !== void 0 ? options.pathExt : process.env.PATHEXT;
       if (!pathext) {
@@ -490,12 +490,12 @@ var require_windows = __commonJS({
       return checkPathExt(path5, options);
     }
     function isexe(path5, options, cb) {
-      fs5.stat(path5, function(er, stat) {
+      fs4.stat(path5, function(er, stat) {
         cb(er, er ? false : checkStat(stat, path5, options));
       });
     }
     function sync(path5, options) {
-      return checkStat(fs5.statSync(path5), path5, options);
+      return checkStat(fs4.statSync(path5), path5, options);
     }
   }
 });
@@ -505,14 +505,14 @@ var require_mode = __commonJS({
   "node_modules/isexe/mode.js"(exports, module2) {
     module2.exports = isexe;
     isexe.sync = sync;
-    var fs5 = require("fs");
+    var fs4 = require("fs");
     function isexe(path5, options, cb) {
-      fs5.stat(path5, function(er, stat) {
+      fs4.stat(path5, function(er, stat) {
         cb(er, er ? false : checkStat(stat, options));
       });
     }
     function sync(path5, options) {
-      return checkStat(fs5.statSync(path5), options);
+      return checkStat(fs4.statSync(path5), options);
     }
     function checkStat(stat, options) {
       return stat.isFile() && checkMode(stat, options);
@@ -536,7 +536,7 @@ var require_mode = __commonJS({
 // node_modules/isexe/index.js
 var require_isexe = __commonJS({
   "node_modules/isexe/index.js"(exports, module2) {
-    var fs5 = require("fs");
+    var fs4 = require("fs");
     var core;
     if (process.platform === "win32" || global.TESTING_WINDOWS) {
       core = require_windows();
@@ -798,16 +798,16 @@ var require_shebang_command = __commonJS({
 var require_readShebang = __commonJS({
   "node_modules/cross-spawn/lib/util/readShebang.js"(exports, module2) {
     "use strict";
-    var fs5 = require("fs");
+    var fs4 = require("fs");
     var shebangCommand = require_shebang_command();
     function readShebang(command2) {
       const size = 150;
       const buffer = Buffer.alloc(size);
       let fd;
       try {
-        fd = fs5.openSync(command2, "r");
-        fs5.readSync(fd, buffer, 0, size, 0);
-        fs5.closeSync(fd);
+        fd = fs4.openSync(command2, "r");
+        fs4.readSync(fd, buffer, 0, size, 0);
+        fs4.closeSync(fd);
       } catch (e2) {
       }
       return shebangCommand(buffer.toString());
@@ -14737,7 +14737,7 @@ var require_form_data = __commonJS({
     var http2 = require("http");
     var https2 = require("https");
     var parseUrl = require("url").parse;
-    var fs5 = require("fs");
+    var fs4 = require("fs");
     var Stream = require("stream").Stream;
     var mime = require_mime_types();
     var asynckit = require_asynckit();
@@ -14802,7 +14802,7 @@ var require_form_data = __commonJS({
         if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
           callback(null, value.end + 1 - (value.start ? value.start : 0));
         } else {
-          fs5.stat(value.path, function(err, stat) {
+          fs4.stat(value.path, function(err, stat) {
             var fileSize;
             if (err) {
               callback(err);
@@ -15499,7 +15499,7 @@ var require_tiktoken = __commonJS({
     var imports = {};
     imports["./tiktoken_bg.js"] = wasm;
     var path5 = require("path");
-    var fs5 = require("fs");
+    var fs4 = require("fs");
     var candidates = __dirname.split(path5.sep).reduce((memo, _6, index, array) => {
       const prefix = array.slice(0, index + 1).join(path5.sep) + path5.sep;
       if (!prefix.includes("node_modules" + path5.sep)) {
@@ -15520,7 +15520,7 @@ var require_tiktoken = __commonJS({
     var bytes = null;
     for (const candidate of candidates) {
       try {
-        bytes = fs5.readFileSync(candidate);
+        bytes = fs4.readFileSync(candidate);
         break;
       } catch {
       }
@@ -22408,7 +22408,6 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
 };
 
 // src/commands/commitlint.ts
-var import_promises4 = __toESM(require("fs/promises"), 1);
 var commitlintConfigCommand = G3(
   {
     name: "commitlint" /* commitlint */,
@@ -22419,7 +22418,7 @@ var commitlintConfigCommand = G3(
     try {
       const { mode: mode2 } = argv._;
       if (mode2 === "get" /* get */) {
-        const commitLintConfig = await import_promises4.default.readFile(COMMITLINT_LLM_CONFIG_PATH);
+        const commitLintConfig = await getCommitlintLLMConfig();
         ce(commitLintConfig.toString());
       } else if (mode2 === "force" /* force */) {
         await configureCommitlintIntegration(true);
