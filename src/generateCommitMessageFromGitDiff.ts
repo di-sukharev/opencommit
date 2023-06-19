@@ -62,16 +62,16 @@ export const generateCommitMessageByDiff = async (
       }
 
       return commitMessages.join('\n\n');
-    } else {
-      const messages = await generateCommitMessageChatCompletionPrompt(diff);
-
-      const commitMessage = await api.generateCommitMessage(messages);
-
-      if (!commitMessage)
-        throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);
-
-      return commitMessage;
     }
+
+    const messages = await generateCommitMessageChatCompletionPrompt(diff);
+
+    const commitMessage = await api.generateCommitMessage(messages);
+
+    if (!commitMessage)
+      throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);
+
+    return commitMessage;
   } catch (error) {
     throw error;
   }
