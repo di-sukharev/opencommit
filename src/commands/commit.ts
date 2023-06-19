@@ -1,7 +1,17 @@
+import chalk from 'chalk';
 import { execa } from 'execa';
+
 import {
-  generateCommitMessageByDiff
-} from '../generateCommitMessageFromGitDiff';
+  confirm,
+  intro,
+  isCancel,
+  multiselect,
+  outro,
+  select,
+  spinner
+} from '@clack/prompts';
+
+import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import {
   assertGitRepo,
   getChangedFiles,
@@ -9,16 +19,6 @@ import {
   getStagedFiles,
   gitAdd
 } from '../utils/git';
-import {
-  spinner,
-  confirm,
-  outro,
-  isCancel,
-  intro,
-  multiselect,
-  select
-} from '@clack/prompts';
-import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
 
 const getGitRemotes = async () => {

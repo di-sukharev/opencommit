@@ -1,18 +1,20 @@
-import { outro } from '@clack/prompts';
 import chalk from 'chalk';
+import {
+  ChatCompletionRequestMessage,
+  ChatCompletionRequestMessageRoleEnum
+} from 'openai';
+
+import { outro } from '@clack/prompts';
 import {
   PromptConfig,
   QualifiedConfig,
   RuleConfigSeverity,
   RuleConfigTuple
 } from '@commitlint/types';
-import {
-  ChatCompletionRequestMessage,
-  ChatCompletionRequestMessageRoleEnum
-} from 'openai';
+
 import { getConfig } from '../../commands/config';
+import { i18n, I18nLocals } from '../../i18n';
 import { IDENTITY, INIT_DIFF_PROMPT } from '../../prompts';
-import { I18nLocals, i18n } from '../../i18n';
 
 const config = getConfig();
 const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];

@@ -2,13 +2,14 @@ import {
   ChatCompletionRequestMessage,
   ChatCompletionRequestMessageRoleEnum
 } from 'openai';
+
+import { note } from '@clack/prompts';
+
 import { getConfig } from './commands/config';
 import { i18n, I18nLocals } from './i18n';
-
+import { configureCommitlintIntegration } from './modules/commitlint/config';
 import { commitlintPrompts } from './modules/commitlint/prompts';
 import { ConsistencyPrompt } from './modules/commitlint/types';
-import { note } from '@clack/prompts';
-import { configureCommitlintIntegration } from './modules/commitlint/config';
 import * as utils from './modules/commitlint/utils';
 
 const config = getConfig();

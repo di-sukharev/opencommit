@@ -1,22 +1,22 @@
-import en from '../i18n/en.json' assert { type: 'json' };
-import cs from '../i18n/cs.json' assert { type: 'json' };
-import de from '../i18n/de.json' assert { type: 'json' };
-import fr from '../i18n/fr.json' assert { type: 'json' };
-import it from '../i18n/it.json' assert { type: 'json' };
-import ko from '../i18n/ko.json' assert { type: 'json' };
-import zh_CN from '../i18n/zh_CN.json' assert { type: 'json' };
-import zh_TW from '../i18n/zh_TW.json' assert { type: 'json' };
-import ja from '../i18n/ja.json' assert { type: 'json' };
-import pt_br from '../i18n/pt_br.json' assert { type: 'json' };
-import vi_VN from '../i18n/vi_VN.json' assert { type: 'json' };
-import es_ES from '../i18n/es_ES.json' assert { type: 'json' };
-import sv from '../i18n/sv.json' assert { type: 'json' };
-import nl from '../i18n/nl.json' assert { type: 'json' };
-import ru from '../i18n/ru.json' assert { type: 'json' };
-import id_ID from '../i18n/id_ID.json' assert { type: 'json' };
-import pl from '../i18n/pl.json' assert { type: 'json' };
-import tr from '../i18n/tr.json' assert { type: 'json' };
-import th from '../i18n/th.json' assert { type: 'json' };
+import cs from '../i18n/cs.json';
+import de from '../i18n/de.json';
+import en from '../i18n/en.json';
+import es_ES from '../i18n/es_ES.json';
+import fr from '../i18n/fr.json';
+import id_ID from '../i18n/id_ID.json';
+import it from '../i18n/it.json';
+import ja from '../i18n/ja.json';
+import ko from '../i18n/ko.json';
+import nl from '../i18n/nl.json';
+import pl from '../i18n/pl.json';
+import pt_br from '../i18n/pt_br.json';
+import ru from '../i18n/ru.json';
+import sv from '../i18n/sv.json';
+import th from '../i18n/th.json';
+import tr from '../i18n/tr.json';
+import vi_VN from '../i18n/vi_VN.json';
+import zh_CN from '../i18n/zh_CN.json';
+import zh_TW from '../i18n/zh_TW.json';
 
 export enum I18nLocals {
   'en' = 'en',
@@ -36,7 +36,7 @@ export enum I18nLocals {
   'id_ID' = 'id_ID',
   'pl' = 'pl',
   'tr' = 'tr',
-  'th' = 'th',
+  'th' = 'th'
 }
 
 export const i18n = {
