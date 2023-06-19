@@ -7,14 +7,9 @@ import {
   OpenAIApi
 } from 'openai';
 
-import {
-  CONFIG_MODES,
-  DEFAULT_MODEL_TOKEN_LIMIT,
-  getConfig
-} from './commands/config';
-import { tokenCount } from './utils/tokenCount';
-import { GenerateCommitMessageErrorEnum } from './generateCommitMessageFromGitDiff';
-import { execa } from 'execa';
+import {CONFIG_MODES, DEFAULT_MODEL_TOKEN_LIMIT, getConfig} from './commands/config';
+import {tokenCount} from './utils/tokenCount';
+import {GenerateCommitMessageErrorEnum} from './generateCommitMessageFromGitDiff';
 
 const config = getConfig();
 
@@ -63,11 +58,11 @@ class OpenAi {
       max_tokens: maxTokens || 500
     };
     try {
-      const REQUEST_TOKENS = messages
-        .map((msg) => tokenCount(msg.content) + 4)
-        .reduce((a, b) => a + b, 0);
+      const REQUEST_TOKENS = messages.map(
+          (msg) => tokenCount(msg.content) + 4
+      ).reduce((a, b) => a + b, 0);
 
-      if (REQUEST_TOKENS > DEFAULT_MODEL_TOKEN_LIMIT - maxTokens) {
+      if (REQUEST_TOKENS > (DEFAULT_MODEL_TOKEN_LIMIT - maxTokens)) {
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
       }
 
@@ -103,8 +98,10 @@ export const getOpenCommitLatestVersion = async (): Promise<
   string | undefined
 > => {
   try {
-    const { stdout } = await execa('npm', ['view', 'opencommit', 'version']);
-    return stdout;
+    const { data } = await axios.get(
+      'https://unpkg.com/opencommit/package.json'
+    );
+    return data.version;
   } catch (_) {
     outro('Error while getting the latest version of opencommit');
     return undefined;
