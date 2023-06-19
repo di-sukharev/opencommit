@@ -14,14 +14,12 @@ const nodeModulesPath = path.join(
  * @returns
  */
 export const getCommitLintPWDConfig = async () => {
-  let commitLintConfig = null;
   const load = require(nodeModulesPath).default;
 
   if (load && typeof load === 'function') {
-    commitLintConfig = await load();
-  } else {
-    // @commitlint/load is not a function
+    return await load();
   }
 
-  return commitLintConfig;
+  // @commitlint/load is not a function
+  return null;
 };

@@ -11,7 +11,9 @@ export const removeDoubleNewlines = (input: string): string => {
   if (pattern.test(input)) {
     const newInput = input.replace(pattern, '');
     return removeDoubleNewlines(newInput);
-  } else return input;
+  }
+
+  return input;
 };
 
 export const commitlintLLMConfigExists = async (): Promise<boolean> => {

@@ -25,13 +25,18 @@ export const commitlintConfigCommand = command(
         const commitLintConfig = await getCommitlintLLMConfig();
 
         outro(commitLintConfig.toString());
-      } else if (mode === CONFIG_MODES.force) {
-        await configureCommitlintIntegration(true);
-      } else {
-        throw new Error(
-          `Unsupported mode: ${mode}. Valid modes are: "force" and "get"`
-        );
+
+        return;
       }
+
+      if (mode === CONFIG_MODES.force) {
+        await configureCommitlintIntegration(true);
+        return;
+      }
+
+      throw new Error(
+        `Unsupported mode: ${mode}. Valid modes are: "force" and "get"`
+      );
     } catch (error) {
       outro(`${chalk.red('✖')} ${error}`);
       process.exit(1);
