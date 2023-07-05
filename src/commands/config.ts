@@ -19,7 +19,8 @@ export enum CONFIG_KEYS {
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_MODEL = 'OCO_MODEL',
-  OCO_LANGUAGE = 'OCO_LANGUAGE'
+  OCO_LANGUAGE = 'OCO_LANGUAGE',
+  OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
 }
 
 export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
@@ -124,6 +125,14 @@ export const configValidators = {
       `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
+  },
+  [CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+      value.startsWith('$'),
+      `${value} must start with $, for example: '$msg'`
+    );
+    return value;
   }
 };
 
@@ -141,7 +150,8 @@ export const getConfig = (): ConfigType | null => {
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo',
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en'
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg'
   };
 
   const configExists = existsSync(configPath);
