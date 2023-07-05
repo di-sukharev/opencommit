@@ -88,7 +88,6 @@ jobs:
           OCO_MODEL: gpt-3.5-turbo
           OCO_LANGUAGE: en
           OCO_PROMPT_MODULE: conventional-commit
-          OCO_PROMPT_MODULE: conventional-commit
 ```
 
 That is it. Now when you push to any branch in your repo — all NEW commits are being improved by your never-tired AI.
