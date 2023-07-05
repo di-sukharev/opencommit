@@ -22030,7 +22030,10 @@ var generateCommitMessageFromGitDiff = async (diff, extraArgs2) => {
   try {
     let commitMessage = await generateCommitMessageByDiff(diff);
     if (typeof messageTemplate === "string") {
-      commitMessage = messageTemplate.replace(config4?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER, commitMessage);
+      commitMessage = messageTemplate.replace(
+        config4?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+        commitMessage
+      );
     }
     commitSpinner.stop("\u{1F4DD} Commit message generated");
     ce(
