@@ -260,7 +260,7 @@ function validatePrefix(prefix: any): boolean {
   }
   
   if (!isRegex(prefix)) {
-    outro('This Regex format is not supported, please use the classic /*/ foramt')
+    outro('This Regex format is not supported, please use the classic /*/ format')
     return false;
   }
 
