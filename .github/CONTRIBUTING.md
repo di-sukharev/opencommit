@@ -9,7 +9,7 @@ Thanks for considering contributing to the project.
 3. Create a new branch for your changes.
 4. Make your changes and commit them with descriptive commit messages.
 5. Push your changes to your forked repository.
-6. Create a pull request from your branch to the `dev` branch.
+6. Create a pull request from your branch to the `dev` branch. Not `master` branch, PR to `dev` branch, please.
 
 ## Getting started
 
