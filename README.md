@@ -16,15 +16,15 @@
     <img src=".github/opencommit-example.png" alt="OpenCommit example"/>
 </div>
 
-All the commits in this repo are done with OpenCommit — look into [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emoji and long commit description text is configurable.
+All the commits in this repo are authored by OpenCommit — look at [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emojis and long commit descriptions are configurable.
 
-## Setup OpenCommit as a Github Action 🔥
+## Setup OpenCommit as a GitHub Action 🔥
 
 OpenCommit is now available as a GitHub Action which automatically improves all new commits messages when you push to remote!
 
-This is great if you want to make sure all of the commits in all of repository branches are meaningful and not lame like `fix1` or `done2`.
+This is great if you want to make sure all of the commits in all of your repository branches are meaningful and not lame like `fix1` or `done2`.
 
-Create a file `.github/workflows/opencommit.yml` with contents below:
+Create a file `.github/workflows/opencommit.yml` with the contents below:
 
 ```yml
 name: 'OpenCommit Action'
@@ -68,15 +68,15 @@ jobs:
           OCO_LANGUAGE: en
 ```
 
-That is it. Now when you push to any branch in your repo — all NEW commits are being improved by never-tired-AI.
+That is it. Now when you push to any branch in your repo — all NEW commits are being improved by your never-tired AI.
 
-Make sure you exclude public collaboration branches (`main`, `dev`, `etc`) in `branches-ignore`, so OpenCommit does not rebase commits there when improving the messages.
+Make sure you exclude public collaboration branches (`main`, `dev`, `etc`) in `branches-ignore`, so OpenCommit does not rebase commits there while improving the messages.
 
-Interactive rebase (`rebase -i`) changes commit SHA, so commit history in remote becomes different with your local branch history. It's ok when you work on the branch alone, but may be inconvenient for other collaborators.
+Interactive rebase (`rebase -i`) changes commits' SHA, so the commit history in remote becomes different from your local branch history. This is okay if you work on the branch alone, but may be inconvenient for other collaborators.
 
-## Setup OpenCommit as a CLI
+## Setup OpenCommit as a CLI tool
 
-You can use OpenCommit by simply running it via CLI like this `oco`. 2 seconds and your staged changes are committed with a meaningful message.
+You can use OpenCommit by simply running it via the CLI like this `oco`. 2 seconds and your staged changes are committed with a meaningful message.
 
 1. Install OpenCommit globally to use in any repository:
 
@@ -84,7 +84,7 @@ You can use OpenCommit by simply running it via CLI like this `oco`. 2 seconds a
    npm install -g opencommit
    ```
 
-2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure you add payment details, so API works.
+2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure that you add your payment details, so the API works.
 
 3. Set the key to OpenCommit config:
 
@@ -92,7 +92,7 @@ You can use OpenCommit by simply running it via CLI like this `oco`. 2 seconds a
    opencommit config set OCO_OPENAI_API_KEY=<your_api_key>
    ```
 
-   Your api key is stored locally in `~/.opencommit` config file.
+   Your API key is stored locally in the `~/.opencommit` config file.
 
 ## Usage
 
@@ -107,19 +107,19 @@ You can also use the `oco` shortcut:
 
 ```sh
 git add <files...>
-oc
+oco
 ```
 
 ## Configuration
 
 ### Local per repo configuration
 
-Create an `.env` file and add OpenCommit config variables there like this:
+Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
-OCO_OPENAI_API_KEY=<your openAI API token>
-OCO_OPENAI_MAX_TOKENS=<max response tokens from openAI API>
-OCO_OPENAI_BASE_PATH=<may be used to set proxy path to openAI api>
+OCO_OPENAI_API_KEY=<your OpenAI API token>
+OCO_OPENAI_MAX_TOKENS=<max response tokens from OpenAI API>
+OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description>
 OCO_EMOJI=<add GitMoji>
 OCO_MODEL=<either gpt-3.5-turbo or gpt-4>
@@ -129,9 +129,9 @@ OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, example: '$msg'>
 
 ### Global config for all repos
 
-Local config still has more priority as Global config, but you may set `OCO_MODEL` and `OCO_LOCALE` globally and set local configs for `OCO_EMOJI` and `OCO_DESCRIPTION` per repo which is more convenient.
+Local config still has more priority than Global config, but you may set `OCO_MODEL` and `OCO_LOCALE` globally and set local configs for `OCO_EMOJI` and `OCO_DESCRIPTION` per repo which is more convenient.
 
-Simply run any of the variable above like this:
+Simply set any of the variables above like this:
 
 ```sh
 oco config set OCO_OPENAI_API_KEY=gpt-4
@@ -143,7 +143,7 @@ Configure [GitMoji](https://gitmoji.dev/) to preface a message.
 oco config set OCO_EMOJI=true
 ```
 
-To remove preface emoji:
+To remove preface emojis:
 
 ```sh
 oco config set OCO_EMOJI=false
@@ -151,7 +151,7 @@ oco config set OCO_EMOJI=false
 
 ### Switch to GPT-4
 
-By default OpenCommit uses GPT-3.5-turbo (ChatGPT).
+By default, OpenCommit uses GPT-3.5-turbo (ChatGPT).
 
 You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 
@@ -159,7 +159,7 @@ You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 oco config set OCO_MODEL=gpt-4
 ```
 
-Make sure you do lowercase `gpt-4` and you have API access to the 4th model. Even if you have ChatGPT+ it doesn't necessarily mean that you have API access to GPT-4.
+Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
 
 ## Locale configuration
 
@@ -177,7 +177,7 @@ oco config set OCO_LANGUAGE=French
 oco config set OCO_LANGUAGE=française
 ```
 
-The default language set is **English**
+The default language setting is **English**
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
 ### Git flags
@@ -204,20 +204,20 @@ oco '$msg #205’
 
 ### Ignore files
 
-You can ignore files from submission to OpenAI by creating a `.opencommitignore` file. For example:
+You can remove files from being sent to OpenAI by creating a `.opencommitignore` file. For example:
 
 ```ignorelang
 path/to/large-asset.zip
 **/*.jpg
 ```
 
-This is useful for preventing opencommit from uploading artifacts and large files.
+This helps prevent opencommit from uploading artifacts and large files.
 
 By default, opencommit ignores files matching: `*-lock.*` and `*.lock`
 
 ## Git hook (KILLER FEATURE)
 
-You can set OpenCommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with you IDE Source Control and allows you edit the message before commit.
+You can set OpenCommit as Git [`prepare-commit-msg`](https://git-scm.com/docs/githooks#_prepare_commit_msg) hook. Hook integrates with your IDE Source Control and allows you to edit the message before committing.
 
 To set the hook:
 
@@ -242,4 +242,4 @@ Or follow the process of your IDE Source Control feature, when it calls `git com
 
 ## Payments
 
-You pay for your own requests to OpenAI API. OpenCommit uses ChatGPT (3.5-turbo) official model, that is ~15x times cheaper than GPT-4.
+You pay for your requests to OpenAI API. OpenCommit uses ChatGPT (3.5-turbo) official model, which is ~15x times cheaper than GPT-4.
