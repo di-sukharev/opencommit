@@ -18717,10 +18717,7 @@ var getOpenCommitIgnore = () => {
   return ig;
 };
 var getCoreHooksPath = async () => {
-  const { stdout } = await execa("git", [
-    "config",
-    "core.hooksPath"
-  ]);
+  const { stdout } = await execa("git", ["config", "core.hooksPath"]);
   return stdout;
 };
 var getStagedFiles = async () => {
@@ -18764,11 +18761,11 @@ var gitAdd = async ({ files }) => {
 };
 var getDiff = async ({ files }) => {
   const lockFiles = files.filter(
-    (file) => file.includes(".lock") || file.includes("-lock.")
+    (file) => file.includes(".lock") || file.includes("-lock.") || file.includes(".svg") || file.includes(".png") || file.includes(".jpg") || file.includes(".jpeg") || file.includes(".webp") || file.includes(".gif")
   );
   if (lockFiles.length) {
     ce(
-      `Some files are '.lock' files which are excluded by default from 'git diff'. No commit messages are generated for this files:
+      `Some files are excluded by default from 'git diff'. No commit messages are generated for this files:
 ${lockFiles.join(
         "\n"
       )}`

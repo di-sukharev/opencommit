@@ -3,11 +3,12 @@
     <img src=".github/logo-grad.svg" alt="OpenCommit logo"/>
     <h1 align="center">OpenCommit</h1>
     <h4 align="center">Follow the bird <a href="https://twitter.com/io_Y_oi"><img src="https://img.shields.io/twitter/follow/io_Y_oi?style=flat&label=io_Y_oi&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
-    </h4>
   </div>
 	<h2>Auto-generate meaningful commits in 1 second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
+  <h4 align="center">🪩 Winner of GitHub 2023 HACKATHON <a href="https://twitter.com/io_Y_oi"><img style="width:18px; height:18px;" src=".github/github-mark-white.png" align="center"></a>
+  </h4>
 </div>
 
 ---
@@ -17,6 +18,26 @@
 </div>
 
 All the commits in this repo are authored by OpenCommit — look at [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emojis and long commit descriptions are configurable.
+
+## Setup OpenCommit as a CLI tool
+
+You can use OpenCommit by simply running it via the CLI like this `oco`. 2 seconds and your staged changes are committed with a meaningful message.
+
+1. Install OpenCommit globally to use in any repository:
+
+   ```sh
+   npm install -g opencommit
+   ```
+
+2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure that you add your payment details, so the API works.
+
+3. Set the key to OpenCommit config:
+
+   ```sh
+   opencommit config set OCO_OPENAI_API_KEY=<your_api_key>
+   ```
+
+   Your API key is stored locally in the `~/.opencommit` config file.
 
 ## Setup OpenCommit as a GitHub Action 🔥
 
@@ -74,26 +95,6 @@ Make sure you exclude public collaboration branches (`main`, `dev`, `etc`) in `b
 
 Interactive rebase (`rebase -i`) changes commits' SHA, so the commit history in remote becomes different from your local branch history. This is okay if you work on the branch alone, but may be inconvenient for other collaborators.
 
-## Setup OpenCommit as a CLI tool
-
-You can use OpenCommit by simply running it via the CLI like this `oco`. 2 seconds and your staged changes are committed with a meaningful message.
-
-1. Install OpenCommit globally to use in any repository:
-
-   ```sh
-   npm install -g opencommit
-   ```
-
-2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure that you add your payment details, so the API works.
-
-3. Set the key to OpenCommit config:
-
-   ```sh
-   opencommit config set OCO_OPENAI_API_KEY=<your_api_key>
-   ```
-
-   Your API key is stored locally in the `~/.opencommit` config file.
-
 ## Usage
 
 You can call OpenCommit directly to generate a commit message for your staged changes:
@@ -149,14 +150,20 @@ To remove preface emojis:
 oco config set OCO_EMOJI=false
 ```
 
-### Switch to GPT-4
+### Switch to GPT-4 or other models
 
-By default, OpenCommit uses GPT-3.5-turbo (ChatGPT).
+By default, OpenCommit uses `gpt-3.5-turbo-16k` model.
 
 You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 
 ```sh
 oco config set OCO_MODEL=gpt-4
+```
+
+or for as a cheaper option:
+
+```sh
+oco config set OCO_MODEL=gpt-3.5-turbo
 ```
 
 Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
