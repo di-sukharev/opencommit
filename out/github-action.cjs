@@ -27965,21 +27965,8 @@ var configValidators = {
   ["OCO_MODEL" /* OCO_MODEL */](value) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      [
-        "gpt-3.5-turbo",
-        "gpt-4",
-        "gpt-3.5-turbo-16k",
-        "gpt-3.5-turbo-0613"
-      ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo' (default)`
-    );
-    return value;
-  },
-  ["OCO_MESSAGE_TEMPLATE_PLACEHOLDER" /* OCO_MESSAGE_TEMPLATE_PLACEHOLDER */](value) {
-    validateConfig(
-      "OCO_MESSAGE_TEMPLATE_PLACEHOLDER" /* OCO_MESSAGE_TEMPLATE_PLACEHOLDER */,
-      value.startsWith("$"),
-      `${value} must start with $, for example: '$msg'`
+      ["gpt-3.5-turbo", "gpt-4"].includes(value),
+      `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
     );
     return value;
   },
