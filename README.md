@@ -135,7 +135,7 @@ Local config still has more priority than Global config, but you may set `OCO_MO
 Simply set any of the variables above like this:
 
 ```sh
-oco config set OCO_OPENAI_API_KEY=gpt-4
+oco config set OCO_MODEL=gpt-4
 ```
 
 Configure [GitMoji](https://gitmoji.dev/) to preface a message.
