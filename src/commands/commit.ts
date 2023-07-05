@@ -1,7 +1,5 @@
 import { execa } from 'execa';
-import {
-  generateCommitMessageByDiff
-} from '../generateCommitMessageFromGitDiff';
+import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import {
   assertGitRepo,
   getChangedFiles,
@@ -18,9 +16,7 @@ import {
   multiselect,
   select
 } from '@clack/prompts';
-import {
-  getConfig
-} from '../commands/config';
+import { getConfig } from '../commands/config';
 import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
 
@@ -32,9 +28,10 @@ const getGitRemotes = async () => {
 };
 
 // Check for the presence of message templates
-const checkMessageTemplate =  (extraArgs: string[]): string | false => {
-  for(const key in extraArgs){
-    if(extraArgs[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER)) return extraArgs[key];
+const checkMessageTemplate = (extraArgs: string[]): string | false => {
+  for (const key in extraArgs) {
+    if (extraArgs[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
+      return extraArgs[key];
   }
   return false;
 };
@@ -51,8 +48,11 @@ const generateCommitMessageFromGitDiff = async (
   try {
     let commitMessage = await generateCommitMessageByDiff(diff);
 
-    if(typeof messageTemplate === 'string'){
-      commitMessage = messageTemplate.replace(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER, commitMessage);
+    if (typeof messageTemplate === 'string') {
+      commitMessage = messageTemplate.replace(
+        config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+        commitMessage
+      );
     }
     commitSpinner.stop('📝 Commit message generated');
 
