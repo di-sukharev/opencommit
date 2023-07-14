@@ -50,9 +50,19 @@ app.use((_, res, next) => {
   },
   {
     role: ChatCompletionRequestMessageRoleEnum.Assistant,
-    content: `${config?.OCO_EMOJI ? '🐛 ' : ''}${translation.commitFix}
-${config?.OCO_EMOJI ? '✨ ' : ''}${translation.commitFeat}
-${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
+    content: `${config?.OCO_EMOJI
+      ? (config?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
+        ? 'fix(server.ts): 🐛 '
+        : '🐛 fix(server.ts): ')
+      : 'fix(server.ts): '
+      }${translation.commitFix.replace('fix(server.ts): ', '')}
+      ${config?.OCO_EMOJI
+        ? (config?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
+          ? 'feat(server.ts): ✨ '
+          : '✨ feat(server.ts): ')
+        : 'feat(server.ts): '
+      }${translation.commitFeat.replace('feat(server.ts): ', '')}
+      ${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
   }
 ];
 
