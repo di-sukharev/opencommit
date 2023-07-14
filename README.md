@@ -85,6 +85,7 @@ jobs:
           OCO_OPENAI_BASE_PATH: ''
           OCO_DESCRIPTION: false
           OCO_EMOJI: false
+          OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: false
           OCO_MODEL: gpt-3.5-turbo
           OCO_LANGUAGE: en
 ```
@@ -123,6 +124,7 @@ OCO_OPENAI_MAX_TOKENS=<max response tokens from OpenAI API>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description>
 OCO_EMOJI=<add GitMoji>
+OCO_EMOJI_POSITION_BEFORE_DESCRIPTION=<add GitMoji beofre description>
 OCO_MODEL=<either gpt-3.5-turbo or gpt-4>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, example: '$msg'>
@@ -148,6 +150,23 @@ To remove preface emojis:
 
 ```sh
 oco config set OCO_EMOJI=false
+```
+
+The GitMoji should be placed immediately before the description in the commit message.
+For example: "chore(ansible-lint.yml): 🔧 remove yaml[line-length] from skip_list".
+
+
+```sh
+oco config set OCO_EMOJI_POSITION_BEFORE_DESCRIPTION=true
+```
+
+
+The GitMoji should be placed at the start of the commit message.
+For example: "🔧 chore(ansible-lint.yml): remove yaml[line-length] from skip_list".
+
+
+```sh
+oco config set OCO_EMOJI_POSITION_BEFORE_DESCRIPTION=false
 ```
 
 ### Switch to GPT-4 or other models
