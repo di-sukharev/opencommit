@@ -18,6 +18,7 @@ export enum CONFIG_KEYS {
   OCO_OPENAI_BASE_PATH = 'OCO_OPENAI_BASE_PATH',
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
+  OCO_EMOJI_POSITION_BEFORE_DESCRIPTION = 'OCO_EMOJI_POSITION_BEFORE_DESCRIPTION',
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER'
@@ -100,6 +101,16 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_LANGUAGE](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_LANGUAGE,
@@ -156,6 +167,7 @@ export const getConfig = (): ConfigType | null => {
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
+    OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: process.env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION === 'true' ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo-16k',
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:

@@ -17,6 +17,7 @@ const INIT_MESSAGES_PROMPT: Array<ChatCompletionRequestMessage> = [
     // prettier-ignore
     content: `You are to act as the author of a commit message in git. Your mission is to create clean and comprehensive commit messages in the conventional commit convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
 ${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.' : 'Do not preface the commit with anything.'}
+${config?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION ? 'The GitMoji should be placed immediately before the description in the commit message. For example: "chore(ansible-lint.yml): 🔧 remove yaml[line-length] from skip_list".' : 'The GitMoji should be placed at the start of the commit message. For example: "🔧 chore(ansible-lint.yml): remove yaml[line-length] from skip_list".'}
 ${config?.OCO_DESCRIPTION ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.' : "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Lines must not be longer than 74 characters. Use ${translation.localLanguage} to answer.`
   },
