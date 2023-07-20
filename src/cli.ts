@@ -16,17 +16,28 @@ cli(
     version: packageJSON.version,
     name: 'opencommit',
     commands: [configCommand, hookCommand],
-    flags: {},
+    flags: {
+      'confirm-commit': {
+        type: 'boolean',
+        default: false,
+        description: 'Confirm commit'
+      },
+      'confirm-push': {
+        type: 'boolean',
+        default: false,
+        description: 'Confirm push'
+      }
+    },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
     help: { description: packageJSON.description }
   },
-  async () => {
+  async ({ flags }) => {
     await checkIsLatestVersion();
 
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs);
+      commit(extraArgs, flags['confirm-commit'], flags['confirm-push']);
     }
   },
   extraArgs
