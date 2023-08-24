@@ -197,7 +197,8 @@ export const getConfig = (): ConfigType | null => {
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai'
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
+    OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true
   };
 
   const configExists = existsSync(configPath);
