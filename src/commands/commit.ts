@@ -88,7 +88,7 @@ ${chalk.grey('——————————————————')}`
       const remotes = await getGitRemotes();
 
       // user isn't pushing, return early
-      if (config?.gitpush === false)
+      if (config?.OCO_GITPUSH === false)
           return
 
       if (!remotes.length) {
