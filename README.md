@@ -209,6 +209,31 @@ oco '$msg #205’
 
 > opencommit examines placeholders in the parameters, allowing you to append additional information before and after the placeholders, such as the relevant Issue or Pull Request. Similarly, you have the option to customize the OCO_MESSAGE_TEMPLATE_PLACEHOLDER configuration item, for example, simplifying it to $m!"
 
+### Message Template Placeholder Config
+
+#### Overview
+
+The `OCO_MESSAGE_TEMPLATE_PLACEHOLDER` feature in the `opencommit` tool allows users to embed a custom message within the generated commit message using a template function. This configuration is designed to enhance the flexibility and customizability of commit messages, making it easier for users to include relevant information directly within their commits.
+
+#### Implementation Details
+
+In our codebase, the implementation of this feature can be found in the following segment:
+```javascript
+commitMessage = messageTemplate.replace(
+    config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+    commitMessage
+);
+```
+This line is responsible for replacing the placeholder in the `messageTemplate` with the actual `commitMessage`.
+
+#### Usage
+
+For instance, using the command `oco '$msg #205’`, users can leverage this feature. The provided code represents the backend mechanics of such commands, ensuring that the placeholder is replaced with the appropriate commit message.
+
+#### Committing with the Message
+
+Once users have generated their desired commit message, they can proceed to commit using the generated message. By understanding the feature's full potential and its implementation details, users can confidently use the generated messages for their commits.
+
 ### Ignore files
 
 You can remove files from being sent to OpenAI by creating a `.opencommitignore` file. For example:
