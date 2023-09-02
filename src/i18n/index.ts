@@ -36,7 +36,7 @@ export enum I18nLocals {
   'id_ID' = 'id_ID',
   'pl' = 'pl',
   'tr' = 'tr',
-  'th' = 'th',
+  'th' = 'th'
 }
 
 export const i18n = {

@@ -27450,10 +27450,10 @@ function G3(t, e2) {
 }
 
 // src/commands/config.ts
-var import_path = require("path");
-var import_ini = __toESM(require_ini(), 1);
 var import_fs = require("fs");
+var import_ini = __toESM(require_ini(), 1);
 var import_os = require("os");
+var import_path = require("path");
 
 // src/i18n/en.json
 var en_default = {
@@ -27738,8 +27738,21 @@ var configValidators = {
   ["OCO_MODEL" /* OCO_MODEL */](value) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      ["gpt-3.5-turbo", "gpt-4"].includes(value),
-      `${value} is not supported yet, use 'gpt-4' or 'gpt-3.5-turbo' (default)`
+      [
+        "gpt-3.5-turbo",
+        "gpt-4",
+        "gpt-3.5-turbo-16k",
+        "gpt-3.5-turbo-0613"
+      ].includes(value),
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo' (default)`
+    );
+    return value;
+  },
+  ["OCO_MESSAGE_TEMPLATE_PLACEHOLDER" /* OCO_MESSAGE_TEMPLATE_PLACEHOLDER */](value) {
+    validateConfig(
+      "OCO_MESSAGE_TEMPLATE_PLACEHOLDER" /* OCO_MESSAGE_TEMPLATE_PLACEHOLDER */,
+      value.startsWith("$"),
+      `${value} must start with $, for example: '$msg'`
     );
     return value;
   }
@@ -27752,8 +27765,9 @@ var getConfig = () => {
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo",
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en"
+    OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo-16k",
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg"
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
