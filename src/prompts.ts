@@ -20,11 +20,18 @@ export const IDENTITY =
 
 const INIT_MAIN_PROMPT = (language: string): ChatCompletionRequestMessage => ({
   role: ChatCompletionRequestMessageRoleEnum.System,
-  // prettier-ignore
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the conventional commit convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
-    ${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.' : 'Do not preface the commit with anything.'}
-    ${config?.OCO_DESCRIPTION ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.' : "Don't add any descriptions to the commit, only commit message."}
-    Use the present tense. Lines must not be longer than 74 characters. Use ${language} to answer.`
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the conventional commit convention and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
+    ${
+      config?.OCO_EMOJI
+        ? 'Use GitMoji convention to preface the commit.'
+        : 'Do not preface the commit with anything.'
+    }
+    ${
+      config?.OCO_DESCRIPTION
+        ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
+        : "Don't add any descriptions to the commit, only commit message."
+    }
+    Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
 });
 
 export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
