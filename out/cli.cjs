@@ -22312,7 +22312,7 @@ var generateCommitMessageFromGitDiff = async (diff, extraArgs2) => {
   try {
     let commitMessage = await generateCommitMessageByDiff(diff);
     const messageTemplate = checkMessageTemplate(extraArgs2);
-    if (typeof messageTemplate === "string") {
+    if (config7?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === "string") {
       commitMessage = messageTemplate.replace(
         config7?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage

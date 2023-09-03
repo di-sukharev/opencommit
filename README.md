@@ -326,4 +326,8 @@ Interactive rebase (`rebase -i`) changes commits' SHA, so the commit history in 
 
 ## Payments
 
-You pay for your requests to OpenAI API. OpenCommit uses ChatGPT (3.5-turbo) official model, which is ~15x times cheaper than GPT-4.
+You pay for your requests to OpenAI API on your own.
+
+OpenCommit stores your key locally.
+
+OpenCommit by default uses ChatGPT (3.5-turbo-16k) official model, which is a lot cheaper than gpt-4.
