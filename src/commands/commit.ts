@@ -199,17 +199,17 @@ export async function commit(
     }
 
     if (stagedFiles.length === 0 && changedFiles.length > 0) {
-      const files = (await multiselect({
+      const files = await multiselect({
         message: chalk.cyan('Select the files you want to add to the commit:'),
         options: changedFiles.map((file) => ({
           value: file,
           label: file
         }))
-      })) as string[];
+      });
 
       if (isCancel(files)) process.exit(1);
 
-      await gitAdd({ files });
+      await gitAdd({ files: files as string[] });
     }
 
     await commit(extraArgs, false);
