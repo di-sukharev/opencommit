@@ -7,7 +7,7 @@
 	<h2>Auto-generate meaningful commits in 1 second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
-  <h4 align="center">🪩 Winner of GitHub 2023 HACKATHON <a href="https://twitter.com/io_Y_oi"><img style="width:18px; height:18px;" src=".github/github-mark-white.png" align="center"></a>
+  <h4 align="center">🪩 Winner of GitHub 2023 HACKATHON <a href="https://twitter.com/io_Y_oi/status/1683448136973582336"><img style="width:14px; height:14px; margin-top: -4px" src=".github/github-mark-white.png" align="center"></a>
   </h4>
 </div>
 
@@ -122,12 +122,12 @@ Create a `.env` file and add OpenCommit config variables there like this:
 OCO_OPENAI_API_KEY=<your OpenAI API token>
 OCO_OPENAI_MAX_TOKENS=<max response tokens from OpenAI API>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
-OCO_DESCRIPTION=<postface a message with ~3 sentences description>
-OCO_EMOJI=<add GitMoji>
-OCO_MODEL=<either gpt-3.5-turbo or gpt-4>
+OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
+OCO_EMOJI=<boolean, add GitMoji>
+OCO_MODEL=<either 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo'>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
-OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, example: '$msg'>
-OCO_PROMPT_MODULE=<either conventional-commit or @commitlint>
+OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
+OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 ```
 
 ### Global config for all repos
@@ -251,10 +251,10 @@ is translated to :
 git commit -m "${generatedMessage}" --no-verify
 ```
 
-To include a message in the generated message, you can utilize the template function! For instance:
+To include a message in the generated message, you can utilize the template function, for instance:
 
 ```sh
-oco '$msg #205’
+oco '#205: $msg’
 ```
 
 > opencommit examines placeholders in the parameters, allowing you to append additional information before and after the placeholders, such as the relevant Issue or Pull Request. Similarly, you have the option to customize the OCO_MESSAGE_TEMPLATE_PLACEHOLDER configuration item, for example, simplifying it to $m!"
@@ -268,12 +268,14 @@ The `OCO_MESSAGE_TEMPLATE_PLACEHOLDER` feature in the `opencommit` tool allows u
 #### Implementation Details
 
 In our codebase, the implementation of this feature can be found in the following segment:
+
 ```javascript
 commitMessage = messageTemplate.replace(
-    config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
-    commitMessage
+  config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+  commitMessage
 );
 ```
+
 This line is responsible for replacing the placeholder in the `messageTemplate` with the actual `commitMessage`.
 
 #### Usage
