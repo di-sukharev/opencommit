@@ -26,7 +26,8 @@
   "author": "https://github.com/di-sukharev",
   "license": "MIT",
   "files": [
-    "out/**/*"
+    "out/cli.cjs",
+    "out/tiktoken_bg.wasm"
   ],
   "release": {
     "branches": [
@@ -42,7 +43,7 @@
     "dev": "ts-node ./src/cli.ts",
     "build": "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
-    "deploy": "npm run build:push && npm version patch && git push --follow-tags && npm publish --tag latest",
+    "deploy": "npm run build:push && npm version patch && git push --tags && npm publish --tag latest",
     "lint": "eslint src --ext ts && tsc --noEmit",
     "format": "prettier --write src"
   },
