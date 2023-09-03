@@ -129,7 +129,7 @@ export const configValidators = {
         'gpt-3.5-turbo-16k',
         'gpt-3.5-turbo-0613'
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo' (default)`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo'`
     );
     return value;
   },
@@ -192,7 +192,8 @@ export const getConfig = (): ConfigType | null => {
     try {
       const validator = configValidators[configKey as CONFIG_KEYS];
       const validValue = validator(
-        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS], config
+        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS],
+        config
       );
 
       config[configKey] = validValue;
