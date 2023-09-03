@@ -16425,8 +16425,8 @@ var package_default = {
     start: "node ./out/cli.cjs",
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
-    deploy: "npm run build:push && npm version patch && git push --tags && git push && npm publish --tag latest",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
+    deploy: "npm run build:push && npm version patch && git push --tags && git push && npm publish --tag latest",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src"
   },
@@ -21548,7 +21548,7 @@ var configValidators = {
         "gpt-3.5-turbo-16k",
         "gpt-3.5-turbo-0613"
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo' (default)`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo'`
     );
     return value;
   },
@@ -22306,12 +22306,12 @@ var checkMessageTemplate = (extraArgs2) => {
   return false;
 };
 var generateCommitMessageFromGitDiff = async (diff, extraArgs2) => {
-  const messageTemplate = checkMessageTemplate(extraArgs2);
   await assertGitRepo();
   const commitSpinner = le();
   commitSpinner.start("Generating the commit message");
   try {
     let commitMessage = await generateCommitMessageByDiff(diff);
+    const messageTemplate = checkMessageTemplate(extraArgs2);
     if (typeof messageTemplate === "string") {
       commitMessage = messageTemplate.replace(
         config7?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
@@ -22320,7 +22320,7 @@ var generateCommitMessageFromGitDiff = async (diff, extraArgs2) => {
     }
     commitSpinner.stop("\u{1F4DD} Commit message generated");
     ce(
-      `Commit message:
+      `Generated commit message:
 ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014")}
 ${commitMessage}
 ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014")}`
@@ -22350,7 +22350,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
         });
         if (isPushConfirmedByUser && !eD2(isPushConfirmedByUser)) {
           const pushSpinner = le();
-          pushSpinner.start(`Running \`git push ${remotes[0]}\``);
+          pushSpinner.start(`Running 'git push ${remotes[0]}'`);
           const { stdout: stdout2 } = await execa("git", [
             "push",
             "--verbose",
@@ -22372,7 +22372,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
         });
         if (!eD2(selectedRemote)) {
           const pushSpinner = le();
-          pushSpinner.start(`Running \`git push ${selectedRemote}\``);
+          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
           const { stdout: stdout2 } = await execa("git", ["push", selectedRemote]);
           pushSpinner.stop(
             `${source_default.green(
