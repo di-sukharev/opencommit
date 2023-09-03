@@ -50,7 +50,10 @@ const generateCommitMessageFromGitDiff = async (
     let commitMessage = await generateCommitMessageByDiff(diff);
 
     const messageTemplate = checkMessageTemplate(extraArgs);
-    if (typeof messageTemplate === 'string') {
+    if (
+      config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER &&
+      typeof messageTemplate === 'string'
+    ) {
       commitMessage = messageTemplate.replace(
         config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
