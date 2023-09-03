@@ -42,24 +42,25 @@ const generateCommitMessageFromGitDiff = async (
   diff: string,
   extraArgs: string[]
 ): Promise<void> => {
-  const messageTemplate = checkMessageTemplate(extraArgs);
   await assertGitRepo();
-
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
+
   try {
     let commitMessage = await generateCommitMessageByDiff(diff);
 
+    const messageTemplate = checkMessageTemplate(extraArgs);
     if (typeof messageTemplate === 'string') {
       commitMessage = messageTemplate.replace(
         config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
       );
     }
+
     commitSpinner.stop('📝 Commit message generated');
 
     outro(
-      `Commit message:
+      `Generated commit message:
 ${chalk.grey('——————————————————')}
 ${commitMessage}
 ${chalk.grey('——————————————————')}`
@@ -97,7 +98,7 @@ ${chalk.grey('——————————————————')}`
         if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
           const pushSpinner = spinner();
 
-          pushSpinner.start(`Running \`git push ${remotes[0]}\``);
+          pushSpinner.start(`Running 'git push ${remotes[0]}'`);
 
           const { stdout } = await execa('git', [
             'push',
@@ -125,7 +126,7 @@ ${chalk.grey('——————————————————')}`
         if (!isCancel(selectedRemote)) {
           const pushSpinner = spinner();
 
-          pushSpinner.start(`Running \`git push ${selectedRemote}\``);
+          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
 
           const { stdout } = await execa('git', ['push', selectedRemote]);
 
