@@ -1,4 +1,5 @@
 import { tokenCount } from './tokenCount';
+
 export function mergeDiffs(arr: string[], maxStringLength: number): string[] {
   const mergedArr: string[] = [];
   let currentItem: string = arr[0];

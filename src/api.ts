@@ -1,20 +1,21 @@
-import { intro, outro } from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
+import { execa } from 'execa';
 import {
   ChatCompletionRequestMessage,
   Configuration as OpenAiApiConfiguration,
   OpenAIApi
 } from 'openai';
 
+import { intro, outro } from '@clack/prompts';
+
 import {
   CONFIG_MODES,
   DEFAULT_MODEL_TOKEN_LIMIT,
   getConfig
 } from './commands/config';
-import { tokenCount } from './utils/tokenCount';
 import { GenerateCommitMessageErrorEnum } from './generateCommitMessageFromGitDiff';
-import { execa } from 'execa';
+import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
 

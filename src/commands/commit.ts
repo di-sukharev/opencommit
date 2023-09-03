@@ -1,4 +1,16 @@
+import chalk from 'chalk';
 import { execa } from 'execa';
+
+import {
+  confirm,
+  intro,
+  isCancel,
+  multiselect,
+  outro,
+  select,
+  spinner
+} from '@clack/prompts';
+
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import {
   assertGitRepo,
@@ -7,18 +19,8 @@ import {
   getStagedFiles,
   gitAdd
 } from '../utils/git';
-import {
-  spinner,
-  confirm,
-  outro,
-  isCancel,
-  intro,
-  multiselect,
-  select
-} from '@clack/prompts';
-import { getConfig } from '../commands/config';
-import chalk from 'chalk';
 import { trytm } from '../utils/trytm';
+import { getConfig } from './config';
 
 const config = getConfig();
 
@@ -40,24 +42,28 @@ const generateCommitMessageFromGitDiff = async (
   diff: string,
   extraArgs: string[]
 ): Promise<void> => {
-  const messageTemplate = checkMessageTemplate(extraArgs);
   await assertGitRepo();
-
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
+
   try {
     let commitMessage = await generateCommitMessageByDiff(diff);
 
-    if (typeof messageTemplate === 'string') {
+    const messageTemplate = checkMessageTemplate(extraArgs);
+    if (
+      config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER &&
+      typeof messageTemplate === 'string'
+    ) {
       commitMessage = messageTemplate.replace(
         config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
       );
     }
+
     commitSpinner.stop('📝 Commit message generated');
 
     outro(
-      `Commit message:
+      `Generated commit message:
 ${chalk.grey('——————————————————')}
 ${commitMessage}
 ${chalk.grey('——————————————————')}`
@@ -95,7 +101,7 @@ ${chalk.grey('——————————————————')}`
         if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
           const pushSpinner = spinner();
 
-          pushSpinner.start(`Running \`git push ${remotes[0]}\``);
+          pushSpinner.start(`Running 'git push ${remotes[0]}'`);
 
           const { stdout } = await execa('git', [
             'push',
@@ -123,7 +129,7 @@ ${chalk.grey('——————————————————')}`
         if (!isCancel(selectedRemote)) {
           const pushSpinner = spinner();
 
-          pushSpinner.start(`Running \`git push ${selectedRemote}\``);
+          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
 
           const { stdout } = await execa('git', ['push', selectedRemote]);
 

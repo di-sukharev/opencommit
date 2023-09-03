@@ -1,5 +1,5 @@
+import cl100k_base from '@dqbd/tiktoken/encoders/cl100k_base.json';
 import { Tiktoken } from '@dqbd/tiktoken/lite';
-import cl100k_base from '@dqbd/tiktoken/encoders/cl100k_base.json' assert { type: 'json' };
 
 export function tokenCount(content: string): number {
   const encoding = new Tiktoken(

@@ -1,14 +1,15 @@
-import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
+import * as dotenv from 'dotenv';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { parse as iniParse, stringify as iniStringify } from 'ini';
 import { homedir } from 'os';
 import { join as pathJoin } from 'path';
+
+import { intro, outro } from '@clack/prompts';
+
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
-
-import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -20,7 +21,8 @@ export enum CONFIG_KEYS {
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
-  OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER'
+  OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
+  OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE'
 }
 
 export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
@@ -45,7 +47,7 @@ const validateConfig = (
 };
 
 export const configValidators = {
-  [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any) {
+  [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config?: any) {
     validateConfig(CONFIG_KEYS.OCO_OPENAI_API_KEY, value, 'Cannot be empty');
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
@@ -54,7 +56,7 @@ export const configValidators = {
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.length === 51,
+      config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51,
       'Must be 51 characters long'
     );
 
@@ -127,7 +129,7 @@ export const configValidators = {
         'gpt-3.5-turbo-16k',
         'gpt-3.5-turbo-0613'
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo' (default)`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo'`
     );
     return value;
   },
@@ -137,6 +139,16 @@ export const configValidators = {
       value.startsWith('$'),
       `${value} must start with $, for example: '$msg'`
     );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_PROMPT_MODULE](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_PROMPT_MODULE,
+      ['conventional-commit', '@commitlint'].includes(value),
+      `${value} is not supported yet, use '@commitlint' or 'conventional-commit' (default)`
+    );
+
     return value;
   }
 };
@@ -159,7 +171,8 @@ export const getConfig = (): ConfigType | null => {
     OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo-16k',
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg'
+      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit'
   };
 
   const configExists = existsSync(configPath);
@@ -179,7 +192,8 @@ export const getConfig = (): ConfigType | null => {
     try {
       const validator = configValidators[configKey as CONFIG_KEYS];
       const validValue = validator(
-        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS]
+        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS],
+        config
       );
 
       config[configKey] = validValue;
