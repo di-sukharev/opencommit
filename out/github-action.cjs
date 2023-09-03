@@ -27900,7 +27900,7 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value) {
+  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config7) {
     validateConfig("OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */, value, "Cannot be empty");
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
@@ -27909,7 +27909,7 @@ var configValidators = {
     );
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      value.length === 51,
+      config7["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */] || value.length === 51,
       "Must be 51 characters long"
     );
     return value;
@@ -28018,7 +28018,8 @@ var getConfig = () => {
     try {
       const validator = configValidators[configKey];
       const validValue = validator(
-        config7[configKey] ?? configFromEnv[configKey]
+        config7[configKey] ?? configFromEnv[configKey],
+        config7
       );
       config7[configKey] = validValue;
     } catch (error) {
@@ -28696,6 +28697,13 @@ async function improveCommitMessages(commitsToImprove) {
     `Improved ${improvedMessagesWithSHAs.length} commits: `,
     improvedMessagesWithSHAs
   );
+  const messagesChanged = improvedMessagesWithSHAs.some(
+    ({ sha, msg }, index) => msg !== commitsToImprove[index].message
+  );
+  if (!messagesChanged) {
+    console.log("No changes in commit messages detected, skipping rebase");
+    return;
+  }
   const createCommitMessageFile = (message, index) => (0, import_fs2.writeFileSync)(`./commit-${index}.txt`, message);
   improvedMessagesWithSHAs.forEach(
     ({ msg }, i2) => createCommitMessageFile(msg, i2)

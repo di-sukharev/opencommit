@@ -21477,7 +21477,7 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value) {
+  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config8) {
     validateConfig("OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */, value, "Cannot be empty");
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
@@ -21486,7 +21486,7 @@ var configValidators = {
     );
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      value.length === 51,
+      config8["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */] || value.length === 51,
       "Must be 51 characters long"
     );
     return value;
@@ -21595,7 +21595,8 @@ var getConfig = () => {
     try {
       const validator = configValidators[configKey];
       const validValue = validator(
-        config8[configKey] ?? configFromEnv[configKey]
+        config8[configKey] ?? configFromEnv[configKey],
+        config8
       );
       config8[configKey] = validValue;
     } catch (error) {
