@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "lib": ["ES5", "ES6"],
-
     "module": "ESNext",
+
+    "lib": ["ES5", "ES6"],
     // "rootDir": "./src",
     "resolveJsonModule": true,
     "moduleResolution": "node",
