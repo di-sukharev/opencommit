@@ -133,6 +133,16 @@ async function improveCommitMessages(
     improvedMessagesWithSHAs
   );
 
+  // Check if there are actually any changes in the commit messages
+  const messagesChanged = improvedMessagesWithSHAs.some(
+    ({ sha, msg }, index) => msg !== commitsToImprove[index].message
+  );
+
+  if (!messagesChanged) {
+    console.log('No changes in commit messages detected, skipping rebase');
+    return;
+  }
+
   const createCommitMessageFile = (message: string, index: number) =>
     writeFileSync(`./commit-${index}.txt`, message);
   improvedMessagesWithSHAs.forEach(({ msg }, i) =>
