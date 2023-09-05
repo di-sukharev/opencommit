@@ -1,7 +1,7 @@
 import path from 'path';
 
 const nodeModulesPath = path.join(
-  process.env.PWD as string,
+  process.env.PWD || process.cwd(),
   'node_modules',
   '@commitlint',
   'load'
