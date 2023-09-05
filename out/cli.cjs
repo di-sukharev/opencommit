@@ -16384,7 +16384,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "2.4.2",
+  version: "3.0.0",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -16426,7 +16426,7 @@ var package_default = {
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
-    deploy: "npm run build:push && npm version patch && git push --tags && git push && npm publish --tag latest",
+    deploy: "npm run build:push && npm version patch && git push --follow-tags && npm publish --tag latest",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src"
   },
