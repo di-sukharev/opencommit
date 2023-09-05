@@ -332,4 +332,6 @@ You pay for your requests to OpenAI API on your own.
 
 OpenCommit stores your key locally.
 
-OpenCommit by default uses ChatGPT (3.5-turbo-16k) official model, which is a lot cheaper than gpt-4.
+OpenCommit by default uses 3.5-turbo-16k model, it should not exceed $0.10 per casual working day.
+
+You may switch to gpt-4, it's better, but more expensive.
