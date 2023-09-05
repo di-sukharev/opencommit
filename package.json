@@ -26,7 +26,8 @@
   "author": "https://github.com/di-sukharev",
   "license": "MIT",
   "files": [
-    "out/**/*"
+    "out/cli.cjs",
+    "out/tiktoken_bg.wasm"
   ],
   "release": {
     "branches": [

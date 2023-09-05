@@ -16410,7 +16410,8 @@ var package_default = {
   author: "https://github.com/di-sukharev",
   license: "MIT",
   files: [
-    "out/**/*"
+    "out/cli.cjs",
+    "out/tiktoken_bg.wasm"
   ],
   release: {
     branches: [
@@ -21906,7 +21907,7 @@ var commitlintPrompts = {
 // src/modules/commitlint/pwd-commitlint.ts
 var import_path2 = __toESM(require("path"), 1);
 var nodeModulesPath = import_path2.default.join(
-  process.env.PWD,
+  process.env.PWD || process.cwd(),
   "node_modules",
   "@commitlint",
   "load"
@@ -21997,10 +21998,10 @@ var translation3 = i18n[config5?.OCO_LANGUAGE || "en"];
 var IDENTITY = "You are to act as the author of a commit message in git.";
 var INIT_MAIN_PROMPT2 = (language) => ({
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.System,
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the conventional commit convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the conventional commit convention and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
     ${config5?.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
     ${config5?.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
-    Use the present tense. Lines must not be longer than 74 characters. Use ${language} to answer.`
+    Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
 });
 var INIT_DIFF_PROMPT = {
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.User,
