@@ -1,12 +1,14 @@
+import { unlinkSync, writeFileSync } from 'fs';
+
 import core from '@actions/core';
-import github from '@actions/github';
 import exec from '@actions/exec';
+import github from '@actions/github';
 import { intro, outro } from '@clack/prompts';
 import { PushEvent } from '@octokit/webhooks-types';
+
 import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
-import { sleep } from './utils/sleep';
 import { randomIntFromInterval } from './utils/randomIntFromInterval';
-import { unlinkSync, writeFileSync } from 'fs';
+import { sleep } from './utils/sleep';
 
 // This should be a token with access to your repository scoped in as a secret.
 // The YML workflow will need to set GITHUB_TOKEN with the GitHub Secret Token
@@ -132,6 +134,16 @@ async function improveCommitMessages(
     `Improved ${improvedMessagesWithSHAs.length} commits: `,
     improvedMessagesWithSHAs
   );
+
+  // Check if there are actually any changes in the commit messages
+  const messagesChanged = improvedMessagesWithSHAs.some(
+    ({ sha, msg }, index) => msg !== commitsToImprove[index].message
+  );
+
+  if (!messagesChanged) {
+    console.log('No changes in commit messages detected, skipping rebase');
+    return;
+  }
 
   const createCommitMessageFile = (message: string, index: number) =>
     writeFileSync(`./commit-${index}.txt`, message);
