@@ -18,15 +18,15 @@ cli(
     name: 'opencommit',
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {
-      'confirm-commit': {
-        type: 'boolean',
-        default: false,
-        description: 'Confirm commit'
+      cc: {
+        description: 'Confirm commit',
+        type: Boolean,
+        default: false
       },
-      'confirm-push': {
-        type: 'boolean',
-        default: false,
-        description: 'Confirm push'
+      cp: {
+        description: 'Confirm push',
+        type: Boolean,
+        default: false
       }
     },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
@@ -38,7 +38,7 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, flags['confirm-commit'], flags['confirm-push']);
+      commit(extraArgs, flags.cc, flags.cp);
     }
   },
   extraArgs
