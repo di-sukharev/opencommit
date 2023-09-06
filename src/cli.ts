@@ -21,12 +21,10 @@ cli(
       cc: {
         description: 'Confirm commit',
         type: Boolean,
-        default: false
       },
       cp: {
         description: 'Confirm push',
         type: Boolean,
-        default: false
       }
     },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
@@ -34,6 +32,8 @@ cli(
   },
   async ({ flags }) => {
     await checkIsLatestVersion();
+
+    console.log(flags)
 
     if (await isHookCalled()) {
       prepareCommitMessageHook();
