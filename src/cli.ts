@@ -18,7 +18,7 @@ cli(
     name: 'opencommit',
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {
-      cc: Boolean,
+      cm: Boolean,
       cp: Boolean
     },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
@@ -30,7 +30,7 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, flags.cc, flags.cp);
+      commit(extraArgs, flags.cm, flags.cp);
     }
   },
   extraArgs

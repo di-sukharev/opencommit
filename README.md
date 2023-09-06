@@ -57,6 +57,24 @@ git add <files...>
 oco
 ```
 
+### Flags
+There are 2 optional flags that can be used with the `oco` command:
+#### Confirm Commit Message
+The `--cm` flag can be used to confirm the generated commit message before committing. This flag is useful if you want to review the generated commit message before committing. For example:
+
+```
+oco --cm
+```
+
+#### Confirm Push
+The `--cp` flag can be used to confirm the push to remote after committing. This flag is useful if you want to review the generated commit message before pushing to remote. For example:
+
+```
+oco --cp
+```
+
+
+
 ## Configuration
 
 ### Local per repo configuration

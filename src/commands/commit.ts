@@ -41,7 +41,7 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
 const generateCommitMessageFromGitDiff = async (
   diff: string,
   extraArgs: string[],
-  confirmCommitFlag: Boolean,
+  confirmCommitMessageFlag: Boolean,
   confirmPushFlag: Boolean
 ): Promise<void> => {
   await assertGitRepo();
@@ -72,7 +72,7 @@ ${chalk.grey('——————————————————')}`
     );
 
     const isCommitConfirmedByUser =
-      confirmCommitFlag ||
+      confirmCommitMessageFlag ||
       (await confirm({
         message: 'Confirm the commit message?'
       }));
@@ -160,7 +160,7 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(
   extraArgs: string[] = [],
-  confirmCommitFlag: Boolean = false,
+  confirmCommitMessageFlag: Boolean = false,
   confirmPushFlag: Boolean = false,
   isStageAllFlag: Boolean = false
 ) {
@@ -234,7 +234,7 @@ export async function commit(
     generateCommitMessageFromGitDiff(
       await getDiff({ files: stagedFiles }),
       extraArgs,
-      confirmCommitFlag,
+      confirmCommitMessageFlag,
       confirmPushFlag
     )
   );
