@@ -18,22 +18,14 @@ cli(
     name: 'opencommit',
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {
-      cc: {
-        description: 'Confirm commit',
-        type: Boolean,
-      },
-      cp: {
-        description: 'Confirm push',
-        type: Boolean,
-      }
+      cc: Boolean,
+      cp: Boolean
     },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
     help: { description: packageJSON.description }
   },
   async ({ flags }) => {
     await checkIsLatestVersion();
-
-    console.log(flags)
 
     if (await isHookCalled()) {
       prepareCommitMessageHook();
