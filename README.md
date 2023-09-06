@@ -60,14 +60,14 @@ oco
 ### Flags
 There are 2 optional flags that can be used with the `oco` command:
 #### Confirm Commit Message
-The `--cm` flag can be used to confirm the generated commit message before committing. This flag is useful if you want to review the generated commit message before committing. For example:
+The `--cm` flag can be used to skip the confirmation step of the generated commit message. For example:
 
 ```
 oco --cm
 ```
 
 #### Confirm Push
-The `--cp` flag can be used to confirm the push to remote after committing. This flag is useful if you want to review the generated commit message before pushing to remote. For example:
+The `--cp` flag can be used to confirm the push to remote after committing(you will have to choose upstream/origin if working in a forked repo). For example:
 
 ```
 oco --cp
