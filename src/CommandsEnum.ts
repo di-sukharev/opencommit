@@ -1,4 +1,5 @@
 export enum COMMANDS {
   config = 'config',
-  hook = 'hook'
+  hook = 'hook',
+  commitlint = 'commitlint'
 }

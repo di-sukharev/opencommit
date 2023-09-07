@@ -1,11 +1,13 @@
+import chalk from 'chalk';
+import { command } from 'cleye';
+import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
-import { command } from 'cleye';
-import { assertGitRepo, getCoreHooksPath } from '../utils/git.js';
-import { existsSync } from 'fs';
-import chalk from 'chalk';
+
 import { intro, outro } from '@clack/prompts';
+
 import { COMMANDS } from '../CommandsEnum.js';
+import { assertGitRepo, getCoreHooksPath } from '../utils/git.js';
 
 const HOOK_NAME = 'prepare-commit-msg';
 const DEFAULT_SYMLINK_URL = path.join('.git', 'hooks', HOOK_NAME);
