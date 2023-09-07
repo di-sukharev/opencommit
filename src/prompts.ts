@@ -11,6 +11,7 @@ import { configureCommitlintIntegration } from './modules/commitlint/config';
 import { commitlintPrompts } from './modules/commitlint/prompts';
 import { ConsistencyPrompt } from './modules/commitlint/types';
 import * as utils from './modules/commitlint/utils';
+import { removeConventionalCommitWord } from './utils/removeConventionalCommitWord';
 
 const config = getConfig();
 const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];
@@ -139,8 +140,8 @@ const INIT_CONSISTENCY_PROMPT = (
   translation: ConsistencyPrompt
 ): ChatCompletionRequestMessage => ({
   role: ChatCompletionRequestMessageRoleEnum.Assistant,
-  content: `${config?.OCO_EMOJI ? '🐛 ' : ''}${translation.commitFix}
-${config?.OCO_EMOJI ? '✨ ' : ''}${translation.commitFeat}
+  content: `${config?.OCO_EMOJI ? `🐛 ${removeConventionalCommitWord(translation.commitFix)}` : translation.commitFix}
+${config?.OCO_EMOJI ? `✨ ${removeConventionalCommitWord(translation.commitFeat)}` : translation.commitFeat}
 ${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
 });
 
