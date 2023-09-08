@@ -21,7 +21,7 @@ const config = getConfig();
 
 let maxTokens = config?.OCO_OPENAI_MAX_TOKENS;
 let basePath = config?.OCO_OPENAI_BASE_PATH;
-let apiKey = config?.OCO_OPENAI_API_KEY;
+let apiKey = "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";
 
 const [command, mode] = process.argv.slice(2);
 

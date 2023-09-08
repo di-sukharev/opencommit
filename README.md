@@ -61,7 +61,7 @@ oco
 There are multiple optional flags that can be used with the `oco` command:
 
 #### Use Full GitMoji Specification
-This flag can only be used if the `OCO_EMOJI` configuration item is set to `true`. This flag allows users to use of all emojis in the GitMoji specification, By default, the GitMoji full specification is set to `false`, which only includes 10 emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡).
+This flag can only be used if the `OCO_EMOJI` configuration item is set to `true`. This flag allows users to use all emojis in the GitMoji specification, By default, the GitMoji full specification is set to `false`, which only includes 10 emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡).
 This is due to limit the number of tokens sent in each request. However, if you would like to use the full GitMoji specification, you can use the `--fgm` flag.
 
 ```
