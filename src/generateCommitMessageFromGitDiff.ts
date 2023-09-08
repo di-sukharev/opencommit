@@ -35,7 +35,8 @@ export enum GenerateCommitMessageErrorEnum {
 const ADJUSTMENT_FACTOR = 20;
 
 export const generateCommitMessageByDiff = async (
-  diff: string
+  diff: string,
+  testing = false
 ): Promise<string> => {
   try {
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
@@ -67,7 +68,7 @@ export const generateCommitMessageByDiff = async (
 
     const messages = await generateCommitMessageChatCompletionPrompt(diff);
 
-    const commitMessage = await api.generateCommitMessage(messages);
+    const commitMessage = !testing ? await api.generateCommitMessage(messages): 'This is a test commit message due to the --test flag';
 
     if (!commitMessage)
       throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);

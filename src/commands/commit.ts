@@ -40,14 +40,15 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
 
 const generateCommitMessageFromGitDiff = async (
   diff: string,
-  extraArgs: string[]
+  extraArgs: string[],
+  testing: boolean
 ): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
 
   try {
-    let commitMessage = await generateCommitMessageByDiff(diff);
+    let commitMessage = await generateCommitMessageByDiff(diff, testing);
 
     const messageTemplate = checkMessageTemplate(extraArgs);
     if (
@@ -154,6 +155,7 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(
   extraArgs: string[] = [],
+  testing: boolean = false,
   isStageAllFlag: Boolean = false
 ) {
   if (isStageAllFlag) {
@@ -225,7 +227,8 @@ export async function commit(
   const [, generateCommitError] = await trytm(
     generateCommitMessageFromGitDiff(
       await getDiff({ files: stagedFiles }),
-      extraArgs
+      extraArgs,
+      testing
     )
   );
 
