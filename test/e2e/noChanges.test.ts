@@ -1,18 +1,16 @@
 import { prepareEnvironment } from "@gmrchk/cli-testing-library";
 
 it('run cli flow to get the no changes message', async () => {
-  const { execute, spawn, cleanup } = await prepareEnvironment();
+  const { spawn, cleanup } = await prepareEnvironment();
 
-  console.log('hello world');
-
-  const { code, stdout, stderr } = await execute(
+  const { waitForFinish, getExitCode } = await spawn(
     'npm',
     'start'
   );
 
-  console.log(code);
-  console.log(stdout);
-  console.log(stderr); 
+  await waitForFinish();
+
+  expect(getExitCode()).toBe(1);
 
   await cleanup();
 }, 100000);
