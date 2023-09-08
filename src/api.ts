@@ -25,7 +25,13 @@ let apiKey = config?.OCO_OPENAI_API_KEY;
 
 const [command, mode] = process.argv.slice(2);
 
-if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set) {
+if (
+  !apiKey &&
+  command !== 'config' &&
+  mode !== CONFIG_MODES.set &&
+  (!basePath ||
+    (!basePath.includes('localhost') && !basePath.includes('127.0.0.1')))
+) {
   intro('opencommit');
 
   outro(

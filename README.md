@@ -115,6 +115,19 @@ oco config set OCO_MODEL=gpt-3.5-turbo
 
 Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
 
+#### Use LocalAI model
+
+We have added support to use (LocalAI)[https://github.com/go-skynet/LocalAI] as a model. This is a free and open source model that you can run locally. To use this model, you need to have LocalAI running on your machine.
+
+##### Setup LocalAI
+This is the way our team configured our enviroment to run LocalAI. You can follow these steps here:
+
+1. Follow the [LocalAI Getting Started Example](https://localai.io/basics/getting_started/index.html)
+2. Set the `OCO_OPENAI_BASE_PATH` to the path of your LocalAI instance. For example, if you are running LocalAI on port `8080`, you would set the `OCO_OPENAI_BASE_PATH` to `http://localhost:8080/v1`.
+3. Set the `OCO_MODEL` to whatever model you're using following the getting started example the value will be `ggml-gpt4all-j`.
+4. Now you can use OpenCommit with LocalAI!
+
+
 ### Locale configuration
 
 To globally specify the language used to generate commit messages:
