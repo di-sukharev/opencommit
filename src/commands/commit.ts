@@ -40,14 +40,15 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
 
 const generateCommitMessageFromGitDiff = async (
   diff: string,
-  extraArgs: string[]
+  extraArgs: string[],
+  fullGitMojiSpec: boolean
 ): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
 
   try {
-    let commitMessage = await generateCommitMessageByDiff(diff);
+    let commitMessage = await generateCommitMessageByDiff(diff, fullGitMojiSpec);
 
     const messageTemplate = checkMessageTemplate(extraArgs);
     if (
@@ -154,7 +155,8 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(
   extraArgs: string[] = [],
-  isStageAllFlag: Boolean = false
+  fullGitMojiSpec: boolean = false,
+  isStageAllFlag: Boolean = false,
 ) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
@@ -194,7 +196,7 @@ export async function commit(
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-      await commit(extraArgs, true);
+      await commit(extraArgs, true, fullGitMojiSpec);
       process.exit(1);
     }
 
@@ -212,7 +214,7 @@ export async function commit(
       await gitAdd({ files });
     }
 
-    await commit(extraArgs, false);
+    await commit(extraArgs, false, fullGitMojiSpec);
     process.exit(1);
   }
 
@@ -225,7 +227,8 @@ export async function commit(
   const [, generateCommitError] = await trytm(
     generateCommitMessageFromGitDiff(
       await getDiff({ files: stagedFiles }),
-      extraArgs
+      extraArgs,
+      fullGitMojiSpec
     )
   );
 
