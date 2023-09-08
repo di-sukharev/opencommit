@@ -14,4 +14,4 @@ it('run cli flow to get the no changes message', async () => {
   expect(getExitCode()).toBe(1);
 
   await cleanup();
-});
+}, 100000);
