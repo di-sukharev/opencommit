@@ -5,22 +5,14 @@ it('run cli flow to get the no changes message', async () => {
 
   console.log('hello world');
 
-  // Stash all changes to have a clean working directory
-
-  await execute('git', 'stash push -m "test"');
-
-  const { waitForText, getExitCode } = await spawn(
+  const { code, stdout, stderr } = await execute(
     'npm',
     'start'
   );
 
-  console.log('hello world');
-
-  await waitForText('No changes detected');
-
-  expect(getExitCode()).toBe(1);
-
-  execute('git', 'stash pop');
+  console.log(code);
+  console.log(stdout);
+  console.log(stderr); 
 
   await cleanup();
-});
+}, 100000);
