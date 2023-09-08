@@ -115,9 +115,9 @@ oco config set OCO_MODEL=gpt-3.5-turbo
 
 Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
 
-#### Use LocalAI model
+#### Use LocalAI
 
-We have added support to use (LocalAI)[https://github.com/go-skynet/LocalAI] as a model. This is a free and open source model that you can run locally. To use this model, you need to have LocalAI running on your machine.
+We have added support to use [LocalAI](https://github.com/go-skynet/LocalAI) as a model. This is a free and open source model that you can run locally. To use this model, you need to have LocalAI running on your machine.
 
 ##### Setup LocalAI
 This is the way our team configured our enviroment to run LocalAI. You can follow these steps here:
