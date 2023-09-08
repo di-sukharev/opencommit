@@ -24,7 +24,9 @@ const INIT_MAIN_PROMPT = (
   fullGitMojiSpec: boolean
 ): ChatCompletionRequestMessage => ({
   role: ChatCompletionRequestMessageRoleEnum.System,
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the conventional commit convention and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${
+    fullGitMojiSpec ? 'GitMoji specification' : 'conventional commit convention'
+  } and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
   ${
     config?.OCO_EMOJI
       ? 'Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): ' +
