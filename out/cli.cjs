@@ -21568,6 +21568,14 @@ var configValidators = {
       `${value} is not supported yet, use '@commitlint' or 'conventional-commit' (default)`
     );
     return value;
+  },
+  ["OCO_ONE_LINE_COMMIT" /* OCO_ONE_LINE_COMMIT */](value) {
+    validateConfig(
+      "OCO_ONE_LINE_COMMIT" /* OCO_ONE_LINE_COMMIT */,
+      typeof value === "boolean",
+      "Must be true or false"
+    );
+    return value;
   }
 };
 var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -21581,7 +21589,8 @@ var getConfig = () => {
     OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo-16k",
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit"
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit",
+    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -21719,6 +21728,24 @@ var OpenAi = class {
       }
       const { data } = await this.openAI.createChatCompletion(params);
       const message = data.choices[0].message;
+      if (config2?.OCO_ONE_LINE_COMMIT) {
+        const { data: oneLineData } = await this.openAI.createChatCompletion({
+          ...params,
+          messages: [
+            {
+              role: "system",
+              content: messages[0].content + "Summarize all file changes in one commit message, Highlight key changes and mention a common scope if applicable, DO ABSOLUTELY NOT WRITE MULTIPLE SCOPES, omit scope if no shared theme exists."
+            },
+            {
+              role: "user",
+              content: `Here are commits messages:
+${message?.content}`
+            }
+          ]
+        });
+        const oneLineMessage = oneLineData.choices[0].message;
+        return oneLineMessage?.content;
+      }
       return message?.content;
     } catch (error) {
       ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);

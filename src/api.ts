@@ -76,6 +76,27 @@ class OpenAi {
 
       const message = data.choices[0].message;
 
+      if (config?.OCO_ONE_LINE_COMMIT) {
+        const { data: oneLineData } = await this.openAI.createChatCompletion({
+          ...params,
+          messages: [
+            {
+              role: 'system',
+              content:
+                messages[0].content +
+                'Summarize all file changes in one commit message, Highlight key changes and mention a common scope if applicable, DO ABSOLUTELY NOT WRITE MULTIPLE SCOPES, omit scope if no shared theme exists.'
+            },
+            {
+              role: 'user',
+              content: `Here are commits messages:\n${message?.content}`
+            }
+          ]
+        });
+
+        const oneLineMessage = oneLineData.choices[0].message;
+        return oneLineMessage?.content;
+      }
+
       return message?.content;
     } catch (error) {
       outro(`${chalk.red('✖')} ${JSON.stringify(params)}`);
