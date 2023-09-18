@@ -21478,7 +21478,7 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config8) {
+  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config8 = {}) {
     validateConfig("OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */, value, "Cannot be empty");
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
