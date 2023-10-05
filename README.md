@@ -7,8 +7,7 @@
 	<h2>Auto-generate meaningful commits in 1 second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
-  <h4 align="center">🪩 Winner of GitHub 2023 HACKATHON <a href="https://twitter.com/io_Y_oi/status/1683448136973582336"><img style="width:14px; height:14px; margin-top: -4px" src=".github/github-mark-white.png" align="center"></a>
-  </h4>
+  <h4 align="center"><a href="https://twitter.com/io_Y_oi/status/1683448136973582336">🪩 Winner of GitHub 2023 HACKATHON 🪩</a></h4>
 </div>
 
 ---
@@ -332,4 +331,6 @@ You pay for your requests to OpenAI API on your own.
 
 OpenCommit stores your key locally.
 
-OpenCommit by default uses ChatGPT (3.5-turbo-16k) official model, which is a lot cheaper than gpt-4.
+OpenCommit by default uses 3.5-turbo-16k model, it should not exceed $0.10 per casual working day.
+
+You may switch to gpt-4, it's better, but more expensive.
