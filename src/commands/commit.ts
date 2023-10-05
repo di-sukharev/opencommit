@@ -29,7 +29,6 @@ const getGitRemotes = async () => {
   return stdout.split('\n').filter((remote) => Boolean(remote.trim()));
 };
 
-// Check for the presence of message templates
 const checkMessageTemplate = (extraArgs: string[]): string | false => {
   for (const key in extraArgs) {
     if (extraArgs[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
@@ -40,7 +39,8 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
 
 const generateCommitMessageFromGitDiff = async (
   diff: string,
-  extraArgs: string[]
+  extraArgs: string[],
+  isYesFlagSet: Boolean
 ): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
@@ -62,16 +62,9 @@ const generateCommitMessageFromGitDiff = async (
 
     commitSpinner.stop('📝 Commit message generated');
 
-    outro(
-      `Generated commit message:
-${chalk.grey('——————————————————')}
-${commitMessage}
-${chalk.grey('——————————————————')}`
-    );
-
-    const isCommitConfirmedByUser = await confirm({
-      message: 'Confirm the commit message?'
-    });
+    const isCommitConfirmedByUser = isYesFlagSet 
+      ? true 
+      : await confirm({ message: 'Confirm the commit message?' });
 
     if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
       const { stdout } = await execa('git', [
@@ -94,9 +87,9 @@ ${chalk.grey('——————————————————')}`
       }
 
       if (remotes.length === 1) {
-        const isPushConfirmedByUser = await confirm({
-          message: 'Do you want to run `git push`?'
-        });
+        const isPushConfirmedByUser = isYesFlagSet 
+          ? true 
+          : await confirm({ message: 'Do you want to run `git push`?' });
 
         if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
           const pushSpinner = spinner();
@@ -154,18 +147,9 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(
   extraArgs: string[] = [],
-  isStageAllFlag: Boolean = false
+  isStageAllFlag: Boolean = false,
+  isYesFlagSet: Boolean = false
 ) {
-  if (isStageAllFlag) {
-    const changedFiles = await getChangedFiles();
-
-    if (changedFiles) await gitAdd({ files: changedFiles });
-    else {
-      outro('No changes detected, write some code and run `oco` again');
-      process.exit(1);
-    }
-  }
-
   const [stagedFiles, errorStagedFiles] = await trytm(getStagedFiles());
   const [changedFiles, errorChangedFiles] = await trytm(getChangedFiles());
 
@@ -185,16 +169,23 @@ export async function commit(
   stagedFilesSpinner.start('Counting staged files');
 
   if (!stagedFiles.length) {
+    if (isYesFlagSet) {
+      await execa('git', ['add', '.']);
+    }
+
     stagedFilesSpinner.stop('No files are staged');
-    const isStageAllAndCommitConfirmedByUser = await confirm({
-      message: 'Do you want to stage all files and generate commit message?'
-    });
+
+    const isStageAllAndCommitConfirmedByUser = isYesFlagSet
+      ? true
+      : await confirm({
+          message: 'Do you want to stage all files and generate commit message?'
+        });
 
     if (
       isStageAllAndCommitConfirmedByUser &&
       !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
-      await commit(extraArgs, true);
+      await commit(extraArgs, true, isYesFlagSet);
       process.exit(1);
     }
 
@@ -212,8 +203,12 @@ export async function commit(
       await gitAdd({ files });
     }
 
-    await commit(extraArgs, false);
+    await commit(extraArgs, false, isYesFlagSet);
     process.exit(1);
+  } else {
+    if (isYesFlagSet) {
+      await execa('git', ['add', '.']);
+    }
   }
 
   stagedFilesSpinner.stop(
@@ -225,7 +220,8 @@ export async function commit(
   const [, generateCommitError] = await trytm(
     generateCommitMessageFromGitDiff(
       await getDiff({ files: stagedFiles }),
-      extraArgs
+      extraArgs,
+      isYesFlagSet
     )
   );
 

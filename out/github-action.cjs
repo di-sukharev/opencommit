@@ -28102,7 +28102,7 @@ function tokenCount(content) {
 var config2 = getConfig();
 var maxTokens = config2?.OCO_OPENAI_MAX_TOKENS;
 var basePath = config2?.OCO_OPENAI_BASE_PATH;
-var apiKey = config2?.OCO_OPENAI_API_KEY;
+var apiKey = config2?.OCO_OPENAI_API_KEY || process.env.OCO_OPENAI_API_KEY || process.env.OPENAI_API_KEY;
 var [command, mode] = process.argv.slice(2);
 if (!apiKey && command !== "config" && mode !== "set" /* set */) {
   ae("opencommit");

@@ -11,13 +11,21 @@ import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 
 const extraArgs = process.argv.slice(2);
+const isYesFlagSet = extraArgs.includes('--yes') || extraArgs.includes('-y');
 
 cli(
   {
     version: packageJSON.version,
     name: 'opencommit',
     commands: [configCommand, hookCommand, commitlintConfigCommand],
-    flags: {},
+    flags: {
+      yes: {
+        type: Boolean,
+        alias: 'y',
+        description: 'Automatically add all files, accept the commit message, and push the code',
+        default: 'n'
+      }
+    },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
     help: { description: packageJSON.description }
   },
@@ -27,7 +35,7 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs);
+      commit(extraArgs, false, isYesFlagSet);
     }
   },
   extraArgs
