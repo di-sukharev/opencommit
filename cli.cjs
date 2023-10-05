@@ -22424,10 +22424,6 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, isYesFlagSet2 = f
     }
     await commit(extraArgs2, false, isYesFlagSet2);
     process.exit(1);
-  } else {
-    if (isYesFlagSet2) {
-      await execa("git", ["add", "."]);
-    }
   }
   stagedFilesSpinner.stop(
     `${stagedFiles.length} staged files:
