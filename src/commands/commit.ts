@@ -169,6 +169,8 @@ export async function commit(
   stagedFilesSpinner.start('Counting staged files');
 
   if (!stagedFiles.length) {
+    console.log('Generating.', stagedFiles.length, !stagedFiles.length);
+
     if (isYesFlagSet) {
       await execa('git', ['add', '.']);
     }
