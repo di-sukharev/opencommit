@@ -22398,7 +22398,6 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, isYesFlagSet2 = f
   const stagedFilesSpinner = le();
   stagedFilesSpinner.start("Counting staged files");
   if (!stagedFiles.length) {
-    console.log("Generating.", stagedFiles.length, !stagedFiles.length);
     if (isYesFlagSet2) {
       await execa("git", ["add", "."]);
     }

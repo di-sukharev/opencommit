@@ -16384,7 +16384,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.3",
+  version: "3.0.4",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -16427,7 +16427,7 @@ var package_default = {
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
-    deploy: "npm run build:push && npm version patch && git push --follow-tags && npm publish --tag latest",
+    deploy: "npm version patch && npm run build:push && git push --tags && npm publish --tag latest",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src"
   },
@@ -21478,7 +21478,7 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config8) {
+  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config8 = {}) {
     validateConfig("OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */, value, "Cannot be empty");
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
@@ -22398,7 +22398,6 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, isYesFlagSet2 = f
   const stagedFilesSpinner = le();
   stagedFilesSpinner.start("Counting staged files");
   if (!stagedFiles.length) {
-    console.log("Generating.", stagedFiles.length, !stagedFiles.length);
     if (isYesFlagSet2) {
       await execa("git", ["add", "."]);
     }
