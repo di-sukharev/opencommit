@@ -207,10 +207,6 @@ export async function commit(
 
     await commit(extraArgs, false, isYesFlagSet);
     process.exit(1);
-  } else {
-    if (isYesFlagSet) {
-      await execa('git', ['add', '.']);
-    }
   }
 
   stagedFilesSpinner.stop(
