@@ -22,7 +22,8 @@ export enum CONFIG_KEYS {
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
-  OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE'
+  OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
+  OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
 }
 
 export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
@@ -48,7 +49,8 @@ const validateConfig = (
 
 export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
-    validateConfig(CONFIG_KEYS.OCO_OPENAI_API_KEY, value, 'Cannot be empty');
+    //need api key unless running locally with ollama
+    validateConfig('API_KEY', value || config.OCO_AI_PROVIDER == 'ollama', 'You need to provide an API key');
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
       value.startsWith('sk-'),
@@ -150,7 +152,20 @@ export const configValidators = {
     );
 
     return value;
-  }
+  },
+
+  [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_AI_PROVIDER,
+      [
+        '',
+        'openai',
+        'ollama'
+      ].includes(value),
+      `${value} is not supported yet, use 'ollama' or 'openai' (default)`
+    );
+    return value;
+  },
 };
 
 export type ConfigType = {
@@ -172,7 +187,8 @@ export const getConfig = (): ConfigType | null => {
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit'
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai'
   };
 
   const configExists = existsSync(configPath);
