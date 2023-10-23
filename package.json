@@ -12,12 +12,15 @@
     "aicommit",
     "aicommits",
     "gptcommit",
-    "commit"
+    "commit",
+    "changelog",
+    "generator"
   ],
   "main": "cli.js",
   "bin": {
     "opencommit": "./out/cli.cjs",
-    "oco": "./out/cli.cjs"
+    "oco": "./out/cli.cjs",
+    "changelog": "./out/changelog.cjs ./CHANGELOG.html"
   },
   "repository": {
     "url": "https://github.com/di-sukharev/opencommit"
@@ -77,6 +80,8 @@
     "ignore": "^5.2.4",
     "ini": "^3.0.1",
     "inquirer": "^9.1.4",
+    "node-emoji": "^2.1.0",
+    "marked": "9.1.2",
     "openai": "^3.2.1"
   }
 }
