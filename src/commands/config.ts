@@ -199,7 +199,6 @@ export const getConfig = (): ConfigType | null => {
 
   for (const configKey of Object.keys(config)) {
     if (
-      !config[configKey] ||
       ['null', 'undefined'].includes(config[configKey])
     ) {
       config[configKey] = undefined;
