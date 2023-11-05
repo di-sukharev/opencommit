@@ -41,7 +41,7 @@
   "scripts": {
     "watch": "npm run -S build -- --sourcemap --watch",
     "start": "node ./out/cli.cjs",
-    "ollama:start": "AI_PROVIDER='ollama' node./out/cli.cjs",
+    "ollama:start": "OCO_AI_PROVIDER='ollama' node ./out/cli.cjs",
     "dev": "ts-node ./src/cli.ts",
     "build": "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
