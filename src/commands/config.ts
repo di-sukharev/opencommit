@@ -162,41 +162,70 @@ const configPath = pathJoin(homedir(), '.opencommit');
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS
-      ? Number(process.env.OCO_OPENAI_MAX_TOKENS)
-      : undefined,
+    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
-    OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo-16k',
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
+    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION,
+    OCO_EMOJI: process.env.OCO_EMOJI,
+    OCO_MODEL: process.env.OCO_MODEL,
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit'
+      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE
   };
 
+  let config = {} as ConfigType;
+
   const configExists = existsSync(configPath);
-  if (!configExists) return configFromEnv;
+  if (configExists) {
+    const configFile = readFileSync(configPath, 'utf8');
+    config = iniParse(configFile);
+  }
 
-  const configFile = readFileSync(configPath, 'utf8');
-  const config = iniParse(configFile);
+  for (const configKey of Object.values(CONFIG_KEYS)) {
+    const envValue = configFromEnv[configKey];
 
-  for (const configKey of Object.keys(config)) {
-    if (
+    if (envValue !== undefined) {
+      config[configKey] =
+        envValue === 'true' ? true : envValue === 'false' ? false : envValue;
+    } else if (
+      !configExists ||
       !config[configKey] ||
-      ['null', 'undefined'].includes(config[configKey])
+      config[configKey] === 'undefined'
     ) {
-      config[configKey] = undefined;
-      continue;
+      switch (configKey) {
+        case 'OCO_OPENAI_API_KEY':
+          config[configKey] = undefined;
+          continue;
+        case 'OCO_OPENAI_MAX_TOKENS':
+          config[configKey] = undefined;
+          continue;
+        case 'OCO_OPENAI_BASE_PATH':
+          config[configKey] = undefined;
+          continue;
+        case 'OCO_DESCRIPTION':
+          config[configKey] = false;
+          break;
+        case 'OCO_EMOJI':
+          config[configKey] = false;
+          break;
+        case 'OCO_MODEL':
+          config[configKey] = 'gpt-3.5-turbo-16k';
+          break;
+        case 'OCO_LANGUAGE':
+          config[configKey] = 'en';
+          break;
+        case 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER':
+          config[configKey] = '$msg';
+          break;
+        case 'OCO_PROMPT_MODULE':
+          config[configKey] = 'conventional-commit';
+          break;
+      }
     }
-    try {
-      const validator = configValidators[configKey as CONFIG_KEYS];
-      const validValue = validator(
-        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS],
-        config
-      );
 
-      config[configKey] = validValue;
+    try {
+      const validator = configValidators[configKey];
+      config[configKey] = validator(config[configKey], config);
     } catch (error) {
       outro(
         `'${configKey}' name is invalid, it should be either 'OCO_${configKey.toUpperCase()}' or it doesn't exist.`
