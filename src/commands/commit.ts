@@ -54,6 +54,9 @@ const generateCommitMessageFromGitDiff = async (
       config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER &&
       typeof messageTemplate === 'string'
     ) {
+      const messageTemplateIndex = extraArgs.indexOf(messageTemplate);
+      extraArgs.splice(messageTemplateIndex, 1);
+
       commitMessage = messageTemplate.replace(
         config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
