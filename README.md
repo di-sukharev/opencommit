@@ -2,12 +2,12 @@
   <div>
     <img src=".github/logo-grad.svg" alt="OpenCommit logo"/>
     <h1 align="center">OpenCommit</h1>
-    <h4 align="center">Follow the bird <a href="https://twitter.com/io_Y_oi"><img src="https://img.shields.io/twitter/follow/io_Y_oi?style=flat&label=io_Y_oi&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
+    <h4 align="center">Follow the bird <a href="https://twitter.com/_sukharev_"><img src="https://img.shields.io/twitter/follow/_sukharev_?style=flat&label=_sukharev_&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
   </div>
 	<h2>Auto-generate meaningful commits in 1 second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
-  <h4 align="center">🪩 Winner of GitHub 2023 HACKATHON <a href="https://twitter.com/io_Y_oi/status/1683448136973582336"><img style="width:14px; height:14px; margin-top: -4px" src=".github/github-mark-white.png" align="center"></a>
+  <h4 align="center">🪩 Winner of GitHub 2023 HACKATHON <a href="https://twitter.com/_sukharev_/status/1683448136973582336"><img style="width:14px; height:14px; margin-top: -4px" src=".github/github-mark-white.png" align="center"></a>
   </h4>
 </div>
 
