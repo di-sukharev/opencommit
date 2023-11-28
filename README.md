@@ -65,7 +65,8 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 OCO_OPENAI_API_KEY=<your OpenAI API token>
-OCO_OPENAI_MAX_TOKENS=<max response tokens from OpenAI API>
+OCO_TOKENS_MAX_INPUT=<max model token limit (default: 4096)>
+OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
@@ -311,7 +312,8 @@ jobs:
           OCO_OPENAI_API_KEY: ${{ secrets.OCO_OPENAI_API_KEY }}
 
           # customization
-          OCO_OPENAI_MAX_TOKENS: 500
+          OCO_TOKENS_MAX_INPUT: 4096
+          OCO_TOKENS_MAX_OUTPUT: 500
           OCO_OPENAI_BASE_PATH: ''
           OCO_DESCRIPTION: false
           OCO_EMOJI: false

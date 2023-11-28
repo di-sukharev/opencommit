@@ -4,12 +4,16 @@ import {
 } from 'openai';
 
 import { api } from './api';
-import { DEFAULT_MODEL_TOKEN_LIMIT, getConfig } from './commands/config';
+import { getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
+const DEFAULT_MAX_TOKENS_INPUT = 4096;
+const DEFAULT_MAX_TOKENS_OUTPUT = 500;
+const MAX_TOKENS_INPUT = config?.OCO_TOKENS_MAX_INPUT || DEFAULT_MAX_TOKENS_INPUT;
+const MAX_TOKENS_OUTPUT = config?.OCO_TOKENS_MAX_OUTPUT || DEFAULT_MAX_TOKENS_OUTPUT;
 
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string
@@ -29,7 +33,8 @@ const generateCommitMessageChatCompletionPrompt = async (
 export enum GenerateCommitMessageErrorEnum {
   tooMuchTokens = 'TOO_MUCH_TOKENS',
   internalError = 'INTERNAL_ERROR',
-  emptyMessage = 'EMPTY_MESSAGE'
+  emptyMessage = 'EMPTY_MESSAGE',
+  outputTokensTooHigh = `Token limit exceeded, OCO_TOKENS_MAX_OUTPUT must not be much higher than the default ${DEFAULT_MAX_TOKENS_OUTPUT} tokens.`
 }
 
 const ADJUSTMENT_FACTOR = 20;
@@ -45,10 +50,10 @@ export const generateCommitMessageByDiff = async (
     ).reduce((a, b) => a + b, 0);
 
     const MAX_REQUEST_TOKENS =
-      DEFAULT_MODEL_TOKEN_LIMIT -
+      MAX_TOKENS_INPUT -
       ADJUSTMENT_FACTOR -
       INIT_MESSAGES_PROMPT_LENGTH -
-      config?.OCO_OPENAI_MAX_TOKENS;
+      MAX_TOKENS_OUTPUT;
 
     if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
       const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
@@ -121,6 +126,10 @@ function splitDiff(diff: string, maxChangeLength: number) {
   const lines = diff.split('\n');
   const splitDiffs = [];
   let currentDiff = '';
+  
+  if (maxChangeLength <= 0) {
+    throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
+  }
 
   for (let line of lines) {
     // If a single line exceeds maxChangeLength, split it into multiple lines

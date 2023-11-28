@@ -15,7 +15,8 @@ dotenv.config();
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
-  OCO_OPENAI_MAX_TOKENS = 'OCO_OPENAI_MAX_TOKENS',
+  OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
+  OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
   OCO_OPENAI_BASE_PATH = 'OCO_OPENAI_BASE_PATH',
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
@@ -24,8 +25,6 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE'
 }
-
-export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
 
 export enum CONFIG_MODES {
   get = 'get',
@@ -73,18 +72,37 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS](value: any) {
+  [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT](value: any) {
     // If the value is a string, convert it to a number.
     if (typeof value === 'string') {
       value = parseInt(value);
       validateConfig(
-        CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
+        CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
         !isNaN(value),
         'Must be a number'
       );
     }
     validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
+      CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
+      value ? typeof value === 'number' : undefined,
+      'Must be a number'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT](value: any) {
+    // If the value is a string, convert it to a number.
+    if (typeof value === 'string') {
+      value = parseInt(value);
+      validateConfig(
+        CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
+        !isNaN(value),
+        'Must be a number'
+      );
+    }
+    validateConfig(
+      CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
       value ? typeof value === 'number' : undefined,
       'Must be a number'
     );
@@ -162,8 +180,11 @@ const configPath = pathJoin(homedir(), '.opencommit');
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS
-      ? Number(process.env.OCO_OPENAI_MAX_TOKENS)
+    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
+      ? Number(process.env.OCO_TOKENS_MAX_INPUT)
+      : undefined,
+    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT
+      ? Number(process.env.OCO_TOKENS_MAX_OUTPUT)
       : undefined,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
