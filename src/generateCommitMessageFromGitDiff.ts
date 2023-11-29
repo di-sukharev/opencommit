@@ -4,16 +4,14 @@ import {
 } from 'openai';
 
 import { api } from './api';
-import { getConfig } from './commands/config';
+import { getConfig, DEFAULT_TOKEN_LIMITS} from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
-const DEFAULT_MAX_TOKENS_INPUT = 4096;
-const DEFAULT_MAX_TOKENS_OUTPUT = 500;
-const MAX_TOKENS_INPUT = config?.OCO_TOKENS_MAX_INPUT || DEFAULT_MAX_TOKENS_INPUT;
-const MAX_TOKENS_OUTPUT = config?.OCO_TOKENS_MAX_OUTPUT || DEFAULT_MAX_TOKENS_OUTPUT;
+const MAX_TOKENS_INPUT = config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
+const MAX_TOKENS_OUTPUT = config?.OCO_TOKENS_MAX_OUTPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
 
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string

@@ -31,6 +31,11 @@ export enum CONFIG_MODES {
   set = 'set'
 }
 
+export enum DEFAULT_TOKEN_LIMITS {
+  DEFAULT_MAX_TOKENS_INPUT = 4096,
+  DEFAULT_MAX_TOKENS_OUTPUT = 500
+}
+
 const validateConfig = (
   key: string,
   condition: any,
