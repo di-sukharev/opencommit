@@ -227,9 +227,7 @@ export const getConfig = (): ConfigType | null => {
       const validator = configValidators[configKey];
       config[configKey] = validator(config[configKey], config);
     } catch (error) {
-      outro(
-        `'${configKey}' name is invalid, it should be either 'OCO_${configKey.toUpperCase()}' or it doesn't exist.`
-      );
+      outro(`Unknown '${configKey}' config option.`);
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
