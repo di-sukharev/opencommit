@@ -112,6 +112,12 @@ or for as a cheaper option:
 oco config set OCO_MODEL=gpt-3.5-turbo
 ```
 
+or for GPT-4 Turbo (Preview) which is more capable, has knowledge of world events up to April 2023, a 128k context window and 2-3x cheaper vs GPT-4:
+
+```sh
+oco config set OCO_MODEL=gpt-4-1106-preview
+```
+
 Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
 
 ### Locale configuration
