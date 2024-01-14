@@ -1,24 +1,10 @@
 import chalk from 'chalk';
 import { execa } from 'execa';
 
-import {
-  confirm,
-  intro,
-  isCancel,
-  multiselect,
-  outro,
-  select,
-  spinner
-} from '@clack/prompts';
+import { confirm, intro, isCancel, multiselect, outro, select, spinner } from '@clack/prompts';
 
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
-import {
-  assertGitRepo,
-  getChangedFiles,
-  getDiff,
-  getStagedFiles,
-  gitAdd
-} from '../utils/git';
+import { assertGitRepo, getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { trytm } from '../utils/trytm';
 import { getConfig } from './config';
 
@@ -30,18 +16,14 @@ const getGitRemotes = async () => {
 };
 
 // Check for the presence of message templates
-const checkMessageTemplate = (extraArgs: string[]): string | false => {
-  for (const key in extraArgs) {
-    if (extraArgs[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
-      return extraArgs[key];
+const checkMessageTemplate = (extraArguments: string[]): string | false => {
+  for (const key in extraArguments) {
+    if (extraArguments[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER)) return extraArguments[key];
   }
   return false;
 };
 
-const generateCommitMessageFromGitDiff = async (
-  diff: string,
-  extraArgs: string[]
-): Promise<void> => {
+const generateCommitMessageFromGitDiff = async (diff: string, extraArguments: string[]): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
@@ -49,15 +31,9 @@ const generateCommitMessageFromGitDiff = async (
   try {
     let commitMessage = await generateCommitMessageByDiff(diff);
 
-    const messageTemplate = checkMessageTemplate(extraArgs);
-    if (
-      config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER &&
-      typeof messageTemplate === 'string'
-    ) {
-      commitMessage = messageTemplate.replace(
-        config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
-        commitMessage
-      );
+    const messageTemplate = checkMessageTemplate(extraArguments);
+    if (config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === 'string') {
+      commitMessage = messageTemplate.replace(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER, commitMessage);
     }
 
     commitSpinner.stop('📝 Commit message generated');
@@ -74,12 +50,7 @@ ${chalk.grey('——————————————————')}`
     });
 
     if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
-      const { stdout } = await execa('git', [
-        'commit',
-        '-m',
-        commitMessage,
-        ...extraArgs
-      ]);
+      const { stdout } = await execa('git', ['commit', '-m', commitMessage, ...extraArguments]);
 
       outro(`${chalk.green('✔')} Successfully committed`);
 
@@ -87,7 +58,7 @@ ${chalk.grey('——————————————————')}`
 
       const remotes = await getGitRemotes();
 
-      if (!remotes.length) {
+      if (remotes.length === 0) {
         const { stdout } = await execa('git', ['push']);
         if (stdout) outro(stdout);
         process.exit(0);
@@ -103,17 +74,9 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.start(`Running 'git push ${remotes[0]}'`);
 
-          const { stdout } = await execa('git', [
-            'push',
-            '--verbose',
-            remotes[0]
-          ]);
+          const { stdout } = await execa('git', ['push', '--verbose', remotes[0]]);
 
-          pushSpinner.stop(
-            `${chalk.green('✔')} Successfully pushed all commits to ${
-              remotes[0]
-            }`
-          );
+          pushSpinner.stop(`${chalk.green('✔')} Successfully pushed all commits to ${remotes[0]}`);
 
           if (stdout) outro(stdout);
         } else {
@@ -126,21 +89,19 @@ ${chalk.grey('——————————————————')}`
           options: remotes.map((remote) => ({ value: remote, label: remote }))
         })) as string;
 
-        if (!isCancel(selectedRemote)) {
+        if (isCancel(selectedRemote)) {
+          outro(`${chalk.gray('✖')} process cancelled`);
+        } else {
           const pushSpinner = spinner();
 
           pushSpinner.start(`Running 'git push ${selectedRemote}'`);
 
           const { stdout } = await execa('git', ['push', selectedRemote]);
 
-          pushSpinner.stop(
-            `${chalk.green(
-              '✔'
-            )} Successfully pushed all commits to ${selectedRemote}`
-          );
+          pushSpinner.stop(`${chalk.green('✔')} Successfully pushed all commits to ${selectedRemote}`);
 
           if (stdout) outro(stdout);
-        } else outro(`${chalk.gray('✖')} process cancelled`);
+        }
       }
     }
   } catch (error) {
@@ -152,10 +113,7 @@ ${chalk.grey('——————————————————')}`
   }
 };
 
-export async function commit(
-  extraArgs: string[] = [],
-  isStageAllFlag: Boolean = false
-) {
+export async function commit(extraArguments: string[] = [], isStageAllFlag = false) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
 
@@ -184,17 +142,14 @@ export async function commit(
 
   stagedFilesSpinner.start('Counting staged files');
 
-  if (!stagedFiles.length) {
+  if (stagedFiles.length === 0) {
     stagedFilesSpinner.stop('No files are staged');
     const isStageAllAndCommitConfirmedByUser = await confirm({
       message: 'Do you want to stage all files and generate commit message?'
     });
 
-    if (
-      isStageAllAndCommitConfirmedByUser &&
-      !isCancel(isStageAllAndCommitConfirmedByUser)
-    ) {
-      await commit(extraArgs, true);
+    if (isStageAllAndCommitConfirmedByUser && !isCancel(isStageAllAndCommitConfirmedByUser)) {
+      await commit(extraArguments, true);
       process.exit(1);
     }
 
@@ -212,22 +167,13 @@ export async function commit(
       await gitAdd({ files });
     }
 
-    await commit(extraArgs, false);
+    await commit(extraArguments, false);
     process.exit(1);
   }
 
-  stagedFilesSpinner.stop(
-    `${stagedFiles.length} staged files:\n${stagedFiles
-      .map((file) => `  ${file}`)
-      .join('\n')}`
-  );
+  stagedFilesSpinner.stop(`${stagedFiles.length} staged files:\n${stagedFiles.map((file) => `  ${file}`).join('\n')}`);
 
-  const [, generateCommitError] = await trytm(
-    generateCommitMessageFromGitDiff(
-      await getDiff({ files: stagedFiles }),
-      extraArgs
-    )
-  );
+  const [, generateCommitError] = await trytm(generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }), extraArguments));
 
   if (generateCommitError) {
     outro(`${chalk.red('✖')} ${generateCommitError}`);

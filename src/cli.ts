@@ -7,10 +7,10 @@ import { commit } from './commands/commit';
 import { commitlintConfigCommand } from './commands/commitlint';
 import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
-import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
+import { prepareCommitMessageHook } from './commands/prepare-commit-message-hook';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 
-const extraArgs = process.argv.slice(2);
+const extraArguments = process.argv.slice(2);
 
 cli(
   {
@@ -27,8 +27,8 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs);
+      commit(extraArguments);
     }
   },
-  extraArgs
+  extraArguments
 );

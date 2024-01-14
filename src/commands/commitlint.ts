@@ -35,9 +35,7 @@ export const commitlintConfigCommand = command(
         return;
       }
 
-      throw new Error(
-        `Unsupported mode: ${mode}. Valid modes are: "force" and "get"`
-      );
+      throw new Error(`Unsupported mode: ${mode}. Valid modes are: "force" and "get"`);
     } catch (error) {
       outro(`${chalk.red('✖')} ${error}`);
       process.exit(1);
