@@ -1,5 +1,9 @@
 import { build } from 'esbuild';
-import fs from 'fs';
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 await build({
   entryPoints: ['./src/cli.ts'],
@@ -17,8 +21,7 @@ await build({
   outfile: './out/github-action.cjs'
 });
 
-const wasmFile = fs.readFileSync(
-  './node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm'
-);
+const readStream = fs.createReadStream(path.join(__dirname, './node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm'));
+const writeStream = fs.createWriteStream(path.join(__dirname, './out/tiktoken_bg.wasm'));
 
-fs.writeFileSync('./out/tiktoken_bg.wasm', wasmFile);
+readStream.pipe(writeStream);

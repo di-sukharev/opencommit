@@ -1,0 +1,70 @@
+##########################################
+# Common Settings
+##########################################
+
+# This file is the top-most EditorConfig file
+root = true
+
+# All Files
+[*]
+charset = utf-8
+indent_style = space
+# (Please don't specify an indent_size here; that has too many unintended consequences.)
+
+insert_final_newline = true
+trim_trailing_whitespace = true
+max_line_length = 160
+
+##########################################
+# File Extension Settings
+##########################################
+
+# XML Configuration Files
+[*.{xml}]
+indent_size = 2
+
+# JSON Files
+[*.{json,json5,webmanifest}]
+indent_size = 2
+
+# YAML Files
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown Files
+[*.{md,mdx}]
+trim_trailing_whitespace = false
+
+# Web Files
+[*.{htm,html,css,sass,scss,less,pcss,svg,vue}]
+indent_size = 2
+
+# JavaScript Files
+[*.{js,jsm,cjs,mjs}]
+indent_size = 2
+
+# TypeScript Files
+[*.{ts,tsx,d.ts,mts,cts}]
+indent_size = 2
+
+# Batch Files
+[*.{cmd,bat}]
+end_of_line = crlf
+indent_size = 2
+
+# Bash Files
+[*.sh]
+end_of_line = lf
+indent_size = 2
+
+# Makefiles
+[Makefile]
+indent_style = tab
+
+# Powershell files
+[*.ps1]
+indent_size = 4
+
+# mustache files
+[*.mustache]
+insert_final_newline = false
