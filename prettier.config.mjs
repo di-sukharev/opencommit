@@ -1,4 +1,4 @@
-/** @type {import("prettier").Options} */
+/** @type {import("prettier").Config} */
 const config = {
   endOfLine: 'auto',
   overrides: [
@@ -15,7 +15,6 @@ const config = {
       }
     }
   ],
-  plugins: ['prettier-plugin-packagejson'],
   singleQuote: true,
   trailingComma: 'none'
 };

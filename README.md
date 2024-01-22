@@ -98,7 +98,7 @@ oco config set OCO_EMOJI=false
 
 ### Switch to GPT-4 or other models
 
-By default, OpenCommit uses `gpt-3.5-turbo-16k` model.
+By default, OpenCommit uses the `gpt-3.5-turbo-16k` model.
 
 You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 
@@ -112,7 +112,7 @@ or for as a cheaper option:
 oco config set OCO_MODEL=gpt-3.5-turbo
 ```
 
-or for GPT-4 Turbo (Preview) which is more capable, has knowledge of world events up to April 2023, a 128k context window and 2-3x cheaper vs GPT-4:
+or for GPT-4 Turbo (Preview) which is more capable, knows world events up to April 2023, has a 128k context window and is 2-3x cheaper vs GPT-4:
 
 ```sh
 oco config set OCO_MODEL=gpt-4-1106-preview
@@ -153,7 +153,7 @@ Replace `<module>` with either `conventional-commit` or `@commitlint`.
 
 #### Example
 
-To switch to using th`'@commitlint` prompt module, run:
+To switch to using the `'@commitlint` prompt module, run:
 
 ```sh
 oco config set OCO_PROMPT_MODULE=@commitlint
@@ -220,10 +220,7 @@ The `OCO_MESSAGE_TEMPLATE_PLACEHOLDER` feature in the `opencommit` tool allows u
 In our codebase, the implementation of this feature can be found in the following segment:
 
 ```javascript
-commitMessage = messageTemplate.replace(
-  config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
-  commitMessage
-);
+commitMessage = messageTemplate.replace(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER, commitMessage);
 ```
 
 This line is responsible for replacing the placeholder in the `messageTemplate` with the actual `commitMessage`.
@@ -272,7 +269,7 @@ git add <files...>
 git commit
 ```
 
-Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow.
+Or follow the process of your IDE Source Control feature, when it calls the `git commit` command — OpenCommit will integrate into the flow.
 
 ## Setup OpenCommit as a GitHub Action (BETA) 🔥
 
@@ -329,7 +326,7 @@ That is it. Now when you push to any branch in your repo — all NEW commits are
 
 Make sure you exclude public collaboration branches (`main`, `dev`, `etc`) in `branches-ignore`, so OpenCommit does not rebase commits there while improving the messages.
 
-Interactive rebase (`rebase -i`) changes commits' SHA, so the commit history in remote becomes different from your local branch history. This is okay if you work on the branch alone, but may be inconvenient for other collaborators.
+Interactive rebase (`rebase -i`) changes commits' SHA, so the commit history in the remote becomes different from your local branch history. This is okay if you work on the branch alone, but may be inconvenient for other collaborators.
 
 ## Payments
 

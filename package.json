@@ -1,5 +1,5 @@
 {
-  "name": "opencommit",
+  "name": "@bodrick/opencommit",
   "version": "3.0.5",
   "description": "Auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
@@ -15,10 +15,10 @@
     "opencommit"
   ],
   "repository": {
-    "url": "https://github.com/di-sukharev/opencommit"
+    "url": "https://github.com/bodrick/opencommit"
   },
   "license": "MIT",
-  "author": "https://github.com/di-sukharev",
+  "author": "https://github.com/bodrick",
   "type": "module",
   "main": "cli.js",
   "bin": {
@@ -35,9 +35,10 @@
     "deploy": "pnpm version patch && pnpm run build:push && git push --tags && pnpm publish --tag latest",
     "dev": "ts-node ./src/cli.ts",
     "format": "prettier --write src",
-    "lint": "eslint src --ext ts && tsc --noEmit",
-    "start": "node ./out/cli.cjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "watch": "pnpm run -S build -- --sourcemap --watch"
+    "typecheck": "tsc --noEmit",
   },
   "dependencies": {
     "@actions/core": "^1.10.1",
@@ -77,7 +78,11 @@
     "prettier": "^3.2.4",
     "prettier-plugin-packagejson": "^2.4.9",
     "rimraf": "^5.0.5",
-    "ts-node": "^10.9.2",
+    "tsup": "^8.0.1",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }
