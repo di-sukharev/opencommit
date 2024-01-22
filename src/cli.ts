@@ -8,7 +8,7 @@ import { commitlintConfigCommand } from './commands/commitlint';
 import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-message-hook';
-import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
+import { checkIsLatestVersion } from './utils/check-is-latest-version';
 
 const extraArguments = process.argv.slice(2);
 

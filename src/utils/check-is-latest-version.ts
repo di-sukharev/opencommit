@@ -5,7 +5,7 @@ import { outro } from '@clack/prompts';
 import currentPackage from '../../package.json';
 import { getOpenCommitLatestVersion } from '../api';
 
-export const checkIsLatestVersion = async () => {
+export async function checkIsLatestVersion() {
   const latestVersion = await getOpenCommitLatestVersion();
 
   if (latestVersion) {
@@ -23,4 +23,4 @@ Current version: ${currentVersion}. Latest version: ${latestVersion}.
       );
     }
   }
-};
+}
