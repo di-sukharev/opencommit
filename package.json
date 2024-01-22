@@ -35,6 +35,7 @@
     "deploy": "pnpm version patch && pnpm run build:push && git push --tags && pnpm publish --tag latest",
     "dev": "ts-node ./src/cli.ts",
     "format": "prettier --write src",
+    "knip": "knip",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "watch": "pnpm run -S build -- --sourcemap --watch"
@@ -56,13 +57,14 @@
     "ini": "^4.1.1",
     "inquirer": "^9.2.12",
     "openai": "^3.3.0",
-    "yargs": "^17.7.2"
+    "semver": "^7.5.4"
   },
   "devDependencies": {
     "@commitlint/types": "^18.4.4",
     "@types/ini": "^4.1.0",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.11.5",
+    "@types/semver": "^7.5.6",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",
     "dotenv": "^16.3.2",
@@ -75,6 +77,7 @@
     "eslint-plugin-prettier": "^5.1.3",
     "eslint-plugin-simple-import-sort": "^10.0.0",
     "eslint-plugin-unicorn": "^50.0.1",
+    "knip": "^4.2.1",
     "prettier": "^3.2.4",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.1",

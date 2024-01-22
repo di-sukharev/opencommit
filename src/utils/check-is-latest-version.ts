@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import semver from 'semver';
 
 import { outro } from '@clack/prompts';
 
@@ -10,15 +11,14 @@ export async function checkIsLatestVersion() {
 
   if (latestVersion) {
     const currentVersion = currentPackage.version;
-
-    if (currentVersion !== latestVersion) {
+    if (semver.lt(currentVersion, latestVersion)) {
       outro(
         chalk.yellow(
           `
-You are not using the latest stable version of OpenCommit with new features and bug fixes.
+You are not using the latest version of OpenCommit with new features and bug fixes.
 Current version: ${currentVersion}. Latest version: ${latestVersion}.
 🚀 To update run: npm i -g opencommit@latest.
-        `
+          `
         )
       );
     }
