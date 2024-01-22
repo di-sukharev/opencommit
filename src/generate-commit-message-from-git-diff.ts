@@ -1,14 +1,16 @@
-import { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from 'openai';
+import { type ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from 'openai';
 
 import { api } from './api';
 import { DEFAULT_MODEL_TOKEN_LIMIT, getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
-import { mergeDiffs } from './utils/mergeDiffs';
-import { tokenCount } from './utils/tokenCount';
+import { mergeDiffs } from './utils/merge-diffs';
+import { tokenCount } from './utils/token-count';
 
 const config = getConfig();
 
-const generateCommitMessageChatCompletionPrompt = async (diff: string): Promise<ChatCompletionRequestMessage[]> => {
+const generateCommitMessageChatCompletionPrompt = async (
+  diff: string
+): Promise<ChatCompletionRequestMessage[]> => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
 
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
@@ -32,12 +34,21 @@ const ADJUSTMENT_FACTOR = 20;
 export const generateCommitMessageByDiff = async (diff: string): Promise<string> => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
 
-  const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map((message) => tokenCount(message.content) + 4).reduce((a, b) => a + b, 0);
+  const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
+    (message) => tokenCount(message.content ?? '') + 4
+  ).reduce((a, b) => a + b, 0);
 
-  const MAX_REQUEST_TOKENS = DEFAULT_MODEL_TOKEN_LIMIT - ADJUSTMENT_FACTOR - INIT_MESSAGES_PROMPT_LENGTH - config?.OCO_OPENAI_MAX_TOKENS;
+  const MAX_REQUEST_TOKENS =
+    DEFAULT_MODEL_TOKEN_LIMIT -
+    ADJUSTMENT_FACTOR -
+    INIT_MESSAGES_PROMPT_LENGTH -
+    config?.OCO_OPENAI_MAX_TOKENS;
 
   if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
-    const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(diff, MAX_REQUEST_TOKENS);
+    const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
+      diff,
+      MAX_REQUEST_TOKENS
+    );
 
     const commitMessages = [];
     for (const promise of commitMessagePromises) {
@@ -57,7 +68,11 @@ export const generateCommitMessageByDiff = async (diff: string): Promise<string>
   return commitMessage;
 };
 
-function getMessagesPromisesByChangesInFile(fileDiff: string, separator: string, maxChangeLength: number) {
+function getMessagesPromisesByChangesInFile(
+  fileDiff: string,
+  separator: string,
+  maxChangeLength: number
+) {
   const hunkHeaderSeparator = '@@ ';
   const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
 
@@ -133,7 +148,11 @@ export const getCommitMsgsPromisesFromFileDiffs = async (diff: string, maxDiffLe
   for (const fileDiff of mergedFilesDiffs) {
     if (tokenCount(fileDiff) >= maxDiffLength) {
       // if file-diff is bigger than gpt context — split fileDiff into lineDiff
-      const messagesPromises = getMessagesPromisesByChangesInFile(fileDiff, separator, maxDiffLength);
+      const messagesPromises = getMessagesPromisesByChangesInFile(
+        fileDiff,
+        separator,
+        maxDiffLength
+      );
 
       commitMessagePromises.push(...messagesPromises);
     } else {

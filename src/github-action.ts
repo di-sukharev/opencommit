@@ -1,13 +1,13 @@
-import { unlinkSync, writeFileSync } from 'fs';
+import { unlinkSync, writeFileSync } from 'node:fs';
 
 import core from '@actions/core';
 import exec from '@actions/exec';
 import github from '@actions/github';
 import { intro, outro } from '@clack/prompts';
-import { PushEvent } from '@octokit/webhooks-types';
+import type { PushEvent } from '@octokit/webhooks-types';
 
 import { generateCommitMessageByDiff } from './generate-commit-message-from-git-diff';
-import { randomIntFromInterval } from './utils/randomIntFromInterval';
+import { randomIntFromInterval } from './utils/random-int-from-interval';
 import { sleep } from './utils/sleep';
 
 // This should be a token with access to your repository scoped in as a secret.
@@ -37,7 +37,7 @@ interface DiffAndSHA {
   diff: string;
 }
 
-interface MsgAndSHA {
+interface MessageAndSHA {
   sha: string;
   msg: string;
 }
@@ -49,18 +49,18 @@ async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
   outro(`Improving commit messages in chunks of ${chunkSize}.`);
   const improvePromises = diffsAndSHAs.map((commit) => generateCommitMessageByDiff(commit.diff));
 
-  let improvedMessagesAndSHAs: MsgAndSHA[] = [];
+  const improvedMessagesAndSHAs: MessageAndSHA[] = [];
   for (let step = 0; step < improvePromises.length; step += chunkSize) {
     const chunkOfPromises = improvePromises.slice(step, step + chunkSize);
 
     try {
       const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
 
-      const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map((improvedMsg, i) => {
-        const index = improvedMessagesAndSHAs.length;
-        const sha = diffsAndSHAs[index + i].sha;
+      const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map((improvedMessage, index) => {
+        const total = improvedMessagesAndSHAs.length;
+        const sha = diffsAndSHAs[total + index].sha;
 
-        return { sha, msg: improvedMsg };
+        return { sha, msg: improvedMessage };
       });
 
       improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
@@ -77,7 +77,7 @@ async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
 
       // if sleeping in try block still fails with 429,
       // openAI wants at least 1 minute before next request
-      const sleepFor = 60000 + 1000 * randomIntFromInterval(1, 5);
+      const sleepFor = 60_000 + 1000 * randomIntFromInterval(1, 5);
       outro(`Retrying after sleeping for ${sleepFor}`);
       await sleep(sleepFor);
 
@@ -100,8 +100,10 @@ const getDiffsBySHAs = async (SHAs: string[]) => {
   return diffs;
 };
 
-async function improveCommitMessages(commitsToImprove: { id: string; message: string }[]): Promise<void> {
-  if (commitsToImprove.length) {
+async function improveCommitMessages(
+  commitsToImprove: { id: string; message: string }[]
+): Promise<void> {
+  if (commitsToImprove.length > 0) {
     outro(`Found ${commitsToImprove.length} commits to improve.`);
   } else {
     outro('No new commits found.');
@@ -115,18 +117,22 @@ async function improveCommitMessages(commitsToImprove: { id: string; message: st
 
   const improvedMessagesWithSHAs = await improveMessagesInChunks(diffsWithSHAs);
 
-  console.log(`Improved ${improvedMessagesWithSHAs.length} commits: `, improvedMessagesWithSHAs);
+  console.log(`Improved ${improvedMessagesWithSHAs.length} commits:`, improvedMessagesWithSHAs);
 
   // Check if there are actually any changes in the commit messages
-  const messagesChanged = improvedMessagesWithSHAs.some(({ sha, msg }, index) => msg !== commitsToImprove[index].message);
+  const messagesChanged = improvedMessagesWithSHAs.some(
+    ({ msg }, index) => msg !== commitsToImprove[index].message
+  );
 
   if (!messagesChanged) {
     console.log('No changes in commit messages detected, skipping rebase');
     return;
   }
 
-  const createCommitMessageFile = (message: string, index: number) => writeFileSync(`./commit-${index}.txt`, message);
-  improvedMessagesWithSHAs.forEach(({ msg }, i) => createCommitMessageFile(msg, i));
+  const createCommitMessageFile = (message: string, index: number) =>
+    writeFileSync(`./commit-${index}.txt`, message);
+  for (const [index, { msg }] of improvedMessagesWithSHAs.entries())
+    createCommitMessageFile(msg, index);
 
   writeFileSync(`./count.txt`, '0');
 
@@ -143,13 +149,13 @@ async function improveCommitMessages(commitsToImprove: { id: string; message: st
   await exec.exec('git', ['rebase', `${commitsToImprove[0].id}^`, '--exec', './rebase-exec.sh'], {
     env: {
       GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
-      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
-      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
+      GIT_COMMITTER_NAME: process.env['GITHUB_ACTOR']!,
+      GIT_COMMITTER_EMAIL: `${process.env['GITHUB_ACTOR']}@users.noreply.github.com`
     }
   });
 
   const deleteCommitMessageFile = (index: number) => unlinkSync(`./commit-${index}.txt`);
-  commitsToImprove.forEach((_commit, i) => deleteCommitMessageFile(i));
+  for (const [index] of commitsToImprove.entries()) deleteCommitMessageFile(index);
 
   unlinkSync('./count.txt');
   unlinkSync('./rebase-exec.sh');
@@ -176,7 +182,8 @@ async function run() {
       const commits = payload.commits;
 
       // Set local Git user identity for future git history manipulations
-      if (payload.pusher.email) await exec.exec('git', ['config', 'user.email', payload.pusher.email]);
+      if (payload.pusher.email)
+        await exec.exec('git', ['config', 'user.email', payload.pusher.email]);
 
       await exec.exec('git', ['config', 'user.name', payload.pusher.name]);
 
@@ -186,12 +193,27 @@ async function run() {
       await improveCommitMessages(commits);
     } else {
       outro('Wrong action.');
-      core.error(`OpenCommit was called on ${github.context.payload.action}. OpenCommit is supposed to be used on "push" action.`);
+      core.error(
+        `OpenCommit was called on ${github.context.payload.action}. OpenCommit is supposed to be used on "push" action.`
+      );
     }
-  } catch (error: any) {
-    const err = error?.message || error;
-    core.setFailed(err);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      core.setFailed(error.message);
+    } else if (typeof error === 'string') {
+      core.setFailed(error);
+    } else {
+      core.setFailed('Unknown error');
+    }
   }
 }
 
-run();
+// eslint-disable-next-line unicorn/prefer-top-level-await
+(async () => {
+  try {
+    await run();
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+})();
