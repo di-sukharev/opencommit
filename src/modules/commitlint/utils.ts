@@ -1,7 +1,7 @@
-import fs from 'fs/promises';
+import fs from 'node:fs/promises';
 
 import { COMMITLINT_LLM_CONFIG_PATH } from './constants';
-import { CommitlintLLMConfig } from './types';
+import type { CommitlintLLMConfig } from './types';
 
 /**
  * Removes the "\n" only if occurring twice
@@ -9,7 +9,7 @@ import { CommitlintLLMConfig } from './types';
 export const removeDoubleNewlines = (input: string): string => {
   const pattern = /\\n\\n/g;
   if (pattern.test(input)) {
-    const newInput = input.replace(pattern, '');
+    const newInput = input.replaceAll(pattern, '');
     return removeDoubleNewlines(newInput);
   }
 
@@ -17,31 +17,21 @@ export const removeDoubleNewlines = (input: string): string => {
 };
 
 export const commitlintLLMConfigExists = async (): Promise<boolean> => {
-  let exists;
   try {
     await fs.access(COMMITLINT_LLM_CONFIG_PATH);
-    exists = true;
-  } catch (e) {
-    exists = false;
+    return true;
+  } catch {
+    return false;
   }
-
-  return exists;
 };
 
 export const writeCommitlintLLMConfig = async (
   commitlintLLMConfig: CommitlintLLMConfig
 ): Promise<void> => {
-  await fs.writeFile(
-    COMMITLINT_LLM_CONFIG_PATH,
-    JSON.stringify(commitlintLLMConfig, null, 2)
-  );
+  await fs.writeFile(COMMITLINT_LLM_CONFIG_PATH, JSON.stringify(commitlintLLMConfig, undefined, 2));
 };
 
-export const getCommitlintLLMConfig =
-  async (): Promise<CommitlintLLMConfig> => {
-    const content = await fs.readFile(COMMITLINT_LLM_CONFIG_PATH);
-    const commitLintLLMConfig = JSON.parse(
-      content.toString()
-    ) as CommitlintLLMConfig;
-    return commitLintLLMConfig;
-  };
+export const getCommitlintLLMConfig = async (): Promise<CommitlintLLMConfig> => {
+  const content = await fs.readFile(COMMITLINT_LLM_CONFIG_PATH);
+  return JSON.parse(content.toString()) as CommitlintLLMConfig;
+};

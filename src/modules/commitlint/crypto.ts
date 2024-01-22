@@ -1,9 +1,6 @@
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
-export const computeHash = async (
-  content: string,
-  algorithm: string = 'sha256'
-): Promise<string> => {
+export function computeHash(content: string, algorithm = 'sha256'): string {
   try {
     const hash = crypto.createHash(algorithm);
     hash.update(content);
@@ -12,4 +9,4 @@ export const computeHash = async (
     console.error('Error while computing hash:', error);
     throw error;
   }
-};
+}

@@ -7,7 +7,7 @@ import { COMMITLINT_LLM_CONFIG_PATH } from './constants';
 import { computeHash } from './crypto';
 import { commitlintPrompts, inferPromptsFromCommitlintConfig } from './prompts';
 import { getCommitLintPWDConfig } from './pwd-commitlint';
-import { CommitlintLLMConfig } from './types';
+import type { CommitlintLLMConfig } from './types';
 import * as utils from './utils';
 
 const config = getConfig();
@@ -19,7 +19,7 @@ export const configureCommitlintIntegration = async (force = false) => {
 
   const fileExists = await utils.commitlintLLMConfigExists();
 
-  let commitLintConfig = await getCommitLintPWDConfig();
+  const commitLintConfig = await getCommitLintPWDConfig();
 
   // debug complete @commitlint configuration
   // await fs.writeFile(
@@ -46,8 +46,7 @@ export const configureCommitlintIntegration = async (force = false) => {
 
   const prompts = inferPromptsFromCommitlintConfig(commitLintConfig);
 
-  const consistencyPrompts =
-    commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
+  const consistencyPrompts = commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
 
   // debug prompt which will generate a consistency
   // await fs.writeFile(
@@ -55,11 +54,10 @@ export const configureCommitlintIntegration = async (force = false) => {
   //   consistencyPrompts.map((p) => p.content)
   // );
 
-  let consistency =
-    (await api.generateCommitMessage(consistencyPrompts)) || '{}';
+  let consistency = (await api.generateCommitMessage(consistencyPrompts)) ?? '{}';
 
   // Cleanup the consistency answer. Sometimes 'gpt-3.5-turbo' sends rule's back.
-  prompts.forEach((prompt) => (consistency = consistency.replace(prompt, '')));
+  for (const prompt of prompts) consistency = consistency.replace(prompt, '');
   // ... remaining might be extra set of "\n"
   consistency = utils.removeDoubleNewlines(consistency);
 
@@ -68,7 +66,7 @@ export const configureCommitlintIntegration = async (force = false) => {
     prompts,
     consistency: {
       [translation.localLanguage]: {
-        ...JSON.parse(consistency as string)
+        ...JSON.parse(consistency)
       }
     }
   };
