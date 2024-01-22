@@ -1,8 +1,8 @@
 import chalk from 'chalk';
 import { command } from 'cleye';
-import { existsSync } from 'fs';
-import fs from 'fs/promises';
-import path from 'path';
+import { existsSync } from 'node:fs';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 import { intro, outro } from '@clack/prompts';
 import { COMMANDS } from '../commands-enum';
@@ -16,7 +16,7 @@ const getHooksPath = async (): Promise<string> => {
   try {
     const hooksPath = await getCoreHooksPath();
     return path.join(hooksPath, HOOK_NAME);
-  } catch (error) {
+  } catch {
     return DEFAULT_SYMLINK_URL;
   }
 };
