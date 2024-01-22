@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 
 import { intro, outro, spinner } from '@clack/prompts';
 
-import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
+import { generateCommitMessageByDiff } from '../generate-commit-message-from-git-diff';
 import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { getConfig } from './config';
 

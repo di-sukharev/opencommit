@@ -1,7 +1,4 @@
-import {
-  ChatCompletionRequestMessage,
-  ChatCompletionRequestMessageRoleEnum
-} from 'openai';
+import { ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from 'openai';
 
 import { note } from '@clack/prompts';
 
@@ -15,17 +12,12 @@ import * as utils from './modules/commitlint/utils';
 const config = getConfig();
 const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];
 
-export const IDENTITY =
-  'You are to act as the author of a commit message in git.';
+export const IDENTITY = 'You are to act as the author of a commit message in git.';
 
 const INIT_MAIN_PROMPT = (language: string): ChatCompletionRequestMessage => ({
   role: ChatCompletionRequestMessageRoleEnum.System,
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the conventional commit convention and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
-    ${
-      config?.OCO_EMOJI
-        ? 'Use GitMoji convention to preface the commit.'
-        : 'Do not preface the commit with anything.'
-    }
+    ${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.' : 'Do not preface the commit with anything.'}
     ${
       config?.OCO_DESCRIPTION
         ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
@@ -43,18 +35,18 @@ export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
     @@ -10,7 +10,7 @@
     import {
         initWinstonLogger();
-        
+
         const app = express();
         -const port = 7799;
         +const PORT = 7799;
-        
+
         app.use(express.json());
-        
+
         @@ -34,6 +34,6 @@
         app.use((_, res, next) => {
             // ROUTES
             app.use(PROTECTED_ROUTER_URL, protectedRouter);
-            
+
             -app.listen(port, () => {
                 -  console.log(\`Server listening on port \${port}\`);
                 +app.listen(process.env.PORT || PORT, () => {
@@ -62,24 +54,18 @@ export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
                 });`
 };
 
-const INIT_CONSISTENCY_PROMPT = (
-  translation: ConsistencyPrompt
-): ChatCompletionRequestMessage => ({
+const INIT_CONSISTENCY_PROMPT = (translation: ConsistencyPrompt): ChatCompletionRequestMessage => ({
   role: ChatCompletionRequestMessageRoleEnum.Assistant,
   content: `${config?.OCO_EMOJI ? '🐛 ' : ''}${translation.commitFix}
 ${config?.OCO_EMOJI ? '✨ ' : ''}${translation.commitFeat}
 ${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
 });
 
-export const getMainCommitPrompt = async (): Promise<
-  ChatCompletionRequestMessage[]
-> => {
+export const getMainCommitPrompt = async (): Promise<ChatCompletionRequestMessage[]> => {
   switch (config?.OCO_PROMPT_MODULE) {
-    case '@commitlint':
+    case '@commitlint': {
       if (!(await utils.commitlintLLMConfigExists())) {
-        note(
-          `OCO_PROMPT_MODULE is @commitlint but you haven't generated consistency for this project yet.`
-        );
+        note(`OCO_PROMPT_MODULE is @commitlint but you haven't generated consistency for this project yet.`);
         await configureCommitlintIntegration();
       }
 
@@ -87,24 +73,15 @@ export const getMainCommitPrompt = async (): Promise<
       const commitLintConfig = await utils.getCommitlintLLMConfig();
 
       return [
-        commitlintPrompts.INIT_MAIN_PROMPT(
-          translation.localLanguage,
-          commitLintConfig.prompts
-        ),
+        commitlintPrompts.INIT_MAIN_PROMPT(translation.localLanguage, commitLintConfig.prompts),
         INIT_DIFF_PROMPT,
-        INIT_CONSISTENCY_PROMPT(
-          commitLintConfig.consistency[
-            translation.localLanguage
-          ] as ConsistencyPrompt
-        )
+        INIT_CONSISTENCY_PROMPT(commitLintConfig.consistency[translation.localLanguage])
       ];
+    }
 
-    default:
+    default: {
       // conventional-commit
-      return [
-        INIT_MAIN_PROMPT(translation.localLanguage),
-        INIT_DIFF_PROMPT,
-        INIT_CONSISTENCY_PROMPT(translation)
-      ];
+      return [INIT_MAIN_PROMPT(translation.localLanguage), INIT_DIFF_PROMPT, INIT_CONSISTENCY_PROMPT(translation)];
+    }
   }
 };

@@ -5,8 +5,8 @@ import fs from 'fs/promises';
 import path from 'path';
 
 import { intro, outro } from '@clack/prompts';
+import { COMMANDS } from '../commands-enum';
 
-import { COMMANDS } from '../CommandsEnum.js';
 import { assertGitRepo, getCoreHooksPath } from '../utils/git.js';
 
 const HOOK_NAME = 'prepare-commit-msg';

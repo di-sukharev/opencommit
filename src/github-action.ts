@@ -6,7 +6,7 @@ import github from '@actions/github';
 import { intro, outro } from '@clack/prompts';
 import { PushEvent } from '@octokit/webhooks-types';
 
-import { generateCommitMessageByDiff } from './generateCommitMessageFromGitDiff';
+import { generateCommitMessageByDiff } from './generate-commit-message-from-git-diff';
 import { randomIntFromInterval } from './utils/randomIntFromInterval';
 import { sleep } from './utils/sleep';
 
@@ -20,42 +20,34 @@ const context = github.context;
 const owner = context.repo.owner;
 const repo = context.repo.repo;
 
-type SHA = string;
-type Diff = string;
-
 async function getCommitDiff(commitSha: string) {
-  const diffResponse = await octokit.request<string>(
-    'GET /repos/{owner}/{repo}/commits/{ref}',
-    {
-      owner,
-      repo,
-      ref: commitSha,
-      headers: {
-        Accept: 'application/vnd.github.v3.diff'
-      }
+  const diffResponse = await octokit.request<string>('GET /repos/{owner}/{repo}/commits/{ref}', {
+    owner,
+    repo,
+    ref: commitSha,
+    headers: {
+      Accept: 'application/vnd.github.v3.diff'
     }
-  );
+  });
   return { sha: commitSha, diff: diffResponse.data };
 }
 
 interface DiffAndSHA {
-  sha: SHA;
-  diff: Diff;
+  sha: string;
+  diff: string;
 }
 
 interface MsgAndSHA {
-  sha: SHA;
+  sha: string;
   msg: string;
 }
 
 // send only 3-4 size chunks of diffs in steps,
 // because openAI restricts "too many requests" at once with 429 error
 async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
-  const chunkSize = diffsAndSHAs!.length % 2 === 0 ? 4 : 3;
+  const chunkSize = diffsAndSHAs.length % 2 === 0 ? 4 : 3;
   outro(`Improving commit messages in chunks of ${chunkSize}.`);
-  const improvePromises = diffsAndSHAs!.map((commit) =>
-    generateCommitMessageByDiff(commit.diff)
-  );
+  const improvePromises = diffsAndSHAs.map((commit) => generateCommitMessageByDiff(commit.diff));
 
   let improvedMessagesAndSHAs: MsgAndSHA[] = [];
   for (let step = 0; step < improvePromises.length; step += chunkSize) {
@@ -64,25 +56,20 @@ async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
     try {
       const chunkOfImprovedMessages = await Promise.all(chunkOfPromises);
 
-      const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map(
-        (improvedMsg, i) => {
-          const index = improvedMessagesAndSHAs.length;
-          const sha = diffsAndSHAs![index + i].sha;
+      const chunkOfImprovedMessagesBySha = chunkOfImprovedMessages.map((improvedMsg, i) => {
+        const index = improvedMessagesAndSHAs.length;
+        const sha = diffsAndSHAs[index + i].sha;
 
-          return { sha, msg: improvedMsg };
-        }
-      );
+        return { sha, msg: improvedMsg };
+      });
 
       improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
 
       // sometimes openAI errors with 429 code (too many requests),
       // so lets sleep a bit
-      const sleepFor =
-        1000 * randomIntFromInterval(1, 5) + 100 * randomIntFromInterval(1, 5);
+      const sleepFor = 1000 * randomIntFromInterval(1, 5) + 100 * randomIntFromInterval(1, 5);
 
-      outro(
-        `Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`
-      );
+      outro(`Improved ${chunkOfPromises.length} messages. Sleeping for ${sleepFor}`);
 
       await sleep(sleepFor);
     } catch (error) {
@@ -113,9 +100,7 @@ const getDiffsBySHAs = async (SHAs: string[]) => {
   return diffs;
 };
 
-async function improveCommitMessages(
-  commitsToImprove: { id: string; message: string }[]
-): Promise<void> {
+async function improveCommitMessages(commitsToImprove: { id: string; message: string }[]): Promise<void> {
   if (commitsToImprove.length) {
     outro(`Found ${commitsToImprove.length} commits to improve.`);
   } else {
@@ -130,26 +115,18 @@ async function improveCommitMessages(
 
   const improvedMessagesWithSHAs = await improveMessagesInChunks(diffsWithSHAs);
 
-  console.log(
-    `Improved ${improvedMessagesWithSHAs.length} commits: `,
-    improvedMessagesWithSHAs
-  );
+  console.log(`Improved ${improvedMessagesWithSHAs.length} commits: `, improvedMessagesWithSHAs);
 
   // Check if there are actually any changes in the commit messages
-  const messagesChanged = improvedMessagesWithSHAs.some(
-    ({ sha, msg }, index) => msg !== commitsToImprove[index].message
-  );
+  const messagesChanged = improvedMessagesWithSHAs.some(({ sha, msg }, index) => msg !== commitsToImprove[index].message);
 
   if (!messagesChanged) {
     console.log('No changes in commit messages detected, skipping rebase');
     return;
   }
 
-  const createCommitMessageFile = (message: string, index: number) =>
-    writeFileSync(`./commit-${index}.txt`, message);
-  improvedMessagesWithSHAs.forEach(({ msg }, i) =>
-    createCommitMessageFile(msg, i)
-  );
+  const createCommitMessageFile = (message: string, index: number) => writeFileSync(`./commit-${index}.txt`, message);
+  improvedMessagesWithSHAs.forEach(({ msg }, i) => createCommitMessageFile(msg, i));
 
   writeFileSync(`./count.txt`, '0');
 
@@ -163,20 +140,15 @@ async function improveCommitMessages(
 
   await exec.exec(`chmod +x ./rebase-exec.sh`);
 
-  await exec.exec(
-    'git',
-    ['rebase', `${commitsToImprove[0].id}^`, '--exec', './rebase-exec.sh'],
-    {
-      env: {
-        GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
-        GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
-        GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
-      }
+  await exec.exec('git', ['rebase', `${commitsToImprove[0].id}^`, '--exec', './rebase-exec.sh'], {
+    env: {
+      GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
+      GIT_COMMITTER_NAME: process.env.GITHUB_ACTOR!,
+      GIT_COMMITTER_EMAIL: `${process.env.GITHUB_ACTOR}@users.noreply.github.com`
     }
-  );
+  });
 
-  const deleteCommitMessageFile = (index: number) =>
-    unlinkSync(`./commit-${index}.txt`);
+  const deleteCommitMessageFile = (index: number) => unlinkSync(`./commit-${index}.txt`);
   commitsToImprove.forEach((_commit, i) => deleteCommitMessageFile(i));
 
   unlinkSync('./count.txt');
@@ -204,8 +176,7 @@ async function run() {
       const commits = payload.commits;
 
       // Set local Git user identity for future git history manipulations
-      if (payload.pusher.email)
-        await exec.exec('git', ['config', 'user.email', payload.pusher.email]);
+      if (payload.pusher.email) await exec.exec('git', ['config', 'user.email', payload.pusher.email]);
 
       await exec.exec('git', ['config', 'user.name', payload.pusher.name]);
 
@@ -215,9 +186,7 @@ async function run() {
       await improveCommitMessages(commits);
     } else {
       outro('Wrong action.');
-      core.error(
-        `OpenCommit was called on ${github.context.payload.action}. OpenCommit is supposed to be used on "push" action.`
-      );
+      core.error(`OpenCommit was called on ${github.context.payload.action}. OpenCommit is supposed to be used on "push" action.`);
     }
   } catch (error: any) {
     const err = error?.message || error;

@@ -14,7 +14,7 @@ import {
   DEFAULT_MODEL_TOKEN_LIMIT,
   getConfig
 } from './commands/config';
-import { GenerateCommitMessageErrorEnum } from './generateCommitMessageFromGitDiff';
+import { GenerateCommitMessageErrorEnum } from './generate-commit-message-from-git-diff';
 import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();

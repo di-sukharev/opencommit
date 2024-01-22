@@ -3,7 +3,7 @@ import { execa } from 'execa';
 
 import { confirm, intro, isCancel, multiselect, outro, select, spinner } from '@clack/prompts';
 
-import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
+import { generateCommitMessageByDiff } from '../generate-commit-message-from-git-diff';
 import { assertGitRepo, getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { trytm } from '../utils/trytm';
 import { getConfig } from './config';

@@ -8,7 +8,7 @@ import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
 
-const generateCommitMessageChatCompletionPrompt = async (diff: string): Promise<Array<ChatCompletionRequestMessage>> => {
+const generateCommitMessageChatCompletionPrompt = async (diff: string): Promise<ChatCompletionRequestMessage[]> => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
 
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
@@ -32,7 +32,7 @@ const ADJUSTMENT_FACTOR = 20;
 export const generateCommitMessageByDiff = async (diff: string): Promise<string> => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
 
-  const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map((msg) => tokenCount(msg.content) + 4).reduce((a, b) => a + b, 0);
+  const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map((message) => tokenCount(message.content) + 4).reduce((a, b) => a + b, 0);
 
   const MAX_REQUEST_TOKENS = DEFAULT_MODEL_TOKEN_LIMIT - ADJUSTMENT_FACTOR - INIT_MESSAGES_PROMPT_LENGTH - config?.OCO_OPENAI_MAX_TOKENS;
 
@@ -96,8 +96,8 @@ function splitDiff(diff: string, maxChangeLength: number) {
   for (let line of lines) {
     // If a single line exceeds maxChangeLength, split it into multiple lines
     while (tokenCount(line) > maxChangeLength) {
-      const subLine = line.substring(0, maxChangeLength);
-      line = line.substring(maxChangeLength);
+      const subLine = line.slice(0, Math.max(0, maxChangeLength));
+      line = line.slice(Math.max(0, maxChangeLength));
       splitDiffs.push(subLine);
     }
 

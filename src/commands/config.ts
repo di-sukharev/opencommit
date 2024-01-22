@@ -8,7 +8,7 @@ import { join as pathJoin } from 'node:path';
 
 import { intro, outro } from '@clack/prompts';
 
-import { COMMANDS } from '../CommandsEnum';
+import { COMMANDS } from '../commands-enum';
 import { getI18nLocal } from '../i18n';
 
 dotenv.config();

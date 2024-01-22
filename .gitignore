@@ -11,3 +11,5 @@ src/*.json
 temp/
 test.ts
 uncaughtExceptions.log
+
+out/
