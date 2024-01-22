@@ -18,12 +18,16 @@ const getGitRemotes = async () => {
 // Check for the presence of message templates
 const checkMessageTemplate = (extraArguments: string[]): string | false => {
   for (const key in extraArguments) {
-    if (extraArguments[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER)) return extraArguments[key];
+    if (extraArguments[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
+      return extraArguments[key];
   }
   return false;
 };
 
-const generateCommitMessageFromGitDiff = async (diff: string, extraArguments: string[]): Promise<void> => {
+const generateCommitMessageFromGitDiff = async (
+  diff: string,
+  extraArguments: string[]
+): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
@@ -33,7 +37,10 @@ const generateCommitMessageFromGitDiff = async (diff: string, extraArguments: st
 
     const messageTemplate = checkMessageTemplate(extraArguments);
     if (config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === 'string') {
-      commitMessage = messageTemplate.replace(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER, commitMessage);
+      commitMessage = messageTemplate.replace(
+        config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+        commitMessage
+      );
     }
 
     commitSpinner.stop('📝 Commit message generated');
@@ -98,7 +105,9 @@ ${chalk.grey('——————————————————')}`
 
           const { stdout } = await execa('git', ['push', selectedRemote]);
 
-          pushSpinner.stop(`${chalk.green('✔')} Successfully pushed all commits to ${selectedRemote}`);
+          pushSpinner.stop(
+            `${chalk.green('✔')} Successfully pushed all commits to ${selectedRemote}`
+          );
 
           if (stdout) outro(stdout);
         }
@@ -107,8 +116,11 @@ ${chalk.grey('——————————————————')}`
   } catch (error) {
     commitSpinner.stop('📝 Commit message generated');
 
-    const err = error as Error;
-    outro(`${chalk.red('✖')} ${err?.message || err}`);
+    if (error instanceof Error) {
+      outro(`${chalk.red('✖')} ${error.message}`);
+    } else {
+      outro(`${chalk.red('✖')} ${error}`);
+    }
     process.exit(1);
   }
 };
@@ -171,9 +183,12 @@ export async function commit(extraArguments: string[] = [], isStageAllFlag = fal
     process.exit(1);
   }
 
-  stagedFilesSpinner.stop(`${stagedFiles.length} staged files:\n${stagedFiles.map((file) => `  ${file}`).join('\n')}`);
+  const stagedFilesMessage = stagedFiles.map((file) => `  ${file}`).join('\n');
+  stagedFilesSpinner.stop(`${stagedFiles.length} staged files:\n${stagedFilesMessage}`);
 
-  const [, generateCommitError] = await trytm(generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }), extraArguments));
+  const [, generateCommitError] = await trytm(
+    generateCommitMessageFromGitDiff(await getDiff({ files: stagedFiles }), extraArguments)
+  );
 
   if (generateCommitError) {
     outro(`${chalk.red('✖')} ${generateCommitError}`);

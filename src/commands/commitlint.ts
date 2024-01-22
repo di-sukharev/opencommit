@@ -25,7 +25,7 @@ export const commitlintConfigCommand = command(
       if (mode === CONFIG_MODES.get) {
         const commitLintConfig = await getCommitlintLLMConfig();
 
-        outro(commitLintConfig.toString());
+        outro(JSON.stringify(commitLintConfig));
 
         return;
       }

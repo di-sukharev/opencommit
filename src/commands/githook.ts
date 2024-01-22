@@ -56,8 +56,7 @@ export const hookCommand = command(
             realPath = null;
           }
 
-          if (realPath === HOOK_URL)
-            return outro(`OpenCommit is already set as '${HOOK_NAME}'`);
+          if (realPath === HOOK_URL) return outro(`OpenCommit is already set as '${HOOK_NAME}'`);
 
           throw new Error(
             `Different ${HOOK_NAME} is already set. Remove it before setting opencommit as '${HOOK_NAME}' hook.`
@@ -72,9 +71,7 @@ export const hookCommand = command(
       }
 
       if (mode === 'unset') {
-        intro(
-          `unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`
-        );
+        intro(`unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`);
 
         if (!(await isHookExists())) {
           return outro(
@@ -93,9 +90,7 @@ export const hookCommand = command(
         return outro(`${chalk.green('✔')} Hook is removed`);
       }
 
-      throw new Error(
-        `Unsupported mode: ${mode}. Supported modes are: 'set' or 'unset'`
-      );
+      throw new Error(`Unsupported mode: ${mode}. Supported modes are: 'set' or 'unset'`);
     } catch (error) {
       outro(`${chalk.red('✖')} ${error}`);
       process.exit(1);

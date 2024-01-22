@@ -12,7 +12,9 @@ const [messageFilePath, commitSource] = process.argv.slice(2);
 export const prepareCommitMessageHook = async (isStageAllFlag = false) => {
   try {
     if (!messageFilePath) {
-      throw new Error('Commit message file path is missing. This file should be called from the "prepare-commit-msg" git hook');
+      throw new Error(
+        'Commit message file path is missing. This file should be called from the "prepare-commit-msg" git hook'
+      );
     }
 
     if (commitSource) return;
