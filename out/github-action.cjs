@@ -27990,8 +27990,32 @@ var configValidators = {
       `${value} is not supported yet, use '@commitlint' or 'conventional-commit' (default)`
     );
     return value;
+  },
+  ["OCO_INVALID_COMMIT_TITLE_REGEX"](value) {
+    if (typeof value !== "string" || !isValidRegex(value)) {
+      throw new Error("OCO_INVALID_COMMIT_TITLE_REGEX must be a valid regular expression string");
+    }
+    return value;
+  },
+  ["OCO_INVALID_COMMIT_DESCRIPTION_REGEX"](value) {
+    if (typeof value !== "string" || !isValidRegex(value)) {
+      throw new Error("OCO_INVALID_COMMIT_DESCRIPTION_REGEX must be a valid regular expression string");
+    }
+    return value;
   }
+
+
 };
+
+function isValidRegex(pattern) {
+  try {
+    new RegExp(pattern);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var getConfig = () => {
   const configFromEnv = {
@@ -28003,7 +28027,11 @@ var getConfig = () => {
     OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo-16k",
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit"
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit",
+    OCO_INVALID_COMMIT_TITLE_REGEX: process.env.OCO_INVALID_COMMIT_TITLE_REGEX || `^.{0,5}`,
+    OCO_INVALID_COMMIT_DESCRIPTION_REGEX: process.env.OCO_INVALID_COMMIT_DESCRIPTION_REGEX || `^.{0,5}`
+
+
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -28737,13 +28765,55 @@ async function improveCommitMessages(commitsToImprove) {
   await import_exec.default.exec("git", ["push", `--force`]);
   ce("Done \u{1F9D9}");
 }
+
 async function run() {
   ae("OpenCommit \u2014 improving lame commit messages");
+
+
+
+function isCommitTitleInappropriate(commitTitle) {
+  const regex = new RegExp(config2?.OCO_INVALID_COMMIT_TITLE_REGEX);
+  return regex.test(commitTitle);
+}
+
+function isCommitDescriptionInappropriate(commitDescription) {
+  const regex = new RegExp(config2?.OCO_INVALID_COMMIT_DESCRIPTION_REGEX);
+  return regex.test(commitDescription);
+}
+
+
+async function run() {
+  ae("OpenCommit \u2014 improving lame commit messages");
+
+
   try {
     if (import_github.default.context.eventName === "push") {
       ce(`Processing commits in a Push event`);
       const payload = import_github.default.context.payload;
       const commits = payload.commits;
+      const latestCommitSha = payload.commits[payload.commits.length - 1].id;
+      const latestCommit = await octokit.request("GET /repos/{owner}/{repo}/commits/{ref}", {
+        owner,
+        repo,
+        ref: latestCommitSha
+      });
+
+      const commitMessageLines = latestCommit.data.commit.message.split('\n');
+      const commitTitle = commitMessageLines[0].trim();
+      const commitDescription = commitMessageLines.slice(1).join('\n').trim();
+
+      ce("Evaluating the latest commit title and description");
+      ce(`Title: ${commitTitle}`);
+      ce(`Description: ${commitDescription}`);
+
+      if (isCommitTitleInappropriate(commitTitle) || isCommitDescriptionInappropriate(commitDescription)) {
+        ce("Inappropriate commit title or description detected. Starting message improvement.");
+
+      } else {
+        ce("The commit title and description are appropriate");
+        return;
+      }
+
       if (payload.pusher.email)
         await import_exec.default.exec("git", ["config", "user.email", payload.pusher.email]);
       await import_exec.default.exec("git", ["config", "user.name", payload.pusher.name]);

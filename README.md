@@ -317,6 +317,17 @@ jobs:
           OCO_MODEL: gpt-3.5-turbo-16k
           OCO_LANGUAGE: en
           OCO_PROMPT_MODULE: conventional-commit
+          # Regular expression for GitHub Actions. 
+          # Skips processing if a commit has a properly formatted title. 
+          # This regex checks for titles shorter than 6 characters, flagging them as inappropriate.
+          OCO_INVALID_COMMIT_TITLE_REGEX: ^.{0,5}
+          # Regular expression for GitHub Actions. 
+          # Skips processing if a commit has a properly formatted description. 
+          # This regex checks for descriptions shorter than 6 characters, flagging them as inappropriate.
+          OCO_INVALID_COMMIT_DESCRIPTION_REGEX: ^.{0,5}
+
+
+
 ```
 
 That is it. Now when you push to any branch in your repo — all NEW commits are being improved by your never-tired AI.
