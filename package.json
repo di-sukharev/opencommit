@@ -30,6 +30,7 @@
   "scripts": {
     "build": "tsx esbuild.config.ts",
     "build:push": "pnpm build && git add . && git commit -m 'build' && git push",
+    "build:tsup": "tsup src/cli.ts",
     "deploy": "pnpm version patch && pnpm run build:push && git push --tags && pnpm publish --tag latest",
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write src",
