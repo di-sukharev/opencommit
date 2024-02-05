@@ -32,6 +32,20 @@ export enum CONFIG_MODES {
   set = 'set'
 }
 
+type MODEL_NAME =
+  | 'gpt-3.5-turbo'
+  | 'gpt-3.5-turbo-16k'
+  | 'gpt-4'
+  | 'gpt-4-1106-preview'
+  | 'gpt-4-0125-preview'
+  | 'gpt-4-turbo-preview';
+
+type Config = Record<CONFIG_KEYS, unknown>;
+
+type MODELS = Record<MODEL_NAME, { tokenLimit: number }>;
+
+type MODEL_LIST = keyof MODELS;
+
 function validateConfig(key: string, condition: boolean, validationMessage: string) {
   if (!condition) {
     outro(`${chalk.red('✖')} Unsupported config key ${key}: ${validationMessage}`);
@@ -106,7 +120,9 @@ export const configValidators = {
         'gpt-4',
         'gpt-3.5-turbo-16k',
         'gpt-3.5-turbo-0613',
-        'gpt-4-1106-preview'
+        'gpt-4-1106-preview',
+        'gpt-4-0125-preview',
+        'gpt-4-turbo-preview'
       ].includes(value),
       `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo' or 'gpt-4-1106-preview'`
     );
