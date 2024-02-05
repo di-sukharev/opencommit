@@ -54,7 +54,7 @@
     "ignore": "^5.3.1",
     "ini": "^4.1.1",
     "inquirer": "^9.2.14",
-    "openai": "^3.3.0",
+    "openai": "^4.26.1",
     "semver": "^7.6.0"
   },
   "devDependencies": {
