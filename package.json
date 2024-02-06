@@ -33,7 +33,7 @@
     "build:tsup": "tsup src/cli.ts",
     "deploy": "pnpm version patch && pnpm run build:push && git push --tags && pnpm publish --tag latest",
     "dev": "tsx ./src/cli.ts",
-    "format": "prettier --write src",
+    "format": "prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "node ./dist/cli.cjs",

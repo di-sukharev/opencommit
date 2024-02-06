@@ -74,7 +74,7 @@ OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 ```
 
-### Global config for all repos
+### Global config for all repositories
 
 Local config still has more priority than Global config, but you may set `OCO_MODEL` and `OCO_LOCALE` globally and set local configs for `OCO_EMOJI` and `OCO_DESCRIPTION` per repo which is more convenient.
 
@@ -141,7 +141,7 @@ All available languages are currently listed in the [i18n](https://github.com/di
 
 ### Switch to `@commitlint`
 
-OpenCommit allows you to choose the prompt module used to generate commit messages. By default, OpenCommit uses its conventional-commit message generator. However, you can switch to using the `@commitlint` prompt module if you prefer. This option lets you generate commit messages in respect with the local config.
+OpenCommit allows you to choose the prompt module used to generate commit messages. By default, OpenCommit uses its conventional-commit message generator. However, you can switch to using the `@commitlint` prompt module if you prefer. This option lets you generate commit messages using the local config.
 
 You can set this option by running the following command:
 
@@ -334,6 +334,6 @@ You pay for your requests to OpenAI API on your own.
 
 OpenCommit stores your key locally.
 
-OpenCommit by default uses 3.5-turbo-16k model, it should not exceed $0.10 per casual working day.
+OpenCommit by default uses the gpt-3.5-turbo-16k model, it should not exceed $0.10 per casual working day.
 
 You may switch to gpt-4, it's better but more expensive.

@@ -55,42 +55,11 @@ function validateConfig(key: string, condition: boolean, validationMessage: stri
 }
 
 export const configValidators = {
-  [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
-    validateConfig(CONFIG_KEYS.OCO_OPENAI_API_KEY, value, 'Cannot be empty');
-    validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.startsWith('sk-'),
-      'Must start with "sk-"'
-    );
-    validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51,
-      'Must be 51 characters long'
-    );
-
-    return value;
-  },
-
   [CONFIG_KEYS.OCO_DESCRIPTION](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_DESCRIPTION,
       typeof value === 'boolean',
       'Must be true or false'
-    );
-
-    return value;
-  },
-
-  [CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS](value: any) {
-    // If the value is a string, convert it to a number.
-    if (typeof value === 'string') {
-      value = Number.parseInt(value);
-      validateConfig(CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS, !Number.isNaN(value), 'Must be a number');
-    }
-    validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
-      value ? typeof value === 'number' : undefined,
-      'Must be a number'
     );
 
     return value;
@@ -107,8 +76,12 @@ export const configValidators = {
     return getI18nLocal(value);
   },
 
-  [CONFIG_KEYS.OCO_OPENAI_BASE_PATH](value: any) {
-    validateConfig(CONFIG_KEYS.OCO_OPENAI_BASE_PATH, typeof value === 'string', 'Must be string');
+  [CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+      value.startsWith('$'),
+      `${value} must start with $, for example: '$msg'`
+    );
     return value;
   },
 
@@ -128,12 +101,39 @@ export const configValidators = {
     );
     return value;
   },
-  [CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER](value: any) {
+
+  [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
+    validateConfig(CONFIG_KEYS.OCO_OPENAI_API_KEY, value, 'Cannot be empty');
     validateConfig(
-      CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
-      value.startsWith('$'),
-      `${value} must start with $, for example: '$msg'`
+      CONFIG_KEYS.OCO_OPENAI_API_KEY,
+      value.startsWith('sk-'),
+      'Must start with "sk-"'
     );
+    validateConfig(
+      CONFIG_KEYS.OCO_OPENAI_API_KEY,
+      config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51,
+      'Must be 51 characters long'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_OPENAI_BASE_PATH](value: any) {
+    validateConfig(CONFIG_KEYS.OCO_OPENAI_BASE_PATH, typeof value === 'string', 'Must be string');
+    return value;
+  },
+  [CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS](value: any) {
+    // If the value is a string, convert it to a number.
+    if (typeof value === 'string') {
+      value = Number.parseInt(value);
+      validateConfig(CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS, !Number.isNaN(value), 'Must be a number');
+    }
+    validateConfig(
+      CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
+      value ? typeof value === 'number' : undefined,
+      'Must be a number'
+    );
+
     return value;
   },
 
@@ -156,16 +156,16 @@ const configPath = pathJoin(homedir(), '.opencommit');
 
 export const getConfig = (): ConfigType | null => {
   const configFromEnvironment = {
+    OCO_DESCRIPTION: process.env['OCO_DESCRIPTION'] === 'true',
+    OCO_EMOJI: process.env['OCO_EMOJI'] === 'true',
+    OCO_LANGUAGE: process.env['OCO_LANGUAGE'] ?? 'en',
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env['OCO_MESSAGE_TEMPLATE_PLACEHOLDER'] ?? '$msg',
+    OCO_MODEL: process.env['OCO_MODEL'] ?? 'gpt-3.5-turbo-16k',
     OCO_OPENAI_API_KEY: process.env['OCO_OPENAI_API_KEY'],
+    OCO_OPENAI_BASE_PATH: process.env['OCO_OPENAI_BASE_PATH'],
     OCO_OPENAI_MAX_TOKENS: process.env['OCO_OPENAI_MAX_TOKENS']
       ? Number(process.env['OCO_OPENAI_MAX_TOKENS'])
       : undefined,
-    OCO_OPENAI_BASE_PATH: process.env['OCO_OPENAI_BASE_PATH'],
-    OCO_DESCRIPTION: process.env['OCO_DESCRIPTION'] === 'true',
-    OCO_EMOJI: process.env['OCO_EMOJI'] === 'true',
-    OCO_MODEL: process.env['OCO_MODEL'] ?? 'gpt-3.5-turbo-16k',
-    OCO_LANGUAGE: process.env['OCO_LANGUAGE'] ?? 'en',
-    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env['OCO_MESSAGE_TEMPLATE_PLACEHOLDER'] ?? '$msg',
     OCO_PROMPT_MODULE: process.env['OCO_PROMPT_MODULE'] ?? 'conventional-commit'
   };
 
@@ -231,7 +231,7 @@ export const configCommand = command(
   (argv) => {
     intro('opencommit — config');
     try {
-      const { mode, keyValues } = argv._;
+      const { keyValues, mode } = argv._;
 
       if (mode === CONFIG_MODES.get) {
         const config = getConfig() ?? {};

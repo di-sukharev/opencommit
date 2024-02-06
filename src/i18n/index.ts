@@ -40,47 +40,47 @@ export enum I18nLocals {
 }
 
 export const i18n = {
-  en,
-  zh_CN,
-  zh_TW,
-  ja,
   cs,
   de,
-  fr,
-  it,
-  ko,
-  pt_br,
-  vi_VN,
+  en,
   es_ES,
-  sv,
+  fr,
   id_ID,
+  it,
+  ja,
+  ko,
   nl,
-  ru,
   pl,
+  pt_br,
+  ru,
+  sv,
+  th,
   tr,
-  th
+  vi_VN,
+  zh_CN,
+  zh_TW
 };
 
 export const I18N_CONFIG_ALIAS: Record<string, string[]> = {
-  zh_CN: ['zh_CN', '简体中文', '中文', '简体'],
-  zh_TW: ['zh_TW', '繁體中文', '繁體'],
-  ja: ['ja', 'Japanese', 'にほんご'],
-  ko: ['ko', 'Korean', '한국어'],
   cs: ['cs', 'Czech', 'česky'],
   de: ['de', 'German', 'Deutsch'],
-  fr: ['fr', 'French', 'française'],
-  it: ['it', 'Italian', 'italiano'],
-  nl: ['nl', 'Dutch', 'Nederlands'],
-  pt_br: ['pt_br', 'Portuguese', 'português'],
-  vi_VN: ['vi_VN', 'Vietnamese', 'tiếng Việt'],
   en: ['en', 'English', 'english'],
   es_ES: ['es_ES', 'Spanish', 'español'],
-  sv: ['sv', 'Swedish', 'Svenska'],
-  ru: ['ru', 'Russian', 'русский'],
+  fr: ['fr', 'French', 'française'],
   id_ID: ['id_ID', 'Bahasa', 'bahasa'],
+  it: ['it', 'Italian', 'italiano'],
+  ja: ['ja', 'Japanese', 'にほんご'],
+  ko: ['ko', 'Korean', '한국어'],
+  nl: ['nl', 'Dutch', 'Nederlands'],
   pl: ['pl', 'Polish', 'Polski'],
+  pt_br: ['pt_br', 'Portuguese', 'português'],
+  ru: ['ru', 'Russian', 'русский'],
+  sv: ['sv', 'Swedish', 'Svenska'],
+  th: ['th', 'Thai', 'ไทย'],
   tr: ['tr', 'Turkish', 'Turkish'],
-  th: ['th', 'Thai', 'ไทย']
+  vi_VN: ['vi_VN', 'Vietnamese', 'tiếng Việt'],
+  zh_CN: ['zh_CN', '简体中文', '中文', '简体'],
+  zh_TW: ['zh_TW', '繁體中文', '繁體']
 };
 
 export function getI18nLocal(value: string): string | boolean {

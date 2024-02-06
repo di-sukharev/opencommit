@@ -23,7 +23,7 @@ module.exports = {
     project: true,
     tsconfigRootDir: __dirname
   },
-  plugins: ['@typescript-eslint', 'perfectionist'],
+  plugins: ['@typescript-eslint', 'perfectionist', 'simple-import-sort'],
   root: true,
   rules: {
     '@typescript-eslint/no-unused-vars': 'error',
