@@ -93,7 +93,7 @@ ${chalk.grey('——————————————————')}`
       } else {
         const selectedRemote = (await select({
           message: 'Choose a remote to push to',
-          options: remotes.map((remote) => ({ value: remote, label: remote }))
+          options: remotes.map((remote) => ({ label: remote, value: remote }))
         })) as string;
 
         if (isCancel(selectedRemote)) {
@@ -169,8 +169,8 @@ export async function commit(extraArguments: string[] = [], isStageAllFlag = fal
       const files = (await multiselect({
         message: chalk.cyan('Select the files you want to add to the commit:'),
         options: changedFiles.map((file) => ({
-          value: file,
-          label: file
+          label: file,
+          value: file
         }))
       })) as string[];
 

@@ -12,23 +12,30 @@ module.exports = {
     'plugin:unicorn/recommended',
     'plugin:prettier/recommended'
   ],
+  overrides: [
+    {
+      extends: ['plugin:@typescript-eslint/disable-type-checked'],
+      files: ['*.js', '*.cjs', '*.mjs']
+    }
+  ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: true,
     tsconfigRootDir: __dirname
   },
-  plugins: ['@typescript-eslint'],
+  plugins: ['@typescript-eslint', 'perfectionist'],
   root: true,
   rules: {
-    'unicorn/no-process-exit': 'off',
+    '@typescript-eslint/no-unused-vars': 'error',
     // Note: you must disable the base rule as it can report incorrect errors
     'no-unused-vars': 'off',
-    '@typescript-eslint/no-unused-vars': 'error'
-  },
-  overrides: [
-    {
-      files: ['*.js', '*.cjs'],
-      extends: ['plugin:@typescript-eslint/disable-type-checked']
-    }
-  ]
+    'perfectionist/sort-objects': [
+      'error',
+      {
+        order: 'asc',
+        type: 'natural'
+      }
+    ],
+    'unicorn/no-process-exit': 'off'
+  }
 };

@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import { type ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from 'openai';
+import OpenAI from 'openai';
 
 import { outro } from '@clack/prompts';
 import {
@@ -176,7 +176,7 @@ function getPrompt(
 }
 
 export function inferPromptsFromCommitlintConfig(config: QualifiedConfig): string[] {
-  const { rules, prompt } = config;
+  const { prompt, rules } = config;
   if (!rules) return [];
   return Object.keys(rules)
     .map((ruleName) => getPrompt(ruleName, rules[ruleName] as RuleConfigTuple<unknown>, prompt))
@@ -193,9 +193,10 @@ const STRUCTURE_OF_COMMIT = `
 - Description of commit is composed of body and footer (optional): <body-of-commit>\n<footer(s)-of-commit>`;
 
 // Prompt to generate LLM-readable rules based on @commitlint rules.
-const GEN_COMMITLINT_CONSISTENCY_PROMPT = (prompts: string[]): ChatCompletionRequestMessage[] => [
+const GEN_COMMITLINT_CONSISTENCY_PROMPT = (
+  prompts: string[]
+): OpenAI.Chat.ChatCompletionMessageParam[] => [
   {
-    role: ChatCompletionRequestMessageRoleEnum.Assistant,
     // prettier-ignore
     content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages for two different changes in a single codebase and output them in the provided JSON format: one for a bug fix and another for a new feature.
 
@@ -224,7 +225,8 @@ Additional Details:
 - Changing the variable 'port' to uppercase 'PORT' is considered a bug fix.
 - Allowing the server to listen on a port specified through the environment variable is considered a new feature.
 
-Example Git Diff is to follow:`
+Example Git Diff is to follow:`,
+    role: 'assistant'
   },
   INIT_DIFF_PROMPT
 ];
@@ -236,8 +238,10 @@ Example Git Diff is to follow:`
  * @param prompts
  * @returns
  */
-const INIT_MAIN_PROMPT = (language: string, prompts: string[]): ChatCompletionRequestMessage => ({
-  role: ChatCompletionRequestMessageRoleEnum.System,
+const INIT_MAIN_PROMPT = (
+  language: string,
+  prompts: string[]
+): OpenAI.Chat.ChatCompletionMessageParam => ({
   // prettier-ignore
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
 ${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.' : 'Do not preface the commit with anything.'}
@@ -250,10 +254,11 @@ You will strictly follow the following conventions to generate the content of th
 The conventions refers to the following structure of commit message:
 ${STRUCTURE_OF_COMMIT}
 
-    `
+    `,
+  role: 'system'
 });
 
 export const commitlintPrompts = {
-  INIT_MAIN_PROMPT,
-  GEN_COMMITLINT_CONSISTENCY_PROMPT
+  GEN_COMMITLINT_CONSISTENCY_PROMPT,
+  INIT_MAIN_PROMPT
 };

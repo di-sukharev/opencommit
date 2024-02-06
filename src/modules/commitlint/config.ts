@@ -27,7 +27,7 @@ export const configureCommitlintIntegration = async (force = false) => {
   //   JSON.stringify(commitLintConfig, null, 2)
   // );
 
-  const hash = await computeHash(JSON.stringify(commitLintConfig));
+  const hash = computeHash(JSON.stringify(commitLintConfig));
 
   spin.stop(`Read @commitlint configuration (hash: ${hash})`);
 
@@ -62,13 +62,13 @@ export const configureCommitlintIntegration = async (force = false) => {
   consistency = utils.removeDoubleNewlines(consistency);
 
   const commitlintLLMConfig: CommitlintLLMConfig = {
-    hash,
-    prompts,
     consistency: {
       [translation.localLanguage]: {
         ...JSON.parse(consistency)
       }
-    }
+    },
+    hash,
+    prompts
   };
 
   await utils.writeCommitlintLLMConfig(commitlintLLMConfig);

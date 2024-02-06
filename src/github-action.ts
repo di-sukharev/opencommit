@@ -22,14 +22,14 @@ const repo = context.repo.repo;
 
 async function getCommitDiff(commitSha: string) {
   const diffResponse = await octokit.request<string>('GET /repos/{owner}/{repo}/commits/{ref}', {
-    owner,
-    repo,
-    ref: commitSha,
     headers: {
       Accept: 'application/vnd.github.v3.diff'
-    }
+    },
+    owner,
+    ref: commitSha,
+    repo
   });
-  return { sha: commitSha, diff: diffResponse.data };
+  return { diff: diffResponse.data, sha: commitSha };
 }
 
 interface DiffAndSHA {
@@ -60,7 +60,7 @@ async function improveMessagesInChunks(diffsAndSHAs: DiffAndSHA[]) {
         const total = improvedMessagesAndSHAs.length;
         const sha = diffsAndSHAs[total + index].sha;
 
-        return { sha, msg: improvedMessage };
+        return { msg: improvedMessage, sha };
       });
 
       improvedMessagesAndSHAs.push(...chunkOfImprovedMessagesBySha);
@@ -148,9 +148,9 @@ async function improveCommitMessages(
 
   await exec.exec('git', ['rebase', `${commitsToImprove[0].id}^`, '--exec', './rebase-exec.sh'], {
     env: {
-      GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"',
+      GIT_COMMITTER_EMAIL: `${process.env['GITHUB_ACTOR']}@users.noreply.github.com`,
       GIT_COMMITTER_NAME: process.env['GITHUB_ACTOR']!,
-      GIT_COMMITTER_EMAIL: `${process.env['GITHUB_ACTOR']}@users.noreply.github.com`
+      GIT_SEQUENCE_EDITOR: 'sed -i -e "s/^pick/reword/g"'
     }
   });
 

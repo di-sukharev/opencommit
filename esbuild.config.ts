@@ -3,19 +3,19 @@ import { copyFile } from 'node:fs/promises';
 import path from 'node:path';
 
 await build({
-  entryPoints: ['./src/cli.ts'],
   bundle: true,
-  platform: 'node',
+  entryPoints: ['./src/cli.ts'],
   format: 'cjs',
-  outfile: './dist/cli.cjs'
+  outfile: './dist/cli.cjs',
+  platform: 'node'
 });
 
 await build({
-  entryPoints: ['./src/github-action.ts'],
   bundle: true,
-  platform: 'node',
+  entryPoints: ['./src/github-action.ts'],
   format: 'cjs',
-  outfile: './dist/github-action.cjs'
+  outfile: './dist/github-action.cjs',
+  platform: 'node'
 });
 
 const tokenInputPath = path.resolve('node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm');

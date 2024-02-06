@@ -14,12 +14,12 @@ const extraArguments = process.argv.slice(2);
 
 cli(
   {
-    version: packageJSON.version,
-    name: 'opencommit',
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {},
+    help: { description: packageJSON.description },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
-    help: { description: packageJSON.description }
+    name: 'opencommit',
+    version: packageJSON.version
   },
   async () => {
     await checkIsLatestVersion();

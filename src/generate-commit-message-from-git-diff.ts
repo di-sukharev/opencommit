@@ -1,6 +1,6 @@
-import { type ChatCompletionRequestMessage, ChatCompletionRequestMessageRoleEnum } from 'openai';
+import OpenAI from 'openai';
 
-import { api } from './api';
+import { api, getTokenCount } from './api';
 import { DEFAULT_MODEL_TOKEN_LIMIT, getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { mergeDiffs } from './utils/merge-diffs';
@@ -10,14 +10,14 @@ const config = getConfig();
 
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string
-): Promise<ChatCompletionRequestMessage[]> => {
+): Promise<OpenAI.Chat.ChatCompletionMessageParam[]> => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
 
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
 
   chatContextAsCompletionRequest.push({
-    role: ChatCompletionRequestMessageRoleEnum.User,
-    content: diff
+    content: diff,
+    role: 'user'
   });
 
   return chatContextAsCompletionRequest;
@@ -34,9 +34,7 @@ const ADJUSTMENT_FACTOR = 20;
 export const generateCommitMessageByDiff = async (diff: string): Promise<string> => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
 
-  const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
-    (message) => tokenCount(message.content ?? '') + 4
-  ).reduce((a, b) => a + b, 0);
+  const INIT_MESSAGES_PROMPT_LENGTH = getTokenCount(INIT_MESSAGES_PROMPT);
 
   const MAX_REQUEST_TOKENS =
     DEFAULT_MODEL_TOKEN_LIMIT -
