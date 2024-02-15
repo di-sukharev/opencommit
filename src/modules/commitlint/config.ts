@@ -60,6 +60,16 @@ export const configureCommitlintIntegration = async (force = false) => {
 
   // Cleanup the consistency answer. Sometimes 'gpt-3.5-turbo' sends rule's back.
   prompts.forEach((prompt) => (consistency = consistency.replace(prompt, '')));
+
+  // sometimes consistency is preceded by explanatory text like "Here is your JSON:"
+  // note this could be surfaced in utils
+  const jsonIndex = consistency.search('```json');
+  if(jsonIndex > -1) {
+    consistency = consistency.slice(jsonIndex + 8);
+    const endJsonIndex = consistency.search('```');
+    consistency = consistency.slice(0, endJsonIndex); 
+  }
+  
   // ... remaining might be extra set of "\n"
   consistency = utils.removeDoubleNewlines(consistency);
 
