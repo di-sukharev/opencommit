@@ -28,7 +28,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsx esbuild.config.ts",
+    "build": "tsx build.ts",
     "build:push": "pnpm build && git add . && git commit -m 'build' && git push",
     "build:tsup": "tsup-node",
     "deploy": "pnpm version patch && pnpm run build:push && git push --tags && pnpm publish --tag latest",
@@ -36,7 +36,7 @@
     "format": "prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "start": "node ./dist/cli.cjs",
+    "start": "node ./dist/cli.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -58,6 +58,7 @@
     "semver": "^7.6.0"
   },
   "devDependencies": {
+    "@commander-js/extra-typings": "^12.0.0",
     "@commitlint/types": "^18.6.1",
     "@types/ini": "^4.1.0",
     "@types/inquirer": "^9.0.7",
@@ -65,11 +66,11 @@
     "@types/semver": "^7.5.7",
     "@typescript-eslint/eslint-plugin": "^7.0.2",
     "@typescript-eslint/parser": "^7.0.2",
+    "commander": "^12.0.0",
+    "del": "^7.1.0",
     "dotenv": "^16.4.5",
-    "esbuild": "^0.20.1",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
-    "eslint-import-resolver-node": "^0.3.9",
     "eslint-import-resolver-typescript": "^3.6.1",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-perfectionist": "^2.5.0",
