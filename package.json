@@ -21,8 +21,8 @@
   "author": "https://github.com/bodrick",
   "type": "module",
   "bin": {
-    "oco": "./dist/cli.cjs",
-    "opencommit": "./dist/cli.cjs"
+    "oco": "./dist/cli.js",
+    "opencommit": "./dist/cli.js"
   },
   "files": [
     "dist"
