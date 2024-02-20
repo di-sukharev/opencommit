@@ -4,8 +4,11 @@ import path from 'node:path';
 
 await build({
   bundle: true,
+  // packages: 'external',
   entryPoints: ['./src/cli.ts'],
+  target: ['node20'],
   format: 'cjs',
+  // format: 'esm',
   outfile: './dist/cli.cjs',
   platform: 'node'
 });

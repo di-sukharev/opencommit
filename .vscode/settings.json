@@ -1,16 +1,22 @@
 {
   "editor.rulers": [80, 100],
   "cSpell.words": [
+    "aicommit",
+    "aicommits",
+    "bodrick",
     "cleye",
     "commitlint",
     "dqbd",
     "execa",
     "githook",
+    "gptcommit",
     "Moji",
     "openai",
     "opencommit",
     "outfile",
     "outro",
-    "tiktoken"
+    "tiktoken",
+    "tsup",
+    "typecheck"
   ]
 }
