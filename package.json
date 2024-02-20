@@ -30,7 +30,6 @@
   "scripts": {
     "build": "tsx build.ts",
     "build:push": "pnpm build && git add . && git commit -m 'build' && git push",
-    "build:tsup": "tsup-node",
     "deploy": "pnpm version patch && pnpm run build:push && git push --tags && pnpm publish --tag latest",
     "dev": "tsx ./src/cli.ts",
     "format": "prettier --write .",
@@ -78,7 +77,6 @@
     "eslint-plugin-simple-import-sort": "^12.0.0",
     "eslint-plugin-unicorn": "^51.0.1",
     "prettier": "^3.2.5",
-    "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
