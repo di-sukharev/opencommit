@@ -24291,9 +24291,7 @@ var getConfig = () => {
       );
       config7[configKey] = validValue;
     } catch (error) {
-      ce(
-        `'${configKey}' name is invalid, it should be either 'OCO_${configKey.toUpperCase()}' or it doesn't exist.`
-      );
+      ce(`Unknown '${configKey}' config option.`);
       ce(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
@@ -27476,7 +27474,6 @@ var OllamaAi = class {
         }
       });
       const answer = response.data?.response;
-      console.log("answer", answer);
       return answer;
     } catch (err) {
       const message = err.response?.data?.error ?? err.message;

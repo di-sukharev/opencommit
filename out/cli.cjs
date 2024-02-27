@@ -16425,7 +16425,7 @@ var package_default = {
   scripts: {
     watch: "npm run -S build -- --sourcemap --watch",
     start: "node ./out/cli.cjs",
-    "ollama:start": "AI_PROVIDER='ollama' node./out/cli.cjs",
+    "ollama:start": "OCO_AI_PROVIDER='ollama' node ./out/cli.cjs",
     dev: "ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
@@ -18796,9 +18796,7 @@ var getConfig = () => {
       );
       config8[configKey] = validValue;
     } catch (error) {
-      ce(
-        `'${configKey}' name is invalid, it should be either 'OCO_${configKey.toUpperCase()}' or it doesn't exist.`
-      );
+      ce(`Unknown '${configKey}' config option.`);
       ce(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
@@ -21981,7 +21979,6 @@ var OllamaAi = class {
         }
       });
       const answer = response.data?.response;
-      console.log("answer", answer);
       return answer;
     } catch (err) {
       const message = err.response?.data?.error ?? err.message;
