@@ -7,8 +7,7 @@
 	<h2>Auto-generate meaningful commits in 1 second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
-  <h4 align="center">🪩 Winner of GitHub 2023 HACKATHON <a href="https://twitter.com/io_Y_oi/status/1683448136973582336"><img style="width:14px; height:14px; margin-top: -4px" src=".github/github-mark-white.png" align="center"></a>
-  </h4>
+  <h4 align="center"><a href="https://twitter.com/io_Y_oi/status/1683448136973582336">🪩 Winner of GitHub 2023 HACKATHON 🪩</a></h4>
 </div>
 
 ---
@@ -56,6 +55,17 @@ You can also use the `oco` shortcut:
 git add <files...>
 oco
 ```
+
+You can also run it with local model through ollama:
+- install and start ollama
+- run `ollama run mistral` (do this only once, to pull model)
+- run (in your project directory):
+
+```sh
+git add <files...>
+AI_PROVIDER='ollama' opencommit
+```
+
 
 ## Configuration
 
