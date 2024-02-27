@@ -7,7 +7,7 @@
 	<h2>Auto-generate meaningful commits in 1 second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
 	<a href="https://www.npmjs.com/package/opencommit"><img src="https://img.shields.io/npm/v/opencommit" alt="Current version"></a>
-  <h4 align="center"><a href="https://twitter.com/_sukharev_/status/1683448136973582336">🪩 Winner of GitHub 2023 HACKATHON 🪩</a></h4>
+  <h4 align="center">🪩 Winner of <a href="https://twitter.com/_sukharev_/status/1683448136973582336">GitHub 2023 hackathon</a> 🪩</h4>
 </div>
 
 ---
