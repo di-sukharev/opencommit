@@ -23,7 +23,8 @@ export enum CONFIG_KEYS {
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
-  OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE'
+  OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
+  OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
 }
 
 export enum CONFIG_MODES {
@@ -52,7 +53,8 @@ const validateConfig = (
 
 export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
-    validateConfig(CONFIG_KEYS.OCO_OPENAI_API_KEY, value, 'Cannot be empty');
+    //need api key unless running locally with ollama
+    validateConfig('API_KEY', value || config.OCO_AI_PROVIDER == 'ollama', 'You need to provide an API key');
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
       value.startsWith('sk-'),
@@ -150,9 +152,10 @@ export const configValidators = {
         'gpt-3.5-turbo',
         'gpt-4',
         'gpt-3.5-turbo-16k',
-        'gpt-3.5-turbo-0613'
+        'gpt-3.5-turbo-0613',
+        'gpt-4-1106-preview'
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo'`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo' or 'gpt-4-1106-preview'`
     );
     return value;
   },
@@ -173,7 +176,20 @@ export const configValidators = {
     );
 
     return value;
-  }
+  },
+
+  [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_AI_PROVIDER,
+      [
+        '',
+        'openai',
+        'ollama'
+      ].includes(value),
+      `${value} is not supported yet, use 'ollama' or 'openai' (default)`
+    );
+    return value;
+  },
 };
 
 export type ConfigType = {
@@ -198,7 +214,8 @@ export const getConfig = (): ConfigType | null => {
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit'
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai'
   };
 
   const configExists = existsSync(configPath);
@@ -224,9 +241,7 @@ export const getConfig = (): ConfigType | null => {
 
       config[configKey] = validValue;
     } catch (error) {
-      outro(
-        `'${configKey}' name is invalid, it should be either 'OCO_${configKey.toUpperCase()}' or it doesn't exist.`
-      );
+      outro(`Unknown '${configKey}' config option.`);
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );

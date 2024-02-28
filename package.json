@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "3.0.3",
+  "version": "3.0.5",
   "description": "Auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
@@ -12,7 +12,8 @@
     "aicommit",
     "aicommits",
     "gptcommit",
-    "commit"
+    "commit",
+    "ollama"
   ],
   "main": "cli.js",
   "bin": {
@@ -40,6 +41,7 @@
   "scripts": {
     "watch": "npm run -S build -- --sourcemap --watch",
     "start": "node ./out/cli.cjs",
+    "ollama:start": "OCO_AI_PROVIDER='ollama' node ./out/cli.cjs",
     "dev": "ts-node ./src/cli.ts",
     "build": "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
@@ -69,6 +71,7 @@
     "@dqbd/tiktoken": "^1.0.2",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
+    "ai": "^2.2.14",
     "axios": "^1.3.4",
     "chalk": "^5.2.0",
     "cleye": "^1.3.2",

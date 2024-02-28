@@ -3,11 +3,11 @@ import {
   ChatCompletionRequestMessageRoleEnum
 } from 'openai';
 
-import { api } from './api';
-import { getConfig, DEFAULT_TOKEN_LIMITS} from './commands/config';
+import { DEFAULT_TOKEN_LIMITS, getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
+import { getEngine } from './utils/engine';
 
 const config = getConfig();
 const MAX_TOKENS_INPUT = config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
@@ -70,7 +70,8 @@ export const generateCommitMessageByDiff = async (
 
     const messages = await generateCommitMessageChatCompletionPrompt(diff);
 
-    const commitMessage = await api.generateCommitMessage(messages);
+    const engine = getEngine()
+    const commitMessage = await engine.generateCommitMessage(messages);
 
     if (!commitMessage)
       throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);
@@ -107,13 +108,14 @@ function getMessagesPromisesByChangesInFile(
     }
   }
 
+  const engine = getEngine()
   const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map(
     async (lineDiff) => {
       const messages = await generateCommitMessageChatCompletionPrompt(
         separator + lineDiff
       );
 
-      return api.generateCommitMessage(messages);
+      return engine.generateCommitMessage(messages);
     }
   );
 
@@ -124,7 +126,7 @@ function splitDiff(diff: string, maxChangeLength: number) {
   const lines = diff.split('\n');
   const splitDiffs = [];
   let currentDiff = '';
-  
+
   if (maxChangeLength <= 0) {
     throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
   }
@@ -184,7 +186,8 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
         separator + fileDiff
       );
 
-      commitMessagePromises.push(api.generateCommitMessage(messages));
+      const engine = getEngine()
+      commitMessagePromises.push(engine.generateCommitMessage(messages));
     }
   }
 
