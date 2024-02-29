@@ -24201,6 +24201,14 @@ var configValidators = {
     );
     return value;
   },
+  ["OCO_EMOJI_POSITION_BEFORE_DESCRIPTION" /* OCO_EMOJI_POSITION_BEFORE_DESCRIPTION */](value) {
+    validateConfig(
+      "OCO_EMOJI_POSITION_BEFORE_DESCRIPTION" /* OCO_EMOJI_POSITION_BEFORE_DESCRIPTION */,
+      typeof value === "boolean",
+      "Must be true or false"
+    );
+    return value;
+  },
   ["OCO_LANGUAGE" /* OCO_LANGUAGE */](value) {
     validateConfig(
       "OCO_LANGUAGE" /* OCO_LANGUAGE */,
@@ -24268,6 +24276,7 @@ var getConfig = () => {
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
+    OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: process.env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION === "true" ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo-16k",
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
@@ -27540,6 +27549,7 @@ var INIT_MAIN_PROMPT2 = (language) => ({
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.System,
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the conventional commit convention and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
     ${config5?.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
+    ${config5?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION ? 'The GitMoji should be placed immediately before the description in the commit message. For example: "chore(ansible-lint.yml): \u{1F527} remove yaml[line-length] from skip_list".' : 'The GitMoji should be placed at the start of the commit message. For example: "\u{1F527} chore(ansible-lint.yml): remove yaml[line-length] from skip_list".'}
     ${config5?.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
     Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
 });
@@ -27572,9 +27582,9 @@ var INIT_DIFF_PROMPT = {
 };
 var INIT_CONSISTENCY_PROMPT = (translation4) => ({
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.Assistant,
-  content: `${config5?.OCO_EMOJI ? "\u{1F41B} " : ""}${translation4.commitFix}
-${config5?.OCO_EMOJI ? "\u2728 " : ""}${translation4.commitFeat}
-${config5?.OCO_DESCRIPTION ? translation4.commitDescription : ""}`
+  content: `${config5?.OCO_EMOJI ? config5?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION ? "fix(server.ts): \u{1F41B} " : "\u{1F41B} fix(server.ts): " : "fix(server.ts): "}${translation4.commitFix}
+    ${config5?.OCO_EMOJI ? config5?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION ? "feat(server.ts): \u2728 " : "\u2728 feat(server.ts): " : "feat(server.ts): "}${translation4.commitFeat}
+    ${config5?.OCO_DESCRIPTION ? translation4.commitDescription : ""}`
 });
 var getMainCommitPrompt = async () => {
   switch (config5?.OCO_PROMPT_MODULE) {

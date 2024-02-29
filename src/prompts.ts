@@ -27,6 +27,11 @@ const INIT_MAIN_PROMPT = (language: string): ChatCompletionRequestMessage => ({
         : 'Do not preface the commit with anything.'
     }
     ${
+      config?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
+        ? 'The GitMoji should be placed immediately before the description in the commit message. For example: "chore(ansible-lint.yml): 🔧 remove yaml[line-length] from skip_list".'
+        : 'The GitMoji should be placed at the start of the commit message. For example: "🔧 chore(ansible-lint.yml): remove yaml[line-length] from skip_list".'
+    }
+    ${
       config?.OCO_DESCRIPTION
         ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
         : "Don't add any descriptions to the commit, only commit message."
@@ -66,9 +71,21 @@ const INIT_CONSISTENCY_PROMPT = (
   translation: ConsistencyPrompt
 ): ChatCompletionRequestMessage => ({
   role: ChatCompletionRequestMessageRoleEnum.Assistant,
-  content: `${config?.OCO_EMOJI ? '🐛 ' : ''}${translation.commitFix}
-${config?.OCO_EMOJI ? '✨ ' : ''}${translation.commitFeat}
-${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
+  content: `${
+    config?.OCO_EMOJI
+      ? config?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
+        ? 'fix(server.ts): 🐛 '
+        : '🐛 fix(server.ts): '
+      : 'fix(server.ts): '
+  }${translation.commitFix}
+    ${
+      config?.OCO_EMOJI
+        ? config?.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
+          ? 'feat(server.ts): ✨ '
+          : '✨ feat(server.ts): '
+        : 'feat(server.ts): '
+    }${translation.commitFeat}
+    ${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
 });
 
 export const getMainCommitPrompt = async (): Promise<
