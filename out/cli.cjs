@@ -18706,6 +18706,14 @@ var configValidators = {
     );
     return value;
   },
+  ["OCO_EMOJI_POSITION_BEFORE_DESCRIPTION" /* OCO_EMOJI_POSITION_BEFORE_DESCRIPTION */](value) {
+    validateConfig(
+      "OCO_EMOJI_POSITION_BEFORE_DESCRIPTION" /* OCO_EMOJI_POSITION_BEFORE_DESCRIPTION */,
+      typeof value === "boolean",
+      "Must be true or false"
+    );
+    return value;
+  },
   ["OCO_LANGUAGE" /* OCO_LANGUAGE */](value) {
     validateConfig(
       "OCO_LANGUAGE" /* OCO_LANGUAGE */,
@@ -18773,6 +18781,7 @@ var getConfig = () => {
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
+    OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: process.env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION === "true" ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || "gpt-3.5-turbo-16k",
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
