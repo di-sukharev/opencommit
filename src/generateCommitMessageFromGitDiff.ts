@@ -3,11 +3,11 @@ import {
   ChatCompletionRequestMessageRoleEnum
 } from 'openai';
 
-import { api } from './api';
 import { DEFAULT_MODEL_TOKEN_LIMIT, getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
+import { getEngine } from './utils/engine';
 
 const config = getConfig();
 
@@ -70,7 +70,8 @@ export const generateCommitMessageByDiff = async (
 
     const messages = await generateCommitMessageChatCompletionPrompt(diff, fullGitMojiSpec);
 
-    const commitMessage = await api.generateCommitMessage(messages);
+    const engine = getEngine()
+    const commitMessage = await engine.generateCommitMessage(messages);
 
     if (!commitMessage)
       throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);
@@ -108,6 +109,7 @@ function getMessagesPromisesByChangesInFile(
     }
   }
 
+  const engine = getEngine()
   const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map(
     async (lineDiff) => {
       const messages = await generateCommitMessageChatCompletionPrompt(
@@ -115,7 +117,7 @@ function getMessagesPromisesByChangesInFile(
         fullGitMojiSpec
       );
 
-      return api.generateCommitMessage(messages);
+      return engine.generateCommitMessage(messages);
     }
   );
 
@@ -185,7 +187,8 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
         fullGitMojiSpec
       );
 
-      commitMessagePromises.push(api.generateCommitMessage(messages));
+      const engine = getEngine()
+      commitMessagePromises.push(engine.generateCommitMessage(messages));
     }
   }
 
