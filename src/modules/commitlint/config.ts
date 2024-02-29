@@ -1,6 +1,5 @@
 import { spinner } from '@clack/prompts';
 
-import { api } from '../../api';
 import { getConfig } from '../../commands/config';
 import { i18n, I18nLocals } from '../../i18n';
 import { COMMITLINT_LLM_CONFIG_PATH } from './constants';
@@ -9,6 +8,7 @@ import { commitlintPrompts, inferPromptsFromCommitlintConfig } from './prompts';
 import { getCommitLintPWDConfig } from './pwd-commitlint';
 import { CommitlintLLMConfig } from './types';
 import * as utils from './utils';
+import { getEngine } from '../../utils/engine';
 
 const config = getConfig();
 const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];
@@ -55,8 +55,9 @@ export const configureCommitlintIntegration = async (force = false) => {
   //   consistencyPrompts.map((p) => p.content)
   // );
 
+  const engine = getEngine()
   let consistency =
-    (await api.generateCommitMessage(consistencyPrompts)) || '{}';
+    (await engine.generateCommitMessage(consistencyPrompts)) || '{}';
 
   // Cleanup the consistency answer. Sometimes 'gpt-3.5-turbo' sends rule's back.
   prompts.forEach((prompt) => (consistency = consistency.replace(prompt, '')));
