@@ -16455,8 +16455,8 @@ var package_default = {
     "@dqbd/tiktoken": "^1.0.2",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
-    ai: "^2.2.14",
     axios: "^1.3.4",
+    ai: "^2.2.14",
     chalk: "^5.2.0",
     cleye: "^1.3.2",
     crypto: "^1.0.1",
@@ -22407,7 +22407,10 @@ var generateCommitMessageFromGitDiff = async (diff, extraArgs2, fullGitMojiSpec)
   const commitSpinner = le();
   commitSpinner.start("Generating the commit message");
   try {
-    let commitMessage = await generateCommitMessageByDiff(diff, fullGitMojiSpec);
+    let commitMessage = await generateCommitMessageByDiff(
+      diff,
+      fullGitMojiSpec
+    );
     const messageTemplate = checkMessageTemplate(extraArgs2);
     if (config7?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === "string") {
       commitMessage = messageTemplate.replace(
@@ -22489,7 +22492,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
     process.exit(1);
   }
 };
-async function commit(extraArgs2 = [], fullGitMojiSpec = false, isStageAllFlag = false) {
+async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec = true) {
   if (isStageAllFlag) {
     const changedFiles2 = await getChangedFiles();
     if (changedFiles2)
