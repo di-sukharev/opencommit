@@ -16384,7 +16384,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.10",
+  version: "3.0.11",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -22661,7 +22661,7 @@ var hookCommand = G3(
         return ce(`${source_default.green("\u2714")} Hook is removed`);
       }
       throw new Error(
-        `Unsupported mode: ${mode2}. Supported modes are: 'set' or 'unset'`
+        `Unsupported mode: ${mode2}. Supported modes are: 'set' or 'unset', do: \`oco hook set\``
       );
     } catch (error) {
       ce(`${source_default.red("\u2716")} ${error}`);
