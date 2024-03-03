@@ -22413,6 +22413,8 @@ var generateCommitMessageFromGitDiff = async (diff, extraArgs2, fullGitMojiSpec)
     );
     const messageTemplate = checkMessageTemplate(extraArgs2);
     if (config7?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === "string") {
+      const messageTemplateIndex = extraArgs2.indexOf(messageTemplate);
+      extraArgs2.splice(messageTemplateIndex, 1);
       commitMessage = messageTemplate.replace(
         config7?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
