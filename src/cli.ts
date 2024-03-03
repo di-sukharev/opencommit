@@ -17,17 +17,19 @@ cli(
     version: packageJSON.version,
     name: 'opencommit',
     commands: [configCommand, hookCommand, commitlintConfigCommand],
-    flags: {},
+    flags: {
+      fgm: Boolean
+    },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
     help: { description: packageJSON.description }
   },
-  async () => {
+  async ({ flags }) => {
     await checkIsLatestVersion();
 
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs);
+      commit(extraArgs, flags.fgm);
     }
   },
   extraArgs
