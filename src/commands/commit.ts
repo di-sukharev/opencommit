@@ -40,7 +40,9 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
 
 const generateCommitMessageFromGitDiff = async (
   diff: string,
-  extraArgs: string[]
+  extraArgs: string[],
+  confirmCommitMessageFlag: Boolean,
+  confirmPushFlag: Boolean
 ): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
@@ -69,9 +71,11 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser = await confirm({
-      message: 'Confirm the commit message?'
-    });
+    const isCommitConfirmedByUser =
+      confirmCommitMessageFlag ||
+      (await confirm({
+        message: 'Confirm the commit message?'
+      }));
 
     if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
       const { stdout } = await execa('git', [
@@ -94,9 +98,11 @@ ${chalk.grey('——————————————————')}`
       }
 
       if (remotes.length === 1) {
-        const isPushConfirmedByUser = await confirm({
-          message: 'Do you want to run `git push`?'
-        });
+        const isPushConfirmedByUser =
+          confirmPushFlag ||
+          (await confirm({
+            message: 'Do you want to run `git push`?'
+          }));
 
         if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
           const pushSpinner = spinner();
@@ -154,6 +160,8 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(
   extraArgs: string[] = [],
+  confirmCommitMessageFlag: Boolean = false,
+  confirmPushFlag: Boolean = false,
   isStageAllFlag: Boolean = false
 ) {
   if (isStageAllFlag) {
@@ -225,7 +233,9 @@ export async function commit(
   const [, generateCommitError] = await trytm(
     generateCommitMessageFromGitDiff(
       await getDiff({ files: stagedFiles }),
-      extraArgs
+      extraArgs,
+      confirmCommitMessageFlag,
+      confirmPushFlag
     )
   );
 
