@@ -48,7 +48,10 @@ const generateCommitMessageFromGitDiff = async (
   commitSpinner.start('Generating the commit message');
 
   try {
-    let commitMessage = await generateCommitMessageByDiff(diff, fullGitMojiSpec);
+    let commitMessage = await generateCommitMessageByDiff(
+      diff,
+      fullGitMojiSpec
+    );
 
     const messageTemplate = checkMessageTemplate(extraArgs);
     if (
@@ -155,8 +158,8 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(
   extraArgs: string[] = [],
-  fullGitMojiSpec: boolean = false,
   isStageAllFlag: Boolean = false,
+  fullGitMojiSpec: boolean = false
 ) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
