@@ -58,6 +58,8 @@ git add <files...>
 oco
 ```
 
+Link to the GitMoji specification: https://gitmoji.dev/
+
 You can also run it with local model through ollama:
 
 - install and start ollama
@@ -69,6 +71,17 @@ git add <files...>
 AI_PROVIDER='ollama' opencommit
 ```
 
+### Flags
+There are multiple optional flags that can be used with the `oco` command:
+
+#### Use Full GitMoji Specification
+This flag can only be used if the `OCO_EMOJI` configuration item is set to `true`. This flag allows users to use all emojis in the GitMoji specification, By default, the GitMoji full specification is set to `false`, which only includes 10 emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡).
+This is due to limit the number of tokens sent in each request. However, if you would like to use the full GitMoji specification, you can use the `--fgm` flag.
+
+```
+oco --fgm
+```
+  
 ## Configuration
 
 ### Local per repo configuration
@@ -77,7 +90,8 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 OCO_OPENAI_API_KEY=<your OpenAI API token>
-OCO_OPENAI_MAX_TOKENS=<max response tokens from OpenAI API>
+OCO_TOKENS_MAX_INPUT=<max model token limit (default: 4096)>
+OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
@@ -329,7 +343,8 @@ jobs:
           OCO_OPENAI_API_KEY: ${{ secrets.OCO_OPENAI_API_KEY }}
 
           # customization
-          OCO_OPENAI_MAX_TOKENS: 500
+          OCO_TOKENS_MAX_INPUT: 4096
+          OCO_TOKENS_MAX_OUTPUT: 500
           OCO_OPENAI_BASE_PATH: ''
           OCO_DESCRIPTION: false
           OCO_EMOJI: false

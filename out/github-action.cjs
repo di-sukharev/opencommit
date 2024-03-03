@@ -24145,7 +24145,6 @@ function getI18nLocal(value) {
 
 // src/commands/config.ts
 dotenv.config();
-var DEFAULT_MODEL_TOKEN_LIMIT = 4096;
 var validateConfig = (key, condition, validationMessage) => {
   if (!condition) {
     ce(
@@ -24177,17 +24176,33 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */](value) {
+  ["OCO_TOKENS_MAX_INPUT" /* OCO_TOKENS_MAX_INPUT */](value) {
     if (typeof value === "string") {
       value = parseInt(value);
       validateConfig(
-        "OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */,
+        "OCO_TOKENS_MAX_INPUT" /* OCO_TOKENS_MAX_INPUT */,
         !isNaN(value),
         "Must be a number"
       );
     }
     validateConfig(
-      "OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */,
+      "OCO_TOKENS_MAX_INPUT" /* OCO_TOKENS_MAX_INPUT */,
+      value ? typeof value === "number" : void 0,
+      "Must be a number"
+    );
+    return value;
+  },
+  ["OCO_TOKENS_MAX_OUTPUT" /* OCO_TOKENS_MAX_OUTPUT */](value) {
+    if (typeof value === "string") {
+      value = parseInt(value);
+      validateConfig(
+        "OCO_TOKENS_MAX_OUTPUT" /* OCO_TOKENS_MAX_OUTPUT */,
+        !isNaN(value),
+        "Must be a number"
+      );
+    }
+    validateConfig(
+      "OCO_TOKENS_MAX_OUTPUT" /* OCO_TOKENS_MAX_OUTPUT */,
       value ? typeof value === "number" : void 0,
       "Must be a number"
     );
@@ -24264,7 +24279,8 @@ var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var getConfig = () => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS ? Number(process.env.OCO_OPENAI_MAX_TOKENS) : void 0,
+    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT ? Number(process.env.OCO_TOKENS_MAX_INPUT) : void 0,
+    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT ? Number(process.env.OCO_TOKENS_MAX_OUTPUT) : void 0,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
@@ -24529,6 +24545,15 @@ var removeDoubleNewlines = (input) => {
   if (pattern.test(input)) {
     const newInput = input.replace(pattern, "");
     return removeDoubleNewlines(newInput);
+  }
+  return input;
+};
+var getJSONBlock = (input) => {
+  const jsonIndex = input.search("```json");
+  if (jsonIndex > -1) {
+    input = input.slice(jsonIndex + 8);
+    const endJsonIndex = consistency.search("```");
+    input = input.slice(0, endJsonIndex);
   }
   return input;
 };
@@ -27395,7 +27420,8 @@ function tokenCount(content) {
 
 // src/engine/openAi.ts
 var config3 = getConfig();
-var maxTokens = config3?.OCO_OPENAI_MAX_TOKENS;
+var MAX_TOKENS_OUTPUT = config3?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var MAX_TOKENS_INPUT = config3?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
 var basePath = config3?.OCO_OPENAI_BASE_PATH;
 var apiKey = config3?.OCO_OPENAI_API_KEY;
 var [command, mode] = process.argv.slice(2);
@@ -27428,11 +27454,11 @@ var OpenAi = class {
       messages,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: maxTokens || 500
+      max_tokens: MAX_TOKENS_OUTPUT
     };
     try {
       const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a2, b2) => a2 + b2, 0);
-      if (REQUEST_TOKENS > DEFAULT_MODEL_TOKEN_LIMIT - maxTokens) {
+      if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
         throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
       }
       const { data } = await this.openAI.createChatCompletion(params);
@@ -27516,15 +27542,16 @@ var configureCommitlintIntegration = async (force = false) => {
   const prompts = inferPromptsFromCommitlintConfig(commitLintConfig);
   const consistencyPrompts = commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
   const engine = getEngine();
-  let consistency = await engine.generateCommitMessage(consistencyPrompts) || "{}";
-  prompts.forEach((prompt) => consistency = consistency.replace(prompt, ""));
-  consistency = removeDoubleNewlines(consistency);
+  let consistency2 = await engine.generateCommitMessage(consistencyPrompts) || "{}";
+  prompts.forEach((prompt) => consistency2 = consistency2.replace(prompt, ""));
+  consistency2 = getJSONBlock(consistency2);
+  consistency2 = removeDoubleNewlines(consistency2);
   const commitlintLLMConfig = {
     hash,
     prompts,
     consistency: {
       [translation2.localLanguage]: {
-        ...JSON.parse(consistency)
+        ...JSON.parse(consistency2)
       }
     }
   };
@@ -27532,14 +27559,19 @@ var configureCommitlintIntegration = async (force = false) => {
   spin.stop(`Done - please review contents of ${COMMITLINT_LLM_CONFIG_PATH}`);
 };
 
+// src/utils/removeConventionalCommitWord.ts
+function removeConventionalCommitWord(message) {
+  return message.replace(/^(fix|feat)\((.+?)\):/, "($2):");
+}
+
 // src/prompts.ts
 var config5 = getConfig();
 var translation3 = i18n[config5?.OCO_LANGUAGE || "en"];
 var IDENTITY = "You are to act as the author of a commit message in git.";
-var INIT_MAIN_PROMPT2 = (language) => ({
+var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.System,
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the conventional commit convention and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
-    ${config5?.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${fullGitMojiSpec ? "GitMoji specification" : "conventional commit convention"} and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
+  ${config5?.OCO_EMOJI ? `Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): \u{1F41B}, Fix a bug; \u2728, Introduce new features; \u{1F4DD}, Add or update documentation; \u{1F680}, Deploy stuff; \u2705, Add, update, or pass tests; \u267B\uFE0F, Refactor code; \u2B06\uFE0F, Upgrade dependencies; \u{1F527}, Add or update configuration files; \u{1F310}, Internationalization and localization; \u{1F4A1}, Add or update comments in source code; ${fullGitMojiSpec ? "\u{1F3A8}, Improve structure / format of the code; \u26A1\uFE0F, Improve performance; \u{1F525}, Remove code or files; \u{1F691}\uFE0F, Critical hotfix; \u{1F484}, Add or update the UI and style files; \u{1F389}, Begin a project; \u{1F512}\uFE0F, Fix security issues; \u{1F510}, Add or update secrets; \u{1F516}, Release / Version tags; \u{1F6A8}, Fix compiler / linter warnings; \u{1F6A7}, Work in progress; \u{1F49A}, Fix CI Build; \u2B07\uFE0F, Downgrade dependencies; \u{1F4CC}, Pin dependencies to specific versions; \u{1F477}, Add or update CI build system; \u{1F4C8}, Add or update analytics or track code; \u2795, Add a dependency; \u2796, Remove a dependency; \u{1F528}, Add or update development scripts; \u270F\uFE0F, Fix typos; \u{1F4A9}, Write bad code that needs to be improved; \u23EA\uFE0F, Revert changes; \u{1F500}, Merge branches; \u{1F4E6}\uFE0F, Add or update compiled files or packages; \u{1F47D}\uFE0F, Update code due to external API changes; \u{1F69A}, Move or rename resources (e.g.: files, paths, routes); \u{1F4C4}, Add or update license; \u{1F4A5}, Introduce breaking changes; \u{1F371}, Add or update assets; \u267F\uFE0F, Improve accessibility; \u{1F37B}, Write code drunkenly; \u{1F4AC}, Add or update text and literals; \u{1F5C3}\uFE0F, Perform database related changes; \u{1F50A}, Add or update logs; \u{1F507}, Remove logs; \u{1F465}, Add or update contributor(s); \u{1F6B8}, Improve user experience / usability; \u{1F3D7}\uFE0F, Make architectural changes; \u{1F4F1}, Work on responsive design; \u{1F921}, Mock things; \u{1F95A}, Add or update an easter egg; \u{1F648}, Add or update a .gitignore file; \u{1F4F8}, Add or update snapshots; \u2697\uFE0F, Perform experiments; \u{1F50D}\uFE0F, Improve SEO; \u{1F3F7}\uFE0F, Add or update types; \u{1F331}, Add or update seed files; \u{1F6A9}, Add, update, or remove feature flags; \u{1F945}, Catch errors; \u{1F4AB}, Add or update animations and transitions; \u{1F5D1}\uFE0F, Deprecate code that needs to be cleaned up; \u{1F6C2}, Work on code related to authorization, roles and permissions; \u{1FA79}, Simple fix for a non-critical issue; \u{1F9D0}, Data exploration/inspection; \u26B0\uFE0F, Remove dead code; \u{1F9EA}, Add a failing test; \u{1F454}, Add or update business logic; \u{1FA7A}, Add or update healthcheck; \u{1F9F1}, Infrastructure related changes; \u{1F9D1}\u200D\u{1F4BB}, Improve developer experience; \u{1F4B8}, Add sponsorships or money related infrastructure; \u{1F9F5}, Add or update code related to multithreading or concurrency; \u{1F9BA}, Add or update code related to validation." : ""}` : "Do not preface the commit with anything. Conventional commit keywords:fix, feat, build, chore, ci, docs, style, refactor, perf, test."}  
     ${config5?.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
     Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
 });
@@ -27572,11 +27604,11 @@ var INIT_DIFF_PROMPT = {
 };
 var INIT_CONSISTENCY_PROMPT = (translation4) => ({
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.Assistant,
-  content: `${config5?.OCO_EMOJI ? "\u{1F41B} " : ""}${translation4.commitFix}
-${config5?.OCO_EMOJI ? "\u2728 " : ""}${translation4.commitFeat}
+  content: `${config5?.OCO_EMOJI ? `\u{1F41B} ${removeConventionalCommitWord(translation4.commitFix)}` : translation4.commitFix}
+${config5?.OCO_EMOJI ? `\u2728 ${removeConventionalCommitWord(translation4.commitFeat)}` : translation4.commitFeat}
 ${config5?.OCO_DESCRIPTION ? translation4.commitDescription : ""}`
 });
-var getMainCommitPrompt = async () => {
+var getMainCommitPrompt = async (fullGitMojiSpec) => {
   switch (config5?.OCO_PROMPT_MODULE) {
     case "@commitlint":
       if (!await commitlintLLMConfigExists()) {
@@ -27598,7 +27630,7 @@ var getMainCommitPrompt = async () => {
       ];
     default:
       return [
-        INIT_MAIN_PROMPT2(translation3.localLanguage),
+        INIT_MAIN_PROMPT2(translation3.localLanguage, fullGitMojiSpec),
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(translation3)
       ];
@@ -27623,8 +27655,10 @@ function mergeDiffs(arr, maxStringLength) {
 
 // src/generateCommitMessageFromGitDiff.ts
 var config6 = getConfig();
-var generateCommitMessageChatCompletionPrompt = async (diff) => {
-  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
+var MAX_TOKENS_INPUT2 = config6?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
+var MAX_TOKENS_OUTPUT2 = config6?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
+  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
   chatContextAsCompletionRequest.push({
     role: import_openai4.ChatCompletionRequestMessageRoleEnum.User,
@@ -27632,18 +27666,26 @@ var generateCommitMessageChatCompletionPrompt = async (diff) => {
   });
   return chatContextAsCompletionRequest;
 };
+var GenerateCommitMessageErrorEnum = ((GenerateCommitMessageErrorEnum2) => {
+  GenerateCommitMessageErrorEnum2["tooMuchTokens"] = "TOO_MUCH_TOKENS";
+  GenerateCommitMessageErrorEnum2["internalError"] = "INTERNAL_ERROR";
+  GenerateCommitMessageErrorEnum2["emptyMessage"] = "EMPTY_MESSAGE";
+  GenerateCommitMessageErrorEnum2[GenerateCommitMessageErrorEnum2["outputTokensTooHigh"] = `Token limit exceeded, OCO_TOKENS_MAX_OUTPUT must not be much higher than the default ${500 /* DEFAULT_MAX_TOKENS_OUTPUT */} tokens.`] = "outputTokensTooHigh";
+  return GenerateCommitMessageErrorEnum2;
+})(GenerateCommitMessageErrorEnum || {});
 var ADJUSTMENT_FACTOR = 20;
-var generateCommitMessageByDiff = async (diff) => {
+var generateCommitMessageByDiff = async (diff, fullGitMojiSpec) => {
   try {
-    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
+    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
       (msg) => tokenCount(msg.content) + 4
     ).reduce((a2, b2) => a2 + b2, 0);
-    const MAX_REQUEST_TOKENS = DEFAULT_MODEL_TOKEN_LIMIT - ADJUSTMENT_FACTOR - INIT_MESSAGES_PROMPT_LENGTH - config6?.OCO_OPENAI_MAX_TOKENS;
+    const MAX_REQUEST_TOKENS = MAX_TOKENS_INPUT2 - ADJUSTMENT_FACTOR - INIT_MESSAGES_PROMPT_LENGTH - MAX_TOKENS_OUTPUT2;
     if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
       const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
         diff,
-        MAX_REQUEST_TOKENS
+        MAX_REQUEST_TOKENS,
+        fullGitMojiSpec
       );
       const commitMessages = [];
       for (const promise of commitMessagePromises) {
@@ -27652,7 +27694,7 @@ var generateCommitMessageByDiff = async (diff) => {
       }
       return commitMessages.join("\n\n");
     }
-    const messages = await generateCommitMessageChatCompletionPrompt(diff);
+    const messages = await generateCommitMessageChatCompletionPrompt(diff, fullGitMojiSpec);
     const engine = getEngine();
     const commitMessage = await engine.generateCommitMessage(messages);
     if (!commitMessage)
@@ -27662,7 +27704,7 @@ var generateCommitMessageByDiff = async (diff) => {
     throw error;
   }
 };
-function getMessagesPromisesByChangesInFile(fileDiff, separator, maxChangeLength) {
+function getMessagesPromisesByChangesInFile(fileDiff, separator, maxChangeLength, fullGitMojiSpec) {
   const hunkHeaderSeparator = "@@ ";
   const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
   const mergedChanges = mergeDiffs(
@@ -27683,7 +27725,8 @@ function getMessagesPromisesByChangesInFile(fileDiff, separator, maxChangeLength
   const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map(
     async (lineDiff) => {
       const messages = await generateCommitMessageChatCompletionPrompt(
-        separator + lineDiff
+        separator + lineDiff,
+        fullGitMojiSpec
       );
       return engine.generateCommitMessage(messages);
     }
@@ -27694,6 +27737,9 @@ function splitDiff(diff, maxChangeLength) {
   const lines = diff.split("\n");
   const splitDiffs = [];
   let currentDiff = "";
+  if (maxChangeLength <= 0) {
+    throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
+  }
   for (let line of lines) {
     while (tokenCount(line) > maxChangeLength) {
       const subLine = line.substring(0, maxChangeLength);
@@ -27712,7 +27758,7 @@ function splitDiff(diff, maxChangeLength) {
   }
   return splitDiffs;
 }
-var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength) => {
+var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength, fullGitMojiSpec) => {
   const separator = "diff --git ";
   const diffByFiles = diff.split(separator).slice(1);
   const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
@@ -27722,12 +27768,14 @@ var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength) => {
       const messagesPromises = getMessagesPromisesByChangesInFile(
         fileDiff,
         separator,
-        maxDiffLength
+        maxDiffLength,
+        fullGitMojiSpec
       );
       commitMessagePromises.push(...messagesPromises);
     } else {
       const messages = await generateCommitMessageChatCompletionPrompt(
-        separator + fileDiff
+        separator + fileDiff,
+        fullGitMojiSpec
       );
       const engine = getEngine();
       commitMessagePromises.push(engine.generateCommitMessage(messages));
