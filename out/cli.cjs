@@ -16384,7 +16384,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.9",
+  version: "3.0.10",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -16455,8 +16455,8 @@ var package_default = {
     "@dqbd/tiktoken": "^1.0.2",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
-    axios: "^1.3.4",
     ai: "^2.2.14",
+    axios: "^1.3.4",
     chalk: "^5.2.0",
     cleye: "^1.3.2",
     crypto: "^1.0.1",
@@ -22492,7 +22492,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
     process.exit(1);
   }
 };
-async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec = true) {
+async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec = false) {
   if (isStageAllFlag) {
     const changedFiles2 = await getChangedFiles();
     if (changedFiles2)
