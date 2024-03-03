@@ -18650,7 +18650,6 @@ function getI18nLocal(value) {
 
 // src/commands/config.ts
 dotenv.config();
-var DEFAULT_MODEL_TOKEN_LIMIT = 4096;
 var validateConfig = (key, condition, validationMessage) => {
   if (!condition) {
     ce(
@@ -18682,17 +18681,33 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */](value) {
+  ["OCO_TOKENS_MAX_INPUT" /* OCO_TOKENS_MAX_INPUT */](value) {
     if (typeof value === "string") {
       value = parseInt(value);
       validateConfig(
-        "OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */,
+        "OCO_TOKENS_MAX_INPUT" /* OCO_TOKENS_MAX_INPUT */,
         !isNaN(value),
         "Must be a number"
       );
     }
     validateConfig(
-      "OCO_OPENAI_MAX_TOKENS" /* OCO_OPENAI_MAX_TOKENS */,
+      "OCO_TOKENS_MAX_INPUT" /* OCO_TOKENS_MAX_INPUT */,
+      value ? typeof value === "number" : void 0,
+      "Must be a number"
+    );
+    return value;
+  },
+  ["OCO_TOKENS_MAX_OUTPUT" /* OCO_TOKENS_MAX_OUTPUT */](value) {
+    if (typeof value === "string") {
+      value = parseInt(value);
+      validateConfig(
+        "OCO_TOKENS_MAX_OUTPUT" /* OCO_TOKENS_MAX_OUTPUT */,
+        !isNaN(value),
+        "Must be a number"
+      );
+    }
+    validateConfig(
+      "OCO_TOKENS_MAX_OUTPUT" /* OCO_TOKENS_MAX_OUTPUT */,
       value ? typeof value === "number" : void 0,
       "Must be a number"
     );
@@ -18729,9 +18744,10 @@ var configValidators = {
         "gpt-3.5-turbo",
         "gpt-4",
         "gpt-3.5-turbo-16k",
-        "gpt-3.5-turbo-0613"
+        "gpt-3.5-turbo-0613",
+        "gpt-4-1106-preview"
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo'`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo' or 'gpt-4-1106-preview'`
     );
     return value;
   },
@@ -18768,7 +18784,8 @@ var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var getConfig = () => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS ? Number(process.env.OCO_OPENAI_MAX_TOKENS) : void 0,
+    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT ? Number(process.env.OCO_TOKENS_MAX_INPUT) : void 0,
+    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT ? Number(process.env.OCO_TOKENS_MAX_OUTPUT) : void 0,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
@@ -19033,6 +19050,15 @@ var removeDoubleNewlines = (input) => {
   if (pattern.test(input)) {
     const newInput = input.replace(pattern, "");
     return removeDoubleNewlines(newInput);
+  }
+  return input;
+};
+var getJSONBlock = (input) => {
+  const jsonIndex = input.search("```json");
+  if (jsonIndex > -1) {
+    input = input.slice(jsonIndex + 8);
+    const endJsonIndex = consistency.search("```");
+    input = input.slice(0, endJsonIndex);
   }
   return input;
 };
@@ -21899,7 +21925,8 @@ function tokenCount(content) {
 
 // src/engine/openAi.ts
 var config3 = getConfig();
-var maxTokens = config3?.OCO_OPENAI_MAX_TOKENS;
+var MAX_TOKENS_OUTPUT = config3?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var MAX_TOKENS_INPUT = config3?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
 var basePath = config3?.OCO_OPENAI_BASE_PATH;
 var apiKey = config3?.OCO_OPENAI_API_KEY;
 var [command, mode] = process.argv.slice(2);
@@ -21932,11 +21959,11 @@ var OpenAi = class {
       messages,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: maxTokens || 500
+      max_tokens: MAX_TOKENS_OUTPUT
     };
     try {
       const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a2, b6) => a2 + b6, 0);
-      if (REQUEST_TOKENS > DEFAULT_MODEL_TOKEN_LIMIT - maxTokens) {
+      if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
         throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
       }
       const { data } = await this.openAI.createChatCompletion(params);
@@ -22020,15 +22047,16 @@ var configureCommitlintIntegration = async (force = false) => {
   const prompts = inferPromptsFromCommitlintConfig(commitLintConfig);
   const consistencyPrompts = commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
   const engine = getEngine();
-  let consistency = await engine.generateCommitMessage(consistencyPrompts) || "{}";
-  prompts.forEach((prompt) => consistency = consistency.replace(prompt, ""));
-  consistency = removeDoubleNewlines(consistency);
+  let consistency2 = await engine.generateCommitMessage(consistencyPrompts) || "{}";
+  prompts.forEach((prompt) => consistency2 = consistency2.replace(prompt, ""));
+  consistency2 = getJSONBlock(consistency2);
+  consistency2 = removeDoubleNewlines(consistency2);
   const commitlintLLMConfig = {
     hash,
     prompts,
     consistency: {
       [translation2.localLanguage]: {
-        ...JSON.parse(consistency)
+        ...JSON.parse(consistency2)
       }
     }
   };
@@ -22127,6 +22155,8 @@ function mergeDiffs(arr, maxStringLength) {
 
 // src/generateCommitMessageFromGitDiff.ts
 var config6 = getConfig();
+var MAX_TOKENS_INPUT2 = config6?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
+var MAX_TOKENS_OUTPUT2 = config6?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
 var generateCommitMessageChatCompletionPrompt = async (diff) => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt();
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
@@ -22136,6 +22166,13 @@ var generateCommitMessageChatCompletionPrompt = async (diff) => {
   });
   return chatContextAsCompletionRequest;
 };
+var GenerateCommitMessageErrorEnum = ((GenerateCommitMessageErrorEnum2) => {
+  GenerateCommitMessageErrorEnum2["tooMuchTokens"] = "TOO_MUCH_TOKENS";
+  GenerateCommitMessageErrorEnum2["internalError"] = "INTERNAL_ERROR";
+  GenerateCommitMessageErrorEnum2["emptyMessage"] = "EMPTY_MESSAGE";
+  GenerateCommitMessageErrorEnum2[GenerateCommitMessageErrorEnum2["outputTokensTooHigh"] = `Token limit exceeded, OCO_TOKENS_MAX_OUTPUT must not be much higher than the default ${500 /* DEFAULT_MAX_TOKENS_OUTPUT */} tokens.`] = "outputTokensTooHigh";
+  return GenerateCommitMessageErrorEnum2;
+})(GenerateCommitMessageErrorEnum || {});
 var ADJUSTMENT_FACTOR = 20;
 var generateCommitMessageByDiff = async (diff) => {
   try {
@@ -22143,7 +22180,7 @@ var generateCommitMessageByDiff = async (diff) => {
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
       (msg) => tokenCount(msg.content) + 4
     ).reduce((a2, b6) => a2 + b6, 0);
-    const MAX_REQUEST_TOKENS = DEFAULT_MODEL_TOKEN_LIMIT - ADJUSTMENT_FACTOR - INIT_MESSAGES_PROMPT_LENGTH - config6?.OCO_OPENAI_MAX_TOKENS;
+    const MAX_REQUEST_TOKENS = MAX_TOKENS_INPUT2 - ADJUSTMENT_FACTOR - INIT_MESSAGES_PROMPT_LENGTH - MAX_TOKENS_OUTPUT2;
     if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
       const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
         diff,
@@ -22198,6 +22235,9 @@ function splitDiff(diff, maxChangeLength) {
   const lines = diff.split("\n");
   const splitDiffs = [];
   let currentDiff = "";
+  if (maxChangeLength <= 0) {
+    throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
+  }
   for (let line of lines) {
     while (tokenCount(line) > maxChangeLength) {
       const subLine = line.substring(0, maxChangeLength);
