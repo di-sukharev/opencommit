@@ -68,7 +68,7 @@ You can also run it with local model through ollama:
 
 ```sh
 git add <files...>
-AI_PROVIDER='ollama' opencommit
+OCO_AI_PROVIDER='ollama' opencommit
 ```
 
 ### Flags
