@@ -54,7 +54,11 @@ const validateConfig = (
 export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     //need api key unless running locally with ollama
-    validateConfig('API_KEY', value || config.OCO_AI_PROVIDER == 'ollama', 'You need to provide an API key');
+    validateConfig(
+      'API_KEY',
+      value || config.OCO_AI_PROVIDER == 'ollama',
+      'You need to provide an API key'
+    );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
       value.startsWith('sk-'),
@@ -150,12 +154,13 @@ export const configValidators = {
       CONFIG_KEYS.OCO_MODEL,
       [
         'gpt-3.5-turbo',
+        'gpt-3.5-turbo-0125',
         'gpt-4',
-        'gpt-3.5-turbo-16k',
-        'gpt-3.5-turbo-0613',
-        'gpt-4-1106-preview'
+        'gpt-4-1106-preview',
+        'gpt-4-turbo-preview',
+        'gpt-4-0125-preview'
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613', 'gpt-3.5-turbo' or 'gpt-4-1106-preview'`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
     );
     return value;
   },
@@ -210,7 +215,7 @@ export const getConfig = (): ConfigType | null => {
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo-16k',
+    OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo',
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
