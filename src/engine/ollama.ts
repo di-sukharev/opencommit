@@ -8,14 +8,14 @@ export class OllamaAi implements AiEngine {
   ): Promise<string | undefined> {
     const model = 'mistral'; // todo: allow other models
 
-    let prompt = messages.map((x) => x.content).join('\n');
-    //hoftix: local models are not so clever so im changing the prompt a bit...
-    prompt += 'Summarize above git diff in 10 words or less';
+    //console.log(messages);
+    //process.exit()
 
-    const url = 'http://localhost:11434/api/generate';
+    const url = 'http://localhost:11434/api/chat';
     const p = {
       model,
-      prompt,
+      messages,
+      options: {temperature: 0, top_p: 0.1},
       stream: false
     };
     try {
@@ -24,8 +24,10 @@ export class OllamaAi implements AiEngine {
           'Content-Type': 'application/json'
         }
       });
-      const answer = response.data?.response;
-      return answer;
+
+      const message = response.data.message;
+
+      return message?.content;
     } catch (err: any) {
       const message = err.response?.data?.error ?? err.message;
       throw new Error('local model issues. details: ' + message);
