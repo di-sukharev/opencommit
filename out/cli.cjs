@@ -16384,7 +16384,7 @@ function G3(t, e2) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.10",
+  version: "3.0.11",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -21991,12 +21991,11 @@ var api = new OpenAi();
 var OllamaAi = class {
   async generateCommitMessage(messages) {
     const model = "mistral";
-    let prompt = messages.map((x4) => x4.content).join("\n");
-    prompt += "Summarize above git diff in 10 words or less";
-    const url3 = "http://localhost:11434/api/generate";
+    const url3 = "http://localhost:11434/api/chat";
     const p4 = {
       model,
-      prompt,
+      messages,
+      options: { temperature: 0, top_p: 0.1 },
       stream: false
     };
     try {
@@ -22005,8 +22004,8 @@ var OllamaAi = class {
           "Content-Type": "application/json"
         }
       });
-      const answer = response.data?.response;
-      return answer;
+      const message = response.data.message;
+      return message?.content;
     } catch (err) {
       const message = err.response?.data?.error ?? err.message;
       throw new Error("local model issues. details: " + message);
@@ -22661,7 +22660,7 @@ var hookCommand = G3(
         return ce(`${source_default.green("\u2714")} Hook is removed`);
       }
       throw new Error(
-        `Unsupported mode: ${mode2}. Supported modes are: 'set' or 'unset'`
+        `Unsupported mode: ${mode2}. Supported modes are: 'set' or 'unset', do: \`oco hook set\``
       );
     } catch (error) {
       ce(`${source_default.red("\u2716")} ${error}`);
