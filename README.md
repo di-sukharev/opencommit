@@ -101,6 +101,7 @@ OCO_MODEL=<either 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
+OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
 ```
 
 ### Global config for all repos
