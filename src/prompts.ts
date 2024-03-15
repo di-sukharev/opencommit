@@ -27,6 +27,7 @@ const INIT_MAIN_PROMPT = (
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${
     fullGitMojiSpec ? 'GitMoji specification' : 'conventional commit convention'
   } and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
+  You should only include the changes that are relevant to the commit. Do not include any changes that are not relevant to the commit.
   ${
     config?.OCO_EMOJI
       ? 'Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): ' +
