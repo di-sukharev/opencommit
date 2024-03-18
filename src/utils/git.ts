@@ -75,8 +75,11 @@ export const getChangedFiles = async (): Promise<string[]> => {
 
 export const gitAdd = async ({ files }: { files: string[] }) => {
   const gitAddSpinner = spinner();
+
   gitAddSpinner.start('Adding files to commit');
+
   await execa('git', ['add', ...files]);
+
   gitAddSpinner.stop('Done');
 };
 
