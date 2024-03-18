@@ -29,7 +29,7 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, flags.fgm);
+      commit(extraArgs, false, flags.fgm);
     }
   },
   extraArgs
