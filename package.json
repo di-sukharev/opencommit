@@ -47,7 +47,9 @@
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
     "deploy": "npm version patch && npm run build:push && git push --tags && npm publish --tag latest",
     "lint": "eslint src --ext ts && tsc --noEmit",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "test:e2e": "jest test/e2e",
+    "test:e2e:docker": "docker build -t oco-e2e -f test/Dockerfile . && DOCKER_CONTENT_TRUST=0 docker run oco-e2e"
   },
   "devDependencies": {
     "@commitlint/types": "^17.4.4",
