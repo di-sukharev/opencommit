@@ -21,6 +21,9 @@
 
     "skipLibCheck": true
   },
+  "include": [
+    "test/jest-setup.ts"
+  ],
   "exclude": ["node_modules"],
   "ts-node": {
     "esm": true,
