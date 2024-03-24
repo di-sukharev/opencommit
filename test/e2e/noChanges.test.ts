@@ -6,8 +6,8 @@ import { prepareEnvironment } from './utils';
 it('cli flow when there are no changes', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
 
-  const cli = await render(`OCO_AI_PROVIDER='test' node`, [resolve('./out/cli.cjs')], { cwd: gitDir });
-  expect(await cli.findByText('No changes detected')).toBeInTheConsole();
+  const { findByText } = await render(`OCO_AI_PROVIDER='test' node`, [resolve('./out/cli.cjs')], { cwd: gitDir });
+  expect(await findByText('No changes detected')).toBeInTheConsole();
 
   await cleanup();
 });
