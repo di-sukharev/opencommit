@@ -27,7 +27,7 @@ let apiKey = config?.OCO_OPENAI_API_KEY
 
 const [command, mode] = process.argv.slice(2);
 
-const isLocalModel = config?.OCO_AI_PROVIDER == 'ollama'
+const isLocalModel = config?.OCO_AI_PROVIDER == 'ollama' || config?.OCO_AI_PROVIDER == 'test';
 
 
 if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set && !isLocalModel) {

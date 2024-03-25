@@ -16431,19 +16431,25 @@ var package_default = {
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
     deploy: "npm version patch && npm run build:push && git push --tags && npm publish --tag latest",
     lint: "eslint src --ext ts && tsc --noEmit",
-    format: "prettier --write src"
+    format: "prettier --write src",
+    "test:e2e": "jest test/e2e",
+    "test:e2e:docker": "docker build -t oco-e2e -f test/Dockerfile . && DOCKER_CONTENT_TRUST=0 docker run oco-e2e"
   },
   devDependencies: {
     "@commitlint/types": "^17.4.4",
     "@types/ini": "^1.3.31",
     "@types/inquirer": "^9.0.3",
+    "@types/jest": "^29.5.12",
     "@types/node": "^16.18.14",
     "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.45.0",
+    "cli-testing-library": "^2.0.2",
     dotenv: "^16.0.3",
     esbuild: "^0.15.18",
     eslint: "^8.28.0",
+    jest: "^29.7.0",
     prettier: "^2.8.4",
+    "ts-jest": "^29.1.2",
     "ts-node": "^10.9.1",
     typescript: "^4.9.3"
   },
@@ -18662,7 +18668,7 @@ var configValidators = {
   ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config8 = {}) {
     validateConfig(
       "API_KEY",
-      value || config8.OCO_AI_PROVIDER == "ollama",
+      value || config8.OCO_AI_PROVIDER == "ollama" || config8.OCO_AI_PROVIDER == "test",
       "You need to provide an API key"
     );
     validateConfig(
@@ -18778,7 +18784,8 @@ var configValidators = {
       [
         "",
         "openai",
-        "ollama"
+        "ollama",
+        "test"
       ].includes(value),
       `${value} is not supported yet, use 'ollama' or 'openai' (default)`
     );
@@ -21945,7 +21952,7 @@ var MAX_TOKENS_INPUT = config3?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKE
 var basePath = config3?.OCO_OPENAI_BASE_PATH;
 var apiKey = config3?.OCO_OPENAI_API_KEY;
 var [command, mode] = process.argv.slice(2);
-var isLocalModel = config3?.OCO_AI_PROVIDER == "ollama";
+var isLocalModel = config3?.OCO_AI_PROVIDER == "ollama" || config3?.OCO_AI_PROVIDER == "test";
 if (!apiKey && command !== "config" && mode !== "set" /* set */ && !isLocalModel) {
   ae("opencommit");
   ce(
@@ -22029,11 +22036,21 @@ var OllamaAi = class {
 };
 var ollamaAi = new OllamaAi();
 
+// src/engine/testAi.ts
+var TestAi = class {
+  async generateCommitMessage(messages) {
+    return "test commit message";
+  }
+};
+var testAi = new TestAi();
+
 // src/utils/engine.ts
 function getEngine() {
   const config8 = getConfig();
   if (config8?.OCO_AI_PROVIDER == "ollama") {
     return ollamaAi;
+  } else if (config8?.OCO_AI_PROVIDER == "test") {
+    return testAi;
   }
   return api;
 }

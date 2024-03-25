@@ -24157,7 +24157,7 @@ var configValidators = {
   ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config7 = {}) {
     validateConfig(
       "API_KEY",
-      value || config7.OCO_AI_PROVIDER == "ollama",
+      value || config7.OCO_AI_PROVIDER == "ollama" || config7.OCO_AI_PROVIDER == "test",
       "You need to provide an API key"
     );
     validateConfig(
@@ -24273,7 +24273,8 @@ var configValidators = {
       [
         "",
         "openai",
-        "ollama"
+        "ollama",
+        "test"
       ].includes(value),
       `${value} is not supported yet, use 'ollama' or 'openai' (default)`
     );
@@ -27440,7 +27441,7 @@ var MAX_TOKENS_INPUT = config3?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKE
 var basePath = config3?.OCO_OPENAI_BASE_PATH;
 var apiKey = config3?.OCO_OPENAI_API_KEY;
 var [command, mode] = process.argv.slice(2);
-var isLocalModel = config3?.OCO_AI_PROVIDER == "ollama";
+var isLocalModel = config3?.OCO_AI_PROVIDER == "ollama" || config3?.OCO_AI_PROVIDER == "test";
 if (!apiKey && command !== "config" && mode !== "set" /* set */ && !isLocalModel) {
   ae("opencommit");
   ce(
@@ -27524,11 +27525,21 @@ var OllamaAi = class {
 };
 var ollamaAi = new OllamaAi();
 
+// src/engine/testAi.ts
+var TestAi = class {
+  async generateCommitMessage(messages) {
+    return "test commit message";
+  }
+};
+var testAi = new TestAi();
+
 // src/utils/engine.ts
 function getEngine() {
   const config7 = getConfig();
   if (config7?.OCO_AI_PROVIDER == "ollama") {
     return ollamaAi;
+  } else if (config7?.OCO_AI_PROVIDER == "test") {
+    return testAi;
   }
   return api;
 }
