@@ -102,9 +102,9 @@ export const configValidators = {
     
     //need api key unless running locally with ollama
     validateConfig(
-      'OpenAI API_KEY',
+      'API_KEY',
       value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
-      'You need to provide an OpenAI/Anthropic API key'
+      'You need to provide an API key'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
