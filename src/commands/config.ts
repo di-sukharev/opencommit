@@ -25,6 +25,7 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
+  OCO_GITPUSH = 'OCO_GITPUSH',
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT'
 }
 
@@ -180,7 +181,15 @@ export const configValidators = {
       ['conventional-commit', '@commitlint'].includes(value),
       `${value} is not supported yet, use '@commitlint' or 'conventional-commit' (default)`
     );
+    return value;
+  },
 
+  [CONFIG_KEYS.OCO_GITPUSH](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_GITPUSH,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
     return value;
   },
 
@@ -233,6 +242,7 @@ export const getConfig = (): ConfigType | null => {
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
+    OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
   };
 
@@ -244,7 +254,6 @@ export const getConfig = (): ConfigType | null => {
 
   for (const configKey of Object.keys(config)) {
     if (
-      !config[configKey] ||
       ['null', 'undefined'].includes(config[configKey])
     ) {
       config[configKey] = undefined;
