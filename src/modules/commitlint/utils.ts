@@ -16,6 +16,16 @@ export const removeDoubleNewlines = (input: string): string => {
   return input;
 };
 
+export const getJSONBlock = (input: string): string => {
+  const jsonIndex = input.search('```json');
+  if(jsonIndex > -1) {
+    input = input.slice(jsonIndex + 8);
+    const endJsonIndex = consistency.search('```');
+    input = input.slice(0, endJsonIndex); 
+  }
+  return input;
+};
+  
 export const commitlintLLMConfigExists = async (): Promise<boolean> => {
   let exists;
   try {
@@ -44,4 +54,4 @@ export const getCommitlintLLMConfig =
       content.toString()
     ) as CommitlintLLMConfig;
     return commitLintLLMConfig;
-  };
+};

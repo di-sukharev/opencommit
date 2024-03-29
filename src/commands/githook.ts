@@ -94,7 +94,7 @@ export const hookCommand = command(
       }
 
       throw new Error(
-        `Unsupported mode: ${mode}. Supported modes are: 'set' or 'unset'`
+        `Unsupported mode: ${mode}. Supported modes are: 'set' or 'unset', do: \`oco hook set\``
       );
     } catch (error) {
       outro(`${chalk.red('✖')} ${error}`);

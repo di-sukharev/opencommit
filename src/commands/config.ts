@@ -15,7 +15,8 @@ dotenv.config();
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
-  OCO_OPENAI_MAX_TOKENS = 'OCO_OPENAI_MAX_TOKENS',
+  OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
+  OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
   OCO_OPENAI_BASE_PATH = 'OCO_OPENAI_BASE_PATH',
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
@@ -24,14 +25,18 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
-  OCO_GITPUSH = 'OCO_GITPUSH'
+  OCO_GITPUSH = 'OCO_GITPUSH',
+  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT'
 }
-
-export const DEFAULT_MODEL_TOKEN_LIMIT = 4096;
 
 export enum CONFIG_MODES {
   get = 'get',
   set = 'set'
+}
+
+export enum DEFAULT_TOKEN_LIMITS {
+  DEFAULT_MAX_TOKENS_INPUT = 4096,
+  DEFAULT_MAX_TOKENS_OUTPUT = 500
 }
 
 const validateConfig = (
@@ -51,7 +56,11 @@ const validateConfig = (
 export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     //need api key unless running locally with ollama
-    validateConfig('API_KEY', value || config.OCO_AI_PROVIDER == 'ollama', 'You need to provide an API key');
+    validateConfig(
+      'API_KEY',
+      value || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      'You need to provide an API key'
+    );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
       value.startsWith('sk-'),
@@ -76,18 +85,37 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS](value: any) {
+  [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT](value: any) {
     // If the value is a string, convert it to a number.
     if (typeof value === 'string') {
       value = parseInt(value);
       validateConfig(
-        CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
+        CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
         !isNaN(value),
         'Must be a number'
       );
     }
     validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_MAX_TOKENS,
+      CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
+      value ? typeof value === 'number' : undefined,
+      'Must be a number'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT](value: any) {
+    // If the value is a string, convert it to a number.
+    if (typeof value === 'string') {
+      value = parseInt(value);
+      validateConfig(
+        CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
+        !isNaN(value),
+        'Must be a number'
+      );
+    }
+    validateConfig(
+      CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
       value ? typeof value === 'number' : undefined,
       'Must be a number'
     );
@@ -128,11 +156,13 @@ export const configValidators = {
       CONFIG_KEYS.OCO_MODEL,
       [
         'gpt-3.5-turbo',
+        'gpt-3.5-turbo-0125',
         'gpt-4',
-        'gpt-3.5-turbo-16k',
-        'gpt-3.5-turbo-0613'
+        'gpt-4-1106-preview',
+        'gpt-4-turbo-preview',
+        'gpt-4-0125-preview'
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo-16k' (default), 'gpt-3.5-turbo-0613' or 'gpt-3.5-turbo'`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
     );
     return value;
   },
@@ -169,10 +199,21 @@ export const configValidators = {
       [
         '',
         'openai',
-        'ollama'
+        'ollama',
+        'test'
       ].includes(value),
       `${value} is not supported yet, use 'ollama' or 'openai' (default)`
     );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_ONE_LINE_COMMIT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_ONE_LINE_COMMIT,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+
     return value;
   },
 };
@@ -186,19 +227,23 @@ const configPath = pathJoin(homedir(), '.opencommit');
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_OPENAI_MAX_TOKENS: process.env.OCO_OPENAI_MAX_TOKENS
-      ? Number(process.env.OCO_OPENAI_MAX_TOKENS)
+    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
+      ? Number(process.env.OCO_TOKENS_MAX_INPUT)
+      : undefined,
+    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT
+      ? Number(process.env.OCO_TOKENS_MAX_OUTPUT)
       : undefined,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo-16k',
+    OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo',
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
-    OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true
+    OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
+    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
   };
 
   const configExists = existsSync(configPath);
