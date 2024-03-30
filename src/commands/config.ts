@@ -15,6 +15,7 @@ dotenv.config();
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
+  OCO_ANTHROPIC_API_KEY = 'OCO_ANTHROPIC_API_KEY',
   OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
   OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
   OCO_OPENAI_BASE_PATH = 'OCO_OPENAI_BASE_PATH',
@@ -32,6 +33,30 @@ export enum CONFIG_MODES {
   get = 'get',
   set = 'set'
 }
+
+export const MODEL_LIST = {
+  openai: ['gpt-3.5-turbo',
+          'gpt-3.5-turbo-0125',
+          'gpt-4',
+          'gpt-4-1106-preview',
+          'gpt-4-turbo-preview',
+          'gpt-4-0125-preview'],
+
+  anthropic: ['claude-3-haiku-20240307',
+              'claude-3-sonnet-20240229',
+              'claude-3-opus-20240229']
+}
+
+const getDefaultModel = (provider: string | undefined): string => {
+  switch (provider) {
+    case 'ollama':
+      return '';
+    case 'anthropic':
+      return MODEL_LIST.anthropic[0];
+    default:
+      return MODEL_LIST.openai[0];
+  }
+};
 
 export enum DEFAULT_TOKEN_LIMITS {
   DEFAULT_MAX_TOKENS_INPUT = 4096,
@@ -56,9 +81,9 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     //need api key unless running locally with ollama
     validateConfig(
-      'API_KEY',
-      value || config.OCO_AI_PROVIDER == 'ollama',
-      'You need to provide an API key'
+      'OpenAI API_KEY',
+      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AI_PROVIDER == 'ollama',
+      'You need to provide an OpenAI/Anthropic API key'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
@@ -69,6 +94,16 @@ export const configValidators = {
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
       config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51,
       'Must be 51 characters long'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
+    validateConfig(
+      'ANTHROPIC_API_KEY',
+      value || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama',
+      'You need to provide an OpenAI/Anthropic API key'
     );
 
     return value;
@@ -153,18 +188,12 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_MODEL](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      [
-        'gpt-3.5-turbo',
-        'gpt-3.5-turbo-0125',
-        'gpt-4',
-        'gpt-4-1106-preview',
-        'gpt-4-turbo-preview',
-        'gpt-4-0125-preview'
-      ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
+      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value),
+      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
     );
     return value;
   },
+
   [CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
@@ -190,9 +219,10 @@ export const configValidators = {
       [
         '',
         'openai',
+        'anthropic',
         'ollama'
       ].includes(value),
-      `${value} is not supported yet, use 'ollama' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama' 'anthropic' or 'openai' (default)`
     );
     return value;
   },
@@ -217,6 +247,7 @@ const configPath = pathJoin(homedir(), '.opencommit');
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
+    OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
     OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
       ? Number(process.env.OCO_TOKENS_MAX_INPUT)
       : undefined,
@@ -226,7 +257,7 @@ export const getConfig = (): ConfigType | null => {
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || 'gpt-3.5-turbo',
+    OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',

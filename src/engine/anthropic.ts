@@ -1,11 +1,8 @@
 import axios from 'axios';
 import chalk from 'chalk';
 
-import {
-  ChatCompletionRequestMessage,
-  Configuration as OpenAiApiConfiguration,
-  OpenAIApi
-} from 'openai';
+import { MessageParam } from '@anthropic-ai/sdk/resources';
+import Anthropic from '@anthropic-ai/sdk';
 
 import { intro, outro } from '@clack/prompts';
 
@@ -26,15 +23,12 @@ const MAX_TOKENS_OUTPUT =
   DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
 const MAX_TOKENS_INPUT =
   config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
-let basePath = config?.OCO_OPENAI_BASE_PATH;
-let apiKey = config?.OCO_OPENAI_API_KEY;
 
+let provider = config?.OCO_AI_PROVIDER;
+let apiKey = config?.OCO_ANTHROPIC_API_KEY;
 const [command, mode] = process.argv.slice(2);
-
-const provider = config?.OCO_AI_PROVIDER;
-
 if (
-  provider === 'openai' &&
+  provider === 'anthropic' &&
   !apiKey &&
   command !== 'config' &&
   mode !== CONFIG_MODES.set
@@ -42,7 +36,7 @@ if (
   intro('opencommit');
 
   outro(
-    'OCO_OPENAI_API_KEY is not set, please run `oco config set OCO_OPENAI_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.`'
+    'OCO_ANTHROPIC_API_KEY is not set, please run `oco config set OCO_ANTHROPIC_API_KEY=<your token> . If you are using Claude, make sure you add payment details, so API works.`'
   );
   outro(
     'For help look into README https://github.com/di-sukharev/opencommit#setup'
@@ -51,35 +45,31 @@ if (
   process.exit(1);
 }
 
-const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
-if (provider === 'openai' &&
-    !MODEL_LIST.openai.includes(MODEL) &&
+const MODEL = config?.OCO_MODEL;
+if (provider === 'anthropic' &&
+    !MODEL_LIST.anthropic.includes(MODEL) &&
     command !== 'config' &&
     mode !== CONFIG_MODES.set) {
   outro(
-    `${chalk.red('✖')} Unsupported model ${MODEL} for OpenAI. Supported models are: ${MODEL_LIST.openai.join(
+    `${chalk.red('✖')} Unsupported model ${MODEL} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
       ', '
     )}`
   );
-
   process.exit(1);
 }
 
-class OpenAi implements AiEngine {
-  private openAiApiConfiguration = new OpenAiApiConfiguration({
+class AnthropicAi implements AiEngine {
+  private anthropicAiApiConfiguration = {
     apiKey: apiKey
-  });
-  private openAI!: OpenAIApi;
+  };
+  private anthropicAI!: Anthropic;
 
   constructor() {
-    if (basePath) {
-      this.openAiApiConfiguration.basePath = basePath;
-    }
-    this.openAI = new OpenAIApi(this.openAiApiConfiguration);
+    this.anthropicAI = new Anthropic(this.anthropicAiApiConfiguration);
   }
 
   public generateCommitMessage = async (
-    messages: Array<ChatCompletionRequestMessage>
+    messages: Array<MessageParam>
   ): Promise<string | undefined> => {
     const params = {
       model: MODEL,
@@ -90,18 +80,18 @@ class OpenAi implements AiEngine {
     };
     try {
       const REQUEST_TOKENS = messages
-        .map((msg) => tokenCount(msg.content) + 4)
+        .map((msg) => tokenCount(msg.content as string) + 4)
         .reduce((a, b) => a + b, 0);
 
       if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
       }
 
-      const { data } = await this.openAI.createChatCompletion(params);
+      const data  = await this.anthropicAI.messages.create(params);
 
-      const message = data.choices[0].message;
+      const message = data?.content[0].text;
 
-      return message?.content;
+      return message;
     } catch (error) {
       outro(`${chalk.red('✖')} ${JSON.stringify(params)}`);
 
@@ -112,9 +102,9 @@ class OpenAi implements AiEngine {
         axios.isAxiosError<{ error?: { message: string } }>(error) &&
         error.response?.status === 401
       ) {
-        const openAiError = error.response.data.error;
+        const anthropicAiError = error.response.data.error;
 
-        if (openAiError?.message) outro(openAiError.message);
+        if (anthropicAiError?.message) outro(anthropicAiError.message);
         outro(
           'For help look into README https://github.com/di-sukharev/opencommit#setup'
         );
@@ -125,4 +115,4 @@ class OpenAi implements AiEngine {
   };
 }
 
-export const api = new OpenAi();
+export const anthropicAi = new AnthropicAi();
