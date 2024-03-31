@@ -1,8 +1,9 @@
 import axios from 'axios';
 import chalk from 'chalk';
 
-import { MessageParam } from '@anthropic-ai/sdk/resources';
 import Anthropic from '@anthropic-ai/sdk';
+import {ChatCompletionRequestMessage} from 'openai'
+import { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources';
 
 import { intro, outro } from '@clack/prompts';
 
@@ -69,13 +70,13 @@ class AnthropicAi implements AiEngine {
   }
 
   public generateCommitMessage = async (
-    messages: Array<MessageParam>
+    messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> => {
 
-    const systemMessage = messages[0].content;
-    const restMessages = messages.filter((_, idx) => idx !==0);
+    const systemMessage = messages.find(msg => msg.role === 'system')?.content as string;
+    const restMessages = messages.filter((msg) => msg.role !== 'system') as MessageParam[];
 
-    const params = {
+    const params: MessageCreateParamsNonStreaming = {
       model: MODEL,
       system: systemMessage,
       messages: restMessages,

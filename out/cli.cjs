@@ -34471,8 +34471,8 @@ var AnthropicAi = class {
     this.anthropicAI = new sdk_default(this.anthropicAiApiConfiguration);
   }
   generateCommitMessage = async (messages) => {
-    const systemMessage = messages[0].content;
-    const restMessages = messages.filter((_7, idx) => idx !== 0);
+    const systemMessage = messages.find((msg) => msg.role === "system")?.content;
+    const restMessages = messages.filter((msg) => msg.role !== "system");
     const params = {
       model: MODEL2,
       system: systemMessage,
