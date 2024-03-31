@@ -23,7 +23,7 @@ const INIT_MAIN_PROMPT = (
   language: string,
   fullGitMojiSpec: boolean
 ): ChatCompletionRequestMessage => ({
-  role: config?.OCO_AI_PROVIDER === 'anthropic' ? ChatCompletionRequestMessageRoleEnum.User : ChatCompletionRequestMessageRoleEnum.System,
+  role: ChatCompletionRequestMessageRoleEnum.System,
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${
     fullGitMojiSpec ? 'GitMoji specification' : 'conventional commit convention'
   } and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
@@ -123,14 +123,6 @@ const INIT_MAIN_PROMPT = (
     Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
 });
 
-const INIT_ASSISTANT_PROMPT = (
-  language: string,
-  fullGitMojiSpec: boolean
-): ChatCompletionRequestMessage => ({
-  role: ChatCompletionRequestMessageRoleEnum.Assistant,
-  content: `I understand your request to act as the author of a Git commit message. Please provide me with the output of the 'git diff --staged' command, and I will generate a clean and comprehensive commit message following the conventional commit convention, explaining WHAT changes were made and WHY they were made${config?.OCO_EMOJI ? ", using the appropriate GitMoji emoji to categorize the type of changes" : ""}. I will use the present tense, keep lines under 74 characters, and write the commit message in ${language} WITHOUT any additional descriptions or preface.`
-});
-
 export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
   role: ChatCompletionRequestMessageRoleEnum.User,
   content: `diff --git a/src/server.ts b/src/server.ts
@@ -206,15 +198,6 @@ export const getMainCommitPrompt = async (
 
     default:
       // conventional-commit
-      if (config?.OCO_AI_PROVIDER === 'anthropic') {
-        return [
-          INIT_MAIN_PROMPT(translation.localLanguage, fullGitMojiSpec),
-          INIT_ASSISTANT_PROMPT(translation.localLanguage, fullGitMojiSpec),
-          INIT_DIFF_PROMPT,
-          INIT_CONSISTENCY_PROMPT(translation)
-        ];
-      }
-
       return [
         INIT_MAIN_PROMPT(translation.localLanguage, fullGitMojiSpec),
         INIT_DIFF_PROMPT,

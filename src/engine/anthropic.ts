@@ -71,9 +71,14 @@ class AnthropicAi implements AiEngine {
   public generateCommitMessage = async (
     messages: Array<MessageParam>
   ): Promise<string | undefined> => {
+
+    const systemMessage = messages[0].content;
+    const restMessages = messages.filter((_, idx) => idx !==0);
+
     const params = {
       model: MODEL,
-      messages,
+      system: systemMessage,
+      messages: restMessages,
       temperature: 0,
       top_p: 0.1,
       max_tokens: MAX_TOKENS_OUTPUT
