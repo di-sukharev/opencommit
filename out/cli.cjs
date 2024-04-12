@@ -27009,7 +27009,7 @@ var package_default = {
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
     "@actions/github": "^5.1.1",
-    "@anthropic-ai/sdk": "^0.19.1",
+    "@anthropic-ai/sdk": "^0.19.2",
     "@clack/prompts": "^0.6.1",
     "@dqbd/tiktoken": "^1.0.2",
     "@octokit/webhooks-schemas": "^6.11.0",
@@ -29455,6 +29455,7 @@ var MODEL_LIST = {
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-0125",
     "gpt-4",
+    "gpt-4-turbo",
     "gpt-4-1106-preview",
     "gpt-4-turbo-preview",
     "gpt-4-0125-preview"
@@ -29505,7 +29506,7 @@ var configValidators = {
   ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config9 = {}) {
     validateConfig(
       "ANTHROPIC_API_KEY",
-      value || config9.OCO_OPENAI_API_KEY || config9.OCO_AI_PROVIDER == "ollama",
+      value || config9.OCO_OPENAI_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic API key"
     );
     return value;
@@ -29578,7 +29579,7 @@ var configValidators = {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
       [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
     );
     return value;
   },
@@ -32970,7 +32971,7 @@ var OllamaAi = class {
 var ollamaAi = new OllamaAi();
 
 // node_modules/@anthropic-ai/sdk/version.mjs
-var VERSION3 = "0.19.1";
+var VERSION3 = "0.19.2";
 
 // node_modules/@anthropic-ai/sdk/_shims/registry.mjs
 var auto = false;
@@ -33544,27 +33545,6 @@ var Stream = class {
   }
   static fromSSEResponse(response, controller) {
     let consumed = false;
-    const decoder = new SSEDecoder();
-    async function* iterMessages() {
-      if (!response.body) {
-        controller.abort();
-        throw new AnthropicError(`Attempted to iterate over a response with no body`);
-      }
-      const lineDecoder = new LineDecoder();
-      const iter = readableStreamAsyncIterable(response.body);
-      for await (const chunk of iter) {
-        for (const line of lineDecoder.decode(chunk)) {
-          const sse = decoder.decode(line);
-          if (sse)
-            yield sse;
-        }
-      }
-      for (const line of lineDecoder.flush()) {
-        const sse = decoder.decode(line);
-        if (sse)
-          yield sse;
-      }
-    }
     async function* iterator() {
       if (consumed) {
         throw new Error("Cannot iterate over a consumed stream, use `.tee()` to split the stream.");
@@ -33572,7 +33552,7 @@ var Stream = class {
       consumed = true;
       let done = false;
       try {
-        for await (const sse of iterMessages()) {
+        for await (const sse of _iterSSEMessages(response, controller)) {
           if (sse.event === "completion") {
             try {
               yield JSON.parse(sse.data);
@@ -33701,6 +33681,64 @@ var Stream = class {
     });
   }
 };
+async function* _iterSSEMessages(response, controller) {
+  if (!response.body) {
+    controller.abort();
+    throw new AnthropicError(`Attempted to iterate over a response with no body`);
+  }
+  const sseDecoder = new SSEDecoder();
+  const lineDecoder = new LineDecoder();
+  const iter = readableStreamAsyncIterable(response.body);
+  for await (const sseChunk of iterSSEChunks(iter)) {
+    for (const line of lineDecoder.decode(sseChunk)) {
+      const sse = sseDecoder.decode(line);
+      if (sse)
+        yield sse;
+    }
+  }
+  for (const line of lineDecoder.flush()) {
+    const sse = sseDecoder.decode(line);
+    if (sse)
+      yield sse;
+  }
+}
+async function* iterSSEChunks(iterator) {
+  let data = new Uint8Array();
+  for await (const chunk of iterator) {
+    if (chunk == null) {
+      continue;
+    }
+    const binaryChunk = chunk instanceof ArrayBuffer ? new Uint8Array(chunk) : typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk;
+    let newData = new Uint8Array(data.length + binaryChunk.length);
+    newData.set(data);
+    newData.set(binaryChunk, data.length);
+    data = newData;
+    let patternIndex;
+    while ((patternIndex = findDoubleNewlineIndex(data)) !== -1) {
+      yield data.slice(0, patternIndex);
+      data = data.slice(patternIndex);
+    }
+  }
+  if (data.length > 0) {
+    yield data;
+  }
+}
+function findDoubleNewlineIndex(buffer) {
+  const newline = 10;
+  const carriage = 13;
+  for (let i3 = 0; i3 < buffer.length - 2; i3++) {
+    if (buffer[i3] === newline && buffer[i3 + 1] === newline) {
+      return i3 + 2;
+    }
+    if (buffer[i3] === carriage && buffer[i3 + 1] === carriage) {
+      return i3 + 2;
+    }
+    if (buffer[i3] === carriage && buffer[i3 + 1] === newline && i3 + 3 < buffer.length && buffer[i3 + 2] === carriage && buffer[i3 + 3] === newline) {
+      return i3 + 4;
+    }
+  }
+  return -1;
+}
 var SSEDecoder = class {
   constructor() {
     this.event = null;
@@ -33809,8 +33847,8 @@ var LineDecoder = class {
     return lines;
   }
 };
-LineDecoder.NEWLINE_CHARS = /* @__PURE__ */ new Set(["\n", "\r", "\v", "\f", "", "", "", "\x85", "\u2028", "\u2029"]);
-LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r\x0b\x0c\x1c\x1d\x1e\x85\u2028\u2029]/g;
+LineDecoder.NEWLINE_CHARS = /* @__PURE__ */ new Set(["\n", "\r"]);
+LineDecoder.NEWLINE_REGEXP = /\r\n|[\n\r]/g;
 function partition(str, delimiter) {
   const index = str.indexOf(delimiter);
   if (index !== -1) {
