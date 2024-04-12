@@ -159,10 +159,11 @@ export const configValidators = {
         'gpt-3.5-turbo-0125',
         'gpt-4',
         'gpt-4-1106-preview',
-        'gpt-4-turbo-preview',
-        'gpt-4-0125-preview'
+        'gpt-4-0125-preview',
+        'gpt-4-turbo',
+        'gpt-4-turbo-preview'
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-0125-preview' or 'gpt-4-turbo-preview'`
     );
     return value;
   },
