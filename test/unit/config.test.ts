@@ -8,6 +8,25 @@ describe('getConfig', () => {
   const testApiKeyWithValidFormat2 =
     'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2';
 
+  const originalEnv = { ...process.env };
+  function resetEnv(env: NodeJS.ProcessEnv) {
+    Object.keys(process.env).forEach((key) => {
+      if (!(key in env)) {
+        delete process.env[key];
+      } else {
+        process.env[key] = env[key];
+      }
+    });
+  }
+
+  beforeEach(() => {
+    resetEnv(originalEnv);
+  });
+
+  afterAll(() => {
+    resetEnv(originalEnv);
+  });
+
   it('return default config values when no global config / local env files are present', async () => {
     const config = getConfig({ configPath: '', envPath: '' });
 
@@ -107,10 +126,7 @@ OCO_ONE_LINE_COMMIT="true"
   });
 
   it('return default values when the content of the global config file is empty', async () => {
-    const configFile = await prepareFile(
-      '.opencommit',
-      '',
-    );
+    const configFile = await prepareFile('.opencommit', '');
     const config = getConfig({ configPath: configFile.filePath, envPath: '' });
 
     expect(config).not.toEqual(null);
@@ -133,10 +149,7 @@ OCO_ONE_LINE_COMMIT="true"
   });
 
   it('return default values when the content of the local env file is empty', async () => {
-    const envFile = await prepareFile(
-      '.env',
-      '',
-    );
+    const envFile = await prepareFile('.env', '');
     const config = getConfig({ configPath: '', envPath: envFile.filePath });
 
     expect(config).not.toEqual(null);
@@ -196,7 +209,10 @@ OCO_ONE_LINE_COMMIT="false"
     `
     );
 
-    const config = getConfig({ configPath: configFile.filePath, envPath: envFile.filePath });
+    const config = getConfig({
+      configPath: configFile.filePath,
+      envPath: envFile.filePath
+    });
 
     expect(config).not.toEqual(null);
 

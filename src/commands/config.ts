@@ -257,27 +257,27 @@ export const getConfig = ({
   configPath?: string
   envPath?: string
 } = {}): ConfigType | null => {
-  const env: DotenvParseOutput = dotenv.config({ path: envPath }).parsed ?? {};
+  dotenv.config({ path: envPath });
   const configFromEnv = {
-    OCO_OPENAI_API_KEY: env.OCO_OPENAI_API_KEY,
-    OCO_ANTHROPIC_API_KEY: env.OCO_ANTHROPIC_API_KEY,
-    OCO_TOKENS_MAX_INPUT: env.OCO_TOKENS_MAX_INPUT
-      ? Number(env.OCO_TOKENS_MAX_INPUT)
+    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
+    OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
+    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
+      ? Number(process.env.OCO_TOKENS_MAX_INPUT)
       : undefined,
-    OCO_TOKENS_MAX_OUTPUT: env.OCO_TOKENS_MAX_OUTPUT
-      ? Number(env.OCO_TOKENS_MAX_OUTPUT)
+    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT
+      ? Number(process.env.OCO_TOKENS_MAX_OUTPUT)
       : undefined,
-    OCO_OPENAI_BASE_PATH: env.OCO_OPENAI_BASE_PATH,
-    OCO_DESCRIPTION: env.OCO_DESCRIPTION === 'true' ? true : false,
-    OCO_EMOJI: env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL: env.OCO_MODEL || getDefaultModel(env.OCO_AI_PROVIDER),
-    OCO_LANGUAGE: env.OCO_LANGUAGE || 'en',
+    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
+    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
+    OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
+    OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-      env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
-    OCO_PROMPT_MODULE: env.OCO_PROMPT_MODULE || 'conventional-commit',
-    OCO_AI_PROVIDER: env.OCO_AI_PROVIDER || 'openai',
-    OCO_GITPUSH: env.OCO_GITPUSH === 'false' ? false : true,
-    OCO_ONE_LINE_COMMIT: env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
+      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
+    OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
+    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
   };
 
   const configExists = existsSync(configPath);
