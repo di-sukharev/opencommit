@@ -18755,10 +18755,11 @@ var configValidators = {
         "gpt-3.5-turbo-0125",
         "gpt-4",
         "gpt-4-1106-preview",
-        "gpt-4-turbo-preview",
-        "gpt-4-0125-preview"
+        "gpt-4-0125-preview",
+        "gpt-4-turbo",
+        "gpt-4-turbo-preview"
       ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
+      `${value} is not supported yet, use 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-0125-preview' or 'gpt-4-turbo-preview'`
     );
     return value;
   },
@@ -18775,6 +18776,14 @@ var configValidators = {
       "OCO_PROMPT_MODULE" /* OCO_PROMPT_MODULE */,
       ["conventional-commit", "@commitlint"].includes(value),
       `${value} is not supported yet, use '@commitlint' or 'conventional-commit' (default)`
+    );
+    return value;
+  },
+  ["OCO_GITPUSH" /* OCO_GITPUSH */](value) {
+    validateConfig(
+      "OCO_GITPUSH" /* OCO_GITPUSH */,
+      typeof value === "boolean",
+      "Must be true or false"
     );
     return value;
   },
@@ -18814,6 +18823,7 @@ var getConfig = () => {
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit",
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || "openai",
+    OCO_GITPUSH: process.env.OCO_GITPUSH === "false" ? false : true,
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false
   };
   const configExists = (0, import_fs.existsSync)(configPath);
@@ -18822,7 +18832,7 @@ var getConfig = () => {
   const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
   const config8 = (0, import_ini.parse)(configFile);
   for (const configKey of Object.keys(config8)) {
-    if (!config8[configKey] || ["null", "undefined"].includes(config8[configKey])) {
+    if (["null", "undefined"].includes(config8[configKey])) {
       config8[configKey] = void 0;
       continue;
     }
@@ -22472,13 +22482,15 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
       ce(`${source_default.green("\u2714")} Successfully committed`);
       ce(stdout);
       const remotes = await getGitRemotes();
+      if (config7?.OCO_GITPUSH === false)
+        return;
       if (!remotes.length) {
         const { stdout: stdout2 } = await execa("git", ["push"]);
         if (stdout2)
           ce(stdout2);
         process.exit(0);
       }
-      if (remotes.length === 1) {
+      if (remotes.length === 1 && config7?.OCO_GITPUSH !== true) {
         const isPushConfirmedByUser = await Q3({
           message: "Do you want to run `git push`?"
         });

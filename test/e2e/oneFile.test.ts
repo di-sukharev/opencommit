@@ -18,7 +18,7 @@ it('cli flow to generate commit message for 1 new file (staged)', async () => {
   expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
   userEvent.keyboard('[Enter]');
 
-  expect(await findByText('Do you want to run `git push`?')).toBeInTheConsole();
+  expect(await findByText('Choose a remote to push to')).toBeInTheConsole();
   userEvent.keyboard('[Enter]');
 
   expect(await findByText('Successfully pushed all commits to origin')).toBeInTheConsole();
@@ -47,7 +47,7 @@ it('cli flow to generate commit message for 1 changed file (not staged)', async 
 
   expect(await findByText('Successfully committed')).toBeInTheConsole();
 
-  expect(await findByText('Do you want to run `git push`?')).toBeInTheConsole();
+  expect(await findByText('Choose a remote to push to')).toBeInTheConsole();
   userEvent.keyboard('[Enter]');
 
   expect(await findByText('Successfully pushed all commits to origin')).toBeInTheConsole();
