@@ -1,4 +1,4 @@
-name: E2E Testing
+name: Testing
 
 on: [pull_request]
 
