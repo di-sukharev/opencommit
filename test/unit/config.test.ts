@@ -4,9 +4,9 @@ import { prepareFile } from './utils';
 describe('getConfig', () => {
   // 51 characters with 'sk-' prefix
   const testApiKeyWithValidFormat =
-    'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+    'sk-************************************************';
   const testApiKeyWithValidFormat2 =
-    'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx2';
+    'sk-***********************************************2';
 
   const originalEnv = { ...process.env };
   function resetEnv(env: NodeJS.ProcessEnv) {
