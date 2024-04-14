@@ -32,6 +32,7 @@ describe('getConfig', () => {
 
     expect(config).not.toEqual(null);
     expect(config!['OCO_OPENAI_API_KEY']).toEqual(undefined);
+    expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual(undefined);
     // TODO: Fix the following tests
     // expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(4096); // Received: undefined
     // expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(500); // Received: undefined
@@ -52,6 +53,7 @@ describe('getConfig', () => {
       '.opencommit',
       `
 OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat}"
+OCO_ANTHROPIC_API_KEY="secret-key"
 OCO_TOKENS_MAX_INPUT="8192"
 OCO_TOKENS_MAX_OUTPUT="1000"
 OCO_OPENAI_BASE_PATH="/openai/api"
@@ -70,6 +72,7 @@ OCO_ONE_LINE_COMMIT="true"
 
     expect(config).not.toEqual(null);
     expect(config!['OCO_OPENAI_API_KEY']).toEqual(testApiKeyWithValidFormat);
+    expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('secret-key');
     expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(8192);
     expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(1000);
     expect(config!['OCO_OPENAI_BASE_PATH']).toEqual('/openai/api');
@@ -91,6 +94,7 @@ OCO_ONE_LINE_COMMIT="true"
       '.env',
       `
 OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat}"
+OCO_ANTHROPIC_API_KEY="secret-key"
 OCO_TOKENS_MAX_INPUT="8192"
 OCO_TOKENS_MAX_OUTPUT="1000"
 OCO_OPENAI_BASE_PATH="/openai/api"
@@ -109,6 +113,7 @@ OCO_ONE_LINE_COMMIT="true"
 
     expect(config).not.toEqual(null);
     expect(config!['OCO_OPENAI_API_KEY']).toEqual(testApiKeyWithValidFormat);
+    expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('secret-key');
     expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(8192);
     expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(1000);
     expect(config!['OCO_OPENAI_BASE_PATH']).toEqual('/openai/api');
@@ -131,6 +136,7 @@ OCO_ONE_LINE_COMMIT="true"
 
     expect(config).not.toEqual(null);
     expect(config!['OCO_OPENAI_API_KEY']).toEqual(undefined);
+    expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual(undefined);
     // TODO: Fix the following tests
     // expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(4096); // Received: undefined
     // expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(500); // Received: undefined
@@ -154,6 +160,7 @@ OCO_ONE_LINE_COMMIT="true"
 
     expect(config).not.toEqual(null);
     expect(config!['OCO_OPENAI_API_KEY']).toEqual(undefined);
+    expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual(undefined);
     // TODO: Fix the following tests
     // expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(4096); // Received: undefined
     // expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(500); // Received: undefined
@@ -176,6 +183,7 @@ OCO_ONE_LINE_COMMIT="true"
       '.opencommit',
       `
 OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat}"
+OCO_ANTHROPIC_API_KEY="secret-key"
 OCO_TOKENS_MAX_INPUT="8192"
 OCO_TOKENS_MAX_OUTPUT="1000"
 OCO_OPENAI_BASE_PATH="/openai/api"
@@ -194,6 +202,7 @@ OCO_ONE_LINE_COMMIT="true"
       '.env',
       `
 OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat2}"
+OCO_ANTHROPIC_API_KEY="secret-key2"
 OCO_TOKENS_MAX_INPUT="16384"
 OCO_TOKENS_MAX_OUTPUT="2000"
 OCO_OPENAI_BASE_PATH="/openai/api2"
@@ -221,6 +230,7 @@ OCO_ONE_LINE_COMMIT="false"
     // The expected values is the value from the local env file.
 
     // expect(config!['OCO_OPENAI_API_KEY']).toEqual(testApiKeyWithValidFormat2);
+    // expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('secret-key2');
     // expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(16384);
     // expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(2000);
     // expect(config!['OCO_OPENAI_BASE_PATH']).toEqual('/openai/api2');
