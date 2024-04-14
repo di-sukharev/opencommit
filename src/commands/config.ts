@@ -138,6 +138,16 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
+    validateConfig(
+      'ANTHROPIC_API_KEY',
+      value || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      'You need to provide an OpenAI/Anthropic API key'
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_DESCRIPTION](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_DESCRIPTION,
