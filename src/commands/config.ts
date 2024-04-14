@@ -4,13 +4,12 @@ import * as dotenv from 'dotenv';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { parse as iniParse, stringify as iniStringify } from 'ini';
 import { homedir } from 'os';
-import path, { join as pathJoin } from 'path';
+import { join as pathJoin, resolve as pathResolve } from 'path';
 
 import { intro, outro } from '@clack/prompts';
 
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
-import { DotenvParseOutput } from 'dotenv';
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
@@ -248,7 +247,7 @@ export type ConfigType = {
 };
 
 const defaultConfigPath = pathJoin(homedir(), '.opencommit');
-const defaultEnvPath = path.resolve(process.cwd(), '.env');
+const defaultEnvPath = pathResolve(process.cwd(), '.env');
 
 export const getConfig = ({
   configPath = defaultConfigPath,
