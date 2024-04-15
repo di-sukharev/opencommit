@@ -12,6 +12,7 @@ import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
 
 dotenv.config();
+let configCache:ConfigType | null = null;
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
@@ -256,6 +257,9 @@ export type ConfigType = {
 const configPath = pathJoin(homedir(), '.opencommit');
 
 export const getConfig = (): ConfigType | null => {
+  // If it is enable, use configCache
+  if (configCache) return configCache;
+
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -279,7 +283,10 @@ export const getConfig = (): ConfigType | null => {
   };
 
   const configExists = existsSync(configPath);
-  if (!configExists) return configFromEnv;
+  if (!configExists) {
+    configCache = configFromEnv;
+    return configFromEnv;
+  }
 
   const configFile = readFileSync(configPath, 'utf8');
   const config = iniParse(configFile);
@@ -308,6 +315,8 @@ export const getConfig = (): ConfigType | null => {
     }
   }
 
+  // Store configCache
+  configCache = config
   return config;
 };
 
