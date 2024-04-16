@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 
 import { COMMITLINT_LLM_CONFIG_PATH } from './constants';
 import { CommitlintLLMConfig } from './types';
+import { URL } from "url";
 
 /**
  * Removes the "\n" only if occurring twice
@@ -55,3 +56,15 @@ export const getCommitlintLLMConfig =
     ) as CommitlintLLMConfig;
     return commitLintLLMConfig;
 };
+
+export const isValidHttpUrl = (url: string): boolean => {
+  let _url;
+
+  try {
+    _url = new URL(url);
+  } catch (_) {
+    return false;
+  }
+
+  return _url.protocol === "http:" || _url.protocol === "https:";
+}

@@ -1,6 +1,7 @@
 import axios, { AxiosError } from 'axios';
 import { ChatCompletionRequestMessage } from 'openai';
 import { AiEngine } from './Engine';
+import { getConfig } from '../commands/config';
 
 export class OllamaAi implements AiEngine {
   async generateCommitMessage(
@@ -11,7 +12,9 @@ export class OllamaAi implements AiEngine {
     //console.log(messages);
     //process.exit()
 
-    const url = 'http://localhost:11434/api/chat';
+    const config = getConfig();
+
+    const url = `${config?.OCO_AI_HOST || "http://localhost:11434"}/api/chat`;
     const p = {
       model,
       messages,

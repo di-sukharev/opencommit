@@ -10,6 +10,7 @@ import { intro, outro } from '@clack/prompts';
 
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
+import { isValidHttpUrl } from '../modules/commitlint/utils';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
+  OCO_AI_HOST = 'OCO_AI_HOST',
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT'
 }
 
@@ -197,6 +199,15 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_AI_HOST](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_AI_HOST,
+      isValidHttpUrl(value),
+      `${value} is not a proper URL`
+    );
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_ONE_LINE_COMMIT](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_ONE_LINE_COMMIT,
@@ -232,6 +243,7 @@ export const getConfig = (): ConfigType | null => {
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
+    OCO_AI_HOST: process.env.OCO_AI_HOST,
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
   };
 
