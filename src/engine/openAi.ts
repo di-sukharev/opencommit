@@ -20,19 +20,26 @@ import { AiEngine } from './Engine';
 
 const config = getConfig();
 
-const MAX_TOKENS_OUTPUT = config?.OCO_TOKENS_MAX_OUTPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
-const MAX_TOKENS_INPUT = config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
+const MAX_TOKENS_OUTPUT =
+  config?.OCO_TOKENS_MAX_OUTPUT ||
+  DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
+const MAX_TOKENS_INPUT =
+  config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
 let basePath = config?.OCO_OPENAI_BASE_PATH;
 let apiKey = config?.OCO_OPENAI_API_KEY;
 let apiType = config?.OCO_AI_PROVIDER;
-let apiVersion = config?.OCO_AI_VERSION;
+let apiVersion = config?.OCO_AZURE_API_VERSION;
 
 const [command, mode] = process.argv.slice(2);
 
-const isLocalModel = config?.OCO_AI_PROVIDER == 'ollama'
+const isLocalModel = config?.OCO_AI_PROVIDER == 'ollama';
 
-
-if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set && !isLocalModel) {
+if (
+  !apiKey &&
+  command !== 'config' &&
+  mode !== CONFIG_MODES.set &&
+  !isLocalModel
+) {
   intro('opencommit');
 
   outro(
@@ -56,16 +63,17 @@ class OpenAi implements AiEngine {
   constructor() {
     switch (apiType) {
       case 'azure':
-        this.openAiApiConfiguration.baseOptions =  {
+        this.openAiApiConfiguration.baseOptions = {
           headers: {
-            "api-key": apiKey,
+            'api-key': apiKey
           },
           params: {
-            'api-version': apiVersion,
+            'api-version': apiVersion
           }
         };
         if (basePath) {
-          this.openAiApiConfiguration.basePath = basePath + 'openai/deployments/' + MODEL;
+          this.openAiApiConfiguration.basePath =
+            basePath + 'openai/deployments/' + MODEL;
         }
         break;
       case 'openai':
@@ -124,7 +132,5 @@ class OpenAi implements AiEngine {
     }
   };
 }
-
-
 
 export const api = new OpenAi();

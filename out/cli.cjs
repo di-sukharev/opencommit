@@ -18667,13 +18667,23 @@ var configValidators = {
     );
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      value.startsWith("sk-"),
-      'Must start with "sk-"'
+      value.startsWith("sk-") || config8.OCO_AI_PROVIDER != "openai",
+      'Must start with "sk-" for openai provider'
     );
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      config8["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */] || value.length === 51,
+      value.match(/^[a-z0-9]{32}$/) || config8.OCO_AI_PROVIDER != "azure",
+      "Must be 32 characters with [a-z0-9]"
+    );
+    validateConfig(
+      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
+      config8["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */] || value.length === 51 || config8.OCO_AI_PROVIDER != "openai" && config8.OCO_AI_PROVIDER != "ollama",
       "Must be 51 characters long"
+    );
+    validateConfig(
+      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
+      value.length === 32 || config8.OCO_AI_PROVIDER != "azure",
+      "Must be 32 characters long"
     );
     return value;
   },
@@ -18741,7 +18751,7 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_MODEL" /* OCO_MODEL */](value) {
+  ["OCO_MODEL" /* OCO_MODEL */](value, config8 = {}) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
       [
@@ -18751,8 +18761,13 @@ var configValidators = {
         "gpt-4-1106-preview",
         "gpt-4-turbo-preview",
         "gpt-4-0125-preview"
-      ].includes(value),
+      ].includes(value) || config8.OCO_AI_PROVIDER != "openai" && config8.OCO_AI_PROVIDER != "ollama",
       `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
+    );
+    validateConfig(
+      "OCO_MODEL" /* OCO_MODEL */,
+      typeof value === "string" && value.match(/^[a-zA-Z0-9~\-]{1,63}[a-zA-Z0-9]$/) || config8.OCO_AI_PROVIDER != "azure",
+      `${value} is not model deployed name.`
     );
     return value;
   },
@@ -18775,12 +18790,8 @@ var configValidators = {
   ["OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */](value) {
     validateConfig(
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
-      [
-        "",
-        "openai",
-        "ollama"
-      ].includes(value),
-      `${value} is not supported yet, use 'ollama' or 'openai' (default)`
+      ["", "openai", "ollama", "azure"].includes(value),
+      `${value} is not supported yet, use 'azure', 'ollama' or 'openai' (default)`
     );
     return value;
   },
@@ -18789,6 +18800,14 @@ var configValidators = {
       "OCO_ONE_LINE_COMMIT" /* OCO_ONE_LINE_COMMIT */,
       typeof value === "boolean",
       "Must be true or false"
+    );
+    return value;
+  },
+  ["OCO_AZURE_API_VERSION" /* OCO_AZURE_API_VERSION */](value) {
+    validateConfig(
+      "OCO_AZURE_API_VERSION" /* OCO_AZURE_API_VERSION */,
+      value.match(/^\d{4}-\d{2}-\d{2}(-preview)?$/),
+      `${value} is not valid azure api version. Check https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#completions`
     );
     return value;
   }
@@ -18807,6 +18826,7 @@ var getConfig = () => {
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit",
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || "openai",
+    OCO_AZURE_API_VERSION: process.env.OCO_AZURE_API_VERSION || "2023-03-15-preview",
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false
   };
   const configExists = (0, import_fs.existsSync)(configPath);
@@ -18827,7 +18847,7 @@ var getConfig = () => {
       );
       config8[configKey] = validValue;
     } catch (error) {
-      ce(`Unknown '${configKey}' config option.`);
+      ce(`Unknown '${configKey}' config option or missing validator.`);
       ce(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
@@ -21944,6 +21964,8 @@ var MAX_TOKENS_OUTPUT = config3?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOK
 var MAX_TOKENS_INPUT = config3?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
 var basePath = config3?.OCO_OPENAI_BASE_PATH;
 var apiKey = config3?.OCO_OPENAI_API_KEY;
+var apiType = config3?.OCO_AI_PROVIDER;
+var apiVersion = config3?.OCO_AZURE_API_VERSION;
 var [command, mode] = process.argv.slice(2);
 var isLocalModel = config3?.OCO_AI_PROVIDER == "ollama";
 if (!apiKey && command !== "config" && mode !== "set" /* set */ && !isLocalModel) {
@@ -21963,8 +21985,26 @@ var OpenAi = class {
   });
   openAI;
   constructor() {
-    if (basePath) {
-      this.openAiApiConfiguration.basePath = basePath;
+    switch (apiType) {
+      case "azure":
+        this.openAiApiConfiguration.baseOptions = {
+          headers: {
+            "api-key": apiKey
+          },
+          params: {
+            "api-version": apiVersion
+          }
+        };
+        if (basePath) {
+          this.openAiApiConfiguration.basePath = basePath + "openai/deployments/" + MODEL;
+        }
+        break;
+      case "openai":
+      default:
+        if (basePath) {
+          this.openAiApiConfiguration.basePath = basePath;
+        }
+        break;
     }
     this.openAI = new import_openai2.OpenAIApi(this.openAiApiConfiguration);
   }
@@ -22214,7 +22254,10 @@ var generateCommitMessageByDiff = async (diff, fullGitMojiSpec) => {
       }
       return commitMessages.join("\n\n");
     }
-    const messages = await generateCommitMessageChatCompletionPrompt(diff, fullGitMojiSpec);
+    const messages = await generateCommitMessageChatCompletionPrompt(
+      diff,
+      fullGitMojiSpec
+    );
     const engine = getEngine();
     const commitMessage = await engine.generateCommitMessage(messages);
     if (!commitMessage)

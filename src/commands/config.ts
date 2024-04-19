@@ -25,7 +25,8 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
-  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT'
+  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
+  OCO_AZURE_API_VERSION = 'OCO_AZURE_API_VERSION'
 }
 
 export enum CONFIG_MODES {
@@ -62,22 +63,24 @@ export const configValidators = {
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.startsWith('sk-') && config.OCO_AI_PROVIDER == 'openai',
+      value.startsWith('sk-') || config.OCO_AI_PROVIDER != 'openai',
       'Must start with "sk-" for openai provider'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.match(/^[a-z0-9]{32}$/) && config.OCO_AI_PROVIDER == 'azure',
+      value.match(/^[a-z0-9]{32}$/) || config.OCO_AI_PROVIDER != 'azure',
       'Must be 32 characters with [a-z0-9]'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      (config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51) && (config.OCO_AI_PROVIDER == 'openai' || config.OCO_AI_PROVIDER == 'ollama'),
+      (config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51) ||
+        (config.OCO_AI_PROVIDER != 'openai' &&
+          config.OCO_AI_PROVIDER != 'ollama'),
       'Must be 51 characters long'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.length === 32 && config.OCO_AI_PROVIDER == 'azure',
+      value.length === 32 || config.OCO_AI_PROVIDER != 'azure',
       'Must be 32 characters long'
     );
 
@@ -170,13 +173,17 @@ export const configValidators = {
         'gpt-4-1106-preview',
         'gpt-4-turbo-preview',
         'gpt-4-0125-preview'
-      ].includes(value) && (config.OCO_AI_PROVIDER == 'openai' || config.OCO_AI_PROVIDER == 'ollama'),
+      ].includes(value) ||
+        (config.OCO_AI_PROVIDER != 'openai' &&
+          config.OCO_AI_PROVIDER != 'ollama'),
       `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
     );
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      typeof value === 'string' && value.match(/^[a-zA-Z0-9~\-]{1,63}[a-zA-Z0-9]$/) && config.OCO_AI_PROVIDER == 'azure',
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
+      typeof value === 'string' &&
+        value.match(/^[a-zA-Z0-9~\-]{1,63}[a-zA-Z0-9]$/) ||
+        config.OCO_AI_PROVIDER != 'azure',
+      `${value} is not model deployed name.`
     );
     return value;
   },
@@ -202,12 +209,7 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      [
-        '',
-        'openai',
-        'ollama',
-        'azure'
-      ].includes(value),
+      ['', 'openai', 'ollama', 'azure'].includes(value),
       `${value} is not supported yet, use 'azure', 'ollama' or 'openai' (default)`
     );
     return value;
@@ -220,6 +222,15 @@ export const configValidators = {
       'Must be true or false'
     );
 
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_AZURE_API_VERSION](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_AZURE_API_VERSION,
+      value.match(/^\d{4}-\d{2}-\d{2}(-preview)?$/),
+      `${value} is not valid azure api version. Check https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#completions`
+    );
     return value;
   },
 };
@@ -248,8 +259,9 @@ export const getConfig = (): ConfigType | null => {
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
-    OCO_AI_VERSION: process.env.OCO_AI_VERSION || '2023-03-15-preview',
-    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
+    OCO_AZURE_API_VERSION: process.env.OCO_AZURE_API_VERSION || '2023-03-15-preview',
+    OCO_ONE_LINE_COMMIT:
+      process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
   };
 
   const configExists = existsSync(configPath);
@@ -275,7 +287,7 @@ export const getConfig = (): ConfigType | null => {
 
       config[configKey] = validValue;
     } catch (error) {
-      outro(`Unknown '${configKey}' config option.`);
+      outro(`Unknown '${configKey}' config option or missing validator.`);
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
