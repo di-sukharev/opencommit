@@ -1,9 +1,11 @@
-import fs from 'fs/promises';
 import chalk from 'chalk';
+import fs from 'fs/promises';
+
 import { intro, outro, spinner } from '@clack/prompts';
+
+import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
 import { getConfig } from './config';
-import { generateCommitMessageWithChatCompletion } from '../generateCommitMessageFromGitDiff';
 
 const [messageFilePath, commitSource] = process.argv.slice(2);
 
@@ -24,7 +26,7 @@ export const prepareCommitMessageHook = async (
 
       if (changedFiles) await gitAdd({ files: changedFiles });
       else {
-        outro('No changes detected, write some code and run `oc` again');
+        outro('No changes detected, write some code and run `oco` again');
         process.exit(1);
       }
     }
@@ -37,7 +39,7 @@ export const prepareCommitMessageHook = async (
 
     const config = getConfig();
 
-    if (!config?.OPENAI_API_KEY) {
+    if (!config?.OCO_OPENAI_API_KEY) {
       throw new Error(
         'No OPEN_AI_API exists. Set your OPEN_AI_API=<key> in ~/.opencommit'
       );
@@ -45,13 +47,11 @@ export const prepareCommitMessageHook = async (
 
     const spin = spinner();
     spin.start('Generating commit message');
-    const commitMessage = await generateCommitMessageWithChatCompletion(
+
+    const commitMessage = await generateCommitMessageByDiff(
       await getDiff({ files: staged })
     );
-    if (typeof commitMessage !== 'string') {
-      spin.stop('Error');
-      throw new Error(commitMessage.error);
-    } else spin.stop('Done');
+    spin.stop('Done');
 
     const fileContent = await fs.readFile(messageFilePath);
 

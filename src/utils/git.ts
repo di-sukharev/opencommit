@@ -1,7 +1,8 @@
 import { execa } from 'execa';
-import { outro, spinner } from '@clack/prompts';
 import { readFileSync } from 'fs';
 import ignore, { Ignore } from 'ignore';
+
+import { outro, spinner } from '@clack/prompts';
 
 export const assertGitRepo = async () => {
   try {
@@ -25,13 +26,11 @@ export const getOpenCommitIgnore = (): Ignore => {
   return ig;
 };
 
-export const getCoreHooksPath = async(): Promise<string> => {
-  const { stdout } = await execa('git', [
-    'config',
-    'core.hooksPath']);
+export const getCoreHooksPath = async (): Promise<string> => {
+  const { stdout } = await execa('git', ['config', 'core.hooksPath']);
 
   return stdout;
-}
+};
 
 export const getStagedFiles = async (): Promise<string[]> => {
   const { stdout: gitDir } = await execa('git', [
@@ -76,19 +75,30 @@ export const getChangedFiles = async (): Promise<string[]> => {
 
 export const gitAdd = async ({ files }: { files: string[] }) => {
   const gitAddSpinner = spinner();
+
   gitAddSpinner.start('Adding files to commit');
+
   await execa('git', ['add', ...files]);
+
   gitAddSpinner.stop('Done');
 };
 
 export const getDiff = async ({ files }: { files: string[] }) => {
   const lockFiles = files.filter(
-    (file) => file.includes('.lock') || file.includes('-lock.')
+    (file) =>
+      file.includes('.lock') ||
+      file.includes('-lock.') ||
+      file.includes('.svg') ||
+      file.includes('.png') ||
+      file.includes('.jpg') ||
+      file.includes('.jpeg') ||
+      file.includes('.webp') ||
+      file.includes('.gif')
   );
 
   if (lockFiles.length) {
     outro(
-      `Some files are '.lock' files which are excluded by default from 'git diff'. No commit messages are generated for this files:\n${lockFiles.join(
+      `Some files are excluded by default from 'git diff'. No commit messages are generated for this files:\n${lockFiles.join(
         '\n'
       )}`
     );

@@ -1,0 +1,29 @@
+name: 'OpenCommit — improve commits with AI 🧙'
+description: 'Replaces lame commit messages with meaningful AI-generated messages when you push to remote'
+author: 'https://github.com/di-sukharev'
+repo: 'https://github.com/di-sukharev/opencommit/tree/github-action'
+branding:
+  icon: 'git-commit'
+  color: 'green'
+keywords:
+  [
+    'git',
+    'chatgpt',
+    'gpt',
+    'ai',
+    'openai',
+    'opencommit',
+    'aicommit',
+    'aicommits',
+    'gptcommit',
+    'commit'
+  ]
+
+inputs:
+  GITHUB_TOKEN:
+    description: 'GitHub token'
+    required: true
+
+runs:
+  using: 'node16'
+  main: 'out/github-action.cjs'

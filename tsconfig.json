@@ -5,8 +5,8 @@
 
     "module": "ESNext",
     // "rootDir": "./src",
-    "moduleResolution": "node",
     "resolveJsonModule": true,
+    "moduleResolution": "node",
 
     "allowJs": true,
 

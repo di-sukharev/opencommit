@@ -21,8 +21,8 @@
   "rules": {
     "prettier/prettier": "error",
     "no-console": "error",
-    "sort-imports": "off",
     "import/order": "off",
+    "sort-imports": "off",
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",
     "import/first": "error",
