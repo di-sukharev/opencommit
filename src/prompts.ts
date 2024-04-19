@@ -117,10 +117,10 @@ const INIT_MAIN_PROMPT = (
     }
     ${
       config?.OCO_ONE_LINE_COMMIT
-        ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change. Describe changes within a single file with a single message.'
+        ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
         : ''
     }
-    Given a scope file, keep its relative path. Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
+    Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
 });
 
 export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
