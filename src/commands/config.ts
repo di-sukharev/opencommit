@@ -26,7 +26,7 @@ export enum CONFIG_KEYS {
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
-  OCO_AZURE_API_VERSION = 'OCO_AZURE_API_VERSION'
+  OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT'
 }
 
 export enum CONFIG_MODES {
@@ -224,13 +224,13 @@ export const configValidators = {
 
     return value;
   },
-
-  [CONFIG_KEYS.OCO_AZURE_API_VERSION](value: any) {
+  [CONFIG_KEYS.OCO_AZURE_ENDPOINT](value: any) {
     validateConfig(
-      CONFIG_KEYS.OCO_AZURE_API_VERSION,
-      value.match(/^\d{4}-\d{2}-\d{2}(-preview)?$/),
-      `${value} is not valid azure api version. Check https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#completions`
+      CONFIG_KEYS.OCO_AZURE_ENDPOINT,
+      value.includes('openai.azure.com'),
+      'Must be in format "https://<resource name>.openai.azure.com/"'
     );
+
     return value;
   },
 };
@@ -259,9 +259,9 @@ export const getConfig = (): ConfigType | null => {
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
-    OCO_AZURE_API_VERSION: process.env.OCO_AZURE_API_VERSION || '2023-03-15-preview',
     OCO_ONE_LINE_COMMIT:
-      process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
+      process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || '',
   };
 
   const configExists = existsSync(configPath);
