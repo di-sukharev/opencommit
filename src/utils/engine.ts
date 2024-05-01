@@ -5,9 +5,14 @@ import { ollamaAi } from '../engine/ollama';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
-  if (config?.OCO_AI_PROVIDER == 'ollama') {
+  const provider = config?.OCO_AI_PROVIDER;
+  if (provider?.startsWith('ollama')) {
+    const model = provider.split('/')[1];
+    if (model) {
+      ollamaAi.setModel(model);
+    }
     return ollamaAi;
   }
-  //open ai gpt by default
+  // open ai gpt by default
   return api;
 }

@@ -57,7 +57,7 @@ export const configValidators = {
     //need api key unless running locally with ollama
     validateConfig(
       'API_KEY',
-      value || config.OCO_AI_PROVIDER == 'ollama',
+      value || config.OCO_AI_PROVIDER.startsWith('ollama'),
       'You need to provide an API key'
     );
     validateConfig(
@@ -187,12 +187,8 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      [
-        '',
-        'openai',
-        'ollama'
-      ].includes(value),
-      `${value} is not supported yet, use 'ollama' or 'openai' (default)`
+      ['', 'openai','ollama'].includes(value) || value.startsWith('ollama/'),
+      `${value} is not supported yet, use 'ollama/{model}', 'ollama' or 'openai' (default)`
     );
     return value;
   },
