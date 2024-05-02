@@ -2,12 +2,6 @@ import { getConfig } from '../../src/commands/config';
 import { prepareFile } from './utils';
 
 describe('getConfig', () => {
-  // 51 characters with 'sk-' prefix
-  const testApiKeyWithValidFormat =
-    'sk-************************************************';
-  const testApiKeyWithValidFormat2 =
-    'sk-***********************************************2';
-
   const originalEnv = { ...process.env };
   function resetEnv(env: NodeJS.ProcessEnv) {
     Object.keys(process.env).forEach((key) => {
@@ -52,7 +46,7 @@ describe('getConfig', () => {
     const configFile = await prepareFile(
       '.opencommit',
       `
-OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat}"
+OCO_OPENAI_API_KEY="sk-key"
 OCO_ANTHROPIC_API_KEY="secret-key"
 OCO_TOKENS_MAX_INPUT="8192"
 OCO_TOKENS_MAX_OUTPUT="1000"
@@ -71,7 +65,7 @@ OCO_ONE_LINE_COMMIT="true"
     const config = getConfig({ configPath: configFile.filePath, envPath: '' });
 
     expect(config).not.toEqual(null);
-    expect(config!['OCO_OPENAI_API_KEY']).toEqual(testApiKeyWithValidFormat);
+    expect(config!['OCO_OPENAI_API_KEY']).toEqual('sk-key');
     expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('secret-key');
     expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(8192);
     expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(1000);
@@ -93,7 +87,7 @@ OCO_ONE_LINE_COMMIT="true"
     const envFile = await prepareFile(
       '.env',
       `
-OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat}"
+OCO_OPENAI_API_KEY="sk-key"
 OCO_ANTHROPIC_API_KEY="secret-key"
 OCO_TOKENS_MAX_INPUT="8192"
 OCO_TOKENS_MAX_OUTPUT="1000"
@@ -112,7 +106,7 @@ OCO_ONE_LINE_COMMIT="true"
     const config = getConfig({ configPath: '', envPath: envFile.filePath });
 
     expect(config).not.toEqual(null);
-    expect(config!['OCO_OPENAI_API_KEY']).toEqual(testApiKeyWithValidFormat);
+    expect(config!['OCO_OPENAI_API_KEY']).toEqual('sk-key');
     expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('secret-key');
     expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(8192);
     expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(1000);
@@ -182,7 +176,7 @@ OCO_ONE_LINE_COMMIT="true"
     const configFile = await prepareFile(
       '.opencommit',
       `
-OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat}"
+OCO_OPENAI_API_KEY="sk-key"
 OCO_ANTHROPIC_API_KEY="secret-key"
 OCO_TOKENS_MAX_INPUT="8192"
 OCO_TOKENS_MAX_OUTPUT="1000"
@@ -201,7 +195,7 @@ OCO_ONE_LINE_COMMIT="true"
     const envFile = await prepareFile(
       '.env',
       `
-OCO_OPENAI_API_KEY="${testApiKeyWithValidFormat2}"
+OCO_OPENAI_API_KEY="sk-key2"
 OCO_ANTHROPIC_API_KEY="secret-key2"
 OCO_TOKENS_MAX_INPUT="16384"
 OCO_TOKENS_MAX_OUTPUT="2000"
@@ -229,7 +223,7 @@ OCO_ONE_LINE_COMMIT="false"
     // In all of the following cases, the global config value is being prioritized.
     // The expected values is the value from the local env file.
 
-    // expect(config!['OCO_OPENAI_API_KEY']).toEqual(testApiKeyWithValidFormat2);
+    // expect(config!['OCO_OPENAI_API_KEY']).toEqual('sk-key2');
     // expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('secret-key2');
     // expect(config!['OCO_TOKENS_MAX_INPUT']).toEqual(16384);
     // expect(config!['OCO_TOKENS_MAX_OUTPUT']).toEqual(2000);
