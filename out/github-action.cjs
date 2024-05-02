@@ -48316,11 +48316,6 @@ var configValidators = {
       value.startsWith("sk-"),
       'Must start with "sk-"'
     );
-    validateConfig(
-      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      config8["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */] || value.length === 51,
-      "Must be 51 characters long"
-    );
     return value;
   },
   ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config8 = {}) {

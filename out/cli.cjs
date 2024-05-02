@@ -26936,7 +26936,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.13",
+  version: "3.0.14",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -29495,11 +29495,6 @@ var configValidators = {
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
       value.startsWith("sk-"),
       'Must start with "sk-"'
-    );
-    validateConfig(
-      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      config9["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */] || value.length === 51,
-      "Must be 51 characters long"
     );
     return value;
   },
