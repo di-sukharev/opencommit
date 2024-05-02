@@ -24157,7 +24157,7 @@ var configValidators = {
   ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config7 = {}) {
     validateConfig(
       "API_KEY",
-      value || config7.OCO_AI_PROVIDER == "ollama",
+      value || config7.OCO_AI_PROVIDER.startsWith("ollama"),
       "You need to provide an API key"
     );
     validateConfig(
@@ -24270,12 +24270,8 @@ var configValidators = {
   ["OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */](value) {
     validateConfig(
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
-      [
-        "",
-        "openai",
-        "ollama"
-      ].includes(value),
-      `${value} is not supported yet, use 'ollama' or 'openai' (default)`
+      ["", "openai", "ollama"].includes(value) || value.startsWith("ollama/"),
+      `${value} is not supported yet, use 'ollama/{model}', 'ollama' or 'openai' (default)`
     );
     return value;
   },
@@ -27499,8 +27495,12 @@ var api = new OpenAi();
 
 // src/engine/ollama.ts
 var OllamaAi = class {
+  model = "mistral";
+  setModel(model) {
+    this.model = model;
+  }
   async generateCommitMessage(messages) {
-    const model = "mistral";
+    const model = this.model;
     const url2 = "http://localhost:11434/api/chat";
     const p2 = {
       model,
@@ -27527,7 +27527,12 @@ var ollamaAi = new OllamaAi();
 // src/utils/engine.ts
 function getEngine() {
   const config7 = getConfig();
-  if (config7?.OCO_AI_PROVIDER == "ollama") {
+  const provider = config7?.OCO_AI_PROVIDER;
+  if (provider?.startsWith("ollama")) {
+    const model = provider.split("/")[1];
+    if (model) {
+      ollamaAi.setModel(model);
+    }
     return ollamaAi;
   }
   return api;
