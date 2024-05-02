@@ -65,12 +65,6 @@ export const configValidators = {
       value.startsWith('sk-'),
       'Must start with "sk-"'
     );
-    validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51,
-      'Must be 51 characters long'
-    );
-
     return value;
   },
 

@@ -24165,11 +24165,6 @@ var configValidators = {
       value.startsWith("sk-"),
       'Must start with "sk-"'
     );
-    validateConfig(
-      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      config7["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */] || value.length === 51,
-      "Must be 51 characters long"
-    );
     return value;
   },
   ["OCO_DESCRIPTION" /* OCO_DESCRIPTION */](value) {
