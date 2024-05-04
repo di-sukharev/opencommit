@@ -40,7 +40,7 @@ const ADJUSTMENT_FACTOR = 20;
 
 export const generateCommitMessageByDiff = async (
   diff: string,
-  fullGitMojiSpec: boolean
+  fullGitMojiSpec = false
 ): Promise<string> => {
   try {
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
@@ -98,7 +98,7 @@ function getMessagesPromisesByChangesInFile(
     maxChangeLength
   );
 
-  const lineDiffsWithHeader = [];
+  const lineDiffsWithHeader: string[] = [];
   for (const change of mergedChanges) {
     const totalChange = fileHeader + change;
     if (tokenCount(totalChange) > maxChangeLength) {
@@ -127,7 +127,7 @@ function getMessagesPromisesByChangesInFile(
 
 function splitDiff(diff: string, maxChangeLength: number) {
   const lines = diff.split('\n');
-  const splitDiffs = [];
+  const splitDiffs: string[] = [];
   let currentDiff = '';
 
   if (maxChangeLength <= 0) {
@@ -173,7 +173,7 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
   // merge multiple files-diffs into 1 prompt to save tokens
   const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
 
-  const commitMessagePromises = [];
+  const commitMessagePromises: Promise<string | undefined>[] = [];
 
   for (const fileDiff of mergedFilesDiffs) {
     if (tokenCount(fileDiff) >= maxDiffLength) {

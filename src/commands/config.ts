@@ -179,7 +179,7 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OCO_MODEL](value: any, config: any) {
+  [CONFIG_KEYS.OCO_MODEL](value: any, config?: any) {
     if (config.OCO_AI_PROVIDER != 'gemini') {
       validateConfig(
         CONFIG_KEYS.OCO_MODEL,
