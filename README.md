@@ -37,7 +37,7 @@ You can use OpenCommit by simply running it via the CLI like this `oco`. 2 secon
 3. Set the key to OpenCommit config:
 
    ```sh
-   oco config set OCO_OPENAI_API_KEY=<your_api_key>
+   oco config set OCO_API_KEY=<your_api_key>
    ```
 
    Your API key is stored locally in the `~/.opencommit` config file.
@@ -91,7 +91,7 @@ oco --fgm
 Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
-OCO_OPENAI_API_KEY=<your OpenAI API token>
+OCO_API_KEY=<your OpenAI API token>
 OCO_TOKENS_MAX_INPUT=<max model token limit (default: 4096)>
 OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
@@ -343,7 +343,7 @@ jobs:
           # set openAI api key in repo actions secrets,
           # for openAI keys go to: https://platform.openai.com/account/api-keys
           # for repo secret go to: <your_repo_url>/settings/secrets/actions
-          OCO_OPENAI_API_KEY: ${{ secrets.OCO_OPENAI_API_KEY }}
+          OCO_API_KEY: ${{ secrets.OCO_API_KEY }}
 
           # customization
           OCO_TOKENS_MAX_INPUT: 4096

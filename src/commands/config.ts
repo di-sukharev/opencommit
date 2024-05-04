@@ -14,6 +14,7 @@ import { getI18nLocal } from '../i18n';
 dotenv.config();
 
 export enum CONFIG_KEYS {
+  OCO_API_KEY = 'OCO_API_KEY',
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
   OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
   OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
@@ -52,27 +53,55 @@ const validateConfig = (
   }
 };
 
-export const configValidators = {
-  [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
-    //need api key unless running locally with ollama
+const apiKeyValidator = (value: any, config: any = {}) => {
+  //need api key unless running locally with ollama
+  validateConfig(
+    'API_KEY',
+    (value || process.env.OCO_OPENAI_API_KEY || process.env.OCO_API_KEY) ||
+    config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'gemini',
+    'You need to provide an API key'
+  );
+  if (config.OCO_AI_PROVIDER != 'gemini') {
     validateConfig(
-      'API_KEY',
-      value || config.OCO_AI_PROVIDER == 'ollama',
-      'You need to provide an API key'
-    );
-    validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
+      CONFIG_KEYS.OCO_API_KEY,
       value.startsWith('sk-'),
       'Must start with "sk-"'
     );
     validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
+      CONFIG_KEYS.OCO_API_KEY,
       config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51,
       'Must be 51 characters long'
     );
+  }
 
-    return value;
-  },
+  return value;
+}
+
+export const configValidators = {
+  [CONFIG_KEYS.OCO_API_KEY]: apiKeyValidator,
+  [CONFIG_KEYS.OCO_OPENAI_API_KEY]: apiKeyValidator,
+  // [CONFIG_KEYS.OCO_API_KEY](value: any, config: any = {}) {
+  //   //need api key unless running locally with ollama
+  //   validateConfig(
+  //     'API_KEY',
+  //     value || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'gemini',
+  //     'You need to provide an API key'
+  //   );
+  //   if (config.OCO_AI_PROVIDER != 'gemini') {
+  //     validateConfig(
+  //       CONFIG_KEYS.OCO_API_KEY,
+  //       value.startsWith('sk-'),
+  //       'Must start with "sk-"'
+  //     );
+  //     validateConfig(
+  //       CONFIG_KEYS.OCO_API_KEY,
+  //       config[CONFIG_KEYS.OCO_OPENAI_BASE_PATH] || value.length === 51,
+  //       'Must be 51 characters long'
+  //     );
+  //   }
+
+  //   return value;
+  // },
 
   [CONFIG_KEYS.OCO_DESCRIPTION](value: any) {
     validateConfig(
@@ -150,19 +179,21 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OCO_MODEL](value: any) {
-    validateConfig(
-      CONFIG_KEYS.OCO_MODEL,
-      [
-        'gpt-3.5-turbo',
-        'gpt-3.5-turbo-0125',
-        'gpt-4',
-        'gpt-4-1106-preview',
-        'gpt-4-turbo-preview',
-        'gpt-4-0125-preview'
-      ].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
-    );
+  [CONFIG_KEYS.OCO_MODEL](value: any, config: any) {
+    if (config.OCO_AI_PROVIDER != 'gemini') {
+      validateConfig(
+        CONFIG_KEYS.OCO_MODEL,
+        [
+          'gpt-3.5-turbo',
+          'gpt-3.5-turbo-0125',
+          'gpt-4',
+          'gpt-4-1106-preview',
+          'gpt-4-turbo-preview',
+          'gpt-4-0125-preview'
+        ].includes(value),
+        `${value} is not supported yet, use 'gpt-4', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'`
+      );
+    }
     return value;
   },
   [CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER](value: any) {
@@ -190,7 +221,8 @@ export const configValidators = {
       [
         '',
         'openai',
-        'ollama'
+        'ollama',
+        'gemini',
       ].includes(value),
       `${value} is not supported yet, use 'ollama' or 'openai' (default)`
     );
@@ -216,7 +248,7 @@ const configPath = pathJoin(homedir(), '.opencommit');
 
 export const getConfig = (): ConfigType | null => {
   const configFromEnv = {
-    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
+    OCO_API_KEY: process.env.OCO_API_KEY || process.env.OCO_OPENAI_API_KEY,
     OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
       ? Number(process.env.OCO_TOKENS_MAX_INPUT)
       : undefined,
@@ -237,7 +269,7 @@ export const getConfig = (): ConfigType | null => {
 
   const configExists = existsSync(configPath);
   if (!configExists) return configFromEnv;
-
+  
   const configFile = readFileSync(configPath, 'utf8');
   const config = iniParse(configFile);
 

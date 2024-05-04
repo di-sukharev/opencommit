@@ -69,6 +69,7 @@
     "@actions/github": "^5.1.1",
     "@clack/prompts": "^0.6.1",
     "@dqbd/tiktoken": "^1.0.2",
+    "@google/generative-ai": "^0.10.0",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
     "ai": "^2.2.14",

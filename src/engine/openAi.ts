@@ -1,6 +1,5 @@
 import axios from 'axios';
 import chalk from 'chalk';
-import { execa } from 'execa';
 import {
   ChatCompletionRequestMessage,
   Configuration as OpenAiApiConfiguration,
@@ -23,18 +22,17 @@ const config = getConfig();
 const MAX_TOKENS_OUTPUT = config?.OCO_TOKENS_MAX_OUTPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
 const MAX_TOKENS_INPUT = config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
 let basePath = config?.OCO_OPENAI_BASE_PATH;
-let apiKey = config?.OCO_OPENAI_API_KEY
+let apiKey = config?.OCO_API_KEY || config?.OCO_OPENAI_API_KEY;
 
 const [command, mode] = process.argv.slice(2);
 
 const isLocalModel = config?.OCO_AI_PROVIDER == 'ollama'
 
-
 if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set && !isLocalModel) {
   intro('opencommit');
 
   outro(
-    'OCO_OPENAI_API_KEY is not set, please run `oco config set OCO_OPENAI_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.`'
+    'OCO_OPENAI_API_KEY is not set, please run `oco config set OCO_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.`'
   );
   outro(
     'For help look into README https://github.com/di-sukharev/opencommit#setup'
@@ -45,7 +43,7 @@ if (!apiKey && command !== 'config' && mode !== CONFIG_MODES.set && !isLocalMode
 
 const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
 
-class OpenAi implements AiEngine {
+export class OpenAi implements AiEngine {
   private openAiApiConfiguration = new OpenAiApiConfiguration({
     apiKey: apiKey
   });
@@ -105,6 +103,3 @@ class OpenAi implements AiEngine {
   };
 }
 
-
-
-export const api = new OpenAi();

@@ -62,11 +62,9 @@ export const generateCommitMessageByDiff = async (
         fullGitMojiSpec
       );
 
-      const commitMessages = [];
-      for (const promise of commitMessagePromises) {
-        commitMessages.push(await promise);
-        await delay(2000);
-      }
+      let commitMessages: string[] = [];
+      const messages = await Promise.all(commitMessagePromises) as string[];
+      commitMessages = [...commitMessages, ...messages];
 
       return commitMessages.join('\n\n');
     }
