@@ -21966,47 +21966,46 @@ if (!apiKey && command !== "config" && mode !== "set" /* set */ && !isLocalModel
 }
 var MODEL = config3?.OCO_MODEL || "gpt-3.5-turbo";
 var OpenAi = class {
-  openAiApiConfiguration = new import_openai2.Configuration({
-    apiKey
-  });
-  openAI;
   constructor() {
+    this.openAiApiConfiguration = new import_openai2.Configuration({
+      apiKey
+    });
+    this.generateCommitMessage = async (messages) => {
+      const params = {
+        model: MODEL,
+        messages,
+        temperature: 0,
+        top_p: 0.1,
+        max_tokens: MAX_TOKENS_OUTPUT
+      };
+      try {
+        const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a2, b6) => a2 + b6, 0);
+        if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
+          throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+        }
+        const { data } = await this.openAI.createChatCompletion(params);
+        const message = data.choices[0].message;
+        return message?.content;
+      } catch (error) {
+        ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
+        const err = error;
+        ce(`${source_default.red("\u2716")} ${err?.message || err}`);
+        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+          const openAiError = error.response.data.error;
+          if (openAiError?.message)
+            ce(openAiError.message);
+          ce(
+            "For help look into README https://github.com/di-sukharev/opencommit#setup"
+          );
+        }
+        throw err;
+      }
+    };
     if (basePath) {
       this.openAiApiConfiguration.basePath = basePath;
     }
     this.openAI = new import_openai2.OpenAIApi(this.openAiApiConfiguration);
   }
-  generateCommitMessage = async (messages) => {
-    const params = {
-      model: MODEL,
-      messages,
-      temperature: 0,
-      top_p: 0.1,
-      max_tokens: MAX_TOKENS_OUTPUT
-    };
-    try {
-      const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a2, b6) => a2 + b6, 0);
-      if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
-        throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
-      }
-      const { data } = await this.openAI.createChatCompletion(params);
-      const message = data.choices[0].message;
-      return message?.content;
-    } catch (error) {
-      ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
-      const err = error;
-      ce(`${source_default.red("\u2716")} ${err?.message || err}`);
-      if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-        const openAiError = error.response.data.error;
-        if (openAiError?.message)
-          ce(openAiError.message);
-        ce(
-          "For help look into README https://github.com/di-sukharev/opencommit#setup"
-        );
-      }
-      throw err;
-    }
-  };
 };
 
 // node_modules/@google/generative-ai/dist/index.mjs
@@ -22781,16 +22780,8 @@ var GoogleGenerativeAI = class {
 
 // src/engine/gemini.ts
 var GeminiAi = class {
-  config = getConfig();
-  get MAX_TOKENS_OUTPUT() {
-    return this.config?.OCO_TOKENS_MAX_OUTPUT || 30720;
-  }
-  get MAX_TOKENS_INPUT() {
-    return this.config?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
-  }
-  genAi;
-  model;
   constructor() {
+    this.config = getConfig();
     const config8 = getConfig();
     const apiKey2 = config8?.OCO_API_KEY || config8?.OCO_OPENAI_API_KEY;
     this.genAi = new GoogleGenerativeAI(apiKey2);
@@ -22806,8 +22797,8 @@ var GeminiAi = class {
       );
       process.exit(1);
     }
-    const VALID_MODELS = ["gemini-1.0-pro-latest", "gemini-pro", "gemini-1.0-pro-001"];
-    const DEFAULT_MODEL = "gemini-pro";
+    const VALID_MODELS = ["gemini-1.0-pro-latest", "gemini-pro", "gemini-1.0-pro-001", "gemini-1.5-pro-latest"];
+    const DEFAULT_MODEL = "gemini-1.5-pro-latest";
     const MODEL2 = (config8?.OCO_MODEL || DEFAULT_MODEL).trim().toLowerCase();
     if (!VALID_MODELS.includes(MODEL2)) {
       ae("opencommit");
@@ -22839,16 +22830,73 @@ var GeminiAi = class {
       ]
     });
   }
+  get MAX_TOKENS_OUTPUT() {
+    return this.config?.OCO_TOKENS_MAX_OUTPUT || 30720;
+  }
+  get MAX_TOKENS_INPUT() {
+    return this.config?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
+  }
   async generateCommitMessage(messages) {
-    let prompt = messages.filter((x4) => x4.role !== "assistant" && !x4.content.includes("diff --git a/src/server.ts b/src/server.ts")).map((x4) => x4.content).join("\n\n");
-    prompt += "You MUST NEVER include any of the output from the `git diff` command in your commit message.";
-    const requestTokens = await this.model.countTokens(prompt);
+    const systemMessages = [];
+    const history = {
+      user: [],
+      model: []
+    };
+    systemMessages.push(...messages.map((m4) => {
+      if (m4.role === "system") {
+        return { text: `${m4.content}
+
+
+        The commit message should start with a single subject line that is a brief overview description that summarizes all of the changes. It should not 
+        exceed 50 characters and should be capitalized and written in the imperative mood. The subject line should be followed by a blank line and then the body of the commit message.
+
+
+        The body of the commit should provide more details about the changes made. Each commit message should be a single logical change.
+
+
+        Here's an example of a well-formed commit message:
+
+ 
+        Adds support for the Gemini language model engine, allowing users to utilize Gemini for generating commit messages.
+
+
+        \u2728 (utils/engine.ts): add support for Gemini engine
+
+        \u267B\uFE0F (openAi.ts & utils/engine.ts): add support for OCO_API_KEY env variable to configure apiKey
+
+        ` };
+      }
+      if (m4.role === "user") {
+        return { text: `This is an example of a git diff --staged command output, it should not be included in the commit message: 
+
+${m4.content}` };
+      }
+      return { text: m4.content };
+    }));
+    let prompt = [
+      {
+        role: "user",
+        parts: [...history.user]
+      },
+      {
+        role: "model",
+        parts: [...history.model]
+      }
+    ];
+    const requestTokens = await this.model.countTokens(prompt.map((p4) => p4.parts.join("\n")));
     const tokenLimit = Math.abs(this.MAX_TOKENS_INPUT - this.MAX_TOKENS_OUTPUT);
     if (requestTokens.totalTokens > tokenLimit) {
       throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
     }
     try {
-      const result = await this.model.generateContent(prompt);
+      const chat = await this.model.startChat({
+        systemInstruction: { role: "system", parts: systemMessages }
+      });
+      const result = await chat.sendMessage([
+        { text: "You MUST NEVER include any of the output from the `git diff --staged` command in your commit message, and you can ignore changes inside of the `out` directory." },
+        { text: `You should include a brief summary of changes to each file in the 'git diff --staged' output as part of the commit message.` },
+        { text: "Lastly, please do not include contextual information explaining new libraries or tools that were added to the project. This information is not necessary for the commit message. The commit message should concisely focus on the changes made to the codebase." }
+      ]);
       const response = await result.response;
       const answer = response.text();
       return answer;
@@ -23053,7 +23101,7 @@ var GenerateCommitMessageErrorEnum = ((GenerateCommitMessageErrorEnum2) => {
   return GenerateCommitMessageErrorEnum2;
 })(GenerateCommitMessageErrorEnum || {});
 var ADJUSTMENT_FACTOR = 20;
-var generateCommitMessageByDiff = async (diff, fullGitMojiSpec) => {
+var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false) => {
   try {
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
@@ -23565,7 +23613,7 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
       return;
     ae("opencommit");
     const config8 = getConfig();
-    if (!config8?.OCO_API_KEY) {
+    if (!config8?.OCO_OPENAI_API_KEY && !!config8?.OCO_API_KEY) {
       throw new Error(
         "No OPEN_AI_API exists. Set your OPEN_AI_API=<key> in ~/.opencommit"
       );
