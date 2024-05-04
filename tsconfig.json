@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["ES5", "ES6"],
+    "target": "ES2020",
+    "lib": ["es6", "es2020"],
 
-    "module": "ESNext",
+    "module": "CommonJS",
     // "rootDir": "./src",
     "resolveJsonModule": true,
     "moduleResolution": "node",
@@ -13,17 +13,15 @@
     "outDir": "./out",
 
     "esModuleInterop": true,
+    
     "forceConsistentCasingInFileNames": true,
 
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
 
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noImplicitAny": false,
   },
   "exclude": ["node_modules"],
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  }
 }
