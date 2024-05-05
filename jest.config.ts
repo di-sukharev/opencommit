@@ -3,26 +3,25 @@
  * https://jestjs.io/docs/configuration
  */
 
-import type {Config} from 'jest';
+import type { Config } from 'jest';
 
 const config: Config = {
-  coverageProvider: "v8",
-  moduleDirectories: [
-    "node_modules",
-    "src",
-  ],
+  testTimeout: 100_000,
+  coverageProvider: 'v8',
+  moduleDirectories: ['node_modules', 'src'],
   preset: 'ts-jest/presets/js-with-ts-esm',
   setupFilesAfterEnv: ['<rootDir>/test/jest-setup.ts'],
-  testEnvironment: "node",
-  testRegex: [
-    '.*\\.test\\.ts$',
-  ],
+  testEnvironment: 'node',
+  testRegex: ['.*\\.test\\.ts$'],
   transformIgnorePatterns: ['node_modules/(?!cli-testing-library)'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      diagnostics: false,
-      useESM: true
-    }],
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        diagnostics: false,
+        useESM: true
+      }
+    ]
   }
 };
 

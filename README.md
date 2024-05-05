@@ -172,6 +172,7 @@ All available languages are currently listed in the [i18n](https://github.com/di
 ### Push to git
 
 Pushing to git is on by default but if you would like to turn it off just use:
+
 ```sh
 oc config set OCO_GITPUSH=false
 ```
