@@ -4,14 +4,12 @@ import * as dotenv from 'dotenv';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { parse as iniParse, stringify as iniStringify } from 'ini';
 import { homedir } from 'os';
-import { join as pathJoin } from 'path';
+import { join as pathJoin, resolve as pathResolve } from 'path';
 
 import { intro, outro } from '@clack/prompts';
 
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
-
-dotenv.config();
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
@@ -248,9 +246,17 @@ export type ConfigType = {
   [key in CONFIG_KEYS]?: any;
 };
 
-const configPath = pathJoin(homedir(), '.opencommit');
+const defaultConfigPath = pathJoin(homedir(), '.opencommit');
+const defaultEnvPath = pathResolve(process.cwd(), '.env');
 
-export const getConfig = (): ConfigType | null => {
+export const getConfig = ({
+  configPath = defaultConfigPath,
+  envPath = defaultEnvPath
+}: {
+  configPath?: string
+  envPath?: string
+} = {}): ConfigType | null => {
+  dotenv.config({ path: envPath });
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -306,7 +312,7 @@ export const getConfig = (): ConfigType | null => {
   return config;
 };
 
-export const setConfig = (keyValues: [key: string, value: string][]) => {
+export const setConfig = (keyValues: [key: string, value: string][], configPath: string = defaultConfigPath) => {
   const config = getConfig() || {};
 
   for (const [configKey, configValue] of keyValues) {

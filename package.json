@@ -48,8 +48,12 @@
     "deploy": "npm version patch && npm run build:push && git push --tags && npm publish --tag latest",
     "lint": "eslint src --ext ts && tsc --noEmit",
     "format": "prettier --write src",
+    "test:all": "npm run test:unit:docker && npm run test:e2e:docker",
+    "test:docker-build": "docker build -t oco-test -f test/Dockerfile .",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest test/unit",
+    "test:unit:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:unit",
     "test:e2e": "jest test/e2e",
-    "test:e2e:docker": "docker build -t oco-e2e -f test/Dockerfile . && DOCKER_CONTENT_TRUST=0 docker run oco-e2e"
+    "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e"
   },
   "devDependencies": {
     "@commitlint/types": "^17.4.4",
