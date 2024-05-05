@@ -48269,7 +48269,6 @@ function getI18nLocal(value) {
 }
 
 // src/commands/config.ts
-dotenv.config();
 var MODEL_LIST = {
   openai: [
     "gpt-3.5-turbo",
@@ -48445,8 +48444,13 @@ var configValidators = {
     return value;
   }
 };
-var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
-var getConfig = () => {
+var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
+var defaultEnvPath = (0, import_path.resolve)(process.cwd(), ".env");
+var getConfig = ({
+  configPath = defaultConfigPath,
+  envPath = defaultEnvPath
+} = {}) => {
+  dotenv.config({ path: envPath });
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -48490,7 +48494,7 @@ var getConfig = () => {
   }
   return config8;
 };
-var setConfig = (keyValues) => {
+var setConfig = (keyValues, configPath = defaultConfigPath) => {
   const config8 = getConfig() || {};
   for (const [configKey, configValue] of keyValues) {
     if (!configValidators.hasOwnProperty(configKey)) {

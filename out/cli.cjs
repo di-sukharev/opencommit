@@ -26984,8 +26984,12 @@ var package_default = {
     deploy: "npm version patch && npm run build:push && git push --tags && npm publish --tag latest",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src",
+    "test:all": "npm run test:unit:docker && npm run test:e2e:docker",
+    "test:docker-build": "docker build -t oco-test -f test/Dockerfile .",
+    "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest test/unit",
+    "test:unit:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:unit",
     "test:e2e": "jest test/e2e",
-    "test:e2e:docker": "docker build -t oco-e2e -f test/Dockerfile . && DOCKER_CONTENT_TRUST=0 docker run oco-e2e"
+    "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e"
   },
   devDependencies: {
     "@commitlint/types": "^17.4.4",
@@ -29449,7 +29453,6 @@ function getI18nLocal(value) {
 }
 
 // src/commands/config.ts
-dotenv.config();
 var MODEL_LIST = {
   openai: [
     "gpt-3.5-turbo",
@@ -29625,8 +29628,13 @@ var configValidators = {
     return value;
   }
 };
-var configPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
-var getConfig = () => {
+var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
+var defaultEnvPath = (0, import_path.resolve)(process.cwd(), ".env");
+var getConfig = ({
+  configPath = defaultConfigPath,
+  envPath = defaultEnvPath
+} = {}) => {
+  dotenv.config({ path: envPath });
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -29670,7 +29678,7 @@ var getConfig = () => {
   }
   return config9;
 };
-var setConfig = (keyValues) => {
+var setConfig = (keyValues, configPath = defaultConfigPath) => {
   const config9 = getConfig() || {};
   for (const [configKey, configValue] of keyValues) {
     if (!configValidators.hasOwnProperty(configKey)) {
