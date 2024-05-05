@@ -1,0 +1,46 @@
+name: Testing
+
+on: [pull_request]
+
+jobs:
+  unit-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install dependencies
+      run: npm install
+    - name: Run Unit Tests
+      run: npm run test:unit
+  e2e-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install git
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git
+        git --version
+    - name: Setup git
+      run: |
+        git config --global user.email "test@example.com"
+        git config --global user.name "Test User"
+    - name: Install dependencies
+      run: npm install
+    - name: Build
+      run: npm run build
+    - name: Run E2E Tests
+      run: npm run test:e2e
