@@ -3,13 +3,18 @@ import { api } from '../engine/openAi';
 import { getConfig } from '../commands/config';
 import { ollamaAi } from '../engine/ollama';
 import { azure } from '../engine/azure';
+import { anthropicAi } from '../engine/anthropic'
+import { testAi } from '../engine/testAi';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
   if (config?.OCO_AI_PROVIDER == 'ollama') {
     return ollamaAi;
-  }
-  if (config?.OCO_AI_PROVIDER == 'azure') {
+  } else if (config?.OCO_AI_PROVIDER == 'anthropic') {
+    return anthropicAi;
+  } else if (config?.OCO_AI_PROVIDER == 'test') {
+    return testAi;
+  } else if (config?.OCO_AI_PROVIDER == 'azure') {
     return azure;
   }
   //open ai gpt by default

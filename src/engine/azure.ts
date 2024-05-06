@@ -26,7 +26,7 @@ const MAX_TOKENS_OUTPUT =
 const MAX_TOKENS_INPUT =
   config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
 let basePath = config?.OCO_OPENAI_BASE_PATH;
-let apiKey = config?.OCO_OPENAI_API_KEY;
+let apiKey = config?.OCO_AZURE_API_KEY;
 let apiEndpoint = config?.OCO_AZURE_ENDPOINT;
 
 const [command, mode] = process.argv.slice(2);
@@ -43,7 +43,7 @@ if (
   intro('opencommit');
 
   outro(
-    'OCO_OPENAI_API_KEY or OCO_AZURE_ENDPOINT are not set, please run `oco config set OCO_OPENAI_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.`'
+    'OCO_AZURE_API_KEY or OCO_AZURE_ENDPOINT are not set, please run `oco config set OCO_AZURE_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.`'
   );
   outro(
     'For help look into README https://github.com/di-sukharev/opencommit#setup'
