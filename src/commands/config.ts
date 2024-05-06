@@ -102,26 +102,15 @@ export const configValidators = {
       value || config.OCO_OPENAI_API_KEY || config.OCO_AZURE_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
-    validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.length === 32 || config.OCO_AI_PROVIDER != 'azure',
-      'Must be 32 characters long'
-    );
 
     return value;
   },
 
-  [CONFIG_KEYS.OCO_AZURE_API_KEY](value: any, config: any = {}) {
-    //need api key unless running locally with ollama
+  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
     validateConfig(
-      'AZURE_API_KEY',
-      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test' ,
+      'ANTHROPIC_API_KEY',
+      value || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic/Azure API key'
-    );
-    validateConfig(
-      CONFIG_KEYS.OCO_AZURE_API_KEY,
-      value.match(/^[a-z0-9]{32}$/) || config.OCO_AI_PROVIDER != 'azure',
-      'Must be 32 characters with [a-z0-9]'
     );
 
     return value;

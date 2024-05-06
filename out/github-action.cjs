@@ -49498,23 +49498,13 @@ var configValidators = {
       value || config9.OCO_OPENAI_API_KEY || config9.OCO_AZURE_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic/Azure API key"
     );
-    validateConfig(
-      "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
-      value.length === 32 || config9.OCO_AI_PROVIDER != "azure",
-      "Must be 32 characters long"
-    );
     return value;
   },
-  ["OCO_AZURE_API_KEY" /* OCO_AZURE_API_KEY */](value, config9 = {}) {
+  ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config9 = {}) {
     validateConfig(
-      "AZURE_API_KEY",
-      value || config9.OCO_ANTHROPIC_API_KEY || config9.OCO_OPENAI_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
+      "ANTHROPIC_API_KEY",
+      value || config9.OCO_OPENAI_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic/Azure API key"
-    );
-    validateConfig(
-      "OCO_AZURE_API_KEY" /* OCO_AZURE_API_KEY */,
-      value.match(/^[a-z0-9]{32}$/) || config9.OCO_AI_PROVIDER != "azure",
-      "Must be 32 characters with [a-z0-9]"
     );
     return value;
   },
