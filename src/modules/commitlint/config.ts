@@ -19,7 +19,16 @@ export const configureCommitlintIntegration = async (force = false) => {
 
   const fileExists = await utils.commitlintLLMConfigExists();
 
-  let commitLintConfig = await getCommitLintPWDConfig();
+  const commitLintConfig = await getCommitLintPWDConfig();
+  if (commitLintConfig === null) {
+    throw new Error(
+      `Failed to load @commitlint config. Please check the following:
+      * @commitlint >= 9.0.0 is installed in the local directory.
+      * 'node_modules/@commitlint/load' package exists.
+      * A valid @commitlint configuration exists.
+      `,
+    );
+  }
 
   // debug complete @commitlint configuration
   // await fs.writeFile(
