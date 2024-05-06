@@ -39,9 +39,9 @@ export const prepareCommitMessageHook = async (
 
     const config = getConfig();
 
-    if (!config?.OCO_OPENAI_API_KEY) {
+    if (!config?.OCO_OPENAI_API_KEY && !config?.OCO_ANTHROPIC_API_KEY && !config?.OCO_AZURE_API_KEY) {
       throw new Error(
-        'No OPEN_AI_API exists. Set your OPEN_AI_API=<key> in ~/.opencommit'
+        'No OPEN_AI_API or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key in ~/.opencommit'
       );
     }
 

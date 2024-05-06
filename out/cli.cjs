@@ -40755,9 +40755,9 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
       return;
     ae("opencommit");
     const config10 = getConfig();
-    if (!config10?.OCO_OPENAI_API_KEY) {
+    if (!config10?.OCO_OPENAI_API_KEY && !config10?.OCO_ANTHROPIC_API_KEY && !config10?.OCO_AZURE_API_KEY) {
       throw new Error(
-        "No OPEN_AI_API exists. Set your OPEN_AI_API=<key> in ~/.opencommit"
+        "No OPEN_AI_API or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key in ~/.opencommit"
       );
     }
     const spin = le();
