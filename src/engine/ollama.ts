@@ -3,10 +3,15 @@ import { ChatCompletionRequestMessage } from 'openai';
 import { AiEngine } from './Engine';
 
 export class OllamaAi implements AiEngine {
+  private model = "mistral"; // as default model of Ollama
+
+  setModel(model: string) {
+    this.model = model;
+  }
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> {
-    const model = 'mistral'; // todo: allow other models
+    const model = this.model;
 
     //console.log(messages);
     //process.exit()
