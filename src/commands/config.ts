@@ -84,7 +84,7 @@ export const configValidators = {
     //need api key unless running locally with ollama
     validateConfig(
       'OpenAI API_KEY',
-      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AZURE_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test' ,
+      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AI_PROVIDER.startsWith('ollama') || config.OCO_AZURE_API_KEY || config.OCO_AI_PROVIDER == 'test' ,
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
     validateConfig(
@@ -241,12 +241,11 @@ export const configValidators = {
       [
         '', 
         'openai', 
-        'anthropic', 
-        'ollama', 
+        'anthropic',
         'azure', 
         'test'
-      ].includes(value),
-      `${value} is not supported yet, use 'azure', 'ollama' 'anthropic' or 'openai' (default)`
+      ].includes(value) || value.startsWith('ollama'),
+      `${value} is not supported yet, use 'ollama/{model}', 'azure', 'anthropic' or 'openai' (default)`
     );
     return value;
   },

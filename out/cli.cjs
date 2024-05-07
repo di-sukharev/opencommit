@@ -30645,8 +30645,8 @@ var MODEL_LIST = {
     "claude-3-opus-20240229"
   ]
 };
-var getDefaultModel = (provider3) => {
-  switch (provider3) {
+var getDefaultModel = (provider4) => {
+  switch (provider4) {
     case "ollama":
       return "";
     case "anthropic":
@@ -30667,7 +30667,7 @@ var configValidators = {
   ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config10 = {}) {
     validateConfig(
       "OpenAI API_KEY",
-      value || config10.OCO_ANTHROPIC_API_KEY || config10.OCO_AZURE_API_KEY || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "test",
+      value || config10.OCO_ANTHROPIC_API_KEY || config10.OCO_AI_PROVIDER.startsWith("ollama") || config10.OCO_AZURE_API_KEY || config10.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic/Azure API key"
     );
     validateConfig(
@@ -30801,11 +30801,10 @@ var configValidators = {
         "",
         "openai",
         "anthropic",
-        "ollama",
         "azure",
         "test"
-      ].includes(value),
-      `${value} is not supported yet, use 'azure', 'ollama' 'anthropic' or 'openai' (default)`
+      ].includes(value) || value.startsWith("ollama"),
+      `${value} is not supported yet, use 'ollama/{model}', 'azure', 'anthropic' or 'openai' (default)`
     );
     return value;
   },
@@ -34148,8 +34147,12 @@ var api = new OpenAi();
 
 // src/engine/ollama.ts
 var OllamaAi = class {
+  model = "mistral";
+  setModel(model) {
+    this.model = model;
+  }
   async generateCommitMessage(messages) {
-    const model = "mistral";
+    const model = this.model;
     const url2 = "http://localhost:11434/api/chat";
     const p4 = {
       model,
@@ -37836,8 +37839,8 @@ var basePath2 = config4?.OCO_OPENAI_BASE_PATH;
 var apiKey2 = config4?.OCO_AZURE_API_KEY;
 var apiEndpoint = config4?.OCO_AZURE_ENDPOINT;
 var [command2, mode2] = process.argv.slice(2);
-var isLocalModel = config4?.OCO_AI_PROVIDER == "ollama";
-if (!apiKey2 && !apiEndpoint && command2 !== "config" && mode2 !== "set" /* set */ && !isLocalModel) {
+var provider2 = config4?.OCO_AI_PROVIDER;
+if (provider2 === "azure" && !apiKey2 && !apiEndpoint && command2 !== "config" && mode2 !== "set" /* set */) {
   ae("opencommit");
   ce(
     "OCO_AZURE_API_KEY or OCO_AZURE_ENDPOINT are not set, please run `oco config set OCO_AZURE_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.`"
@@ -37851,7 +37854,9 @@ var MODEL2 = config4?.OCO_MODEL || "gpt-3.5-turbo";
 var Azure = class {
   openAI;
   constructor() {
-    this.openAI = new OpenAIClient(apiEndpoint, new AzureKeyCredential(apiKey2));
+    if (provider2 === "azure") {
+      this.openAI = new OpenAIClient(apiEndpoint, new AzureKeyCredential(apiKey2));
+    }
   }
   generateCommitMessage = async (messages) => {
     try {
@@ -39975,10 +39980,10 @@ var sdk_default = Anthropic;
 var config5 = getConfig();
 var MAX_TOKENS_OUTPUT3 = config5?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
 var MAX_TOKENS_INPUT3 = config5?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
-var provider2 = config5?.OCO_AI_PROVIDER;
+var provider3 = config5?.OCO_AI_PROVIDER;
 var apiKey3 = config5?.OCO_ANTHROPIC_API_KEY;
 var [command3, mode3] = process.argv.slice(2);
-if (provider2 === "anthropic" && !apiKey3 && command3 !== "config" && mode3 !== "set" /* set */) {
+if (provider3 === "anthropic" && !apiKey3 && command3 !== "config" && mode3 !== "set" /* set */) {
   ae("opencommit");
   ce(
     "OCO_ANTHROPIC_API_KEY is not set, please run `oco config set OCO_ANTHROPIC_API_KEY=<your token> . If you are using Claude, make sure you add payment details, so API works.`"
@@ -39989,7 +39994,7 @@ if (provider2 === "anthropic" && !apiKey3 && command3 !== "config" && mode3 !== 
   process.exit(1);
 }
 var MODEL3 = config5?.OCO_MODEL;
-if (provider2 === "anthropic" && !MODEL_LIST.anthropic.includes(MODEL3) && command3 !== "config" && mode3 !== "set" /* set */) {
+if (provider3 === "anthropic" && !MODEL_LIST.anthropic.includes(MODEL3) && command3 !== "config" && mode3 !== "set" /* set */) {
   ce(
     `${source_default.red("\u2716")} Unsupported model ${MODEL3} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
       ", "
@@ -40053,7 +40058,12 @@ var testAi = new TestAi();
 // src/utils/engine.ts
 function getEngine() {
   const config10 = getConfig();
-  if (config10?.OCO_AI_PROVIDER == "ollama") {
+  const provider4 = config10?.OCO_AI_PROVIDER;
+  if (provider4?.startsWith("ollama")) {
+    const model = provider4.split("/")[1];
+    if (model) {
+      ollamaAi.setModel(model);
+    }
     return ollamaAi;
   } else if (config10?.OCO_AI_PROVIDER == "anthropic") {
     return anthropicAi;
