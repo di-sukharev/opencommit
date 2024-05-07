@@ -31,14 +31,14 @@ let apiEndpoint = config?.OCO_AZURE_ENDPOINT;
 
 const [command, mode] = process.argv.slice(2);
 
-const isLocalModel = config?.OCO_AI_PROVIDER == 'ollama';
+const provider = config?.OCO_AI_PROVIDER;
 
 if (
+  provider === 'azure' &&
   !apiKey &&
   !apiEndpoint &&
   command !== 'config' &&
-  mode !== CONFIG_MODES.set &&
-  !isLocalModel
+  mode !== CONFIG_MODES.set
 ) {
   intro('opencommit');
 
@@ -58,7 +58,9 @@ class Azure implements AiEngine {
   private openAI!: OpenAIClient;
 
   constructor() {
-    this.openAI = new OpenAIClient(apiEndpoint, new AzureKeyCredential(apiKey));
+    if (provider === 'azure') {
+      this.openAI = new OpenAIClient(apiEndpoint, new AzureKeyCredential(apiKey));
+    }
   }
 
   public generateCommitMessage = async (
