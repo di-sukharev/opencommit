@@ -9,10 +9,15 @@ import {
 const config = getConfig();
 
 export class OllamaAi implements AiEngine {
+  private model = "mistral"; // as default model of Ollama
+
+  setModel(model: string) {
+    this.model = model;
+  }
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> {
-    const model = config?.OCO_MODEL || 'mistral';
+    const model = this.model;
 
     //console.log(messages);
     //process.exit()

@@ -10,7 +10,12 @@ export function getEngine(): AiEngine {
   const config = getConfig();
   
   if (config?.OCO_AI_PROVIDER == 'ollama') {
-    return new OllamaAi();
+	const ollamaAi = new OllamaAi();
+	const model = provider.split('/')[1];
+    if (model) {
+      ollamaAi.setModel(model);
+    }
+    return ollamaAi;
   } else if (config?.OCO_AI_PROVIDER == 'anthropic') {
     return new AnthropicAi();
   } else if (config?.OCO_AI_PROVIDER == 'test') {
