@@ -174,7 +174,7 @@ All available languages are currently listed in the [i18n](https://github.com/di
 Pushing to git is on by default but if you would like to turn it off just use:
 
 ```sh
-oc config set OCO_GITPUSH=false
+oco config set OCO_GITPUSH=false
 ```
 
 ### Switch to `@commitlint`
