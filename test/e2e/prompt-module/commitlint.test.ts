@@ -4,34 +4,77 @@ import 'cli-testing-library/extend-expect';
 import { prepareEnvironment, wait } from '../utils';
 import path from 'path';
 
-const commitlint18PackagePath = './data/commitlint_18/node_modules';
-const commitlint18ConfigPath = './data/commitlint_18/commitlint.config.js';
-const commitlint19PackagePath = './data/commitlint_19/node_modules';
-const commitlint19ConfigPath = './data/commitlint_19/commitlint.config.js';
 function getAbsolutePath(relativePath: string) {
   const scriptDir = path.dirname(__filename);
   return path.resolve(scriptDir, relativePath);
 }
-async function setupCommitlintAsCJS(dir: string) {
-  const packagePath = getAbsolutePath(commitlint18PackagePath);
-  const configPath = getAbsolutePath(commitlint18ConfigPath);
-  await render('cp', ['-r', packagePath, '.'], { cwd: dir });
-  await render('cp', [configPath, '.'], { cwd: dir });
-  await wait(3000); // Avoid flakiness by waiting
-}
-async function setupCommitlintAsESM(dir: string) {
-  const packagePath = getAbsolutePath(commitlint19PackagePath);
-  const configPath = getAbsolutePath(commitlint19ConfigPath);
+async function setupCommitlint(dir: string, ver: 9 | 18 | 19) {
+  let packagePath, configPath
+  switch (ver) {
+    case 9:
+      packagePath = getAbsolutePath('./data/commitlint_9/node_modules');
+      configPath = getAbsolutePath('./data/commitlint_9/commitlint.config.js');
+      break;
+    case 18:
+      packagePath = getAbsolutePath('./data/commitlint_18/node_modules');
+      configPath = getAbsolutePath('./data/commitlint_18/commitlint.config.js');
+      break;
+    case 19:
+      packagePath = getAbsolutePath('./data/commitlint_19/node_modules');
+      configPath = getAbsolutePath('./data/commitlint_19/commitlint.config.js');
+      break;
+  }
   await render('cp', ['-r', packagePath, '.'], { cwd: dir });
   await render('cp', [configPath, '.'], { cwd: dir });
   await wait(3000); // Avoid flakiness by waiting
 }
 
 describe('cli flow to run "oco commitlint force"', () => {
+  it('on commitlint@9 using CJS', async () => {
+    const { gitDir, cleanup } = await prepareEnvironment();
+
+    await setupCommitlint(gitDir, 9);
+    const npmList = await render('npm', ['list', '@commitlint/load'], {
+      cwd: gitDir
+    });
+    expect(await npmList.findByText('@commitlint/load@9')).toBeInTheConsole();
+
+    await render('echo', [`'console.log("Hello World");' > index.ts`], {
+      cwd: gitDir
+    });
+    await render('git', ['add index.ts'], { cwd: gitDir });
+
+    const { findByText } = await render(
+      `
+      OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
+      OCO_PROMPT_MODULE='@commitlint'  \
+      OCO_AI_PROVIDER='test'  \
+      node ${resolve('./out/cli.cjs')} commitlint force \
+    `,
+      [],
+      { cwd: gitDir }
+    );
+
+    expect(
+      await findByText('opencommit — configure @commitlint')
+    ).toBeInTheConsole();
+    expect(
+      await findByText('Read @commitlint configuration')
+    ).toBeInTheConsole();
+
+    expect(
+      await findByText('Generating consistency with given @commitlint rules')
+    ).toBeInTheConsole();
+    expect(
+      await findByText('Done - please review contents of')
+    ).toBeInTheConsole();
+
+    await cleanup();
+  });
   it('on commitlint@18 using CJS', async () => {
     const { gitDir, cleanup } = await prepareEnvironment();
 
-    await setupCommitlintAsCJS(gitDir);
+    await setupCommitlint(gitDir, 18);
     const npmList = await render('npm', ['list', '@commitlint/load'], {
       cwd: gitDir
     });
@@ -72,7 +115,7 @@ describe('cli flow to run "oco commitlint force"', () => {
   it('on commitlint@19 using ESM', async () => {
     const { gitDir, cleanup } = await prepareEnvironment();
 
-    await setupCommitlintAsESM(gitDir);
+    await setupCommitlint(gitDir, 19);
     const npmList = await render('npm', ['list', '@commitlint/load'], {
       cwd: gitDir
     });
