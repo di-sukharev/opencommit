@@ -150,6 +150,20 @@ oco config set OCO_MODEL=gpt-4-0125-preview
 
 Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
 
+### Switch to Azure OpenAI
+
+By default OpenCommit uses [OpenAI](https://openai.com).
+
+You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cognitive-services/openai/)🚀
+
+```sh
+opencommit config set OCO_AI_PROVIDER=azure
+```
+
+Of course need to set 'OPENAI_API_KEY'. And also need to set the
+'OPENAI_BASE_PATH' for the endpoint and set the deployment name to
+'model'.
+
 ### Locale configuration
 
 To globally specify the language used to generate commit messages:

@@ -14,6 +14,7 @@ import { getI18nLocal } from '../i18n';
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
   OCO_ANTHROPIC_API_KEY = 'OCO_ANTHROPIC_API_KEY',
+  OCO_AZURE_API_KEY = 'OCO_AZURE_API_KEY',
   OCO_GEMINI_API_KEY = 'OCO_GEMINI_API_KEY',
   OCO_GEMINI_BASE_PATH = 'OCO_GEMINI_BASE_PATH',
   OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
@@ -27,7 +28,8 @@ export enum CONFIG_KEYS {
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
   OCO_GITPUSH = 'OCO_GITPUSH',
-  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT'
+  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
+  OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT'
 }
 
 export enum CONFIG_MODES {
@@ -103,13 +105,23 @@ export const configValidators = {
     //need api key unless running locally with ollama
     validateConfig(
       'OpenAI API_KEY',
-      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AI_PROVIDER.startsWith('ollama') || config.OCO_AI_PROVIDER == 'test',
-      'You need to provide an OpenAI/Anthropic API key'
+      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AI_PROVIDER.startsWith('ollama') || config.OCO_AZURE_API_KEY || config.OCO_AI_PROVIDER == 'test' ,
+      'You need to provide an OpenAI/Anthropic/Azure API key'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.startsWith('sk-'),
-      'Must start with "sk-"'
+      value.startsWith('sk-') || config.OCO_AI_PROVIDER != 'openai',
+      'Must start with "sk-" for openai provider'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_AZURE_API_KEY](value: any, config: any = {}) {
+    validateConfig(
+      'ANTHROPIC_API_KEY',
+      value || config.OCO_OPENAI_API_KEY || config.OCO_AZURE_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      'You need to provide an OpenAI/Anthropic/Azure API key'
     );
 
     return value;
@@ -119,7 +131,7 @@ export const configValidators = {
     validateConfig(
       'ANTHROPIC_API_KEY',
       value || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
-      'You need to provide an OpenAI/Anthropic API key'
+      'You need to provide an OpenAI/Anthropic/Azure API key'
     );
 
     return value;
@@ -229,6 +241,7 @@ export const configValidators = {
       CONFIG_KEYS.OCO_MODEL,
       [...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].includes(value) || 
       config.OCO_AI_PROVIDER == 'ollama' || 
+	  config.OCO_AI_PROVIDER == 'azure' ||
       config.OCO_AI_PROVIDER == 'test',
       `${value} is not supported yet, use:\n\n ${[...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].join('\n')}`
     );
@@ -266,13 +279,14 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
       [
-        '',
-        'openai',
+        '', 
+        'openai', 
         'anthropic',
         'gemini',
+		'azure',
         'test'
       ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'anthropic', 'gemini' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini' or 'openai' (default)`
     );
     return value;
   },
@@ -282,6 +296,15 @@ export const configValidators = {
       CONFIG_KEYS.OCO_ONE_LINE_COMMIT,
       typeof value === 'boolean',
       'Must be true or false'
+    );
+
+    return value;
+  },
+  [CONFIG_KEYS.OCO_AZURE_ENDPOINT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_AZURE_ENDPOINT,
+      value.includes('openai.azure.com'),
+      'Must be in format "https://<resource name>.openai.azure.com/"'
     );
 
     return value;
@@ -306,6 +329,7 @@ export const getConfig = ({
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
+    OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
     OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
     OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
       ? Number(process.env.OCO_TOKENS_MAX_INPUT)
@@ -324,7 +348,9 @@ export const getConfig = ({
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
     OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
-    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
+    OCO_ONE_LINE_COMMIT:
+      process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || '',
   };
 
   const configExists = existsSync(configPath);
@@ -349,7 +375,7 @@ export const getConfig = ({
 
       config[configKey] = validValue;
     } catch (error) {
-      outro(`Unknown '${configKey}' config option.`);
+      outro(`Unknown '${configKey}' config option or missing validator.`);
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );

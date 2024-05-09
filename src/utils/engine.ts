@@ -5,6 +5,7 @@ import { getConfig } from '../commands/config';
 import { OllamaAi } from '../engine/ollama';
 import { AnthropicAi } from '../engine/anthropic'
 import { TestAi } from '../engine/testAi';
+import { Azure } from '../engine/azure';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
@@ -22,6 +23,8 @@ export function getEngine(): AiEngine {
     return new TestAi();
   } else if (config?.OCO_AI_PROVIDER == 'gemini') {
     return new Gemini();  
+  } else if (config?.OCO_AI_PROVIDER == 'azure') {
+  	return new Azure();
   }
   
   //open ai gpt by default

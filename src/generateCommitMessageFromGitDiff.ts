@@ -10,8 +10,11 @@ import { tokenCount } from './utils/tokenCount';
 import { getEngine } from './utils/engine';
 
 const config = getConfig();
-const MAX_TOKENS_INPUT = config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
-const MAX_TOKENS_OUTPUT = config?.OCO_TOKENS_MAX_OUTPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
+const MAX_TOKENS_INPUT =
+  config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
+const MAX_TOKENS_OUTPUT =
+  config?.OCO_TOKENS_MAX_OUTPUT ||
+  DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
 
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string,
@@ -71,9 +74,12 @@ export const generateCommitMessageByDiff = async (
       return commitMessages.join('\n\n');
     }
 
-    const messages = await generateCommitMessageChatCompletionPrompt(diff, fullGitMojiSpec);
+    const messages = await generateCommitMessageChatCompletionPrompt(
+      diff,
+      fullGitMojiSpec
+    );
 
-    const engine = getEngine()
+    const engine = getEngine();
     const commitMessage = await engine.generateCommitMessage(messages);
 
     if (!commitMessage)
@@ -112,7 +118,7 @@ function getMessagesPromisesByChangesInFile(
     }
   }
 
-  const engine = getEngine()
+  const engine = getEngine();
   const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map(
     async (lineDiff) => {
       const messages = await generateCommitMessageChatCompletionPrompt(
@@ -194,7 +200,7 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
         fullGitMojiSpec
       );
 
-      const engine = getEngine()
+      const engine = getEngine();
       commitMessagePromises.push(engine.generateCommitMessage(messages));
     }
   }
