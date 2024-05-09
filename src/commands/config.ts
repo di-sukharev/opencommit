@@ -10,6 +10,7 @@ import { intro, outro } from '@clack/prompts';
 
 import { COMMANDS } from '../CommandsEnum';
 import { getI18nLocal } from '../i18n';
+import { TEST_MOCK_TYPES } from '../engine/testAi';
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
@@ -27,7 +28,8 @@ export enum CONFIG_KEYS {
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
   OCO_GITPUSH = 'OCO_GITPUSH',
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
-  OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT'
+  OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT',
+  OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
 }
 
 export enum CONFIG_MODES {
@@ -268,6 +270,14 @@ export const configValidators = {
 
     return value;
   },
+  [CONFIG_KEYS.OCO_TEST_MOCK_TYPE](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_TEST_MOCK_TYPE,
+      TEST_MOCK_TYPES.includes(value),
+      `${value} is not supported yet, use ${TEST_MOCK_TYPES.map(t => `'${t}'`).join(', ')}`
+    );
+    return value;
+  },
 };
 
 export type ConfigType = {
@@ -308,6 +318,7 @@ export const getConfig = ({
     OCO_ONE_LINE_COMMIT:
       process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || '',
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message'
   };
 
   const configExists = existsSync(configPath);
