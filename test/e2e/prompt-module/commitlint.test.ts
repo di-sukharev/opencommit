@@ -39,11 +39,6 @@ describe('cli flow to run "oco commitlint force"', () => {
     });
     expect(await npmList.findByText('@commitlint/load@9')).toBeInTheConsole();
 
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
-    });
-    await render('git', ['add index.ts'], { cwd: gitDir });
-
     const { findByText } = await render(
       `
       OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
@@ -80,11 +75,6 @@ describe('cli flow to run "oco commitlint force"', () => {
     });
     expect(await npmList.findByText('@commitlint/load@18')).toBeInTheConsole();
 
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
-    });
-    await render('git', ['add index.ts'], { cwd: gitDir });
-
     const { findByText } = await render(
       `
       OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
@@ -120,11 +110,6 @@ describe('cli flow to run "oco commitlint force"', () => {
       cwd: gitDir
     });
     expect(await npmList.findByText('@commitlint/load@19')).toBeInTheConsole();
-
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
-    });
-    await render('git', ['add index.ts'], { cwd: gitDir });
 
     const { findByText } = await render(
       `
