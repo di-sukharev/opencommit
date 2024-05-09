@@ -10,10 +10,13 @@ RUN apt-get install -y nodejs
 RUN git config --global user.email "test@example.com"
 RUN git config --global user.name "Test User"
 
-COPY . /app
 WORKDIR /app
+COPY package.json /app/
+COPY package-lock.json /app/
 
 RUN ls -la
 
-RUN npm install
+RUN npm ci
+COPY . /app
+RUN ls -la
 RUN npm run build

@@ -20,7 +20,7 @@ export class OllamaAi implements AiEngine {
     const p = {
       model,
       messages,
-      options: {temperature: 0, top_p: 0.1},
+      options: { temperature: 0, top_p: 0.1 },
       stream: false
     };
     try {

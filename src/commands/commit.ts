@@ -154,6 +154,18 @@ ${chalk.grey('——————————————————')}`
         } else outro(`${chalk.gray('✖')} process cancelled`);
       }
     }
+    if (!isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
+      const regenerateMessage = await confirm({
+        message: 'Do you want to regenerate the message ?'
+      });
+      if (regenerateMessage && !isCancel(isCommitConfirmedByUser)) {
+        await generateCommitMessageFromGitDiff(
+          diff,
+          extraArgs,
+          fullGitMojiSpec
+        )
+      }
+    }
   } catch (error) {
     commitSpinner.stop('📝 Commit message generated');
 
