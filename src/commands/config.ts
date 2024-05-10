@@ -25,7 +25,8 @@ export enum CONFIG_KEYS {
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
   OCO_GITPUSH = 'OCO_GITPUSH',
-  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT'
+  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
+  OCO_OLLAMA_BASE_PATH = 'OCO_OLLAMA_BASE_PATH'
 }
 
 export enum CONFIG_MODES {
@@ -34,23 +35,31 @@ export enum CONFIG_MODES {
 }
 
 export const MODEL_LIST = {
-  openai: ['gpt-3.5-turbo',
-          'gpt-3.5-turbo-0125',
-          'gpt-4',
-          'gpt-4-turbo',
-          'gpt-4-1106-preview',
-          'gpt-4-turbo-preview',
-          'gpt-4-0125-preview'],
+  openai: [
+    'gpt-3.5-turbo',
+    'gpt-3.5-turbo-0125',
+    'gpt-4',
+    'gpt-4-turbo',
+    'gpt-4-1106-preview',
+    'gpt-4-turbo-preview',
+    'gpt-4-0125-preview'
+  ],
 
-  anthropic: ['claude-3-haiku-20240307',
-              'claude-3-sonnet-20240229',
-              'claude-3-opus-20240229']
+  anthropic: [
+    'claude-3-haiku-20240307',
+    'claude-3-sonnet-20240229',
+    'claude-3-opus-20240229'
+  ],
+
+  ollama: [
+    'mistral'
+  ]
 }
 
 const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
     case 'ollama':
-      return '';
+      return MODEL_LIST.ollama[0];
     case 'anthropic':
       return MODEL_LIST.anthropic[0];
     default:
@@ -183,8 +192,8 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_MODEL](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
+      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.ollama].includes(value),
+      `${value} is not supported yet, use 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307' or 'mistral'`
     );
     return value;
   },
@@ -276,7 +285,8 @@ export const getConfig = ({
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
     OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
-    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
+    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
+    OCO_OLLAMA_BASE_PATH: process.env.OCO_OLLAMA_BASE_PATH || 'http://localhost:11434'
   };
 
   const configExists = existsSync(configPath);
