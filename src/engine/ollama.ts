@@ -17,7 +17,7 @@ export class OllamaAi implements AiEngine {
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> {
-    const model = this.model;
+    const model = config?.OCO_MODEL || 'mistral';
 
     //console.log(messages);
     //process.exit()
