@@ -2,11 +2,17 @@ import axios, { AxiosError } from 'axios';
 import { ChatCompletionRequestMessage } from 'openai';
 import { AiEngine } from './Engine';
 
+import {
+  getConfig
+} from '../commands/config';
+
+const config = getConfig();
+
 export class OllamaAi implements AiEngine {
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> {
-    const model = 'mistral'; // todo: allow other models
+    const model = config?.OCO_MODEL || 'mistral';
 
     //console.log(messages);
     //process.exit()
