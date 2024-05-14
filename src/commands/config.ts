@@ -40,7 +40,8 @@ export const MODEL_LIST = {
           'gpt-4-turbo',
           'gpt-4-1106-preview',
           'gpt-4-turbo-preview',
-          'gpt-4-0125-preview'],
+          'gpt-4-0125-preview',
+          'gpt-4o'],
 
   anthropic: ['claude-3-haiku-20240307',
               'claude-3-sonnet-20240229',
@@ -184,7 +185,7 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
       [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value) || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
-      `${value} is not supported yet, use 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
+      `${value} is not supported yet, use 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
     );
     return value;
   },
