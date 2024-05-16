@@ -132,7 +132,7 @@ ${chalk.grey('——————————————————')}`
         }
       } else {
         var selectedRemote: string;
-        if (remotes.length > 0) {
+        if (remotes.length > 1) {
           selectedRemote = (await select({
             message: 'Choose a remote to push to',
             options: remotes.map((remote) => ({ value: remote, label: remote }))
