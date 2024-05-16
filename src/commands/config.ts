@@ -27,7 +27,8 @@ export enum CONFIG_KEYS {
   OCO_GITPUSH = 'OCO_GITPUSH',
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_PROMPT_HEADER = 'OCO_PROMPT_HEADER',
-  OCO_PROMPT_FOOTER = 'OCO_PROMPT_FOOTER'
+  OCO_PROMPT_FOOTER = 'OCO_PROMPT_FOOTER',
+  OCO_GIT_STAGE_ALWAYS = 'OCO_GIT_STAGE_ALWAYS',
 }
 
 export enum CONFIG_MODES {
@@ -85,6 +86,9 @@ const validateConfig = (
 };
 
 export const configValidators = {
+
+
+
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     //need api key unless running locally with ollama
     validateConfig(
@@ -231,6 +235,18 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_GIT_STAGE_ALWAYS](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_GIT_STAGE_ALWAYS,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+
+    return value;
+  },
+
+
+
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
@@ -295,7 +311,8 @@ export const getConfig = ({
     OCO_ONE_LINE_COMMIT:
       process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
     OCO_PROMPT_HEADER: process.env.OCO_PROMPT_HEADER || '',
-    OCO_PROMPT_FOOTER: process.env.OCO_PROMPT_FOOTER || ''
+    OCO_PROMPT_FOOTER: process.env.OCO_PROMPT_FOOTER || '',
+    OCO_GIT_STAGE_ALWAYS: false
   };
 
   const configExists = existsSync(configPath);

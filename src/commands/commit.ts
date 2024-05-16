@@ -202,13 +202,16 @@ export async function commit(
 
   if (!stagedFiles.length) {
     stagedFilesSpinner.stop('No files are staged');
-    const isStageAllAndCommitConfirmedByUser = await confirm({
-      message: 'Do you want to stage all files and generate commit message?'
-    });
 
+    let isStageAllAndCommitConfirmedByUser: boolean | symbol = true
+    if(!(config?.OCO_GIT_STAGE_ALWAYS)) {
+      isStageAllAndCommitConfirmedByUser  =  await confirm({
+        message: 'Do you want to stage all files and generate commit message?'
+      });
+    }
     if (
       isStageAllAndCommitConfirmedByUser &&
-      !isCancel(isStageAllAndCommitConfirmedByUser)
+        !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
       await commit(extraArgs, true, fullGitMojiSpec);
       process.exit(1);
@@ -234,8 +237,8 @@ export async function commit(
 
   stagedFilesSpinner.stop(
     `${stagedFiles.length} staged files:\n${stagedFiles
-      .map((file) => `  ${file}`)
-      .join('\n')}`
+.map((file) => `  ${file}`)
+.join('\n')}`
   );
 
   const [, generateCommitError] = await trytm(
