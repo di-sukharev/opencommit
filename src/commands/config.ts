@@ -85,7 +85,6 @@ const validateConfig = (
 };
 
 export const configValidators = {
-
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     //need api key unless running locally with ollama
     validateConfig(
@@ -251,11 +250,11 @@ export const configValidators = {
     return value;
   },
   [CONFIG_KEYS.OCO_PROMPT_HEADER](value: any) {
-    return value
+    return value;
   },
   [CONFIG_KEYS.OCO_PROMPT_FOOTER](value: any) {
-    return value
-  },
+    return value;
+  }
 };
 
 export type ConfigType = {
@@ -269,9 +268,9 @@ export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
 }: {
-    configPath?: string;
-    envPath?: string;
-  } = {}): ConfigType | null => {
+  configPath?: string;
+  envPath?: string;
+} = {}): ConfigType | null => {
   dotenv.config({ path: envPath });
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
@@ -286,17 +285,17 @@ export const getConfig = ({
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
     OCO_MODEL:
-    process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
+      process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-    process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
+      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
     OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
     OCO_ONE_LINE_COMMIT:
-    process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
-    OCO_PROMPT_HEADER: process.env.OCO_PROMPT_HEADER || "",
-    OCO_PROMPT_FOOTER: process.env.OCO_PROMPT_FOOTER || "",
+      process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
+    OCO_PROMPT_HEADER: process.env.OCO_PROMPT_HEADER || '',
+    OCO_PROMPT_FOOTER: process.env.OCO_PROMPT_FOOTER || ''
   };
 
   const configExists = existsSync(configPath);
@@ -350,7 +349,7 @@ export const setConfig = (
     }
 
     const validValue =
-    configValidators[configKey as CONFIG_KEYS](parsedConfigValue);
+      configValidators[configKey as CONFIG_KEYS](parsedConfigValue);
     config[configKey as CONFIG_KEYS] = validValue;
   }
 

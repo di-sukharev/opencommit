@@ -23,8 +23,8 @@ const INIT_MAIN_PROMPT = (
   language: string,
   fullGitMojiSpec: boolean
 ): ChatCompletionRequestMessage => {
-
-  const OCO_EMOJI_LITE = 'Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): ' +
+  const OCO_EMOJI_LITE =
+    'Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): ' +
     '🐛, Fix a bug; ' +
     '✨, Introduce new features; ' +
     '📝, Add or update documentation; ' +
@@ -34,9 +34,10 @@ const INIT_MAIN_PROMPT = (
     '⬆️, Upgrade dependencies; ' +
     '🔧, Add or update configuration files; ' +
     '🌐, Internationalization and localization; ' +
-    '💡, Add or update comments in source code; '
+    '💡, Add or update comments in source code; ';
 
-  const OCO_EMOJI_FULL = '🎨, Improve structure / format of the code; ' +
+  const OCO_EMOJI_FULL =
+    '🎨, Improve structure / format of the code; ' +
     '⚡️, Improve performance; ' +
     '🔥, Remove code or files; ' +
     '🚑️, Critical hotfix; ' +
@@ -98,33 +99,36 @@ const INIT_MAIN_PROMPT = (
     '🧑‍💻, Improve developer experience; ' +
     '💸, Add sponsorships or money related infrastructure; ' +
     '🧵, Add or update code related to multithreading or concurrency; ' +
-    '🦺, Add or update code related to validation.'
+    '🦺, Add or update code related to validation.';
 
-  const specificationName =     fullGitMojiSpec ? 'GitMoji specification' : 'conventional commit convention'
+  const specificationName = fullGitMojiSpec
+    ? 'GitMoji specification'
+    : 'conventional commit convention';
 
   return {
     role: ChatCompletionRequestMessageRoleEnum.System,
     content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${specificationName} and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
 
-${config?.OCO_PROMPT_HEADER || ""}
+${config?.OCO_PROMPT_HEADER || ''}
 ${
-config?.OCO_EMOJI ? OCO_EMOJI_LITE + `${fullGitMojiSpec ? OCO_EMOJI_FULL : ''}`
-: `${
-'Do not preface the commit with anything. Conventional commit keywords:' +
-'fix, feat, build, chore, ci, docs, style, refactor, perf, test.'
-}`
+  config?.OCO_EMOJI
+    ? OCO_EMOJI_LITE + `${fullGitMojiSpec ? OCO_EMOJI_FULL : ''}`
+    : `${
+        'Do not preface the commit with anything. Conventional commit keywords:' +
+        'fix, feat, build, chore, ci, docs, style, refactor, perf, test.'
+      }`
 }
-${config?.OCO_PROMPT_FOOTER || ""}
+${config?.OCO_PROMPT_FOOTER || ''}
 
 ${
-config?.OCO_DESCRIPTION
-? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
-: "Don't add any descriptions to the commit, only commit message."
+  config?.OCO_DESCRIPTION
+    ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
+    : "Don't add any descriptions to the commit, only commit message."
 }
 ${
-config?.OCO_ONE_LINE_COMMIT
-? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
-: ''
+  config?.OCO_ONE_LINE_COMMIT
+    ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
+    : ''
 }
 Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
   };
@@ -161,19 +165,19 @@ app.use(PROTECTED_ROUTER_URL, protectedRouter);
 const INIT_CONSISTENCY_PROMPT = (
   translation: ConsistencyPrompt
 ): ChatCompletionRequestMessage => ({
-    role: ChatCompletionRequestMessageRoleEnum.Assistant,
-    content: `${
-config?.OCO_EMOJI
-? `🐛 ${removeConventionalCommitWord(translation.commitFix)}`
-: translation.commitFix
-}
+  role: ChatCompletionRequestMessageRoleEnum.Assistant,
+  content: `${
+    config?.OCO_EMOJI
+      ? `🐛 ${removeConventionalCommitWord(translation.commitFix)}`
+      : translation.commitFix
+  }
 ${
-config?.OCO_EMOJI
-? `✨ ${removeConventionalCommitWord(translation.commitFeat)}`
-: translation.commitFeat
+  config?.OCO_EMOJI
+    ? `✨ ${removeConventionalCommitWord(translation.commitFeat)}`
+    : translation.commitFeat
 }
 ${config?.OCO_DESCRIPTION ? translation.commitDescription : ''}`
-  });
+});
 
 export const getMainCommitPrompt = async (
   fullGitMojiSpec: boolean
@@ -198,8 +202,8 @@ export const getMainCommitPrompt = async (
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(
           commitLintConfig.consistency[
-          translation.localLanguage
-        ] as ConsistencyPrompt
+            translation.localLanguage
+          ] as ConsistencyPrompt
         )
       ];
 

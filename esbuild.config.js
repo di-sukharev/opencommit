@@ -15,3 +15,9 @@ await build({
   format: 'cjs',
   outfile: './out/github-action.cjs'
 });
+
+const wasmFile = fs.readFileSync(
+  './node_modules/tiktoken/lite/tiktoken_bg.wasm'
+);
+
+fs.writeFileSync('./out/tiktoken_bg.wasm', wasmFile);

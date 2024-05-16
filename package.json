@@ -73,8 +73,8 @@
     "typescript": "^4.9.3"
   },
   "overrides": {
-  "whatwg-url": "13.0.0"
-},
+    "whatwg-url": "13.0.0"
+  },
   "dependencies": {
     "@actions/core": "^1.10.0",
     "@actions/exec": "^1.1.1",
@@ -94,6 +94,7 @@
     "ini": "^3.0.1",
     "inquirer": "^9.1.4",
     "js-tiktoken": "^1.0.12",
-    "openai": "^3.2.1"
+    "openai": "^3.2.1",
+    "tiktoken": "^1.0.15"
   }
 }
