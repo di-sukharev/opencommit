@@ -107,9 +107,9 @@ const INIT_MAIN_PROMPT = (
               '🦺, Add or update code related to validation.'
             : ''
         }`
-      : 'Do not preface the commit with anything. Conventional commit keywords:' +
-        'fix, feat, build, chore, ci, docs, style, refactor, perf, test.'
-  }  
+      : 'Do not preface the commit with anything. Do not use keywords fix and feat. Conventional commit keywords:' +
+        'build, chore, ci, docs, style, refactor, perf, test, repair, clean, new, util, prepare.'
+  }
     ${
       config?.OCO_DESCRIPTION
         ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
@@ -132,18 +132,18 @@ export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
     @@ -10,7 +10,7 @@
     import {
         initWinstonLogger();
-        
+
         const app = express();
         -const port = 7799;
         +const PORT = 7799;
-        
+
         app.use(express.json());
-        
+
         @@ -34,6 +34,6 @@
         app.use((_, res, next) => {
             // ROUTES
             app.use(PROTECTED_ROUTER_URL, protectedRouter);
-            
+
             -app.listen(port, () => {
                 -  console.log(\`Server listening on port \${port}\`);
                 +app.listen(process.env.PORT || PORT, () => {
