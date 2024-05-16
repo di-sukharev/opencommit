@@ -25,7 +25,9 @@ export enum CONFIG_KEYS {
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
   OCO_GITPUSH = 'OCO_GITPUSH',
-  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT'
+  OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
+  OCO_PROMPT_HEADER = 'OCO_PROMPT_HEADER',
+  OCO_PROMPT_FOOTER = 'OCO_PROMPT_FOOTER'
 }
 
 export enum CONFIG_MODES {
@@ -34,19 +36,23 @@ export enum CONFIG_MODES {
 }
 
 export const MODEL_LIST = {
-  openai: ['gpt-3.5-turbo',
-          'gpt-3.5-turbo-0125',
-          'gpt-4',
-          'gpt-4-turbo',
-          'gpt-4-1106-preview',
-          'gpt-4-turbo-preview',
-          'gpt-4-0125-preview',
-          'gpt-4o'],
+  openai: [
+    'gpt-3.5-turbo',
+    'gpt-3.5-turbo-0125',
+    'gpt-4',
+    'gpt-4-turbo',
+    'gpt-4-1106-preview',
+    'gpt-4-turbo-preview',
+    'gpt-4-0125-preview',
+    'gpt-4o'
+  ],
 
-  anthropic: ['claude-3-haiku-20240307',
-              'claude-3-sonnet-20240229',
-              'claude-3-opus-20240229']
-}
+  anthropic: [
+    'claude-3-haiku-20240307',
+    'claude-3-sonnet-20240229',
+    'claude-3-opus-20240229'
+  ]
+};
 
 const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
@@ -79,11 +85,15 @@ const validateConfig = (
 };
 
 export const configValidators = {
+
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     //need api key unless running locally with ollama
     validateConfig(
       'OpenAI API_KEY',
-      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      value ||
+        config.OCO_ANTHROPIC_API_KEY ||
+        config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic API key'
     );
     validateConfig(
@@ -98,7 +108,10 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
     validateConfig(
       'ANTHROPIC_API_KEY',
-      value || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      value ||
+        config.OCO_OPENAI_API_KEY ||
+        config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic API key'
     );
 
@@ -184,7 +197,9 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_MODEL](value: any, config: any = {}) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value) || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value) ||
+        config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'test',
       `${value} is not supported yet, use 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
     );
     return value;
@@ -220,13 +235,7 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      [
-        '',
-        'openai',
-        'anthropic',
-        'ollama',
-        'test'
-      ].includes(value),
+      ['', 'openai', 'anthropic', 'ollama', 'test'].includes(value),
       `${value} is not supported yet, use 'ollama' 'anthropic' or 'openai' (default)`
     );
     return value;
@@ -241,6 +250,12 @@ export const configValidators = {
 
     return value;
   },
+  [CONFIG_KEYS.OCO_PROMPT_HEADER](value: any) {
+    return value
+  },
+  [CONFIG_KEYS.OCO_PROMPT_FOOTER](value: any) {
+    return value
+  },
 };
 
 export type ConfigType = {
@@ -254,9 +269,9 @@ export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
 }: {
-  configPath?: string
-  envPath?: string
-} = {}): ConfigType | null => {
+    configPath?: string;
+    envPath?: string;
+  } = {}): ConfigType | null => {
   dotenv.config({ path: envPath });
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
@@ -270,14 +285,18 @@ export const getConfig = ({
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
+    OCO_MODEL:
+    process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
+    process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
     OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
-    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false
+    OCO_ONE_LINE_COMMIT:
+    process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
+    OCO_PROMPT_HEADER: process.env.OCO_PROMPT_HEADER || "",
+    OCO_PROMPT_FOOTER: process.env.OCO_PROMPT_FOOTER || "",
   };
 
   const configExists = existsSync(configPath);
@@ -287,9 +306,7 @@ export const getConfig = ({
   const config = iniParse(configFile);
 
   for (const configKey of Object.keys(config)) {
-    if (
-      ['null', 'undefined'].includes(config[configKey])
-    ) {
+    if (['null', 'undefined'].includes(config[configKey])) {
       config[configKey] = undefined;
       continue;
     }
@@ -313,7 +330,10 @@ export const getConfig = ({
   return config;
 };
 
-export const setConfig = (keyValues: [key: string, value: string][], configPath: string = defaultConfigPath) => {
+export const setConfig = (
+  keyValues: [key: string, value: string][],
+  configPath: string = defaultConfigPath
+) => {
   const config = getConfig() || {};
 
   for (const [configKey, configValue] of keyValues) {
@@ -330,7 +350,7 @@ export const setConfig = (keyValues: [key: string, value: string][], configPath:
     }
 
     const validValue =
-      configValidators[configKey as CONFIG_KEYS](parsedConfigValue);
+    configValidators[configKey as CONFIG_KEYS](parsedConfigValue);
     config[configKey as CONFIG_KEYS] = validValue;
   }
 

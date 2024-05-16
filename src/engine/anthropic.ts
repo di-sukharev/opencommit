@@ -2,8 +2,11 @@ import axios from 'axios';
 import chalk from 'chalk';
 
 import Anthropic from '@anthropic-ai/sdk';
-import {ChatCompletionRequestMessage} from 'openai'
-import { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources';
+import { ChatCompletionRequestMessage } from 'openai';
+import {
+  MessageCreateParamsNonStreaming,
+  MessageParam
+} from '@anthropic-ai/sdk/resources';
 
 import { intro, outro } from '@clack/prompts';
 
@@ -47,12 +50,16 @@ if (
 }
 
 const MODEL = config?.OCO_MODEL;
-if (provider === 'anthropic' &&
-    !MODEL_LIST.anthropic.includes(MODEL) &&
-    command !== 'config' &&
-    mode !== CONFIG_MODES.set) {
+if (
+  provider === 'anthropic' &&
+  !MODEL_LIST.anthropic.includes(MODEL) &&
+  command !== 'config' &&
+  mode !== CONFIG_MODES.set
+) {
   outro(
-    `${chalk.red('✖')} Unsupported model ${MODEL} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
+    `${chalk.red(
+      '✖'
+    )} Unsupported model ${MODEL} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
       ', '
     )}`
   );
@@ -72,9 +79,11 @@ class AnthropicAi implements AiEngine {
   public generateCommitMessage = async (
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> => {
-
-    const systemMessage = messages.find(msg => msg.role === 'system')?.content as string;
-    const restMessages = messages.filter((msg) => msg.role !== 'system') as MessageParam[];
+    const systemMessage = messages.find((msg) => msg.role === 'system')
+      ?.content as string;
+    const restMessages = messages.filter(
+      (msg) => msg.role !== 'system'
+    ) as MessageParam[];
 
     const params: MessageCreateParamsNonStreaming = {
       model: MODEL,
@@ -93,7 +102,7 @@ class AnthropicAi implements AiEngine {
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
       }
 
-      const data  = await this.anthropicAI.messages.create(params);
+      const data = await this.anthropicAI.messages.create(params);
 
       const message = data?.content[0].text;
 

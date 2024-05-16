@@ -61,16 +61,16 @@ const llmReadableRules: {
   caseRule: (key, applicable, value: string | Array<string>) =>
     `The ${key} should ${applicable} be in ${
       Array.isArray(value)
-        ? `one of the following case: 
+        ? `one of the following case:
   - ${value.join('\n  - ')}.`
         : `${value} case.`
     }`,
   emptyRule: (key, applicable) => `The ${key} should ${applicable} be empty.`,
   enumRule: (key, applicable, value: string | Array<string>) =>
-    `The ${key} should ${applicable} be one of the following values: 
+    `The ${key} should ${applicable} be one of the following values:
   - ${Array.isArray(value) ? value.join('\n  - ') : value}.`,
   enumTypeRule: (key, applicable, value: string | Array<string>, prompt) =>
-    `The ${key} should ${applicable} be one of the following values: 
+    `The ${key} should ${applicable} be one of the following values:
   - ${
     Array.isArray(value)
       ? value
@@ -218,13 +218,13 @@ const GEN_COMMITLINT_CONSISTENCY_PROMPT = (
   {
     role: ChatCompletionRequestMessageRoleEnum.Assistant,
     // prettier-ignore
-    content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages for two different changes in a single codebase and output them in the provided JSON format: one for a bug fix and another for a new feature. 
+    content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages for two different changes in a single codebase and output them in the provided JSON format: one for a bug fix and another for a new feature.
 
 Here are the specific requirements and conventions that should be strictly followed:
 
 Commit Message Conventions:
 - The commit message consists of three parts: Header, Body, and Footer.
-- Header: 
+- Header:
   - Format: \`<type>(<scope>): <subject>\`
 - ${prompts.join('\n- ')}
 
@@ -242,8 +242,8 @@ JSON Output Format:
 - Description should not be more than 74 characters.
 
 Additional Details:
-- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix. 
-- Allowing the server to listen on a port specified through the environment variable is considered a new feature. 
+- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix.
+- Allowing the server to listen on a port specified through the environment variable is considered a new feature.
 
 Example Git Diff is to follow:`
   },
@@ -268,13 +268,15 @@ ${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.' : 'Do not 
 ${config?.OCO_DESCRIPTION ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.' : "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Use ${language} to answer.
 ${ config?.OCO_ONE_LINE_COMMIT ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.' : ""}
-    
+
+${config?.OCO_PROMPT_HEADER || ""}
 You will strictly follow the following conventions to generate the content of the commit message:
 - ${prompts.join('\n- ')}
 
 The conventions refers to the following structure of commit message:
 ${STRUCTURE_OF_COMMIT}
-    
+
+${config?.OCO_PROMPT_FOOTER || ""}
     `
 });
 

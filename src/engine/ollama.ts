@@ -2,9 +2,7 @@ import axios, { AxiosError } from 'axios';
 import { ChatCompletionRequestMessage } from 'openai';
 import { AiEngine } from './Engine';
 
-import {
-  getConfig
-} from '../commands/config';
+import { getConfig } from '../commands/config';
 
 const config = getConfig();
 
@@ -21,7 +19,7 @@ export class OllamaAi implements AiEngine {
     const p = {
       model,
       messages,
-      options: {temperature: 0, top_p: 0.1},
+      options: { temperature: 0, top_p: 0.1 },
       stream: false
     };
     try {
