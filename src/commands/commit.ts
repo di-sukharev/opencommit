@@ -131,10 +131,15 @@ ${chalk.grey('——————————————————')}`
           process.exit(0);
         }
       } else {
-        const selectedRemote = (await select({
-          message: 'Choose a remote to push to',
-          options: remotes.map((remote) => ({ value: remote, label: remote }))
-        })) as string;
+        var selectedRemote: string;
+        if (remotes.length > 0) {
+          selectedRemote = (await select({
+            message: 'Choose a remote to push to',
+            options: remotes.map((remote) => ({ value: remote, label: remote }))
+          })) as string;
+        } else {
+          selectedRemote = remotes[0];
+        }
 
         if (!isCancel(selectedRemote)) {
           const pushSpinner = spinner();

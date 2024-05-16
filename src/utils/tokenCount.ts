@@ -2,14 +2,11 @@ import { getEncoding } from 'js-tiktoken';
 import cl100k_base from 'tiktoken/encoders/cl100k_base.json';
 import { Tiktoken } from 'tiktoken/lite';
 
-const encoding = getEncoding('cl100k_base');
 function tokenCount__js(content: string): number {
-  console.log("encoding")
+  const encoding = getEncoding('cl100k_base');
   const tokens = encoding.encode(content);
-  console.log("done encoding")
   return tokens.length;
 }
-
 
 function tokenCount__native(content: string): number {
   const encoding = new Tiktoken(
@@ -22,4 +19,7 @@ function tokenCount__native(content: string): number {
   return tokens.length;
 }
 
-export const tokenCount = process.env.USE_NATIVE_TIKTOKEN === "TRUE" ? tokenCount__native : tokenCount__js
+export const tokenCount =
+  process.env.USE_NATIVE_TIKTOKEN === 'TRUE'
+    ? tokenCount__native
+    : tokenCount__js;
