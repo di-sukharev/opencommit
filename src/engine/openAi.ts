@@ -95,7 +95,7 @@ class OpenAi implements AiEngine {
     };
     try {
       const REQUEST_TOKENS = messages
-        .map((msg) => tokenCount(msg.content) + 4)
+        .map((msg) => tokenCount(msg.content || "") + 4)
         .reduce((a, b) => a + b, 0);
 
       if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {

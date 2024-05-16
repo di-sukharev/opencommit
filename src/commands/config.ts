@@ -28,7 +28,8 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_PROMPT_HEADER = 'OCO_PROMPT_HEADER',
   OCO_PROMPT_FOOTER = 'OCO_PROMPT_FOOTER',
-  OCO_GIT_STAGE_ALWAYS = 'OCO_GIT_STAGE_ALWAYS',
+  OCO_AUTOCONFIRM_STAGE = 'OCO_AUTOCONFIRM_STAGE',
+  OCO_AUTOCONFIRM_COMMIT = 'OCO_AUTOCONFIRM_COMMIT',
 }
 
 export enum CONFIG_MODES {
@@ -86,9 +87,6 @@ const validateConfig = (
 };
 
 export const configValidators = {
-
-
-
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     //need api key unless running locally with ollama
     validateConfig(
@@ -235,17 +233,24 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OCO_GIT_STAGE_ALWAYS](value: any) {
+  [CONFIG_KEYS.OCO_AUTOCONFIRM_STAGE](value: any) {
     validateConfig(
-      CONFIG_KEYS.OCO_GIT_STAGE_ALWAYS,
+      CONFIG_KEYS.OCO_AUTOCONFIRM_STAGE,
       typeof value === 'boolean',
       'Must be true or false'
     );
 
     return value;
   },
+  [CONFIG_KEYS.OCO_AUTOCONFIRM_COMMIT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_AUTOCONFIRM_COMMIT,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
 
-
+    return value;
+  },
 
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
@@ -312,7 +317,8 @@ export const getConfig = ({
       process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
     OCO_PROMPT_HEADER: process.env.OCO_PROMPT_HEADER || '',
     OCO_PROMPT_FOOTER: process.env.OCO_PROMPT_FOOTER || '',
-    OCO_GIT_STAGE_ALWAYS: false
+    OCO_AUTOCONFIRM_STAGE: process.env.OCO_AUTOCONFIRM_STAGE === 'true' ? true : false,
+    OCO_AUTOCONFIRM_COMMIT: process.env.OCO_AUTOCONFIRM_COMMIT === 'true' ? true : false
   };
 
   const configExists = existsSync(configPath);

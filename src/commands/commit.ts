@@ -76,9 +76,13 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser = await confirm({
-      message: 'Confirm the commit message?'
-    });
+
+    let isCommitConfirmedByUser: boolean | symbol = true
+    if(!(config?.OCO_AUTOCONFIRM_COMMIT)) {
+      isCommitConfirmedByUser = await confirm({
+        message: 'Confirm the commit message?'
+      });
+    }
 
     if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
       const { stdout } = await execa('git', [
@@ -121,8 +125,8 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.stop(
             `${chalk.green('✔')} Successfully pushed all commits to ${
-              remotes[0]
-            }`
+remotes[0]
+}`
           );
 
           if (stdout) outro(stdout);
@@ -150,8 +154,8 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.stop(
             `${chalk.green(
-              '✔'
-            )} Successfully pushed all commits to ${selectedRemote}`
+'✔'
+)} Successfully pushed all commits to ${selectedRemote}`
           );
 
           if (stdout) outro(stdout);
@@ -204,7 +208,7 @@ export async function commit(
     stagedFilesSpinner.stop('No files are staged');
 
     let isStageAllAndCommitConfirmedByUser: boolean | symbol = true
-    if(!(config?.OCO_GIT_STAGE_ALWAYS)) {
+    if(!(config?.OCO_AUTOCONFIRM_STAGE)) {
       isStageAllAndCommitConfirmedByUser  =  await confirm({
         message: 'Do you want to stage all files and generate commit message?'
       });

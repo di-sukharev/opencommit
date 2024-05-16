@@ -118,8 +118,6 @@ ${
         'fix, feat, build, chore, ci, docs, style, refactor, perf, test.'
       }`
 }
-${config?.OCO_PROMPT_FOOTER || ''}
-
 ${
   config?.OCO_DESCRIPTION
     ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
@@ -130,6 +128,7 @@ ${
     ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
     : ''
 }
+${config?.OCO_PROMPT_FOOTER || ''}
 Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
   };
 };
