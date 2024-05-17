@@ -23,3 +23,7 @@ export const tokenCount =
   process.env.USE_NATIVE_TIKTOKEN === 'TRUE'
     ? tokenCount__native
     : tokenCount__js;
+
+export const tokenCountEstimate = (content:string): number => {
+  return 4 + content.length / 3
+}

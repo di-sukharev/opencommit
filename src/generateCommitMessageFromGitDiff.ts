@@ -6,7 +6,7 @@ import {
 import { DEFAULT_TOKEN_LIMITS, getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { mergeDiffs } from './utils/mergeDiffs';
-import { tokenCount } from './utils/tokenCount';
+import { tokenCount, tokenCountEstimate } from './utils/tokenCount';
 import { getEngine } from './utils/engine';
 
 const config = getConfig();
@@ -49,7 +49,7 @@ export const generateCommitMessageByDiff = async (
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
 
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
-      (msg) => tokenCount(msg.content) + 4
+      (msg) => tokenCount(msg.content || "") + 4
     ).reduce((a, b) => a + b, 0);
 
     const MAX_REQUEST_TOKENS =
@@ -58,7 +58,15 @@ export const generateCommitMessageByDiff = async (
       INIT_MESSAGES_PROMPT_LENGTH -
       MAX_TOKENS_OUTPUT;
 
-    if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
+
+    let useFileDiffs = false
+    if(tokenCountEstimate(diff) > MAX_REQUEST_TOKENS)  {
+      useFileDiffs = true
+    } else {
+      useFileDiffs = tokenCount(diff) >= MAX_REQUEST_TOKENS
+    }
+
+    if (useFileDiffs) {
       const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
         diff,
         MAX_REQUEST_TOKENS,
@@ -135,11 +143,11 @@ function getMessagesPromisesByChangesInFile(
 
 function splitDiff(diff: string, maxChangeLength: number) {
   const lines = diff.split('\n');
-  const splitDiffs = [];
+  const splitDiffs:string[] = [];
   let currentDiff = '';
 
   if (maxChangeLength <= 0) {
-    throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
+    throw new Error(`${GenerateCommitMessageErrorEnum.outputTokensTooHigh}`);
   }
 
   for (let line of lines) {
@@ -181,10 +189,10 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
   // merge multiple files-diffs into 1 prompt to save tokens
   const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
 
-  const commitMessagePromises = [];
+  const commitMessagePromises: Promise<string | undefined>[] = [];
 
   for (const fileDiff of mergedFilesDiffs) {
-    if (tokenCount(fileDiff) >= maxDiffLength) {
+    if ((tokenCountEstimate(fileDiff) >= maxDiffLength ? false : tokenCount(fileDiff) >= maxDiffLength)) {
       // if file-diff is bigger than gpt context — split fileDiff into lineDiff
       const messagesPromises = getMessagesPromisesByChangesInFile(
         fileDiff,
