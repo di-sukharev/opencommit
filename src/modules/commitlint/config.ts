@@ -55,7 +55,7 @@ export const configureCommitlintIntegration = async (force = false) => {
   //   consistencyPrompts.map((p) => p.content)
   // );
 
-  const engine = getEngine()
+  const engine = getEngine();
   let consistency =
     (await engine.generateCommitMessage(consistencyPrompts)) || '{}';
 
@@ -64,7 +64,7 @@ export const configureCommitlintIntegration = async (force = false) => {
 
   // sometimes consistency is preceded by explanatory text like "Here is your JSON:"
   consistency = utils.getJSONBlock(consistency);
-  
+
   // ... remaining might be extra set of "\n"
   consistency = utils.removeDoubleNewlines(consistency);
 

@@ -76,9 +76,13 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser = await confirm({
-      message: 'Confirm the commit message?'
-    });
+
+    let isCommitConfirmedByUser: boolean | symbol = true
+    if(!(config?.OCO_AUTOCONFIRM_COMMIT)) {
+      isCommitConfirmedByUser = await confirm({
+        message: 'Confirm the commit message?'
+      });
+    }
 
     if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
       const { stdout } = await execa('git', [
@@ -95,8 +99,7 @@ ${chalk.grey('——————————————————')}`
       const remotes = await getGitRemotes();
 
       // user isn't pushing, return early
-      if (config?.OCO_GITPUSH === false)
-          return
+      if (config?.OCO_GITPUSH === false) return;
 
       if (!remotes.length) {
         const { stdout } = await execa('git', ['push']);
@@ -122,8 +125,8 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.stop(
             `${chalk.green('✔')} Successfully pushed all commits to ${
-              remotes[0]
-            }`
+remotes[0]
+}`
           );
 
           if (stdout) outro(stdout);
@@ -132,10 +135,15 @@ ${chalk.grey('——————————————————')}`
           process.exit(0);
         }
       } else {
-        const selectedRemote = (await select({
-          message: 'Choose a remote to push to',
-          options: remotes.map((remote) => ({ value: remote, label: remote }))
-        })) as string;
+        var selectedRemote: string;
+        if (remotes.length > 1) {
+          selectedRemote = (await select({
+            message: 'Choose a remote to push to',
+            options: remotes.map((remote) => ({ value: remote, label: remote }))
+          })) as string;
+        } else {
+          selectedRemote = remotes[0];
+        }
 
         if (!isCancel(selectedRemote)) {
           const pushSpinner = spinner();
@@ -146,8 +154,8 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.stop(
             `${chalk.green(
-              '✔'
-            )} Successfully pushed all commits to ${selectedRemote}`
+'✔'
+)} Successfully pushed all commits to ${selectedRemote}`
           );
 
           if (stdout) outro(stdout);
@@ -198,13 +206,16 @@ export async function commit(
 
   if (!stagedFiles.length) {
     stagedFilesSpinner.stop('No files are staged');
-    const isStageAllAndCommitConfirmedByUser = await confirm({
-      message: 'Do you want to stage all files and generate commit message?'
-    });
 
+    let isStageAllAndCommitConfirmedByUser: boolean | symbol = true
+    if(!(config?.OCO_AUTOCONFIRM_STAGE)) {
+      isStageAllAndCommitConfirmedByUser  =  await confirm({
+        message: 'Do you want to stage all files and generate commit message?'
+      });
+    }
     if (
       isStageAllAndCommitConfirmedByUser &&
-      !isCancel(isStageAllAndCommitConfirmedByUser)
+        !isCancel(isStageAllAndCommitConfirmedByUser)
     ) {
       await commit(extraArgs, true, fullGitMojiSpec);
       process.exit(1);
@@ -230,8 +241,8 @@ export async function commit(
 
   stagedFilesSpinner.stop(
     `${stagedFiles.length} staged files:\n${stagedFiles
-      .map((file) => `  ${file}`)
-      .join('\n')}`
+.map((file) => `  ${file}`)
+.join('\n')}`
   );
 
   const [, generateCommitError] = await trytm(

@@ -1,5 +1,5 @@
-import { outro } from "@clack/prompts";
-import { execa } from "execa";
+import { outro } from '@clack/prompts';
+import { execa } from 'execa';
 
 export const getOpenCommitLatestVersion = async (): Promise<
   string | undefined

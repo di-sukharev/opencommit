@@ -53,12 +53,16 @@ if (
 }
 
 const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
-if (provider === 'openai' &&
-    !MODEL_LIST.openai.includes(MODEL) &&
-    command !== 'config' &&
-    mode !== CONFIG_MODES.set) {
+if (
+  provider === 'openai' &&
+  !MODEL_LIST.openai.includes(MODEL) &&
+  command !== 'config' &&
+  mode !== CONFIG_MODES.set
+) {
   outro(
-    `${chalk.red('✖')} Unsupported model ${MODEL} for OpenAI. Supported models are: ${MODEL_LIST.openai.join(
+    `${chalk.red(
+      '✖'
+    )} Unsupported model ${MODEL} for OpenAI. Supported models are: ${MODEL_LIST.openai.join(
       ', '
     )}`
   );
@@ -91,7 +95,7 @@ class OpenAi implements AiEngine {
     };
     try {
       const REQUEST_TOKENS = messages
-        .map((msg) => tokenCount(msg.content) + 4)
+        .map((msg) => tokenCount(msg.content || "") + 4)
         .reduce((a, b) => a + b, 0);
 
       if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {

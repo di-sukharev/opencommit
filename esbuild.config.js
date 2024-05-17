@@ -6,7 +6,7 @@ await build({
   bundle: true,
   platform: 'node',
   format: 'cjs',
-  outfile: './out/cli.cjs'
+  outfile: './out/cli.cjs',
 });
 
 await build({
@@ -18,7 +18,7 @@ await build({
 });
 
 const wasmFile = fs.readFileSync(
-  './node_modules/@dqbd/tiktoken/lite/tiktoken_bg.wasm'
+  './node_modules/tiktoken/lite/tiktoken_bg.wasm'
 );
 
 fs.writeFileSync('./out/tiktoken_bg.wasm', wasmFile);

@@ -11,3 +11,5 @@ uncaughtExceptions.log
 src/*.json
 .idea
 test.ts
+
+Makefile
