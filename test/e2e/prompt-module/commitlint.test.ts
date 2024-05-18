@@ -9,22 +9,26 @@ function getAbsolutePath(relativePath: string) {
   return path.resolve(scriptDir, relativePath);
 }
 async function setupCommitlint(dir: string, ver: 9 | 18 | 19) {
-  let packagePath, configPath;
+  let packagePath, packageJsonPath, configPath;
   switch (ver) {
     case 9:
       packagePath = getAbsolutePath('./data/commitlint_9/node_modules');
+      packageJsonPath = getAbsolutePath('./data/commitlint_9/package.json');
       configPath = getAbsolutePath('./data/commitlint_9/commitlint.config.js');
       break;
     case 18:
       packagePath = getAbsolutePath('./data/commitlint_18/node_modules');
+      packageJsonPath = getAbsolutePath('./data/commitlint_18/package.json');
       configPath = getAbsolutePath('./data/commitlint_18/commitlint.config.js');
       break;
     case 19:
       packagePath = getAbsolutePath('./data/commitlint_19/node_modules');
+      packageJsonPath = getAbsolutePath('./data/commitlint_19/package.json');
       configPath = getAbsolutePath('./data/commitlint_19/commitlint.config.js');
       break;
   }
   await render('cp', ['-r', packagePath, '.'], { cwd: dir });
+  await render('cp', [packageJsonPath, '.'], { cwd: dir });
   await render('cp', [configPath, '.'], { cwd: dir });
   await wait(3000); // Avoid flakiness by waiting
 }
