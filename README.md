@@ -84,6 +84,14 @@ This is due to limit the number of tokens sent in each request. However, if you 
 oco --fgm
 ```
 
+#### Skip Commit Confirmation
+
+This flag allows users to automatically commit the changes without having to manually confirm the commit message. This is useful for users who want to streamline the commit process and avoid additional steps. To use this flag, you can run the following command:
+
+```
+oco --yes
+```
+
 ## Configuration
 
 ### Local per repo configuration
