@@ -48313,6 +48313,8 @@ var validateConfig = (key, condition, validationMessage) => {
 };
 var configValidators = {
   ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config9 = {}) {
+    if (config9.OCO_AI_PROVIDER == "gemini")
+      return value;
     validateConfig(
       "OpenAI API_KEY",
       value || config9.OCO_ANTHROPIC_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
@@ -48330,6 +48332,16 @@ var configValidators = {
       "ANTHROPIC_API_KEY",
       value || config9.OCO_OPENAI_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic API key"
+    );
+    return value;
+  },
+  ["OCO_GEMINI_API_KEY" /* OCO_GEMINI_API_KEY */](value, config9 = {}) {
+    if (config9.OCO_AI_PROVIDER != "gemini")
+      return value;
+    validateConfig(
+      "Gemini API Key",
+      value || config9.OCO_GEMINI_API_KEY || config9.OCO_AI_PROVIDER == "test",
+      "You need to provide an Gemini API key"
     );
     return value;
   },
@@ -48400,8 +48412,10 @@ var configValidators = {
   ["OCO_MODEL" /* OCO_MODEL */](value, config9 = {}) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value) || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
-      `${value} is not supported yet, use 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
+      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].includes(value) || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
+      `${value} is not supported yet, use:
+
+ ${[...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].join("\n")}`
     );
     return value;
   },
@@ -48437,9 +48451,10 @@ var configValidators = {
         "openai",
         "anthropic",
         "ollama",
+        "gemini",
         "test"
       ].includes(value),
-      `${value} is not supported yet, use 'ollama' 'anthropic' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'anthropic', 'gemini' or 'openai' (default)`
     );
     return value;
   },
