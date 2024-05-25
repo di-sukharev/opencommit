@@ -46,7 +46,7 @@ export const generateCommitMessageByDiff = async (
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
 
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
-      (msg) => tokenCount(msg.content) + 4
+      (msg) => tokenCount(msg.content as string) + 4
     ).reduce((a, b) => a + b, 0);
 
     const MAX_REQUEST_TOKENS =
@@ -62,9 +62,9 @@ export const generateCommitMessageByDiff = async (
         fullGitMojiSpec
       );
 
-      const commitMessages = [];
+      const commitMessages = [] as string[];
       for (const promise of commitMessagePromises) {
-        commitMessages.push(await promise);
+        commitMessages.push((await promise) as string);
         await delay(2000);
       }
 

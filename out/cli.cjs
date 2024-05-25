@@ -1239,8 +1239,8 @@ var require_normalizeHeaderName = __commonJS({
 var require_enhanceError = __commonJS({
   "node_modules/openai/node_modules/axios/lib/core/enhanceError.js"(exports, module2) {
     "use strict";
-    module2.exports = function enhanceError(error, config9, code, request, response) {
-      error.config = config9;
+    module2.exports = function enhanceError(error, config10, code, request, response) {
+      error.config = config10;
       if (code) {
         error.code = code;
       }
@@ -1284,9 +1284,9 @@ var require_createError = __commonJS({
   "node_modules/openai/node_modules/axios/lib/core/createError.js"(exports, module2) {
     "use strict";
     var enhanceError = require_enhanceError();
-    module2.exports = function createError(message, config9, code, request, response) {
+    module2.exports = function createError(message, config10, code, request, response) {
       var error = new Error(message);
-      return enhanceError(error, config9, code, request, response);
+      return enhanceError(error, config10, code, request, response);
     };
   }
 });
@@ -1515,32 +1515,32 @@ var require_xhr = __commonJS({
     var createError = require_createError();
     var transitionalDefaults = require_transitional();
     var Cancel2 = require_Cancel();
-    module2.exports = function xhrAdapter(config9) {
+    module2.exports = function xhrAdapter(config10) {
       return new Promise(function dispatchXhrRequest(resolve, reject) {
-        var requestData = config9.data;
-        var requestHeaders = config9.headers;
-        var responseType = config9.responseType;
+        var requestData = config10.data;
+        var requestHeaders = config10.headers;
+        var responseType = config10.responseType;
         var onCanceled;
         function done() {
-          if (config9.cancelToken) {
-            config9.cancelToken.unsubscribe(onCanceled);
+          if (config10.cancelToken) {
+            config10.cancelToken.unsubscribe(onCanceled);
           }
-          if (config9.signal) {
-            config9.signal.removeEventListener("abort", onCanceled);
+          if (config10.signal) {
+            config10.signal.removeEventListener("abort", onCanceled);
           }
         }
         if (utils.isFormData(requestData)) {
           delete requestHeaders["Content-Type"];
         }
         var request = new XMLHttpRequest();
-        if (config9.auth) {
-          var username = config9.auth.username || "";
-          var password = config9.auth.password ? unescape(encodeURIComponent(config9.auth.password)) : "";
+        if (config10.auth) {
+          var username = config10.auth.username || "";
+          var password = config10.auth.password ? unescape(encodeURIComponent(config10.auth.password)) : "";
           requestHeaders.Authorization = "Basic " + btoa(username + ":" + password);
         }
-        var fullPath = buildFullPath2(config9.baseURL, config9.url);
-        request.open(config9.method.toUpperCase(), buildURL2(fullPath, config9.params, config9.paramsSerializer), true);
-        request.timeout = config9.timeout;
+        var fullPath = buildFullPath2(config10.baseURL, config10.url);
+        request.open(config10.method.toUpperCase(), buildURL2(fullPath, config10.params, config10.paramsSerializer), true);
+        request.timeout = config10.timeout;
         function onloadend() {
           if (!request) {
             return;
@@ -1552,7 +1552,7 @@ var require_xhr = __commonJS({
             status: request.status,
             statusText: request.statusText,
             headers: responseHeaders,
-            config: config9,
+            config: config10,
             request
           };
           settle2(function _resolve(value) {
@@ -1581,31 +1581,31 @@ var require_xhr = __commonJS({
           if (!request) {
             return;
           }
-          reject(createError("Request aborted", config9, "ECONNABORTED", request));
+          reject(createError("Request aborted", config10, "ECONNABORTED", request));
           request = null;
         };
         request.onerror = function handleError() {
-          reject(createError("Network Error", config9, null, request));
+          reject(createError("Network Error", config10, null, request));
           request = null;
         };
         request.ontimeout = function handleTimeout() {
-          var timeoutErrorMessage = config9.timeout ? "timeout of " + config9.timeout + "ms exceeded" : "timeout exceeded";
-          var transitional2 = config9.transitional || transitionalDefaults;
-          if (config9.timeoutErrorMessage) {
-            timeoutErrorMessage = config9.timeoutErrorMessage;
+          var timeoutErrorMessage = config10.timeout ? "timeout of " + config10.timeout + "ms exceeded" : "timeout exceeded";
+          var transitional2 = config10.transitional || transitionalDefaults;
+          if (config10.timeoutErrorMessage) {
+            timeoutErrorMessage = config10.timeoutErrorMessage;
           }
           reject(createError(
             timeoutErrorMessage,
-            config9,
+            config10,
             transitional2.clarifyTimeoutError ? "ETIMEDOUT" : "ECONNABORTED",
             request
           ));
           request = null;
         };
         if (utils.isStandardBrowserEnv()) {
-          var xsrfValue = (config9.withCredentials || isURLSameOrigin(fullPath)) && config9.xsrfCookieName ? cookies.read(config9.xsrfCookieName) : void 0;
+          var xsrfValue = (config10.withCredentials || isURLSameOrigin(fullPath)) && config10.xsrfCookieName ? cookies.read(config10.xsrfCookieName) : void 0;
           if (xsrfValue) {
-            requestHeaders[config9.xsrfHeaderName] = xsrfValue;
+            requestHeaders[config10.xsrfHeaderName] = xsrfValue;
           }
         }
         if ("setRequestHeader" in request) {
@@ -1617,19 +1617,19 @@ var require_xhr = __commonJS({
             }
           });
         }
-        if (!utils.isUndefined(config9.withCredentials)) {
-          request.withCredentials = !!config9.withCredentials;
+        if (!utils.isUndefined(config10.withCredentials)) {
+          request.withCredentials = !!config10.withCredentials;
         }
         if (responseType && responseType !== "json") {
-          request.responseType = config9.responseType;
+          request.responseType = config10.responseType;
         }
-        if (typeof config9.onDownloadProgress === "function") {
-          request.addEventListener("progress", config9.onDownloadProgress);
+        if (typeof config10.onDownloadProgress === "function") {
+          request.addEventListener("progress", config10.onDownloadProgress);
         }
-        if (typeof config9.onUploadProgress === "function" && request.upload) {
-          request.upload.addEventListener("progress", config9.onUploadProgress);
+        if (typeof config10.onUploadProgress === "function" && request.upload) {
+          request.upload.addEventListener("progress", config10.onUploadProgress);
         }
-        if (config9.cancelToken || config9.signal) {
+        if (config10.cancelToken || config10.signal) {
           onCanceled = function(cancel) {
             if (!request) {
               return;
@@ -1638,9 +1638,9 @@ var require_xhr = __commonJS({
             request.abort();
             request = null;
           };
-          config9.cancelToken && config9.cancelToken.subscribe(onCanceled);
-          if (config9.signal) {
-            config9.signal.aborted ? onCanceled() : config9.signal.addEventListener("abort", onCanceled);
+          config10.cancelToken && config10.cancelToken.subscribe(onCanceled);
+          if (config10.signal) {
+            config10.signal.aborted ? onCanceled() : config10.signal.addEventListener("abort", onCanceled);
           }
         }
         if (!requestData) {
@@ -2936,15 +2936,15 @@ var require_http = __commonJS({
         setProxy2(redirection, proxy, redirection.href);
       };
     }
-    module2.exports = function httpAdapter2(config9) {
+    module2.exports = function httpAdapter2(config10) {
       return new Promise(function dispatchHttpRequest(resolvePromise, rejectPromise) {
         var onCanceled;
         function done() {
-          if (config9.cancelToken) {
-            config9.cancelToken.unsubscribe(onCanceled);
+          if (config10.cancelToken) {
+            config10.cancelToken.unsubscribe(onCanceled);
           }
-          if (config9.signal) {
-            config9.signal.removeEventListener("abort", onCanceled);
+          if (config10.signal) {
+            config10.signal.removeEventListener("abort", onCanceled);
           }
         }
         var resolve = function resolve2(value) {
@@ -2957,8 +2957,8 @@ var require_http = __commonJS({
           rejected = true;
           rejectPromise(value);
         };
-        var data = config9.data;
-        var headers = config9.headers;
+        var data = config10.data;
+        var headers = config10.headers;
         var headerNames = {};
         Object.keys(headers).forEach(function storeLowerName(name) {
           headerNames[name.toLowerCase()] = name;
@@ -2979,23 +2979,23 @@ var require_http = __commonJS({
           } else {
             return reject(createError(
               "Data after transformation must be a string, an ArrayBuffer, a Buffer, or a Stream",
-              config9
+              config10
             ));
           }
-          if (config9.maxBodyLength > -1 && data.length > config9.maxBodyLength) {
-            return reject(createError("Request body larger than maxBodyLength limit", config9));
+          if (config10.maxBodyLength > -1 && data.length > config10.maxBodyLength) {
+            return reject(createError("Request body larger than maxBodyLength limit", config10));
           }
           if (!headerNames["content-length"]) {
             headers["Content-Length"] = data.length;
           }
         }
         var auth = void 0;
-        if (config9.auth) {
-          var username = config9.auth.username || "";
-          var password = config9.auth.password || "";
+        if (config10.auth) {
+          var username = config10.auth.username || "";
+          var password = config10.auth.password || "";
           auth = username + ":" + password;
         }
-        var fullPath = buildFullPath2(config9.baseURL, config9.url);
+        var fullPath = buildFullPath2(config10.baseURL, config10.url);
         var parsed = url2.parse(fullPath);
         var protocol = parsed.protocol || "http:";
         if (!auth && parsed.auth) {
@@ -3008,31 +3008,31 @@ var require_http = __commonJS({
           delete headers[headerNames.authorization];
         }
         var isHttpsRequest = isHttps2.test(protocol);
-        var agent = isHttpsRequest ? config9.httpsAgent : config9.httpAgent;
+        var agent = isHttpsRequest ? config10.httpsAgent : config10.httpAgent;
         try {
-          buildURL2(parsed.path, config9.params, config9.paramsSerializer).replace(/^\?/, "");
+          buildURL2(parsed.path, config10.params, config10.paramsSerializer).replace(/^\?/, "");
         } catch (err) {
           var customErr = new Error(err.message);
-          customErr.config = config9;
-          customErr.url = config9.url;
+          customErr.config = config10;
+          customErr.url = config10.url;
           customErr.exists = true;
           reject(customErr);
         }
         var options = {
-          path: buildURL2(parsed.path, config9.params, config9.paramsSerializer).replace(/^\?/, ""),
-          method: config9.method.toUpperCase(),
+          path: buildURL2(parsed.path, config10.params, config10.paramsSerializer).replace(/^\?/, ""),
+          method: config10.method.toUpperCase(),
           headers,
           agent,
-          agents: { http: config9.httpAgent, https: config9.httpsAgent },
+          agents: { http: config10.httpAgent, https: config10.httpsAgent },
           auth
         };
-        if (config9.socketPath) {
-          options.socketPath = config9.socketPath;
+        if (config10.socketPath) {
+          options.socketPath = config10.socketPath;
         } else {
           options.hostname = parsed.hostname;
           options.port = parsed.port;
         }
-        var proxy = config9.proxy;
+        var proxy = config10.proxy;
         if (!proxy && proxy !== false) {
           var proxyEnv = protocol.slice(0, -1) + "_proxy";
           var proxyUrl = process.env[proxyEnv] || process.env[proxyEnv.toUpperCase()];
@@ -3079,28 +3079,28 @@ var require_http = __commonJS({
         }
         var transport;
         var isHttpsProxy = isHttpsRequest && (proxy ? isHttps2.test(proxy.protocol) : true);
-        if (config9.transport) {
-          transport = config9.transport;
-        } else if (config9.maxRedirects === 0) {
+        if (config10.transport) {
+          transport = config10.transport;
+        } else if (config10.maxRedirects === 0) {
           transport = isHttpsProxy ? https2 : http2;
         } else {
-          if (config9.maxRedirects) {
-            options.maxRedirects = config9.maxRedirects;
+          if (config10.maxRedirects) {
+            options.maxRedirects = config10.maxRedirects;
           }
           transport = isHttpsProxy ? httpsFollow2 : httpFollow2;
         }
-        if (config9.maxBodyLength > -1) {
-          options.maxBodyLength = config9.maxBodyLength;
+        if (config10.maxBodyLength > -1) {
+          options.maxBodyLength = config10.maxBodyLength;
         }
-        if (config9.insecureHTTPParser) {
-          options.insecureHTTPParser = config9.insecureHTTPParser;
+        if (config10.insecureHTTPParser) {
+          options.insecureHTTPParser = config10.insecureHTTPParser;
         }
         var req = transport.request(options, function handleResponse(res) {
           if (req.aborted)
             return;
           var stream4 = res;
           var lastRequest = res.req || req;
-          if (res.statusCode !== 204 && lastRequest.method !== "HEAD" && config9.decompress !== false) {
+          if (res.statusCode !== 204 && lastRequest.method !== "HEAD" && config10.decompress !== false) {
             switch (res.headers["content-encoding"]) {
               case "gzip":
               case "compress":
@@ -3114,10 +3114,10 @@ var require_http = __commonJS({
             status: res.statusCode,
             statusText: res.statusMessage,
             headers: res.headers,
-            config: config9,
+            config: config10,
             request: lastRequest
           };
-          if (config9.responseType === "stream") {
+          if (config10.responseType === "stream") {
             response.data = stream4;
             settle2(resolve, reject, response);
           } else {
@@ -3126,12 +3126,12 @@ var require_http = __commonJS({
             stream4.on("data", function handleStreamData(chunk) {
               responseBuffer.push(chunk);
               totalResponseBytes += chunk.length;
-              if (config9.maxContentLength > -1 && totalResponseBytes > config9.maxContentLength) {
+              if (config10.maxContentLength > -1 && totalResponseBytes > config10.maxContentLength) {
                 rejected = true;
                 stream4.destroy();
                 reject(createError(
-                  "maxContentLength size of " + config9.maxContentLength + " exceeded",
-                  config9,
+                  "maxContentLength size of " + config10.maxContentLength + " exceeded",
+                  config10,
                   null,
                   lastRequest
                 ));
@@ -3142,25 +3142,25 @@ var require_http = __commonJS({
                 return;
               }
               stream4.destroy();
-              reject(createError("error request aborted", config9, "ERR_REQUEST_ABORTED", lastRequest));
+              reject(createError("error request aborted", config10, "ERR_REQUEST_ABORTED", lastRequest));
             });
             stream4.on("error", function handleStreamError(err) {
               if (req.aborted)
                 return;
-              reject(enhanceError(err, config9, null, lastRequest));
+              reject(enhanceError(err, config10, null, lastRequest));
             });
             stream4.on("end", function handleStreamEnd() {
               try {
                 var responseData = responseBuffer.length === 1 ? responseBuffer[0] : Buffer.concat(responseBuffer);
-                if (config9.responseType !== "arraybuffer") {
-                  responseData = responseData.toString(config9.responseEncoding);
-                  if (!config9.responseEncoding || config9.responseEncoding === "utf8") {
+                if (config10.responseType !== "arraybuffer") {
+                  responseData = responseData.toString(config10.responseEncoding);
+                  if (!config10.responseEncoding || config10.responseEncoding === "utf8") {
                     responseData = utils.stripBOM(responseData);
                   }
                 }
                 response.data = responseData;
               } catch (err) {
-                reject(enhanceError(err, config9, err.code, response.request, response));
+                reject(enhanceError(err, config10, err.code, response.request, response));
               }
               settle2(resolve, reject, response);
             });
@@ -3169,17 +3169,17 @@ var require_http = __commonJS({
         req.on("error", function handleRequestError(err) {
           if (req.aborted && err.code !== "ERR_FR_TOO_MANY_REDIRECTS")
             return;
-          reject(enhanceError(err, config9, null, req));
+          reject(enhanceError(err, config10, null, req));
         });
         req.on("socket", function handleRequestSocket(socket) {
           socket.setKeepAlive(true, 1e3 * 60);
         });
-        if (config9.timeout) {
-          var timeout = parseInt(config9.timeout, 10);
+        if (config10.timeout) {
+          var timeout = parseInt(config10.timeout, 10);
           if (isNaN(timeout)) {
             reject(createError(
               "error trying to parse `config.timeout` to int",
-              config9,
+              config10,
               "ERR_PARSE_TIMEOUT",
               req
             ));
@@ -3188,35 +3188,35 @@ var require_http = __commonJS({
           req.setTimeout(timeout, function handleRequestTimeout() {
             req.abort();
             var timeoutErrorMessage = "";
-            if (config9.timeoutErrorMessage) {
-              timeoutErrorMessage = config9.timeoutErrorMessage;
+            if (config10.timeoutErrorMessage) {
+              timeoutErrorMessage = config10.timeoutErrorMessage;
             } else {
-              timeoutErrorMessage = "timeout of " + config9.timeout + "ms exceeded";
+              timeoutErrorMessage = "timeout of " + config10.timeout + "ms exceeded";
             }
-            var transitional2 = config9.transitional || transitionalDefaults;
+            var transitional2 = config10.transitional || transitionalDefaults;
             reject(createError(
               timeoutErrorMessage,
-              config9,
+              config10,
               transitional2.clarifyTimeoutError ? "ETIMEDOUT" : "ECONNABORTED",
               req
             ));
           });
         }
-        if (config9.cancelToken || config9.signal) {
+        if (config10.cancelToken || config10.signal) {
           onCanceled = function(cancel) {
             if (req.aborted)
               return;
             req.abort();
             reject(!cancel || cancel && cancel.type ? new Cancel2("canceled") : cancel);
           };
-          config9.cancelToken && config9.cancelToken.subscribe(onCanceled);
-          if (config9.signal) {
-            config9.signal.aborted ? onCanceled() : config9.signal.addEventListener("abort", onCanceled);
+          config10.cancelToken && config10.cancelToken.subscribe(onCanceled);
+          if (config10.signal) {
+            config10.signal.aborted ? onCanceled() : config10.signal.addEventListener("abort", onCanceled);
           }
         }
         if (utils.isStream(data)) {
           data.on("error", function handleStreamError(err) {
-            reject(enhanceError(err, config9, null, req));
+            reject(enhanceError(err, config10, null, req));
           }).pipe(req);
         } else {
           req.end(data);
@@ -3364,53 +3364,53 @@ var require_dispatchRequest = __commonJS({
     var isCancel3 = require_isCancel();
     var defaults2 = require_defaults();
     var Cancel2 = require_Cancel();
-    function throwIfCancellationRequested2(config9) {
-      if (config9.cancelToken) {
-        config9.cancelToken.throwIfRequested();
+    function throwIfCancellationRequested2(config10) {
+      if (config10.cancelToken) {
+        config10.cancelToken.throwIfRequested();
       }
-      if (config9.signal && config9.signal.aborted) {
+      if (config10.signal && config10.signal.aborted) {
         throw new Cancel2("canceled");
       }
     }
-    module2.exports = function dispatchRequest2(config9) {
-      throwIfCancellationRequested2(config9);
-      config9.headers = config9.headers || {};
-      config9.data = transformData2.call(
-        config9,
-        config9.data,
-        config9.headers,
-        config9.transformRequest
+    module2.exports = function dispatchRequest2(config10) {
+      throwIfCancellationRequested2(config10);
+      config10.headers = config10.headers || {};
+      config10.data = transformData2.call(
+        config10,
+        config10.data,
+        config10.headers,
+        config10.transformRequest
       );
-      config9.headers = utils.merge(
-        config9.headers.common || {},
-        config9.headers[config9.method] || {},
-        config9.headers
+      config10.headers = utils.merge(
+        config10.headers.common || {},
+        config10.headers[config10.method] || {},
+        config10.headers
       );
       utils.forEach(
         ["delete", "get", "head", "post", "put", "patch", "common"],
         function cleanHeaderConfig(method) {
-          delete config9.headers[method];
+          delete config10.headers[method];
         }
       );
-      var adapter = config9.adapter || defaults2.adapter;
-      return adapter(config9).then(function onAdapterResolution(response) {
-        throwIfCancellationRequested2(config9);
+      var adapter = config10.adapter || defaults2.adapter;
+      return adapter(config10).then(function onAdapterResolution(response) {
+        throwIfCancellationRequested2(config10);
         response.data = transformData2.call(
-          config9,
+          config10,
           response.data,
           response.headers,
-          config9.transformResponse
+          config10.transformResponse
         );
         return response;
       }, function onAdapterRejection(reason) {
         if (!isCancel3(reason)) {
-          throwIfCancellationRequested2(config9);
+          throwIfCancellationRequested2(config10);
           if (reason && reason.response) {
             reason.response.data = transformData2.call(
-              config9,
+              config10,
               reason.response.data,
               reason.response.headers,
-              config9.transformResponse
+              config10.transformResponse
             );
           }
         }
@@ -3427,7 +3427,7 @@ var require_mergeConfig = __commonJS({
     var utils = require_utils();
     module2.exports = function mergeConfig3(config1, config22) {
       config22 = config22 || {};
-      var config9 = {};
+      var config10 = {};
       function getMergedValue(target, source) {
         if (utils.isPlainObject(target) && utils.isPlainObject(source)) {
           return utils.merge(target, source);
@@ -3495,9 +3495,9 @@ var require_mergeConfig = __commonJS({
       utils.forEach(Object.keys(config1).concat(Object.keys(config22)), function computeConfigValue(prop) {
         var merge2 = mergeMap[prop] || mergeDeepProperties;
         var configValue = merge2(prop);
-        utils.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config9[prop] = configValue);
+        utils.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config10[prop] = configValue);
       });
-      return config9;
+      return config10;
     };
   }
 });
@@ -3581,22 +3581,22 @@ var require_Axios = __commonJS({
         response: new InterceptorManager2()
       };
     }
-    Axios3.prototype.request = function request(configOrUrl, config9) {
+    Axios3.prototype.request = function request(configOrUrl, config10) {
       if (typeof configOrUrl === "string") {
-        config9 = config9 || {};
-        config9.url = configOrUrl;
+        config10 = config10 || {};
+        config10.url = configOrUrl;
       } else {
-        config9 = configOrUrl || {};
+        config10 = configOrUrl || {};
       }
-      config9 = mergeConfig3(this.defaults, config9);
-      if (config9.method) {
-        config9.method = config9.method.toLowerCase();
+      config10 = mergeConfig3(this.defaults, config10);
+      if (config10.method) {
+        config10.method = config10.method.toLowerCase();
       } else if (this.defaults.method) {
-        config9.method = this.defaults.method.toLowerCase();
+        config10.method = this.defaults.method.toLowerCase();
       } else {
-        config9.method = "get";
+        config10.method = "get";
       }
-      var transitional2 = config9.transitional;
+      var transitional2 = config10.transitional;
       if (transitional2 !== void 0) {
         validator.assertOptions(transitional2, {
           silentJSONParsing: validators3.transitional(validators3.boolean),
@@ -3607,7 +3607,7 @@ var require_Axios = __commonJS({
       var requestInterceptorChain = [];
       var synchronousRequestInterceptors = true;
       this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-        if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config9) === false) {
+        if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config10) === false) {
           return;
         }
         synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
@@ -3622,13 +3622,13 @@ var require_Axios = __commonJS({
         var chain = [dispatchRequest2, void 0];
         Array.prototype.unshift.apply(chain, requestInterceptorChain);
         chain = chain.concat(responseInterceptorChain);
-        promise = Promise.resolve(config9);
+        promise = Promise.resolve(config10);
         while (chain.length) {
           promise = promise.then(chain.shift(), chain.shift());
         }
         return promise;
       }
-      var newConfig = config9;
+      var newConfig = config10;
       while (requestInterceptorChain.length) {
         var onFulfilled = requestInterceptorChain.shift();
         var onRejected = requestInterceptorChain.shift();
@@ -3649,22 +3649,22 @@ var require_Axios = __commonJS({
       }
       return promise;
     };
-    Axios3.prototype.getUri = function getUri(config9) {
-      config9 = mergeConfig3(this.defaults, config9);
-      return buildURL2(config9.url, config9.params, config9.paramsSerializer).replace(/^\?/, "");
+    Axios3.prototype.getUri = function getUri(config10) {
+      config10 = mergeConfig3(this.defaults, config10);
+      return buildURL2(config10.url, config10.params, config10.paramsSerializer).replace(/^\?/, "");
     };
     utils.forEach(["delete", "get", "head", "options"], function forEachMethodNoData2(method) {
-      Axios3.prototype[method] = function(url2, config9) {
-        return this.request(mergeConfig3(config9 || {}, {
+      Axios3.prototype[method] = function(url2, config10) {
+        return this.request(mergeConfig3(config10 || {}, {
           method,
           url: url2,
-          data: (config9 || {}).data
+          data: (config10 || {}).data
         }));
       };
     });
     utils.forEach(["post", "put", "patch"], function forEachMethodWithData2(method) {
-      Axios3.prototype[method] = function(url2, data, config9) {
-        return this.request(mergeConfig3(config9 || {}, {
+      Axios3.prototype[method] = function(url2, data, config10) {
+        return this.request(mergeConfig3(config10 || {}, {
           method,
           url: url2,
           data
@@ -14799,7 +14799,7 @@ var require_main = __commonJS({
         return { parsed: parsedAll };
       }
     }
-    function config9(options) {
+    function config10(options) {
       if (_dotenvKey(options).length === 0) {
         return DotenvModule.configDotenv(options);
       }
@@ -14866,7 +14866,7 @@ var require_main = __commonJS({
       configDotenv,
       _configVault,
       _parseVault,
-      config: config9,
+      config: config10,
       decrypt,
       parse,
       populate
@@ -17818,11 +17818,11 @@ var require_lib3 = __commonJS({
       return void 0;
     }
     var MAP = Symbol("map");
-    var Headers3 = class {
+    var Headers4 = class {
       constructor() {
         let init = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : void 0;
         this[MAP] = /* @__PURE__ */ Object.create(null);
-        if (init instanceof Headers3) {
+        if (init instanceof Headers4) {
           const rawHeaders = init.raw();
           const headerNames = Object.keys(rawHeaders);
           for (const headerName of headerNames) {
@@ -17874,13 +17874,13 @@ var require_lib3 = __commonJS({
       }
       forEach(callback) {
         let thisArg = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : void 0;
-        let pairs = getHeaders(this);
+        let pairs = getHeaders2(this);
         let i3 = 0;
         while (i3 < pairs.length) {
           var _pairs$i = pairs[i3];
           const name = _pairs$i[0], value = _pairs$i[1];
           callback.call(thisArg, value, name, this);
-          pairs = getHeaders(this);
+          pairs = getHeaders2(this);
           i3++;
         }
       }
@@ -17930,14 +17930,14 @@ var require_lib3 = __commonJS({
         return createHeadersIterator(this, "key+value");
       }
     };
-    Headers3.prototype.entries = Headers3.prototype[Symbol.iterator];
-    Object.defineProperty(Headers3.prototype, Symbol.toStringTag, {
+    Headers4.prototype.entries = Headers4.prototype[Symbol.iterator];
+    Object.defineProperty(Headers4.prototype, Symbol.toStringTag, {
       value: "Headers",
       writable: false,
       enumerable: false,
       configurable: true
     });
-    Object.defineProperties(Headers3.prototype, {
+    Object.defineProperties(Headers4.prototype, {
       get: { enumerable: true },
       forEach: { enumerable: true },
       set: { enumerable: true },
@@ -17948,7 +17948,7 @@ var require_lib3 = __commonJS({
       values: { enumerable: true },
       entries: { enumerable: true }
     });
-    function getHeaders(headers) {
+    function getHeaders2(headers) {
       let kind2 = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : "key+value";
       const keys = Object.keys(headers[MAP]).sort();
       return keys.map(kind2 === "key" ? function(k7) {
@@ -17976,7 +17976,7 @@ var require_lib3 = __commonJS({
         }
         var _INTERNAL = this[INTERNAL];
         const target = _INTERNAL.target, kind2 = _INTERNAL.kind, index = _INTERNAL.index;
-        const values = getHeaders(target, kind2);
+        const values = getHeaders2(target, kind2);
         const len = values.length;
         if (index >= len) {
           return {
@@ -18006,7 +18006,7 @@ var require_lib3 = __commonJS({
       return obj;
     }
     function createHeadersLenient(obj) {
-      const headers = new Headers3();
+      const headers = new Headers4();
       for (const name of Object.keys(obj)) {
         if (invalidTokenRegex.test(name)) {
           continue;
@@ -18036,7 +18036,7 @@ var require_lib3 = __commonJS({
         let opts = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
         Body.call(this, body, opts);
         const status = opts.status || 200;
-        const headers = new Headers3(opts.headers);
+        const headers = new Headers4(opts.headers);
         if (body != null && !headers.has("Content-Type")) {
           const contentType = extractContentType(body);
           if (contentType) {
@@ -18138,7 +18138,7 @@ var require_lib3 = __commonJS({
           timeout: init.timeout || input.timeout || 0,
           size: init.size || input.size || 0
         });
-        const headers = new Headers3(init.headers || input.headers || {});
+        const headers = new Headers4(init.headers || input.headers || {});
         if (inputBody != null && !headers.has("Content-Type")) {
           const contentType = extractContentType(inputBody);
           if (contentType) {
@@ -18199,7 +18199,7 @@ var require_lib3 = __commonJS({
     });
     function getNodeRequestOptions(request) {
       const parsedURL = request[INTERNALS$2].parsedURL;
-      const headers = new Headers3(request[INTERNALS$2].headers);
+      const headers = new Headers4(request[INTERNALS$2].headers);
       if (!headers.has("Accept")) {
         headers.set("Accept", "*/*");
       }
@@ -18262,12 +18262,12 @@ var require_lib3 = __commonJS({
       const dest = new URL$1(destination).protocol;
       return orig === dest;
     };
-    function fetch2(url2, opts) {
-      if (!fetch2.Promise) {
+    function fetch3(url2, opts) {
+      if (!fetch3.Promise) {
         throw new Error("native promise missing, set fetch.Promise to your favorite alternative");
       }
-      Body.Promise = fetch2.Promise;
-      return new fetch2.Promise(function(resolve, reject) {
+      Body.Promise = fetch3.Promise;
+      return new fetch3.Promise(function(resolve, reject) {
         const request = new Request3(url2, opts);
         const options = getNodeRequestOptions(request);
         const send = (options.protocol === "https:" ? https2 : http2).request;
@@ -18340,7 +18340,7 @@ var require_lib3 = __commonJS({
         req.on("response", function(res) {
           clearTimeout(reqTimeout);
           const headers = createHeadersLenient(res.headers);
-          if (fetch2.isRedirect(res.statusCode)) {
+          if (fetch3.isRedirect(res.statusCode)) {
             const location = headers.get("Location");
             let locationURL = null;
             try {
@@ -18376,7 +18376,7 @@ var require_lib3 = __commonJS({
                   return;
                 }
                 const requestOpts = {
-                  headers: new Headers3(request.headers),
+                  headers: new Headers4(request.headers),
                   follow: request.follow,
                   counter: request.counter + 1,
                   agent: request.agent,
@@ -18402,7 +18402,7 @@ var require_lib3 = __commonJS({
                   requestOpts.body = void 0;
                   requestOpts.headers.delete("content-length");
                 }
-                resolve(fetch2(new Request3(locationURL, requestOpts)));
+                resolve(fetch3(new Request3(locationURL, requestOpts)));
                 finalize();
                 return;
             }
@@ -18495,14 +18495,14 @@ var require_lib3 = __commonJS({
         stream4.end();
       }
     }
-    fetch2.isRedirect = function(code) {
+    fetch3.isRedirect = function(code) {
       return code === 301 || code === 302 || code === 303 || code === 307 || code === 308;
     };
-    fetch2.Promise = global.Promise;
-    module2.exports = exports = fetch2;
+    fetch3.Promise = global.Promise;
+    module2.exports = exports = fetch3;
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.default = exports;
-    exports.Headers = Headers3;
+    exports.Headers = Headers4;
     exports.Request = Request3;
     exports.Response = Response3;
     exports.FetchError = FetchError;
@@ -19274,9 +19274,9 @@ function Ot(e3, t2) {
       }
       return m5;
     }
-    const q6 = new ReadableStream2({ type: "bytes", start(e5) {
+    const q6 = new ReadableStream3({ type: "bytes", start(e5) {
       o3 = e5;
-    }, pull: S6, cancel: R7 }), C5 = new ReadableStream2({ type: "bytes", start(e5) {
+    }, pull: S6, cancel: R7 }), C5 = new ReadableStream3({ type: "bytes", start(e5) {
       n2 = e5;
     }, pull: v5, cancel: T6 });
     return y6(i3), [q6, C5];
@@ -19308,9 +19308,9 @@ function Ot(e3, t2) {
       }
       return p4;
     }
-    const w7 = new ReadableStream2({ start(e5) {
+    const w7 = new ReadableStream3({ start(e5) {
       a4 = e5;
-    }, pull: m5, cancel: y6 }), S6 = new ReadableStream2({ start(e5) {
+    }, pull: m5, cancel: y6 }), S6 = new ReadableStream3({ start(e5) {
       i3 = e5;
     }, pull: m5, cancel: g4 });
     return _6(r3.closed, (e5) => (a4.error(e5), i3.error(e5), f4 && h4 || l3(void 0), null)), [w7, S6];
@@ -19413,7 +19413,7 @@ function xt(e3, t2) {
   }(o3, `${t2} has member 'writable' that`), { readable: r3, writable: o3 };
 }
 function Vt(e3) {
-  return !!r2(e3) && (!!Object.prototype.hasOwnProperty.call(e3, "_readableStreamController") && e3 instanceof ReadableStream2);
+  return !!r2(e3) && (!!Object.prototype.hasOwnProperty.call(e3, "_readableStreamController") && e3 instanceof ReadableStream3);
 }
 function Ut(e3) {
   return void 0 !== e3._reader;
@@ -19566,7 +19566,7 @@ function qr(e3) {
 function Cr(e3) {
   "erroring" === e3._writableState && qr(e3);
 }
-var e2, o2, a3, i2, l2, s, y5, S5, v4, R6, T5, q5, C4, z5, L6, ReadableStreamDefaultReader, te, re2, ae2, ReadableStreamBYOBRequest, ReadableByteStreamController, ReadableStreamBYOBReader, Ue, WritableStream, WritableStreamDefaultWriter, lt, WritableStreamDefaultController, Pt, Wt, ReadableStreamDefaultController, ReadableStream2, er, ByteLengthQueuingStrategy, or, CountQueuingStrategy, TransformStream, TransformStreamDefaultController;
+var e2, o2, a3, i2, l2, s, y5, S5, v4, R6, T5, q5, C4, z5, L6, ReadableStreamDefaultReader, te, re2, ae2, ReadableStreamBYOBRequest, ReadableByteStreamController, ReadableStreamBYOBReader, Ue, WritableStream, WritableStreamDefaultWriter, lt, WritableStreamDefaultController, Pt, Wt, ReadableStreamDefaultController, ReadableStream3, er, ByteLengthQueuingStrategy, or, CountQueuingStrategy, TransformStream, TransformStreamDefaultController;
 var init_ponyfill = __esm({
   "node_modules/formdata-node/node_modules/web-streams-polyfill/dist/ponyfill.mjs"() {
     e2 = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? Symbol : (e3) => `Symbol(${e3})`;
@@ -20227,7 +20227,7 @@ var init_ponyfill = __esm({
       }
     };
     Object.defineProperties(ReadableStreamDefaultController.prototype, { close: { enumerable: true }, enqueue: { enumerable: true }, error: { enumerable: true }, desiredSize: { enumerable: true } }), n(ReadableStreamDefaultController.prototype.close, "close"), n(ReadableStreamDefaultController.prototype.enqueue, "enqueue"), n(ReadableStreamDefaultController.prototype.error, "error"), "symbol" == typeof e2.toStringTag && Object.defineProperty(ReadableStreamDefaultController.prototype, e2.toStringTag, { value: "ReadableStreamDefaultController", configurable: true });
-    ReadableStream2 = class {
+    ReadableStream3 = class {
       constructor(e3 = {}, t2 = {}) {
         void 0 === e3 ? e3 = null : D4(e3, "First parameter");
         const r3 = Ye(t2, "Second parameter"), o3 = function(e4, t3) {
@@ -20310,7 +20310,7 @@ var init_ponyfill = __esm({
         }(e3, "First parameter").preventCancel);
       }
     };
-    Object.defineProperties(ReadableStream2.prototype, { cancel: { enumerable: true }, getReader: { enumerable: true }, pipeThrough: { enumerable: true }, pipeTo: { enumerable: true }, tee: { enumerable: true }, values: { enumerable: true }, locked: { enumerable: true } }), n(ReadableStream2.prototype.cancel, "cancel"), n(ReadableStream2.prototype.getReader, "getReader"), n(ReadableStream2.prototype.pipeThrough, "pipeThrough"), n(ReadableStream2.prototype.pipeTo, "pipeTo"), n(ReadableStream2.prototype.tee, "tee"), n(ReadableStream2.prototype.values, "values"), "symbol" == typeof e2.toStringTag && Object.defineProperty(ReadableStream2.prototype, e2.toStringTag, { value: "ReadableStream", configurable: true }), "symbol" == typeof e2.asyncIterator && Object.defineProperty(ReadableStream2.prototype, e2.asyncIterator, { value: ReadableStream2.prototype.values, writable: true, configurable: true });
+    Object.defineProperties(ReadableStream3.prototype, { cancel: { enumerable: true }, getReader: { enumerable: true }, pipeThrough: { enumerable: true }, pipeTo: { enumerable: true }, tee: { enumerable: true }, values: { enumerable: true }, locked: { enumerable: true } }), n(ReadableStream3.prototype.cancel, "cancel"), n(ReadableStream3.prototype.getReader, "getReader"), n(ReadableStream3.prototype.pipeThrough, "pipeThrough"), n(ReadableStream3.prototype.pipeTo, "pipeTo"), n(ReadableStream3.prototype.tee, "tee"), n(ReadableStream3.prototype.values, "values"), "symbol" == typeof e2.toStringTag && Object.defineProperty(ReadableStream3.prototype, e2.toStringTag, { value: "ReadableStream", configurable: true }), "symbol" == typeof e2.asyncIterator && Object.defineProperty(ReadableStream3.prototype, e2.asyncIterator, { value: ReadableStream3.prototype.values, writable: true, configurable: true });
     er = (e3) => e3.byteLength;
     n(er, "size");
     ByteLengthQueuingStrategy = class {
@@ -20436,7 +20436,7 @@ var init_ponyfill = __esm({
               }(e5, t5), t5;
             })), abort: (t5) => (e5._writableState = "errored", e5._writableStoredError = t5, n4(t5)) }, { highWaterMark: a6, size: i5 });
           }(e4, i4, l4, u3, s3, r4, o4), e4._readableState = "readable", e4._readableStoredError = void 0, e4._readableCloseRequested = false, e4._readablePulling = false, e4._readable = function(e5, t4, r5, o5, n4, a6) {
-            return new ReadableStream2({ start: (r6) => (e5._readableController = r6, t4().catch((t5) => {
+            return new ReadableStream3({ start: (r6) => (e5._readableController = r6, t4().catch((t5) => {
               Sr(e5, t5);
             })), pull: () => (e5._readablePulling = true, r5().catch((t5) => {
               Sr(e5, t5);
@@ -20677,7 +20677,7 @@ var init_Blob = __esm({
       }
       stream() {
         const iterator = consumeBlobParts(__classPrivateFieldGet(this, _Blob_parts, "f"), true);
-        return new ReadableStream2({
+        return new ReadableStream3({
           async pull(controller) {
             const { value, done } = await iterator.next();
             if (done) {
@@ -25041,7 +25041,7 @@ var require_ponyfill_es2018 = __commonJS({
         assertWritableStream(writable, `${context} has member 'writable' that`);
         return { readable, writable };
       }
-      class ReadableStream4 {
+      class ReadableStream5 {
         constructor(rawUnderlyingSource = {}, rawStrategy = {}) {
           if (rawUnderlyingSource === void 0) {
             rawUnderlyingSource = null;
@@ -25150,10 +25150,10 @@ var require_ponyfill_es2018 = __commonJS({
           return ReadableStreamFrom(asyncIterable);
         }
       }
-      Object.defineProperties(ReadableStream4, {
+      Object.defineProperties(ReadableStream5, {
         from: { enumerable: true }
       });
-      Object.defineProperties(ReadableStream4.prototype, {
+      Object.defineProperties(ReadableStream5.prototype, {
         cancel: { enumerable: true },
         getReader: { enumerable: true },
         pipeThrough: { enumerable: true },
@@ -25162,33 +25162,33 @@ var require_ponyfill_es2018 = __commonJS({
         values: { enumerable: true },
         locked: { enumerable: true }
       });
-      setFunctionName(ReadableStream4.from, "from");
-      setFunctionName(ReadableStream4.prototype.cancel, "cancel");
-      setFunctionName(ReadableStream4.prototype.getReader, "getReader");
-      setFunctionName(ReadableStream4.prototype.pipeThrough, "pipeThrough");
-      setFunctionName(ReadableStream4.prototype.pipeTo, "pipeTo");
-      setFunctionName(ReadableStream4.prototype.tee, "tee");
-      setFunctionName(ReadableStream4.prototype.values, "values");
+      setFunctionName(ReadableStream5.from, "from");
+      setFunctionName(ReadableStream5.prototype.cancel, "cancel");
+      setFunctionName(ReadableStream5.prototype.getReader, "getReader");
+      setFunctionName(ReadableStream5.prototype.pipeThrough, "pipeThrough");
+      setFunctionName(ReadableStream5.prototype.pipeTo, "pipeTo");
+      setFunctionName(ReadableStream5.prototype.tee, "tee");
+      setFunctionName(ReadableStream5.prototype.values, "values");
       if (typeof Symbol.toStringTag === "symbol") {
-        Object.defineProperty(ReadableStream4.prototype, Symbol.toStringTag, {
+        Object.defineProperty(ReadableStream5.prototype, Symbol.toStringTag, {
           value: "ReadableStream",
           configurable: true
         });
       }
-      Object.defineProperty(ReadableStream4.prototype, SymbolAsyncIterator, {
-        value: ReadableStream4.prototype.values,
+      Object.defineProperty(ReadableStream5.prototype, SymbolAsyncIterator, {
+        value: ReadableStream5.prototype.values,
         writable: true,
         configurable: true
       });
       function CreateReadableStream(startAlgorithm, pullAlgorithm, cancelAlgorithm, highWaterMark = 1, sizeAlgorithm = () => 1) {
-        const stream4 = Object.create(ReadableStream4.prototype);
+        const stream4 = Object.create(ReadableStream5.prototype);
         InitializeReadableStream(stream4);
         const controller = Object.create(ReadableStreamDefaultController2.prototype);
         SetUpReadableStreamDefaultController(stream4, controller, startAlgorithm, pullAlgorithm, cancelAlgorithm, highWaterMark, sizeAlgorithm);
         return stream4;
       }
       function CreateReadableByteStream(startAlgorithm, pullAlgorithm, cancelAlgorithm) {
-        const stream4 = Object.create(ReadableStream4.prototype);
+        const stream4 = Object.create(ReadableStream5.prototype);
         InitializeReadableStream(stream4);
         const controller = Object.create(ReadableByteStreamController2.prototype);
         SetUpReadableByteStreamController(stream4, controller, startAlgorithm, pullAlgorithm, cancelAlgorithm, 0, void 0);
@@ -25207,7 +25207,7 @@ var require_ponyfill_es2018 = __commonJS({
         if (!Object.prototype.hasOwnProperty.call(x5, "_readableStreamController")) {
           return false;
         }
-        return x5 instanceof ReadableStream4;
+        return x5 instanceof ReadableStream5;
       }
       function IsReadableStreamLocked(stream4) {
         if (stream4._reader === void 0) {
@@ -25770,7 +25770,7 @@ var require_ponyfill_es2018 = __commonJS({
       exports2.ByteLengthQueuingStrategy = ByteLengthQueuingStrategy2;
       exports2.CountQueuingStrategy = CountQueuingStrategy2;
       exports2.ReadableByteStreamController = ReadableByteStreamController2;
-      exports2.ReadableStream = ReadableStream4;
+      exports2.ReadableStream = ReadableStream5;
       exports2.ReadableStreamBYOBReader = ReadableStreamBYOBReader2;
       exports2.ReadableStreamBYOBRequest = ReadableStreamBYOBRequest2;
       exports2.ReadableStreamDefaultController = ReadableStreamDefaultController2;
@@ -27016,6 +27016,7 @@ var package_default = {
     "@anthropic-ai/sdk": "^0.19.2",
     "@clack/prompts": "^0.6.1",
     "@dqbd/tiktoken": "^1.0.2",
+    "@google/generative-ai": "^0.11.4",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
     ai: "^2.2.14",
@@ -29461,12 +29462,20 @@ var MODEL_LIST = {
     "gpt-4-turbo",
     "gpt-4-1106-preview",
     "gpt-4-turbo-preview",
-    "gpt-4-0125-preview"
+    "gpt-4-0125-preview",
+    "gpt-4o"
   ],
   anthropic: [
     "claude-3-haiku-20240307",
     "claude-3-sonnet-20240229",
     "claude-3-opus-20240229"
+  ],
+  gemini: [
+    "gemini-1.5-flash",
+    "gemini-1.5-pro",
+    "gemini-1.0-pro",
+    "gemini-pro-vision",
+    "text-embedding-004"
   ]
 };
 var getDefaultModel = (provider3) => {
@@ -29488,10 +29497,10 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config9 = {}) {
+  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config10 = {}) {
     validateConfig(
       "OpenAI API_KEY",
-      value || config9.OCO_ANTHROPIC_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
+      value || config10.OCO_ANTHROPIC_API_KEY || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic API key"
     );
     validateConfig(
@@ -29501,10 +29510,10 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config9 = {}) {
+  ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config10 = {}) {
     validateConfig(
       "ANTHROPIC_API_KEY",
-      value || config9.OCO_OPENAI_API_KEY || config9.OCO_AI_PROVIDER == "ollama" || config9.OCO_AI_PROVIDER == "test",
+      value || config10.OCO_OPENAI_API_KEY || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic API key"
     );
     return value;
@@ -29573,11 +29582,11 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_MODEL" /* OCO_MODEL */](value) {
+  ["OCO_MODEL" /* OCO_MODEL */](value, config10 = {}) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value),
-      `${value} is not supported yet, use 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
+      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic].includes(value) || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "test",
+      `${value} is not supported yet, use 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview', 'gpt-4-0125-preview', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229' or 'claude-3-haiku-20240307'`
     );
     return value;
   },
@@ -29638,9 +29647,11 @@ var getConfig = ({
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
+    OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
     OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT ? Number(process.env.OCO_TOKENS_MAX_INPUT) : void 0,
     OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT ? Number(process.env.OCO_TOKENS_MAX_OUTPUT) : void 0,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
+    OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
@@ -29655,19 +29666,19 @@ var getConfig = ({
   if (!configExists)
     return configFromEnv;
   const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
-  const config9 = (0, import_ini.parse)(configFile);
-  for (const configKey of Object.keys(config9)) {
-    if (["null", "undefined"].includes(config9[configKey])) {
-      config9[configKey] = void 0;
+  const config10 = (0, import_ini.parse)(configFile);
+  for (const configKey of Object.keys(config10)) {
+    if (["null", "undefined"].includes(config10[configKey])) {
+      config10[configKey] = void 0;
       continue;
     }
     try {
       const validator = configValidators[configKey];
       const validValue = validator(
-        config9[configKey] ?? configFromEnv[configKey],
-        config9
+        config10[configKey] ?? configFromEnv[configKey],
+        config10
       );
-      config9[configKey] = validValue;
+      config10[configKey] = validValue;
     } catch (error) {
       ce(`Unknown '${configKey}' config option.`);
       ce(
@@ -29676,10 +29687,10 @@ var getConfig = ({
       process.exit(1);
     }
   }
-  return config9;
+  return config10;
 };
 var setConfig = (keyValues, configPath = defaultConfigPath) => {
-  const config9 = getConfig() || {};
+  const config10 = getConfig() || {};
   for (const [configKey, configValue] of keyValues) {
     if (!configValidators.hasOwnProperty(configKey)) {
       throw new Error(`Unsupported config key: ${configKey}`);
@@ -29691,9 +29702,9 @@ var setConfig = (keyValues, configPath = defaultConfigPath) => {
       parsedConfigValue = configValue;
     }
     const validValue = configValidators[configKey](parsedConfigValue);
-    config9[configKey] = validValue;
+    config10[configKey] = validValue;
   }
-  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config9), "utf8");
+  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config10), "utf8");
   ce(`${source_default.green("\u2714")} Config successfully set`);
 };
 var configCommand = G3(
@@ -29706,9 +29717,9 @@ var configCommand = G3(
     try {
       const { mode: mode3, keyValues } = argv._;
       if (mode3 === "get" /* get */) {
-        const config9 = getConfig() || {};
+        const config10 = getConfig() || {};
         for (const key of keyValues) {
-          ce(`${key}=${config9[key]}`);
+          ce(`${key}=${config10[key]}`);
         }
       } else if (mode3 === "set" /* set */) {
         await setConfig(
@@ -29817,8 +29828,8 @@ var getPrompt = (ruleName, ruleConfig, prompt) => {
   ce(`${source_default.red("\u2716")} No prompt handler for rule "${ruleName}".`);
   return `Please manualy set the prompt for rule "${ruleName}".`;
 };
-var inferPromptsFromCommitlintConfig = (config9) => {
-  const { rules, prompt } = config9;
+var inferPromptsFromCommitlintConfig = (config10) => {
+  const { rules, prompt } = config10;
   if (!rules)
     return [];
   return Object.keys(rules).map(
@@ -30308,7 +30319,7 @@ var utils_default = {
 };
 
 // node_modules/axios/lib/core/AxiosError.js
-function AxiosError(message, code, config9, request, response) {
+function AxiosError(message, code, config10, request, response) {
   Error.call(this);
   if (Error.captureStackTrace) {
     Error.captureStackTrace(this, this.constructor);
@@ -30318,7 +30329,7 @@ function AxiosError(message, code, config9, request, response) {
   this.message = message;
   this.name = "AxiosError";
   code && (this.code = code);
-  config9 && (this.config = config9);
+  config10 && (this.config = config10);
   request && (this.request = request);
   response && (this.response = response);
 }
@@ -30359,14 +30370,14 @@ var descriptors2 = {};
 });
 Object.defineProperties(AxiosError, descriptors2);
 Object.defineProperty(prototype, "isAxiosError", { value: true });
-AxiosError.from = (error, code, config9, request, response, customProps) => {
+AxiosError.from = (error, code, config10, request, response, customProps) => {
   const axiosError = Object.create(prototype);
   utils_default.toFlatObject(error, axiosError, function filter2(obj) {
     return obj !== Error.prototype;
   }, (prop) => {
     return prop !== "isAxiosError";
   });
-  AxiosError.call(axiosError, error.message, code, config9, request, response);
+  AxiosError.call(axiosError, error.message, code, config10, request, response);
   axiosError.cause = error;
   axiosError.name = error.name;
   customProps && Object.assign(axiosError, customProps);
@@ -31062,12 +31073,12 @@ var AxiosHeaders_default = AxiosHeaders;
 
 // node_modules/axios/lib/core/transformData.js
 function transformData(fns, response) {
-  const config9 = this || defaults_default;
-  const context = response || config9;
+  const config10 = this || defaults_default;
+  const context = response || config10;
   const headers = AxiosHeaders_default.from(context.headers);
   let data = context.data;
   utils_default.forEach(fns, function transform(fn) {
-    data = fn.call(config9, data, headers.normalize(), response ? response.status : void 0);
+    data = fn.call(config10, data, headers.normalize(), response ? response.status : void 0);
   });
   headers.normalize();
   return data;
@@ -31079,8 +31090,8 @@ function isCancel(value) {
 }
 
 // node_modules/axios/lib/cancel/CanceledError.js
-function CanceledError(message, config9, request) {
-  AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config9, request);
+function CanceledError(message, config10, request) {
+  AxiosError_default.call(this, message == null ? "canceled" : message, AxiosError_default.ERR_CANCELED, config10, request);
   this.name = "CanceledError";
 }
 utils_default.inherits(CanceledError, AxiosError_default, {
@@ -31612,11 +31623,11 @@ var resolveFamily = ({ address, family }) => {
   };
 };
 var buildAddressEntry = (address, family) => resolveFamily(utils_default.isObject(address) ? address : { address, family });
-var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
+var http_default = isHttpAdapterSupported && function httpAdapter(config10) {
   return wrapAsync(async function dispatchHttpRequest(resolve, reject, onDone) {
-    let { data, lookup, family } = config9;
-    const { responseType, responseEncoding } = config9;
-    const method = config9.method.toUpperCase();
+    let { data, lookup, family } = config10;
+    const { responseType, responseEncoding } = config10;
+    const method = config10.method.toUpperCase();
     let isDone;
     let rejected = false;
     let req;
@@ -31634,11 +31645,11 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
     }
     const emitter = new import_events.EventEmitter();
     const onFinished = () => {
-      if (config9.cancelToken) {
-        config9.cancelToken.unsubscribe(abort);
+      if (config10.cancelToken) {
+        config10.cancelToken.unsubscribe(abort);
       }
-      if (config9.signal) {
-        config9.signal.removeEventListener("abort", abort);
+      if (config10.signal) {
+        config10.signal.removeEventListener("abort", abort);
       }
       emitter.removeAllListeners();
     };
@@ -31650,16 +31661,16 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       }
     });
     function abort(reason) {
-      emitter.emit("abort", !reason || reason.type ? new CanceledError_default(null, config9, req) : reason);
+      emitter.emit("abort", !reason || reason.type ? new CanceledError_default(null, config10, req) : reason);
     }
     emitter.once("abort", reject);
-    if (config9.cancelToken || config9.signal) {
-      config9.cancelToken && config9.cancelToken.subscribe(abort);
-      if (config9.signal) {
-        config9.signal.aborted ? abort() : config9.signal.addEventListener("abort", abort);
+    if (config10.cancelToken || config10.signal) {
+      config10.cancelToken && config10.cancelToken.subscribe(abort);
+      if (config10.signal) {
+        config10.signal.aborted ? abort() : config10.signal.addEventListener("abort", abort);
       }
     }
-    const fullPath = buildFullPath(config9.baseURL, config9.url);
+    const fullPath = buildFullPath(config10.baseURL, config10.url);
     const parsed = new URL(fullPath, "http://localhost");
     const protocol = parsed.protocol || supportedProtocols[0];
     if (protocol === "data:") {
@@ -31669,15 +31680,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
           status: 405,
           statusText: "method not allowed",
           headers: {},
-          config: config9
+          config: config10
         });
       }
       try {
-        convertedData = fromDataURI(config9.url, responseType === "blob", {
-          Blob: config9.env && config9.env.Blob
+        convertedData = fromDataURI(config10.url, responseType === "blob", {
+          Blob: config10.env && config10.env.Blob
         });
       } catch (err) {
-        throw AxiosError_default.from(err, AxiosError_default.ERR_BAD_REQUEST, config9);
+        throw AxiosError_default.from(err, AxiosError_default.ERR_BAD_REQUEST, config10);
       }
       if (responseType === "text") {
         convertedData = convertedData.toString(responseEncoding);
@@ -31692,21 +31703,21 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
         status: 200,
         statusText: "OK",
         headers: new AxiosHeaders_default(),
-        config: config9
+        config: config10
       });
     }
     if (supportedProtocols.indexOf(protocol) === -1) {
       return reject(new AxiosError_default(
         "Unsupported protocol " + protocol,
         AxiosError_default.ERR_BAD_REQUEST,
-        config9
+        config10
       ));
     }
-    const headers = AxiosHeaders_default.from(config9.headers).normalize();
+    const headers = AxiosHeaders_default.from(config10.headers).normalize();
     headers.set("User-Agent", "axios/" + VERSION, false);
-    const onDownloadProgress = config9.onDownloadProgress;
-    const onUploadProgress = config9.onUploadProgress;
-    const maxRate = config9.maxRate;
+    const onDownloadProgress = config10.onDownloadProgress;
+    const onUploadProgress = config10.onUploadProgress;
+    const maxRate = config10.maxRate;
     let maxUploadRate = void 0;
     let maxDownloadRate = void 0;
     if (utils_default.isSpecCompliantForm(data)) {
@@ -31740,15 +31751,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
         return reject(new AxiosError_default(
           "Data after transformation must be a string, an ArrayBuffer, a Buffer, or a Stream",
           AxiosError_default.ERR_BAD_REQUEST,
-          config9
+          config10
         ));
       }
       headers.setContentLength(data.length, false);
-      if (config9.maxBodyLength > -1 && data.length > config9.maxBodyLength) {
+      if (config10.maxBodyLength > -1 && data.length > config10.maxBodyLength) {
         return reject(new AxiosError_default(
           "Request body larger than maxBodyLength limit",
           AxiosError_default.ERR_BAD_REQUEST,
-          config9
+          config10
         ));
       }
     }
@@ -31774,9 +31785,9 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       });
     }
     let auth = void 0;
-    if (config9.auth) {
-      const username = config9.auth.username || "";
-      const password = config9.auth.password || "";
+    if (config10.auth) {
+      const username = config10.auth.username || "";
+      const password = config10.auth.password || "";
       auth = username + ":" + password;
     }
     if (!auth && parsed.username) {
@@ -31789,13 +31800,13 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
     try {
       path5 = buildURL(
         parsed.pathname + parsed.search,
-        config9.params,
-        config9.paramsSerializer
+        config10.params,
+        config10.paramsSerializer
       ).replace(/^\?/, "");
     } catch (err) {
       const customErr = new Error(err.message);
-      customErr.config = config9;
-      customErr.url = config9.url;
+      customErr.config = config10;
+      customErr.url = config10.url;
       customErr.exists = true;
       return reject(customErr);
     }
@@ -31808,7 +31819,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       path: path5,
       method,
       headers: headers.toJSON(),
-      agents: { http: config9.httpAgent, https: config9.httpsAgent },
+      agents: { http: config10.httpAgent, https: config10.httpsAgent },
       auth,
       protocol,
       family,
@@ -31816,36 +31827,36 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       beforeRedirects: {}
     };
     !utils_default.isUndefined(lookup) && (options.lookup = lookup);
-    if (config9.socketPath) {
-      options.socketPath = config9.socketPath;
+    if (config10.socketPath) {
+      options.socketPath = config10.socketPath;
     } else {
       options.hostname = parsed.hostname;
       options.port = parsed.port;
-      setProxy(options, config9.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options.path);
+      setProxy(options, config10.proxy, protocol + "//" + parsed.hostname + (parsed.port ? ":" + parsed.port : "") + options.path);
     }
     let transport;
     const isHttpsRequest = isHttps.test(options.protocol);
-    options.agent = isHttpsRequest ? config9.httpsAgent : config9.httpAgent;
-    if (config9.transport) {
-      transport = config9.transport;
-    } else if (config9.maxRedirects === 0) {
+    options.agent = isHttpsRequest ? config10.httpsAgent : config10.httpAgent;
+    if (config10.transport) {
+      transport = config10.transport;
+    } else if (config10.maxRedirects === 0) {
       transport = isHttpsRequest ? import_https.default : import_http.default;
     } else {
-      if (config9.maxRedirects) {
-        options.maxRedirects = config9.maxRedirects;
+      if (config10.maxRedirects) {
+        options.maxRedirects = config10.maxRedirects;
       }
-      if (config9.beforeRedirect) {
-        options.beforeRedirects.config = config9.beforeRedirect;
+      if (config10.beforeRedirect) {
+        options.beforeRedirects.config = config10.beforeRedirect;
       }
       transport = isHttpsRequest ? httpsFollow : httpFollow;
     }
-    if (config9.maxBodyLength > -1) {
-      options.maxBodyLength = config9.maxBodyLength;
+    if (config10.maxBodyLength > -1) {
+      options.maxBodyLength = config10.maxBodyLength;
     } else {
       options.maxBodyLength = Infinity;
     }
-    if (config9.insecureHTTPParser) {
-      options.insecureHTTPParser = config9.insecureHTTPParser;
+    if (config10.insecureHTTPParser) {
+      options.insecureHTTPParser = config10.insecureHTTPParser;
     }
     req = transport.request(options, function handleResponse(res) {
       if (req.destroyed)
@@ -31866,7 +31877,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       }
       let responseStream = res;
       const lastRequest = res.req || req;
-      if (config9.decompress !== false && res.headers["content-encoding"]) {
+      if (config10.decompress !== false && res.headers["content-encoding"]) {
         if (method === "HEAD" || res.statusCode === 204) {
           delete res.headers["content-encoding"];
         }
@@ -31899,7 +31910,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
         status: res.statusCode,
         statusText: res.statusMessage,
         headers: new AxiosHeaders_default(res.headers),
-        config: config9,
+        config: config10,
         request: lastRequest
       };
       if (responseType === "stream") {
@@ -31911,13 +31922,13 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
         responseStream.on("data", function handleStreamData(chunk) {
           responseBuffer.push(chunk);
           totalResponseBytes += chunk.length;
-          if (config9.maxContentLength > -1 && totalResponseBytes > config9.maxContentLength) {
+          if (config10.maxContentLength > -1 && totalResponseBytes > config10.maxContentLength) {
             rejected = true;
             responseStream.destroy();
             reject(new AxiosError_default(
-              "maxContentLength size of " + config9.maxContentLength + " exceeded",
+              "maxContentLength size of " + config10.maxContentLength + " exceeded",
               AxiosError_default.ERR_BAD_RESPONSE,
-              config9,
+              config10,
               lastRequest
             ));
           }
@@ -31927,9 +31938,9 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
             return;
           }
           const err = new AxiosError_default(
-            "maxContentLength size of " + config9.maxContentLength + " exceeded",
+            "maxContentLength size of " + config10.maxContentLength + " exceeded",
             AxiosError_default.ERR_BAD_RESPONSE,
-            config9,
+            config10,
             lastRequest
           );
           responseStream.destroy(err);
@@ -31938,7 +31949,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
         responseStream.on("error", function handleStreamError(err) {
           if (req.destroyed)
             return;
-          reject(AxiosError_default.from(err, null, config9, lastRequest));
+          reject(AxiosError_default.from(err, null, config10, lastRequest));
         });
         responseStream.on("end", function handleStreamEnd() {
           try {
@@ -31951,7 +31962,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
             }
             response.data = responseData;
           } catch (err) {
-            return reject(AxiosError_default.from(err, null, config9, response.request, response));
+            return reject(AxiosError_default.from(err, null, config10, response.request, response));
           }
           settle(resolve, reject, response);
         });
@@ -31968,18 +31979,18 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       req.destroy(err);
     });
     req.on("error", function handleRequestError(err) {
-      reject(AxiosError_default.from(err, null, config9, req));
+      reject(AxiosError_default.from(err, null, config10, req));
     });
     req.on("socket", function handleRequestSocket(socket) {
       socket.setKeepAlive(true, 1e3 * 60);
     });
-    if (config9.timeout) {
-      const timeout = parseInt(config9.timeout, 10);
+    if (config10.timeout) {
+      const timeout = parseInt(config10.timeout, 10);
       if (Number.isNaN(timeout)) {
         reject(new AxiosError_default(
           "error trying to parse `config.timeout` to int",
           AxiosError_default.ERR_BAD_OPTION_VALUE,
-          config9,
+          config10,
           req
         ));
         return;
@@ -31987,15 +31998,15 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       req.setTimeout(timeout, function handleRequestTimeout() {
         if (isDone)
           return;
-        let timeoutErrorMessage = config9.timeout ? "timeout of " + config9.timeout + "ms exceeded" : "timeout exceeded";
-        const transitional2 = config9.transitional || transitional_default;
-        if (config9.timeoutErrorMessage) {
-          timeoutErrorMessage = config9.timeoutErrorMessage;
+        let timeoutErrorMessage = config10.timeout ? "timeout of " + config10.timeout + "ms exceeded" : "timeout exceeded";
+        const transitional2 = config10.transitional || transitional_default;
+        if (config10.timeoutErrorMessage) {
+          timeoutErrorMessage = config10.timeoutErrorMessage;
         }
         reject(new AxiosError_default(
           timeoutErrorMessage,
           transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-          config9,
+          config10,
           req
         ));
         abort();
@@ -32013,7 +32024,7 @@ var http_default = isHttpAdapterSupported && function httpAdapter(config9) {
       });
       data.on("close", () => {
         if (!ended && !errored) {
-          abort(new CanceledError_default("Request stream has been aborted", config9, req));
+          abort(new CanceledError_default("Request stream has been aborted", config10, req));
         }
       });
       data.pipe(req);
@@ -32109,18 +32120,18 @@ function progressEventReducer(listener, isDownloadStream) {
   };
 }
 var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
-var xhr_default = isXHRAdapterSupported && function(config9) {
+var xhr_default = isXHRAdapterSupported && function(config10) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    let requestData = config9.data;
-    const requestHeaders = AxiosHeaders_default.from(config9.headers).normalize();
-    let { responseType, withXSRFToken } = config9;
+    let requestData = config10.data;
+    const requestHeaders = AxiosHeaders_default.from(config10.headers).normalize();
+    let { responseType, withXSRFToken } = config10;
     let onCanceled;
     function done() {
-      if (config9.cancelToken) {
-        config9.cancelToken.unsubscribe(onCanceled);
+      if (config10.cancelToken) {
+        config10.cancelToken.unsubscribe(onCanceled);
       }
-      if (config9.signal) {
-        config9.signal.removeEventListener("abort", onCanceled);
+      if (config10.signal) {
+        config10.signal.removeEventListener("abort", onCanceled);
       }
     }
     let contentType;
@@ -32133,14 +32144,14 @@ var xhr_default = isXHRAdapterSupported && function(config9) {
       }
     }
     let request = new XMLHttpRequest();
-    if (config9.auth) {
-      const username = config9.auth.username || "";
-      const password = config9.auth.password ? unescape(encodeURIComponent(config9.auth.password)) : "";
+    if (config10.auth) {
+      const username = config10.auth.username || "";
+      const password = config10.auth.password ? unescape(encodeURIComponent(config10.auth.password)) : "";
       requestHeaders.set("Authorization", "Basic " + btoa(username + ":" + password));
     }
-    const fullPath = buildFullPath(config9.baseURL, config9.url);
-    request.open(config9.method.toUpperCase(), buildURL(fullPath, config9.params, config9.paramsSerializer), true);
-    request.timeout = config9.timeout;
+    const fullPath = buildFullPath(config10.baseURL, config10.url);
+    request.open(config10.method.toUpperCase(), buildURL(fullPath, config10.params, config10.paramsSerializer), true);
+    request.timeout = config10.timeout;
     function onloadend() {
       if (!request) {
         return;
@@ -32154,7 +32165,7 @@ var xhr_default = isXHRAdapterSupported && function(config9) {
         status: request.status,
         statusText: request.statusText,
         headers: responseHeaders,
-        config: config9,
+        config: config10,
         request
       };
       settle(function _resolve(value) {
@@ -32183,33 +32194,33 @@ var xhr_default = isXHRAdapterSupported && function(config9) {
       if (!request) {
         return;
       }
-      reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config9, request));
+      reject(new AxiosError_default("Request aborted", AxiosError_default.ECONNABORTED, config10, request));
       request = null;
     };
     request.onerror = function handleError() {
-      reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config9, request));
+      reject(new AxiosError_default("Network Error", AxiosError_default.ERR_NETWORK, config10, request));
       request = null;
     };
     request.ontimeout = function handleTimeout() {
-      let timeoutErrorMessage = config9.timeout ? "timeout of " + config9.timeout + "ms exceeded" : "timeout exceeded";
-      const transitional2 = config9.transitional || transitional_default;
-      if (config9.timeoutErrorMessage) {
-        timeoutErrorMessage = config9.timeoutErrorMessage;
+      let timeoutErrorMessage = config10.timeout ? "timeout of " + config10.timeout + "ms exceeded" : "timeout exceeded";
+      const transitional2 = config10.transitional || transitional_default;
+      if (config10.timeoutErrorMessage) {
+        timeoutErrorMessage = config10.timeoutErrorMessage;
       }
       reject(new AxiosError_default(
         timeoutErrorMessage,
         transitional2.clarifyTimeoutError ? AxiosError_default.ETIMEDOUT : AxiosError_default.ECONNABORTED,
-        config9,
+        config10,
         request
       ));
       request = null;
     };
     if (platform_default.hasStandardBrowserEnv) {
-      withXSRFToken && utils_default.isFunction(withXSRFToken) && (withXSRFToken = withXSRFToken(config9));
+      withXSRFToken && utils_default.isFunction(withXSRFToken) && (withXSRFToken = withXSRFToken(config10));
       if (withXSRFToken || withXSRFToken !== false && isURLSameOrigin_default(fullPath)) {
-        const xsrfValue = config9.xsrfHeaderName && config9.xsrfCookieName && cookies_default.read(config9.xsrfCookieName);
+        const xsrfValue = config10.xsrfHeaderName && config10.xsrfCookieName && cookies_default.read(config10.xsrfCookieName);
         if (xsrfValue) {
-          requestHeaders.set(config9.xsrfHeaderName, xsrfValue);
+          requestHeaders.set(config10.xsrfHeaderName, xsrfValue);
         }
       }
     }
@@ -32219,35 +32230,35 @@ var xhr_default = isXHRAdapterSupported && function(config9) {
         request.setRequestHeader(key, val);
       });
     }
-    if (!utils_default.isUndefined(config9.withCredentials)) {
-      request.withCredentials = !!config9.withCredentials;
+    if (!utils_default.isUndefined(config10.withCredentials)) {
+      request.withCredentials = !!config10.withCredentials;
     }
     if (responseType && responseType !== "json") {
-      request.responseType = config9.responseType;
+      request.responseType = config10.responseType;
     }
-    if (typeof config9.onDownloadProgress === "function") {
-      request.addEventListener("progress", progressEventReducer(config9.onDownloadProgress, true));
+    if (typeof config10.onDownloadProgress === "function") {
+      request.addEventListener("progress", progressEventReducer(config10.onDownloadProgress, true));
     }
-    if (typeof config9.onUploadProgress === "function" && request.upload) {
-      request.upload.addEventListener("progress", progressEventReducer(config9.onUploadProgress));
+    if (typeof config10.onUploadProgress === "function" && request.upload) {
+      request.upload.addEventListener("progress", progressEventReducer(config10.onUploadProgress));
     }
-    if (config9.cancelToken || config9.signal) {
+    if (config10.cancelToken || config10.signal) {
       onCanceled = (cancel) => {
         if (!request) {
           return;
         }
-        reject(!cancel || cancel.type ? new CanceledError_default(null, config9, request) : cancel);
+        reject(!cancel || cancel.type ? new CanceledError_default(null, config10, request) : cancel);
         request.abort();
         request = null;
       };
-      config9.cancelToken && config9.cancelToken.subscribe(onCanceled);
-      if (config9.signal) {
-        config9.signal.aborted ? onCanceled() : config9.signal.addEventListener("abort", onCanceled);
+      config10.cancelToken && config10.cancelToken.subscribe(onCanceled);
+      if (config10.signal) {
+        config10.signal.aborted ? onCanceled() : config10.signal.addEventListener("abort", onCanceled);
       }
     }
     const protocol = parseProtocol(fullPath);
     if (protocol && platform_default.protocols.indexOf(protocol) === -1) {
-      reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config9));
+      reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config10));
       return;
     }
     request.send(requestData || null);
@@ -32308,41 +32319,41 @@ var adapters_default = {
 };
 
 // node_modules/axios/lib/core/dispatchRequest.js
-function throwIfCancellationRequested(config9) {
-  if (config9.cancelToken) {
-    config9.cancelToken.throwIfRequested();
+function throwIfCancellationRequested(config10) {
+  if (config10.cancelToken) {
+    config10.cancelToken.throwIfRequested();
   }
-  if (config9.signal && config9.signal.aborted) {
-    throw new CanceledError_default(null, config9);
+  if (config10.signal && config10.signal.aborted) {
+    throw new CanceledError_default(null, config10);
   }
 }
-function dispatchRequest(config9) {
-  throwIfCancellationRequested(config9);
-  config9.headers = AxiosHeaders_default.from(config9.headers);
-  config9.data = transformData.call(
-    config9,
-    config9.transformRequest
+function dispatchRequest(config10) {
+  throwIfCancellationRequested(config10);
+  config10.headers = AxiosHeaders_default.from(config10.headers);
+  config10.data = transformData.call(
+    config10,
+    config10.transformRequest
   );
-  if (["post", "put", "patch"].indexOf(config9.method) !== -1) {
-    config9.headers.setContentType("application/x-www-form-urlencoded", false);
+  if (["post", "put", "patch"].indexOf(config10.method) !== -1) {
+    config10.headers.setContentType("application/x-www-form-urlencoded", false);
   }
-  const adapter = adapters_default.getAdapter(config9.adapter || defaults_default.adapter);
-  return adapter(config9).then(function onAdapterResolution(response) {
-    throwIfCancellationRequested(config9);
+  const adapter = adapters_default.getAdapter(config10.adapter || defaults_default.adapter);
+  return adapter(config10).then(function onAdapterResolution(response) {
+    throwIfCancellationRequested(config10);
     response.data = transformData.call(
-      config9,
-      config9.transformResponse,
+      config10,
+      config10.transformResponse,
       response
     );
     response.headers = AxiosHeaders_default.from(response.headers);
     return response;
   }, function onAdapterRejection(reason) {
     if (!isCancel(reason)) {
-      throwIfCancellationRequested(config9);
+      throwIfCancellationRequested(config10);
       if (reason && reason.response) {
         reason.response.data = transformData.call(
-          config9,
-          config9.transformResponse,
+          config10,
+          config10.transformResponse,
           reason.response
         );
         reason.response.headers = AxiosHeaders_default.from(reason.response.headers);
@@ -32356,7 +32367,7 @@ function dispatchRequest(config9) {
 var headersToObject = (thing) => thing instanceof AxiosHeaders_default ? { ...thing } : thing;
 function mergeConfig(config1, config22) {
   config22 = config22 || {};
-  const config9 = {};
+  const config10 = {};
   function getMergedValue(target, source, caseless) {
     if (utils_default.isPlainObject(target) && utils_default.isPlainObject(source)) {
       return utils_default.merge.call({ caseless }, target, source);
@@ -32427,9 +32438,9 @@ function mergeConfig(config1, config22) {
   utils_default.forEach(Object.keys(Object.assign({}, config1, config22)), function computeConfigValue(prop) {
     const merge2 = mergeMap[prop] || mergeDeepProperties;
     const configValue = merge2(config1[prop], config22[prop], prop);
-    utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config9[prop] = configValue);
+    utils_default.isUndefined(configValue) && merge2 !== mergeDirectKeys || (config10[prop] = configValue);
   });
-  return config9;
+  return config10;
 }
 
 // node_modules/axios/lib/helpers/validator.js
@@ -32500,9 +32511,9 @@ var Axios = class {
       response: new InterceptorManager_default()
     };
   }
-  async request(configOrUrl, config9) {
+  async request(configOrUrl, config10) {
     try {
-      return await this._request(configOrUrl, config9);
+      return await this._request(configOrUrl, config10);
     } catch (err) {
       if (err instanceof Error) {
         let dummy;
@@ -32517,15 +32528,15 @@ var Axios = class {
       throw err;
     }
   }
-  _request(configOrUrl, config9) {
+  _request(configOrUrl, config10) {
     if (typeof configOrUrl === "string") {
-      config9 = config9 || {};
-      config9.url = configOrUrl;
+      config10 = config10 || {};
+      config10.url = configOrUrl;
     } else {
-      config9 = configOrUrl || {};
+      config10 = configOrUrl || {};
     }
-    config9 = mergeConfig(this.defaults, config9);
-    const { transitional: transitional2, paramsSerializer, headers } = config9;
+    config10 = mergeConfig(this.defaults, config10);
+    const { transitional: transitional2, paramsSerializer, headers } = config10;
     if (transitional2 !== void 0) {
       validator_default.assertOptions(transitional2, {
         silentJSONParsing: validators2.transitional(validators2.boolean),
@@ -32535,7 +32546,7 @@ var Axios = class {
     }
     if (paramsSerializer != null) {
       if (utils_default.isFunction(paramsSerializer)) {
-        config9.paramsSerializer = {
+        config10.paramsSerializer = {
           serialize: paramsSerializer
         };
       } else {
@@ -32545,10 +32556,10 @@ var Axios = class {
         }, true);
       }
     }
-    config9.method = (config9.method || this.defaults.method || "get").toLowerCase();
+    config10.method = (config10.method || this.defaults.method || "get").toLowerCase();
     let contextHeaders = headers && utils_default.merge(
       headers.common,
-      headers[config9.method]
+      headers[config10.method]
     );
     headers && utils_default.forEach(
       ["delete", "get", "head", "post", "put", "patch", "common"],
@@ -32556,11 +32567,11 @@ var Axios = class {
         delete headers[method];
       }
     );
-    config9.headers = AxiosHeaders_default.concat(contextHeaders, headers);
+    config10.headers = AxiosHeaders_default.concat(contextHeaders, headers);
     const requestInterceptorChain = [];
     let synchronousRequestInterceptors = true;
     this.interceptors.request.forEach(function unshiftRequestInterceptors(interceptor) {
-      if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config9) === false) {
+      if (typeof interceptor.runWhen === "function" && interceptor.runWhen(config10) === false) {
         return;
       }
       synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
@@ -32578,14 +32589,14 @@ var Axios = class {
       chain.unshift.apply(chain, requestInterceptorChain);
       chain.push.apply(chain, responseInterceptorChain);
       len = chain.length;
-      promise = Promise.resolve(config9);
+      promise = Promise.resolve(config10);
       while (i3 < len) {
         promise = promise.then(chain[i3++], chain[i3++]);
       }
       return promise;
     }
     len = requestInterceptorChain.length;
-    let newConfig = config9;
+    let newConfig = config10;
     i3 = 0;
     while (i3 < len) {
       const onFulfilled = requestInterceptorChain[i3++];
@@ -32609,25 +32620,25 @@ var Axios = class {
     }
     return promise;
   }
-  getUri(config9) {
-    config9 = mergeConfig(this.defaults, config9);
-    const fullPath = buildFullPath(config9.baseURL, config9.url);
-    return buildURL(fullPath, config9.params, config9.paramsSerializer);
+  getUri(config10) {
+    config10 = mergeConfig(this.defaults, config10);
+    const fullPath = buildFullPath(config10.baseURL, config10.url);
+    return buildURL(fullPath, config10.params, config10.paramsSerializer);
   }
 };
 utils_default.forEach(["delete", "get", "head", "options"], function forEachMethodNoData(method) {
-  Axios.prototype[method] = function(url2, config9) {
-    return this.request(mergeConfig(config9 || {}, {
+  Axios.prototype[method] = function(url2, config10) {
+    return this.request(mergeConfig(config10 || {}, {
       method,
       url: url2,
-      data: (config9 || {}).data
+      data: (config10 || {}).data
     }));
   };
 });
 utils_default.forEach(["post", "put", "patch"], function forEachMethodWithData(method) {
   function generateHTTPMethod(isForm) {
-    return function httpMethod(url2, data, config9) {
-      return this.request(mergeConfig(config9 || {}, {
+    return function httpMethod(url2, data, config10) {
+      return this.request(mergeConfig(config10 || {}, {
         method,
         headers: isForm ? {
           "Content-Type": "multipart/form-data"
@@ -32673,11 +32684,11 @@ var CancelToken = class {
       };
       return promise;
     };
-    executor(function cancel(message, config9, request) {
+    executor(function cancel(message, config10, request) {
       if (token.reason) {
         return;
       }
-      token.reason = new CanceledError_default(message, config9, request);
+      token.reason = new CanceledError_default(message, config10, request);
       resolvePromise(token.reason);
     });
   }
@@ -32902,54 +32913,908 @@ if (provider === "openai" && !MODEL_LIST.openai.includes(MODEL) && command !== "
   process.exit(1);
 }
 var OpenAi = class {
-  openAiApiConfiguration = new import_openai2.Configuration({
-    apiKey
-  });
-  openAI;
   constructor() {
+    this.openAiApiConfiguration = new import_openai2.Configuration({
+      apiKey
+    });
+    this.generateCommitMessage = async (messages) => {
+      const params = {
+        model: MODEL,
+        messages,
+        temperature: 0,
+        top_p: 0.1,
+        max_tokens: MAX_TOKENS_OUTPUT
+      };
+      try {
+        const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
+        if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
+          throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+        }
+        const { data } = await this.openAI.createChatCompletion(params);
+        const message = data.choices[0].message;
+        return message?.content;
+      } catch (error) {
+        ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
+        const err = error;
+        ce(`${source_default.red("\u2716")} ${err?.message || err}`);
+        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+          const openAiError = error.response.data.error;
+          if (openAiError?.message)
+            ce(openAiError.message);
+          ce(
+            "For help look into README https://github.com/di-sukharev/opencommit#setup"
+          );
+        }
+        throw err;
+      }
+    };
     if (basePath) {
       this.openAiApiConfiguration.basePath = basePath;
     }
     this.openAI = new import_openai2.OpenAIApi(this.openAiApiConfiguration);
   }
-  generateCommitMessage = async (messages) => {
-    const params = {
-      model: MODEL,
-      messages,
-      temperature: 0,
-      top_p: 0.1,
-      max_tokens: MAX_TOKENS_OUTPUT
-    };
-    try {
-      const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
-      if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
-        throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+};
+
+// node_modules/@google/generative-ai/dist/index.mjs
+var POSSIBLE_ROLES = ["user", "model", "function", "system"];
+var HarmCategory;
+(function(HarmCategory2) {
+  HarmCategory2["HARM_CATEGORY_UNSPECIFIED"] = "HARM_CATEGORY_UNSPECIFIED";
+  HarmCategory2["HARM_CATEGORY_HATE_SPEECH"] = "HARM_CATEGORY_HATE_SPEECH";
+  HarmCategory2["HARM_CATEGORY_SEXUALLY_EXPLICIT"] = "HARM_CATEGORY_SEXUALLY_EXPLICIT";
+  HarmCategory2["HARM_CATEGORY_HARASSMENT"] = "HARM_CATEGORY_HARASSMENT";
+  HarmCategory2["HARM_CATEGORY_DANGEROUS_CONTENT"] = "HARM_CATEGORY_DANGEROUS_CONTENT";
+})(HarmCategory || (HarmCategory = {}));
+var HarmBlockThreshold;
+(function(HarmBlockThreshold2) {
+  HarmBlockThreshold2["HARM_BLOCK_THRESHOLD_UNSPECIFIED"] = "HARM_BLOCK_THRESHOLD_UNSPECIFIED";
+  HarmBlockThreshold2["BLOCK_LOW_AND_ABOVE"] = "BLOCK_LOW_AND_ABOVE";
+  HarmBlockThreshold2["BLOCK_MEDIUM_AND_ABOVE"] = "BLOCK_MEDIUM_AND_ABOVE";
+  HarmBlockThreshold2["BLOCK_ONLY_HIGH"] = "BLOCK_ONLY_HIGH";
+  HarmBlockThreshold2["BLOCK_NONE"] = "BLOCK_NONE";
+})(HarmBlockThreshold || (HarmBlockThreshold = {}));
+var HarmProbability;
+(function(HarmProbability2) {
+  HarmProbability2["HARM_PROBABILITY_UNSPECIFIED"] = "HARM_PROBABILITY_UNSPECIFIED";
+  HarmProbability2["NEGLIGIBLE"] = "NEGLIGIBLE";
+  HarmProbability2["LOW"] = "LOW";
+  HarmProbability2["MEDIUM"] = "MEDIUM";
+  HarmProbability2["HIGH"] = "HIGH";
+})(HarmProbability || (HarmProbability = {}));
+var BlockReason;
+(function(BlockReason2) {
+  BlockReason2["BLOCKED_REASON_UNSPECIFIED"] = "BLOCKED_REASON_UNSPECIFIED";
+  BlockReason2["SAFETY"] = "SAFETY";
+  BlockReason2["OTHER"] = "OTHER";
+})(BlockReason || (BlockReason = {}));
+var FinishReason;
+(function(FinishReason2) {
+  FinishReason2["FINISH_REASON_UNSPECIFIED"] = "FINISH_REASON_UNSPECIFIED";
+  FinishReason2["STOP"] = "STOP";
+  FinishReason2["MAX_TOKENS"] = "MAX_TOKENS";
+  FinishReason2["SAFETY"] = "SAFETY";
+  FinishReason2["RECITATION"] = "RECITATION";
+  FinishReason2["OTHER"] = "OTHER";
+})(FinishReason || (FinishReason = {}));
+var TaskType;
+(function(TaskType2) {
+  TaskType2["TASK_TYPE_UNSPECIFIED"] = "TASK_TYPE_UNSPECIFIED";
+  TaskType2["RETRIEVAL_QUERY"] = "RETRIEVAL_QUERY";
+  TaskType2["RETRIEVAL_DOCUMENT"] = "RETRIEVAL_DOCUMENT";
+  TaskType2["SEMANTIC_SIMILARITY"] = "SEMANTIC_SIMILARITY";
+  TaskType2["CLASSIFICATION"] = "CLASSIFICATION";
+  TaskType2["CLUSTERING"] = "CLUSTERING";
+})(TaskType || (TaskType = {}));
+var FunctionCallingMode;
+(function(FunctionCallingMode2) {
+  FunctionCallingMode2["MODE_UNSPECIFIED"] = "MODE_UNSPECIFIED";
+  FunctionCallingMode2["AUTO"] = "AUTO";
+  FunctionCallingMode2["ANY"] = "ANY";
+  FunctionCallingMode2["NONE"] = "NONE";
+})(FunctionCallingMode || (FunctionCallingMode = {}));
+var FunctionDeclarationSchemaType;
+(function(FunctionDeclarationSchemaType2) {
+  FunctionDeclarationSchemaType2["STRING"] = "STRING";
+  FunctionDeclarationSchemaType2["NUMBER"] = "NUMBER";
+  FunctionDeclarationSchemaType2["INTEGER"] = "INTEGER";
+  FunctionDeclarationSchemaType2["BOOLEAN"] = "BOOLEAN";
+  FunctionDeclarationSchemaType2["ARRAY"] = "ARRAY";
+  FunctionDeclarationSchemaType2["OBJECT"] = "OBJECT";
+})(FunctionDeclarationSchemaType || (FunctionDeclarationSchemaType = {}));
+var GoogleGenerativeAIError = class extends Error {
+  constructor(message) {
+    super(`[GoogleGenerativeAI Error]: ${message}`);
+  }
+};
+var GoogleGenerativeAIResponseError = class extends GoogleGenerativeAIError {
+  constructor(message, response) {
+    super(message);
+    this.response = response;
+  }
+};
+var GoogleGenerativeAIFetchError = class extends GoogleGenerativeAIError {
+  constructor(message, status, statusText, errorDetails) {
+    super(message);
+    this.status = status;
+    this.statusText = statusText;
+    this.errorDetails = errorDetails;
+  }
+};
+var GoogleGenerativeAIRequestInputError = class extends GoogleGenerativeAIError {
+};
+var DEFAULT_BASE_URL = "https://generativelanguage.googleapis.com";
+var DEFAULT_API_VERSION = "v1beta";
+var PACKAGE_VERSION = "0.11.4";
+var PACKAGE_LOG_HEADER = "genai-js";
+var Task;
+(function(Task2) {
+  Task2["GENERATE_CONTENT"] = "generateContent";
+  Task2["STREAM_GENERATE_CONTENT"] = "streamGenerateContent";
+  Task2["COUNT_TOKENS"] = "countTokens";
+  Task2["EMBED_CONTENT"] = "embedContent";
+  Task2["BATCH_EMBED_CONTENTS"] = "batchEmbedContents";
+})(Task || (Task = {}));
+var RequestUrl = class {
+  constructor(model, task, apiKey3, stream4, requestOptions) {
+    this.model = model;
+    this.task = task;
+    this.apiKey = apiKey3;
+    this.stream = stream4;
+    this.requestOptions = requestOptions;
+  }
+  toString() {
+    var _a2, _b;
+    const apiVersion = ((_a2 = this.requestOptions) === null || _a2 === void 0 ? void 0 : _a2.apiVersion) || DEFAULT_API_VERSION;
+    const baseUrl = ((_b = this.requestOptions) === null || _b === void 0 ? void 0 : _b.baseUrl) || DEFAULT_BASE_URL;
+    let url2 = `${baseUrl}/${apiVersion}/${this.model}:${this.task}`;
+    if (this.stream) {
+      url2 += "?alt=sse";
+    }
+    return url2;
+  }
+};
+function getClientHeaders(requestOptions) {
+  const clientHeaders = [];
+  if (requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.apiClient) {
+    clientHeaders.push(requestOptions.apiClient);
+  }
+  clientHeaders.push(`${PACKAGE_LOG_HEADER}/${PACKAGE_VERSION}`);
+  return clientHeaders.join(" ");
+}
+async function getHeaders(url2) {
+  const headers = new Headers();
+  headers.append("Content-Type", "application/json");
+  headers.append("x-goog-api-client", getClientHeaders(url2.requestOptions));
+  headers.append("x-goog-api-key", url2.apiKey);
+  let customHeaders = url2.requestOptions.customHeaders;
+  if (customHeaders) {
+    if (!(customHeaders instanceof Headers)) {
+      try {
+        customHeaders = new Headers(customHeaders);
+      } catch (e3) {
+        throw new GoogleGenerativeAIRequestInputError(`unable to convert customHeaders value ${JSON.stringify(customHeaders)} to Headers: ${e3.message}`);
       }
-      const { data } = await this.openAI.createChatCompletion(params);
-      const message = data.choices[0].message;
-      return message?.content;
+    }
+    for (const [headerName, headerValue] of customHeaders.entries()) {
+      if (headerName === "x-goog-api-key") {
+        throw new GoogleGenerativeAIRequestInputError(`Cannot set reserved header name ${headerName}`);
+      } else if (headerName === "x-goog-api-client") {
+        throw new GoogleGenerativeAIRequestInputError(`Header name ${headerName} can only be set using the apiClient field`);
+      }
+      headers.append(headerName, headerValue);
+    }
+  }
+  return headers;
+}
+async function constructRequest(model, task, apiKey3, stream4, body, requestOptions) {
+  const url2 = new RequestUrl(model, task, apiKey3, stream4, requestOptions);
+  return {
+    url: url2.toString(),
+    fetchOptions: Object.assign(Object.assign({}, buildFetchOptions(requestOptions)), { method: "POST", headers: await getHeaders(url2), body })
+  };
+}
+async function makeRequest(model, task, apiKey3, stream4, body, requestOptions) {
+  return _makeRequestInternal(model, task, apiKey3, stream4, body, requestOptions, fetch);
+}
+async function _makeRequestInternal(model, task, apiKey3, stream4, body, requestOptions, fetchFn = fetch) {
+  const url2 = new RequestUrl(model, task, apiKey3, stream4, requestOptions);
+  let response;
+  try {
+    const request = await constructRequest(model, task, apiKey3, stream4, body, requestOptions);
+    response = await fetchFn(request.url, request.fetchOptions);
+    if (!response.ok) {
+      let message = "";
+      let errorDetails;
+      try {
+        const json = await response.json();
+        message = json.error.message;
+        if (json.error.details) {
+          message += ` ${JSON.stringify(json.error.details)}`;
+          errorDetails = json.error.details;
+        }
+      } catch (e3) {
+      }
+      throw new GoogleGenerativeAIFetchError(`Error fetching from ${url2.toString()}: [${response.status} ${response.statusText}] ${message}`, response.status, response.statusText, errorDetails);
+    }
+  } catch (e3) {
+    let err = e3;
+    if (!(e3 instanceof GoogleGenerativeAIFetchError || e3 instanceof GoogleGenerativeAIRequestInputError)) {
+      err = new GoogleGenerativeAIError(`Error fetching from ${url2.toString()}: ${e3.message}`);
+      err.stack = e3.stack;
+    }
+    throw err;
+  }
+  return response;
+}
+function buildFetchOptions(requestOptions) {
+  const fetchOptions = {};
+  if ((requestOptions === null || requestOptions === void 0 ? void 0 : requestOptions.timeout) >= 0) {
+    const abortController = new AbortController();
+    const signal = abortController.signal;
+    setTimeout(() => abortController.abort(), requestOptions.timeout);
+    fetchOptions.signal = signal;
+  }
+  return fetchOptions;
+}
+function addHelpers(response) {
+  response.text = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning text from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      return getText(response);
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Text not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return "";
+  };
+  response.functionCall = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      console.warn(`response.functionCall() is deprecated. Use response.functionCalls() instead.`);
+      return getFunctionCalls(response)[0];
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return void 0;
+  };
+  response.functionCalls = () => {
+    if (response.candidates && response.candidates.length > 0) {
+      if (response.candidates.length > 1) {
+        console.warn(`This response had ${response.candidates.length} candidates. Returning function calls from the first candidate only. Access response.candidates directly to use the other candidates.`);
+      }
+      if (hadBadFinishReason(response.candidates[0])) {
+        throw new GoogleGenerativeAIResponseError(`${formatBlockErrorMessage(response)}`, response);
+      }
+      return getFunctionCalls(response);
+    } else if (response.promptFeedback) {
+      throw new GoogleGenerativeAIResponseError(`Function call not available. ${formatBlockErrorMessage(response)}`, response);
+    }
+    return void 0;
+  };
+  return response;
+}
+function getText(response) {
+  var _a2, _b, _c, _d;
+  const textStrings = [];
+  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
+    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
+      if (part.text) {
+        textStrings.push(part.text);
+      }
+    }
+  }
+  if (textStrings.length > 0) {
+    return textStrings.join("");
+  } else {
+    return "";
+  }
+}
+function getFunctionCalls(response) {
+  var _a2, _b, _c, _d;
+  const functionCalls = [];
+  if ((_b = (_a2 = response.candidates) === null || _a2 === void 0 ? void 0 : _a2[0].content) === null || _b === void 0 ? void 0 : _b.parts) {
+    for (const part of (_d = (_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0].content) === null || _d === void 0 ? void 0 : _d.parts) {
+      if (part.functionCall) {
+        functionCalls.push(part.functionCall);
+      }
+    }
+  }
+  if (functionCalls.length > 0) {
+    return functionCalls;
+  } else {
+    return void 0;
+  }
+}
+var badFinishReasons = [FinishReason.RECITATION, FinishReason.SAFETY];
+function hadBadFinishReason(candidate) {
+  return !!candidate.finishReason && badFinishReasons.includes(candidate.finishReason);
+}
+function formatBlockErrorMessage(response) {
+  var _a2, _b, _c;
+  let message = "";
+  if ((!response.candidates || response.candidates.length === 0) && response.promptFeedback) {
+    message += "Response was blocked";
+    if ((_a2 = response.promptFeedback) === null || _a2 === void 0 ? void 0 : _a2.blockReason) {
+      message += ` due to ${response.promptFeedback.blockReason}`;
+    }
+    if ((_b = response.promptFeedback) === null || _b === void 0 ? void 0 : _b.blockReasonMessage) {
+      message += `: ${response.promptFeedback.blockReasonMessage}`;
+    }
+  } else if ((_c = response.candidates) === null || _c === void 0 ? void 0 : _c[0]) {
+    const firstCandidate = response.candidates[0];
+    if (hadBadFinishReason(firstCandidate)) {
+      message += `Candidate was blocked due to ${firstCandidate.finishReason}`;
+      if (firstCandidate.finishMessage) {
+        message += `: ${firstCandidate.finishMessage}`;
+      }
+    }
+  }
+  return message;
+}
+function __await(v5) {
+  return this instanceof __await ? (this.v = v5, this) : new __await(v5);
+}
+function __asyncGenerator(thisArg, _arguments, generator) {
+  if (!Symbol.asyncIterator)
+    throw new TypeError("Symbol.asyncIterator is not defined.");
+  var g4 = generator.apply(thisArg, _arguments || []), i3, q6 = [];
+  return i3 = {}, verb("next"), verb("throw"), verb("return"), i3[Symbol.asyncIterator] = function() {
+    return this;
+  }, i3;
+  function verb(n2) {
+    if (g4[n2])
+      i3[n2] = function(v5) {
+        return new Promise(function(a4, b7) {
+          q6.push([n2, v5, a4, b7]) > 1 || resume(n2, v5);
+        });
+      };
+  }
+  function resume(n2, v5) {
+    try {
+      step(g4[n2](v5));
+    } catch (e3) {
+      settle2(q6[0][3], e3);
+    }
+  }
+  function step(r3) {
+    r3.value instanceof __await ? Promise.resolve(r3.value.v).then(fulfill, reject) : settle2(q6[0][2], r3);
+  }
+  function fulfill(value) {
+    resume("next", value);
+  }
+  function reject(value) {
+    resume("throw", value);
+  }
+  function settle2(f4, v5) {
+    if (f4(v5), q6.shift(), q6.length)
+      resume(q6[0][0], q6[0][1]);
+  }
+}
+var responseLineRE = /^data\: (.*)(?:\n\n|\r\r|\r\n\r\n)/;
+function processStream(response) {
+  const inputStream = response.body.pipeThrough(new TextDecoderStream("utf8", { fatal: true }));
+  const responseStream = getResponseStream(inputStream);
+  const [stream1, stream22] = responseStream.tee();
+  return {
+    stream: generateResponseSequence(stream1),
+    response: getResponsePromise(stream22)
+  };
+}
+async function getResponsePromise(stream4) {
+  const allResponses = [];
+  const reader = stream4.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      return addHelpers(aggregateResponses(allResponses));
+    }
+    allResponses.push(value);
+  }
+}
+function generateResponseSequence(stream4) {
+  return __asyncGenerator(this, arguments, function* generateResponseSequence_1() {
+    const reader = stream4.getReader();
+    while (true) {
+      const { value, done } = yield __await(reader.read());
+      if (done) {
+        break;
+      }
+      yield yield __await(addHelpers(value));
+    }
+  });
+}
+function getResponseStream(inputStream) {
+  const reader = inputStream.getReader();
+  const stream4 = new ReadableStream({
+    start(controller) {
+      let currentText = "";
+      return pump();
+      function pump() {
+        return reader.read().then(({ value, done }) => {
+          if (done) {
+            if (currentText.trim()) {
+              controller.error(new GoogleGenerativeAIError("Failed to parse stream"));
+              return;
+            }
+            controller.close();
+            return;
+          }
+          currentText += value;
+          let match = currentText.match(responseLineRE);
+          let parsedResponse;
+          while (match) {
+            try {
+              parsedResponse = JSON.parse(match[1]);
+            } catch (e3) {
+              controller.error(new GoogleGenerativeAIError(`Error parsing JSON response: "${match[1]}"`));
+              return;
+            }
+            controller.enqueue(parsedResponse);
+            currentText = currentText.substring(match[0].length);
+            match = currentText.match(responseLineRE);
+          }
+          return pump();
+        });
+      }
+    }
+  });
+  return stream4;
+}
+function aggregateResponses(responses) {
+  const lastResponse = responses[responses.length - 1];
+  const aggregatedResponse = {
+    promptFeedback: lastResponse === null || lastResponse === void 0 ? void 0 : lastResponse.promptFeedback
+  };
+  for (const response of responses) {
+    if (response.candidates) {
+      for (const candidate of response.candidates) {
+        const i3 = candidate.index;
+        if (!aggregatedResponse.candidates) {
+          aggregatedResponse.candidates = [];
+        }
+        if (!aggregatedResponse.candidates[i3]) {
+          aggregatedResponse.candidates[i3] = {
+            index: candidate.index
+          };
+        }
+        aggregatedResponse.candidates[i3].citationMetadata = candidate.citationMetadata;
+        aggregatedResponse.candidates[i3].finishReason = candidate.finishReason;
+        aggregatedResponse.candidates[i3].finishMessage = candidate.finishMessage;
+        aggregatedResponse.candidates[i3].safetyRatings = candidate.safetyRatings;
+        if (candidate.content && candidate.content.parts) {
+          if (!aggregatedResponse.candidates[i3].content) {
+            aggregatedResponse.candidates[i3].content = {
+              role: candidate.content.role || "user",
+              parts: []
+            };
+          }
+          const newPart = {};
+          for (const part of candidate.content.parts) {
+            if (part.text) {
+              newPart.text = part.text;
+            }
+            if (part.functionCall) {
+              newPart.functionCall = part.functionCall;
+            }
+            if (Object.keys(newPart).length === 0) {
+              newPart.text = "";
+            }
+            aggregatedResponse.candidates[i3].content.parts.push(newPart);
+          }
+        }
+      }
+    }
+  }
+  return aggregatedResponse;
+}
+async function generateContentStream(apiKey3, model, params, requestOptions) {
+  const response = await makeRequest(
+    model,
+    Task.STREAM_GENERATE_CONTENT,
+    apiKey3,
+    true,
+    JSON.stringify(params),
+    requestOptions
+  );
+  return processStream(response);
+}
+async function generateContent(apiKey3, model, params, requestOptions) {
+  const response = await makeRequest(
+    model,
+    Task.GENERATE_CONTENT,
+    apiKey3,
+    false,
+    JSON.stringify(params),
+    requestOptions
+  );
+  const responseJson = await response.json();
+  const enhancedResponse = addHelpers(responseJson);
+  return {
+    response: enhancedResponse
+  };
+}
+function formatSystemInstruction(input) {
+  if (input == null) {
+    return void 0;
+  } else if (typeof input === "string") {
+    return { role: "system", parts: [{ text: input }] };
+  } else if (input.text) {
+    return { role: "system", parts: [input] };
+  } else if (input.parts) {
+    if (!input.role) {
+      return { role: "system", parts: input.parts };
+    } else {
+      return input;
+    }
+  }
+}
+function formatNewContent(request) {
+  let newParts = [];
+  if (typeof request === "string") {
+    newParts = [{ text: request }];
+  } else {
+    for (const partOrString of request) {
+      if (typeof partOrString === "string") {
+        newParts.push({ text: partOrString });
+      } else {
+        newParts.push(partOrString);
+      }
+    }
+  }
+  return assignRoleToPartsAndValidateSendMessageRequest(newParts);
+}
+function assignRoleToPartsAndValidateSendMessageRequest(parts) {
+  const userContent = { role: "user", parts: [] };
+  const functionContent = { role: "function", parts: [] };
+  let hasUserContent = false;
+  let hasFunctionContent = false;
+  for (const part of parts) {
+    if ("functionResponse" in part) {
+      functionContent.parts.push(part);
+      hasFunctionContent = true;
+    } else {
+      userContent.parts.push(part);
+      hasUserContent = true;
+    }
+  }
+  if (hasUserContent && hasFunctionContent) {
+    throw new GoogleGenerativeAIError("Within a single message, FunctionResponse cannot be mixed with other type of part in the request for sending chat message.");
+  }
+  if (!hasUserContent && !hasFunctionContent) {
+    throw new GoogleGenerativeAIError("No content is provided for sending chat message.");
+  }
+  if (hasUserContent) {
+    return userContent;
+  }
+  return functionContent;
+}
+function formatGenerateContentInput(params) {
+  let formattedRequest;
+  if (params.contents) {
+    formattedRequest = params;
+  } else {
+    const content = formatNewContent(params);
+    formattedRequest = { contents: [content] };
+  }
+  if (params.systemInstruction) {
+    formattedRequest.systemInstruction = formatSystemInstruction(params.systemInstruction);
+  }
+  return formattedRequest;
+}
+function formatEmbedContentInput(params) {
+  if (typeof params === "string" || Array.isArray(params)) {
+    const content = formatNewContent(params);
+    return { content };
+  }
+  return params;
+}
+var VALID_PART_FIELDS = [
+  "text",
+  "inlineData",
+  "functionCall",
+  "functionResponse"
+];
+var VALID_PARTS_PER_ROLE = {
+  user: ["text", "inlineData"],
+  function: ["functionResponse"],
+  model: ["text", "functionCall"],
+  system: ["text"]
+};
+function validateChatHistory(history) {
+  let prevContent = false;
+  for (const currContent of history) {
+    const { role, parts } = currContent;
+    if (!prevContent && role !== "user") {
+      throw new GoogleGenerativeAIError(`First content should be with role 'user', got ${role}`);
+    }
+    if (!POSSIBLE_ROLES.includes(role)) {
+      throw new GoogleGenerativeAIError(`Each item should include role field. Got ${role} but valid roles are: ${JSON.stringify(POSSIBLE_ROLES)}`);
+    }
+    if (!Array.isArray(parts)) {
+      throw new GoogleGenerativeAIError("Content should have 'parts' property with an array of Parts");
+    }
+    if (parts.length === 0) {
+      throw new GoogleGenerativeAIError("Each Content should have at least one part");
+    }
+    const countFields = {
+      text: 0,
+      inlineData: 0,
+      functionCall: 0,
+      functionResponse: 0,
+      fileData: 0
+    };
+    for (const part of parts) {
+      for (const key of VALID_PART_FIELDS) {
+        if (key in part) {
+          countFields[key] += 1;
+        }
+      }
+    }
+    const validParts = VALID_PARTS_PER_ROLE[role];
+    for (const key of VALID_PART_FIELDS) {
+      if (!validParts.includes(key) && countFields[key] > 0) {
+        throw new GoogleGenerativeAIError(`Content with role '${role}' can't contain '${key}' part`);
+      }
+    }
+    prevContent = true;
+  }
+}
+var SILENT_ERROR = "SILENT_ERROR";
+var ChatSession = class {
+  constructor(apiKey3, model, params, requestOptions) {
+    this.model = model;
+    this.params = params;
+    this.requestOptions = requestOptions;
+    this._history = [];
+    this._sendPromise = Promise.resolve();
+    this._apiKey = apiKey3;
+    if (params === null || params === void 0 ? void 0 : params.history) {
+      validateChatHistory(params.history);
+      this._history = params.history;
+    }
+  }
+  async getHistory() {
+    await this._sendPromise;
+    return this._history;
+  }
+  async sendMessage(request) {
+    var _a2, _b, _c, _d, _e2;
+    await this._sendPromise;
+    const newContent = formatNewContent(request);
+    const generateContentRequest = {
+      safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
+      generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
+      tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
+      toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
+      systemInstruction: (_e2 = this.params) === null || _e2 === void 0 ? void 0 : _e2.systemInstruction,
+      contents: [...this._history, newContent]
+    };
+    let finalResult;
+    this._sendPromise = this._sendPromise.then(() => generateContent(this._apiKey, this.model, generateContentRequest, this.requestOptions)).then((result) => {
+      var _a3;
+      if (result.response.candidates && result.response.candidates.length > 0) {
+        this._history.push(newContent);
+        const responseContent = Object.assign({
+          parts: [],
+          role: "model"
+        }, (_a3 = result.response.candidates) === null || _a3 === void 0 ? void 0 : _a3[0].content);
+        this._history.push(responseContent);
+      } else {
+        const blockErrorMessage = formatBlockErrorMessage(result.response);
+        if (blockErrorMessage) {
+          console.warn(`sendMessage() was unsuccessful. ${blockErrorMessage}. Inspect response object for details.`);
+        }
+      }
+      finalResult = result;
+    });
+    await this._sendPromise;
+    return finalResult;
+  }
+  async sendMessageStream(request) {
+    var _a2, _b, _c, _d, _e2;
+    await this._sendPromise;
+    const newContent = formatNewContent(request);
+    const generateContentRequest = {
+      safetySettings: (_a2 = this.params) === null || _a2 === void 0 ? void 0 : _a2.safetySettings,
+      generationConfig: (_b = this.params) === null || _b === void 0 ? void 0 : _b.generationConfig,
+      tools: (_c = this.params) === null || _c === void 0 ? void 0 : _c.tools,
+      toolConfig: (_d = this.params) === null || _d === void 0 ? void 0 : _d.toolConfig,
+      systemInstruction: (_e2 = this.params) === null || _e2 === void 0 ? void 0 : _e2.systemInstruction,
+      contents: [...this._history, newContent]
+    };
+    const streamPromise = generateContentStream(this._apiKey, this.model, generateContentRequest, this.requestOptions);
+    this._sendPromise = this._sendPromise.then(() => streamPromise).catch((_ignored) => {
+      throw new Error(SILENT_ERROR);
+    }).then((streamResult) => streamResult.response).then((response) => {
+      if (response.candidates && response.candidates.length > 0) {
+        this._history.push(newContent);
+        const responseContent = Object.assign({}, response.candidates[0].content);
+        if (!responseContent.role) {
+          responseContent.role = "model";
+        }
+        this._history.push(responseContent);
+      } else {
+        const blockErrorMessage = formatBlockErrorMessage(response);
+        if (blockErrorMessage) {
+          console.warn(`sendMessageStream() was unsuccessful. ${blockErrorMessage}. Inspect response object for details.`);
+        }
+      }
+    }).catch((e3) => {
+      if (e3.message !== SILENT_ERROR) {
+        console.error(e3);
+      }
+    });
+    return streamPromise;
+  }
+};
+async function countTokens(apiKey3, model, params, requestOptions) {
+  const response = await makeRequest(model, Task.COUNT_TOKENS, apiKey3, false, JSON.stringify(Object.assign(Object.assign({}, params), { model })), requestOptions);
+  return response.json();
+}
+async function embedContent(apiKey3, model, params, requestOptions) {
+  const response = await makeRequest(model, Task.EMBED_CONTENT, apiKey3, false, JSON.stringify(params), requestOptions);
+  return response.json();
+}
+async function batchEmbedContents(apiKey3, model, params, requestOptions) {
+  const requestsWithModel = params.requests.map((request) => {
+    return Object.assign(Object.assign({}, request), { model });
+  });
+  const response = await makeRequest(model, Task.BATCH_EMBED_CONTENTS, apiKey3, false, JSON.stringify({ requests: requestsWithModel }), requestOptions);
+  return response.json();
+}
+var GenerativeModel = class {
+  constructor(apiKey3, modelParams, requestOptions) {
+    this.apiKey = apiKey3;
+    if (modelParams.model.includes("/")) {
+      this.model = modelParams.model;
+    } else {
+      this.model = `models/${modelParams.model}`;
+    }
+    this.generationConfig = modelParams.generationConfig || {};
+    this.safetySettings = modelParams.safetySettings || [];
+    this.tools = modelParams.tools;
+    this.toolConfig = modelParams.toolConfig;
+    this.systemInstruction = formatSystemInstruction(modelParams.systemInstruction);
+    this.requestOptions = requestOptions || {};
+  }
+  async generateContent(request) {
+    const formattedParams = formatGenerateContentInput(request);
+    return generateContent(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, formattedParams), this.requestOptions);
+  }
+  async generateContentStream(request) {
+    const formattedParams = formatGenerateContentInput(request);
+    return generateContentStream(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, formattedParams), this.requestOptions);
+  }
+  startChat(startChatParams) {
+    return new ChatSession(this.apiKey, this.model, Object.assign({ generationConfig: this.generationConfig, safetySettings: this.safetySettings, tools: this.tools, toolConfig: this.toolConfig, systemInstruction: this.systemInstruction }, startChatParams), this.requestOptions);
+  }
+  async countTokens(request) {
+    const formattedParams = formatGenerateContentInput(request);
+    return countTokens(this.apiKey, this.model, formattedParams, this.requestOptions);
+  }
+  async embedContent(request) {
+    const formattedParams = formatEmbedContentInput(request);
+    return embedContent(this.apiKey, this.model, formattedParams, this.requestOptions);
+  }
+  async batchEmbedContents(batchEmbedContentRequest) {
+    return batchEmbedContents(this.apiKey, this.model, batchEmbedContentRequest, this.requestOptions);
+  }
+};
+var GoogleGenerativeAI = class {
+  constructor(apiKey3) {
+    this.apiKey = apiKey3;
+  }
+  getGenerativeModel(modelParams, requestOptions) {
+    if (!modelParams.model) {
+      throw new GoogleGenerativeAIError(`Must provide a model name. Example: genai.getGenerativeModel({ model: 'my-model-name' })`);
+    }
+    return new GenerativeModel(this.apiKey, modelParams, requestOptions);
+  }
+};
+
+// src/engine/gemini.ts
+var Gemini = class {
+  constructor() {
+    this.maxTokens = {
+      input: 4096 /* DEFAULT_MAX_TOKENS_INPUT */,
+      output: 500 /* DEFAULT_MAX_TOKENS_OUTPUT */
+    };
+    this.config = getConfig();
+    this.googleGenerativeAi = new GoogleGenerativeAI(this.config.OCO_GEMINI_API_KEY);
+    this.warmup();
+  }
+  async generateCommitMessage(messages) {
+    const systemInstruction = messages.filter((m5) => m5.role === "system").map((m5) => m5.content).join("\n");
+    this.ai = this.googleGenerativeAi.getGenerativeModel({
+      model: this.model,
+      systemInstruction
+    });
+    const contents = messages.filter((m5) => m5.role !== "user" && m5.role !== "system").map((m5) => ({ parts: [{ text: m5.content }], role: m5.role }));
+    try {
+      const result = await this.ai.generateContent({
+        contents,
+        safetySettings: [
+          {
+            category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+          },
+          {
+            category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+          }
+        ],
+        generationConfig: {
+          maxOutputTokens: this.maxTokens.output,
+          temperature: 0,
+          topP: 0.1
+        }
+      });
+      return result.response.text();
     } catch (error) {
-      ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
       const err = error;
       ce(`${source_default.red("\u2716")} ${err?.message || err}`);
       if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-        const openAiError = error.response.data.error;
-        if (openAiError?.message)
-          ce(openAiError.message);
+        const geminiError = error.response.data.error;
+        if (geminiError?.message)
+          ce(geminiError.message);
         ce(
           "For help look into README https://github.com/di-sukharev/opencommit#setup"
         );
       }
       throw err;
     }
-  };
+  }
+  warmup() {
+    if (this.config.OCO_TOKENS_MAX_INPUT !== void 0)
+      this.maxTokens.input = this.config.OCO_TOKENS_MAX_INPUT;
+    if (this.config.OCO_TOKENS_MAX_OUTPUT !== void 0)
+      this.maxTokens.output = this.config.OCO_TOKENS_MAX_OUTPUT;
+    this.basePath = this.config.OCO_GEMINI_BASE_PATH;
+    this.apiKey = this.config.OCO_GEMINI_API_KEY;
+    const [command3, mode3] = process.argv.slice(2);
+    const provider3 = this.config.OCO_AI_PROVIDER;
+    if (provider3 === "gemini" && !this.apiKey && command3 !== "config" && mode3 !== "set") {
+      ae("opencommit");
+      ce("OCO_GEMINI_API_KEY is not set, please run `oco config set OCO_GEMINI_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.");
+      ce(
+        "For help look into README https://github.com/di-sukharev/opencommit#setup"
+      );
+      process.exit(1);
+    }
+    this.model = this.config.OCO_MODEL || "gemini-1.5-flash";
+    if (provider3 === "gemini" && !MODEL_LIST.gemini.includes(this.model) && command3 !== "config" && mode3 !== "set" /* set */) {
+      ce(
+        `${source_default.red("\u2716")} Unsupported model ${this.model} for Gemini. Supported models are: ${MODEL_LIST.gemini.join(
+          ", "
+        )}`
+      );
+      process.exit(1);
+    }
+  }
 };
-var api = new OpenAi();
 
 // src/engine/ollama.ts
+var config4 = getConfig();
 var OllamaAi = class {
   async generateCommitMessage(messages) {
-    const model = "mistral";
+    const model = config4?.OCO_MODEL || "mistral";
     const url2 = "http://localhost:11434/api/chat";
     const p4 = {
       model,
@@ -32971,7 +33836,6 @@ var OllamaAi = class {
     }
   }
 };
-var ollamaAi = new OllamaAi();
 
 // node_modules/@anthropic-ai/sdk/version.mjs
 var VERSION3 = "0.19.2";
@@ -32979,14 +33843,14 @@ var VERSION3 = "0.19.2";
 // node_modules/@anthropic-ai/sdk/_shims/registry.mjs
 var auto = false;
 var kind = void 0;
-var fetch = void 0;
+var fetch2 = void 0;
 var Request = void 0;
 var Response = void 0;
-var Headers = void 0;
+var Headers2 = void 0;
 var FormData3 = void 0;
 var Blob2 = void 0;
 var File = void 0;
-var ReadableStream = void 0;
+var ReadableStream2 = void 0;
 var getMultipartRequestOptions = void 0;
 var getDefaultAgent = void 0;
 var fileFromPath = void 0;
@@ -33000,14 +33864,14 @@ function setShims(shims, options = { auto: false }) {
   }
   auto = options.auto;
   kind = shims.kind;
-  fetch = shims.fetch;
+  fetch2 = shims.fetch;
   Request = shims.Request;
   Response = shims.Response;
-  Headers = shims.Headers;
+  Headers2 = shims.Headers;
   FormData3 = shims.FormData;
   Blob2 = shims.Blob;
   File = shims.File;
-  ReadableStream = shims.ReadableStream;
+  ReadableStream2 = shims.ReadableStream;
   getMultipartRequestOptions = shims.getMultipartRequestOptions;
   getDefaultAgent = shims.getDefaultAgent;
   fileFromPath = shims.fileFromPath;
@@ -33663,7 +34527,7 @@ var Stream = class {
     const self2 = this;
     let iter;
     const encoder = new TextEncoder();
-    return new ReadableStream({
+    return new ReadableStream2({
       async start() {
         iter = self2[Symbol.asyncIterator]();
       },
@@ -34031,7 +34895,7 @@ var APIClient = class {
     this.maxRetries = validatePositiveInteger("maxRetries", maxRetries);
     this.timeout = validatePositiveInteger("timeout", timeout);
     this.httpAgent = httpAgent;
-    this.fetch = overridenFetch ?? fetch;
+    this.fetch = overridenFetch ?? fetch2;
   }
   authHeaders(opts) {
     return {};
@@ -35062,11 +35926,11 @@ var { AnthropicError: AnthropicError2, APIError: APIError2, APIConnectionError: 
 var sdk_default = Anthropic;
 
 // src/engine/anthropic.ts
-var config4 = getConfig();
-var MAX_TOKENS_OUTPUT2 = config4?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
-var MAX_TOKENS_INPUT2 = config4?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
-var provider2 = config4?.OCO_AI_PROVIDER;
-var apiKey2 = config4?.OCO_ANTHROPIC_API_KEY;
+var config5 = getConfig();
+var MAX_TOKENS_OUTPUT2 = config5?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var MAX_TOKENS_INPUT2 = config5?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
+var provider2 = config5?.OCO_AI_PROVIDER;
+var apiKey2 = config5?.OCO_ANTHROPIC_API_KEY;
 var [command2, mode2] = process.argv.slice(2);
 if (provider2 === "anthropic" && !apiKey2 && command2 !== "config" && mode2 !== "set" /* set */) {
   ae("opencommit");
@@ -35078,7 +35942,7 @@ if (provider2 === "anthropic" && !apiKey2 && command2 !== "config" && mode2 !== 
   );
   process.exit(1);
 }
-var MODEL2 = config4?.OCO_MODEL;
+var MODEL2 = config5?.OCO_MODEL;
 if (provider2 === "anthropic" && !MODEL_LIST.anthropic.includes(MODEL2) && command2 !== "config" && mode2 !== "set" /* set */) {
   ce(
     `${source_default.red("\u2716")} Unsupported model ${MODEL2} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
@@ -35088,49 +35952,47 @@ if (provider2 === "anthropic" && !MODEL_LIST.anthropic.includes(MODEL2) && comma
   process.exit(1);
 }
 var AnthropicAi = class {
-  anthropicAiApiConfiguration = {
-    apiKey: apiKey2
-  };
-  anthropicAI;
   constructor() {
+    this.anthropicAiApiConfiguration = {
+      apiKey: apiKey2
+    };
+    this.generateCommitMessage = async (messages) => {
+      const systemMessage = messages.find((msg) => msg.role === "system")?.content;
+      const restMessages = messages.filter((msg) => msg.role !== "system");
+      const params = {
+        model: MODEL2,
+        system: systemMessage,
+        messages: restMessages,
+        temperature: 0,
+        top_p: 0.1,
+        max_tokens: MAX_TOKENS_OUTPUT2
+      };
+      try {
+        const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
+        if (REQUEST_TOKENS > MAX_TOKENS_INPUT2 - MAX_TOKENS_OUTPUT2) {
+          throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+        }
+        const data = await this.anthropicAI.messages.create(params);
+        const message = data?.content[0].text;
+        return message;
+      } catch (error) {
+        ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
+        const err = error;
+        ce(`${source_default.red("\u2716")} ${err?.message || err}`);
+        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+          const anthropicAiError = error.response.data.error;
+          if (anthropicAiError?.message)
+            ce(anthropicAiError.message);
+          ce(
+            "For help look into README https://github.com/di-sukharev/opencommit#setup"
+          );
+        }
+        throw err;
+      }
+    };
     this.anthropicAI = new sdk_default(this.anthropicAiApiConfiguration);
   }
-  generateCommitMessage = async (messages) => {
-    const systemMessage = messages.find((msg) => msg.role === "system")?.content;
-    const restMessages = messages.filter((msg) => msg.role !== "system");
-    const params = {
-      model: MODEL2,
-      system: systemMessage,
-      messages: restMessages,
-      temperature: 0,
-      top_p: 0.1,
-      max_tokens: MAX_TOKENS_OUTPUT2
-    };
-    try {
-      const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
-      if (REQUEST_TOKENS > MAX_TOKENS_INPUT2 - MAX_TOKENS_OUTPUT2) {
-        throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
-      }
-      const data = await this.anthropicAI.messages.create(params);
-      const message = data?.content[0].text;
-      return message;
-    } catch (error) {
-      ce(`${source_default.red("\u2716")} ${JSON.stringify(params)}`);
-      const err = error;
-      ce(`${source_default.red("\u2716")} ${err?.message || err}`);
-      if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-        const anthropicAiError = error.response.data.error;
-        if (anthropicAiError?.message)
-          ce(anthropicAiError.message);
-        ce(
-          "For help look into README https://github.com/di-sukharev/opencommit#setup"
-        );
-      }
-      throw err;
-    }
-  };
 };
-var anthropicAi = new AnthropicAi();
 
 // src/engine/testAi.ts
 var TestAi = class {
@@ -35138,24 +36000,25 @@ var TestAi = class {
     return "test commit message";
   }
 };
-var testAi = new TestAi();
 
 // src/utils/engine.ts
 function getEngine() {
-  const config9 = getConfig();
-  if (config9?.OCO_AI_PROVIDER == "ollama") {
-    return ollamaAi;
-  } else if (config9?.OCO_AI_PROVIDER == "anthropic") {
-    return anthropicAi;
-  } else if (config9?.OCO_AI_PROVIDER == "test") {
-    return testAi;
+  const config10 = getConfig();
+  if (config10?.OCO_AI_PROVIDER == "ollama") {
+    return new OllamaAi();
+  } else if (config10?.OCO_AI_PROVIDER == "anthropic") {
+    return new AnthropicAi();
+  } else if (config10?.OCO_AI_PROVIDER == "test") {
+    return new TestAi();
+  } else if (config10?.OCO_AI_PROVIDER == "gemini") {
+    return new Gemini();
   }
-  return api;
+  return new OpenAi();
 }
 
 // src/modules/commitlint/config.ts
-var config5 = getConfig();
-var translation2 = i18n[config5?.OCO_LANGUAGE || "en"];
+var config6 = getConfig();
+var translation2 = i18n[config6?.OCO_LANGUAGE || "en"];
 var configureCommitlintIntegration = async (force = false) => {
   const spin = le();
   spin.start("Loading @commitlint configuration");
@@ -35199,15 +36062,15 @@ function removeConventionalCommitWord(message) {
 }
 
 // src/prompts.ts
-var config6 = getConfig();
-var translation3 = i18n[config6?.OCO_LANGUAGE || "en"];
+var config7 = getConfig();
+var translation3 = i18n[config7?.OCO_LANGUAGE || "en"];
 var IDENTITY = "You are to act as the author of a commit message in git.";
 var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.System,
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${fullGitMojiSpec ? "GitMoji specification" : "conventional commit convention"} and explain WHAT were the changes and mainly WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.
-  ${config6?.OCO_EMOJI ? `Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): \u{1F41B}, Fix a bug; \u2728, Introduce new features; \u{1F4DD}, Add or update documentation; \u{1F680}, Deploy stuff; \u2705, Add, update, or pass tests; \u267B\uFE0F, Refactor code; \u2B06\uFE0F, Upgrade dependencies; \u{1F527}, Add or update configuration files; \u{1F310}, Internationalization and localization; \u{1F4A1}, Add or update comments in source code; ${fullGitMojiSpec ? "\u{1F3A8}, Improve structure / format of the code; \u26A1\uFE0F, Improve performance; \u{1F525}, Remove code or files; \u{1F691}\uFE0F, Critical hotfix; \u{1F484}, Add or update the UI and style files; \u{1F389}, Begin a project; \u{1F512}\uFE0F, Fix security issues; \u{1F510}, Add or update secrets; \u{1F516}, Release / Version tags; \u{1F6A8}, Fix compiler / linter warnings; \u{1F6A7}, Work in progress; \u{1F49A}, Fix CI Build; \u2B07\uFE0F, Downgrade dependencies; \u{1F4CC}, Pin dependencies to specific versions; \u{1F477}, Add or update CI build system; \u{1F4C8}, Add or update analytics or track code; \u2795, Add a dependency; \u2796, Remove a dependency; \u{1F528}, Add or update development scripts; \u270F\uFE0F, Fix typos; \u{1F4A9}, Write bad code that needs to be improved; \u23EA\uFE0F, Revert changes; \u{1F500}, Merge branches; \u{1F4E6}\uFE0F, Add or update compiled files or packages; \u{1F47D}\uFE0F, Update code due to external API changes; \u{1F69A}, Move or rename resources (e.g.: files, paths, routes); \u{1F4C4}, Add or update license; \u{1F4A5}, Introduce breaking changes; \u{1F371}, Add or update assets; \u267F\uFE0F, Improve accessibility; \u{1F37B}, Write code drunkenly; \u{1F4AC}, Add or update text and literals; \u{1F5C3}\uFE0F, Perform database related changes; \u{1F50A}, Add or update logs; \u{1F507}, Remove logs; \u{1F465}, Add or update contributor(s); \u{1F6B8}, Improve user experience / usability; \u{1F3D7}\uFE0F, Make architectural changes; \u{1F4F1}, Work on responsive design; \u{1F921}, Mock things; \u{1F95A}, Add or update an easter egg; \u{1F648}, Add or update a .gitignore file; \u{1F4F8}, Add or update snapshots; \u2697\uFE0F, Perform experiments; \u{1F50D}\uFE0F, Improve SEO; \u{1F3F7}\uFE0F, Add or update types; \u{1F331}, Add or update seed files; \u{1F6A9}, Add, update, or remove feature flags; \u{1F945}, Catch errors; \u{1F4AB}, Add or update animations and transitions; \u{1F5D1}\uFE0F, Deprecate code that needs to be cleaned up; \u{1F6C2}, Work on code related to authorization, roles and permissions; \u{1FA79}, Simple fix for a non-critical issue; \u{1F9D0}, Data exploration/inspection; \u26B0\uFE0F, Remove dead code; \u{1F9EA}, Add a failing test; \u{1F454}, Add or update business logic; \u{1FA7A}, Add or update healthcheck; \u{1F9F1}, Infrastructure related changes; \u{1F9D1}\u200D\u{1F4BB}, Improve developer experience; \u{1F4B8}, Add sponsorships or money related infrastructure; \u{1F9F5}, Add or update code related to multithreading or concurrency; \u{1F9BA}, Add or update code related to validation." : ""}` : "Do not preface the commit with anything. Conventional commit keywords:fix, feat, build, chore, ci, docs, style, refactor, perf, test."}  
-    ${config6?.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
-    ${config6?.OCO_ONE_LINE_COMMIT ? "Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change." : ""}
+  ${config7?.OCO_EMOJI ? `Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): \u{1F41B}, Fix a bug; \u2728, Introduce new features; \u{1F4DD}, Add or update documentation; \u{1F680}, Deploy stuff; \u2705, Add, update, or pass tests; \u267B\uFE0F, Refactor code; \u2B06\uFE0F, Upgrade dependencies; \u{1F527}, Add or update configuration files; \u{1F310}, Internationalization and localization; \u{1F4A1}, Add or update comments in source code; ${fullGitMojiSpec ? "\u{1F3A8}, Improve structure / format of the code; \u26A1\uFE0F, Improve performance; \u{1F525}, Remove code or files; \u{1F691}\uFE0F, Critical hotfix; \u{1F484}, Add or update the UI and style files; \u{1F389}, Begin a project; \u{1F512}\uFE0F, Fix security issues; \u{1F510}, Add or update secrets; \u{1F516}, Release / Version tags; \u{1F6A8}, Fix compiler / linter warnings; \u{1F6A7}, Work in progress; \u{1F49A}, Fix CI Build; \u2B07\uFE0F, Downgrade dependencies; \u{1F4CC}, Pin dependencies to specific versions; \u{1F477}, Add or update CI build system; \u{1F4C8}, Add or update analytics or track code; \u2795, Add a dependency; \u2796, Remove a dependency; \u{1F528}, Add or update development scripts; \u270F\uFE0F, Fix typos; \u{1F4A9}, Write bad code that needs to be improved; \u23EA\uFE0F, Revert changes; \u{1F500}, Merge branches; \u{1F4E6}\uFE0F, Add or update compiled files or packages; \u{1F47D}\uFE0F, Update code due to external API changes; \u{1F69A}, Move or rename resources (e.g.: files, paths, routes); \u{1F4C4}, Add or update license; \u{1F4A5}, Introduce breaking changes; \u{1F371}, Add or update assets; \u267F\uFE0F, Improve accessibility; \u{1F37B}, Write code drunkenly; \u{1F4AC}, Add or update text and literals; \u{1F5C3}\uFE0F, Perform database related changes; \u{1F50A}, Add or update logs; \u{1F507}, Remove logs; \u{1F465}, Add or update contributor(s); \u{1F6B8}, Improve user experience / usability; \u{1F3D7}\uFE0F, Make architectural changes; \u{1F4F1}, Work on responsive design; \u{1F921}, Mock things; \u{1F95A}, Add or update an easter egg; \u{1F648}, Add or update a .gitignore file; \u{1F4F8}, Add or update snapshots; \u2697\uFE0F, Perform experiments; \u{1F50D}\uFE0F, Improve SEO; \u{1F3F7}\uFE0F, Add or update types; \u{1F331}, Add or update seed files; \u{1F6A9}, Add, update, or remove feature flags; \u{1F945}, Catch errors; \u{1F4AB}, Add or update animations and transitions; \u{1F5D1}\uFE0F, Deprecate code that needs to be cleaned up; \u{1F6C2}, Work on code related to authorization, roles and permissions; \u{1FA79}, Simple fix for a non-critical issue; \u{1F9D0}, Data exploration/inspection; \u26B0\uFE0F, Remove dead code; \u{1F9EA}, Add a failing test; \u{1F454}, Add or update business logic; \u{1FA7A}, Add or update healthcheck; \u{1F9F1}, Infrastructure related changes; \u{1F9D1}\u200D\u{1F4BB}, Improve developer experience; \u{1F4B8}, Add sponsorships or money related infrastructure; \u{1F9F5}, Add or update code related to multithreading or concurrency; \u{1F9BA}, Add or update code related to validation." : ""}` : "Do not preface the commit with anything. Conventional commit keywords:fix, feat, build, chore, ci, docs, style, refactor, perf, test."}  
+    ${config7?.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
+    ${config7?.OCO_ONE_LINE_COMMIT ? "Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change." : ""}
     Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`
 });
 var INIT_DIFF_PROMPT = {
@@ -35239,12 +36102,12 @@ var INIT_DIFF_PROMPT = {
 };
 var INIT_CONSISTENCY_PROMPT = (translation4) => ({
   role: import_openai3.ChatCompletionRequestMessageRoleEnum.Assistant,
-  content: `${config6?.OCO_EMOJI ? `\u{1F41B} ${removeConventionalCommitWord(translation4.commitFix)}` : translation4.commitFix}
-${config6?.OCO_EMOJI ? `\u2728 ${removeConventionalCommitWord(translation4.commitFeat)}` : translation4.commitFeat}
-${config6?.OCO_DESCRIPTION ? translation4.commitDescription : ""}`
+  content: `${config7?.OCO_EMOJI ? `\u{1F41B} ${removeConventionalCommitWord(translation4.commitFix)}` : translation4.commitFix}
+${config7?.OCO_EMOJI ? `\u2728 ${removeConventionalCommitWord(translation4.commitFeat)}` : translation4.commitFeat}
+${config7?.OCO_DESCRIPTION ? translation4.commitDescription : ""}`
 });
 var getMainCommitPrompt = async (fullGitMojiSpec) => {
-  switch (config6?.OCO_PROMPT_MODULE) {
+  switch (config7?.OCO_PROMPT_MODULE) {
     case "@commitlint":
       if (!await commitlintLLMConfigExists()) {
         ie(
@@ -35289,9 +36152,9 @@ function mergeDiffs(arr, maxStringLength) {
 }
 
 // src/generateCommitMessageFromGitDiff.ts
-var config7 = getConfig();
-var MAX_TOKENS_INPUT3 = config7?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
-var MAX_TOKENS_OUTPUT3 = config7?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var config8 = getConfig();
+var MAX_TOKENS_INPUT3 = config8?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
+var MAX_TOKENS_OUTPUT3 = config8?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
 var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
@@ -35520,14 +36383,14 @@ var trytm = async (promise) => {
 };
 
 // src/commands/commit.ts
-var config8 = getConfig();
+var config9 = getConfig();
 var getGitRemotes = async () => {
   const { stdout } = await execa("git", ["remote"]);
   return stdout.split("\n").filter((remote) => Boolean(remote.trim()));
 };
 var checkMessageTemplate = (extraArgs2) => {
   for (const key in extraArgs2) {
-    if (extraArgs2[key].includes(config8?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
+    if (extraArgs2[key].includes(config9?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
       return extraArgs2[key];
   }
   return false;
@@ -35542,11 +36405,11 @@ var generateCommitMessageFromGitDiff = async (diff, extraArgs2, fullGitMojiSpec)
       fullGitMojiSpec
     );
     const messageTemplate = checkMessageTemplate(extraArgs2);
-    if (config8?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === "string") {
+    if (config9?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === "string") {
       const messageTemplateIndex = extraArgs2.indexOf(messageTemplate);
       extraArgs2.splice(messageTemplateIndex, 1);
       commitMessage = messageTemplate.replace(
-        config8?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+        config9?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
       );
     }
@@ -35570,7 +36433,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
       ce(`${source_default.green("\u2714")} Successfully committed`);
       ce(stdout);
       const remotes = await getGitRemotes();
-      if (config8?.OCO_GITPUSH === false)
+      if (config9?.OCO_GITPUSH === false)
         return;
       if (!remotes.length) {
         const { stdout: stdout2 } = await execa("git", ["push"]);
@@ -35578,7 +36441,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
           ce(stdout2);
         process.exit(0);
       }
-      if (remotes.length === 1 && config8?.OCO_GITPUSH !== true) {
+      if (remotes.length === 1 && config9?.OCO_GITPUSH !== true) {
         const isPushConfirmedByUser = await Q3({
           message: "Do you want to run `git push`?"
         });
@@ -35827,8 +36690,8 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
     if (!staged)
       return;
     ae("opencommit");
-    const config9 = getConfig();
-    if (!config9?.OCO_OPENAI_API_KEY) {
+    const config10 = getConfig();
+    if (!config10?.OCO_OPENAI_API_KEY) {
       throw new Error(
         "No OPEN_AI_API exists. Set your OPEN_AI_API=<key> in ~/.opencommit"
       );
@@ -35922,6 +36785,22 @@ Z2(
  */
 /*! Based on fetch-blob. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> & David Frank */
 /*! node-domexception. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
+/**
+ * @license
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  * @license
  * web-streams-polyfill v3.3.3
