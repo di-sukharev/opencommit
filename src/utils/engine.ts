@@ -9,21 +9,22 @@ import { Azure } from '../engine/azure';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
+  const provider = config?.OCO_AI_PROVIDER;
   
-  if (config?.OCO_AI_PROVIDER == 'ollama') {
-	const ollamaAi = new OllamaAi();
-	const model = provider.split('/')[1];
+  if (provider == 'ollama') {
+    const ollamaAi = new OllamaAi();
+    const model = provider.split('/')[1];
     if (model) {
       ollamaAi.setModel(model);
     }
     return ollamaAi;
-  } else if (config?.OCO_AI_PROVIDER == 'anthropic') {
+  } else if (provider == 'anthropic') {
     return new AnthropicAi();
-  } else if (config?.OCO_AI_PROVIDER == 'test') {
+  } else if (provider == 'test') {
     return new TestAi();
-  } else if (config?.OCO_AI_PROVIDER == 'gemini') {
+  } else if (provider == 'gemini') {
     return new Gemini();  
-  } else if (config?.OCO_AI_PROVIDER == 'azure') {
+  } else if (provider == 'azure') {
   	return new Azure();
   }
   

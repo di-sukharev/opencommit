@@ -67,20 +67,6 @@ describe('Gemini', () => {
 
     expect(result).toEqual('generated content');
     expect(mockWarmp).toHaveBeenCalled();
-    // expect(mockGenerateContent).toHaveBeenCalledWith({
-    //   contents: [{ parts: [{ text: 'assistant message' }], role: 'assistant' }],
-    //   safetySettings: [
-    //     { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE },
-    //     { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE },
-    //     { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE },
-    //     { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE },
-    //   ],
-    //   generationConfig: {
-    //     maxOutputTokens: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
-    //     temperature: 0,
-    //     topP: 0.1,
-    //   },
-    // });
   });
 
   it('should warmup correctly', () => {
