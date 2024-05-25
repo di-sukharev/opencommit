@@ -100,7 +100,7 @@ function getMessagesPromisesByChangesInFile(
     maxChangeLength
   );
 
-  const lineDiffsWithHeader = [];
+  const lineDiffsWithHeader = [] as string[];
   for (const change of mergedChanges) {
     const totalChange = fileHeader + change;
     if (tokenCount(totalChange) > maxChangeLength) {
@@ -129,7 +129,7 @@ function getMessagesPromisesByChangesInFile(
 
 function splitDiff(diff: string, maxChangeLength: number) {
   const lines = diff.split('\n');
-  const splitDiffs = [];
+  const splitDiffs = [] as string[];
   let currentDiff = '';
 
   if (maxChangeLength <= 0) {
@@ -175,7 +175,7 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
   // merge multiple files-diffs into 1 prompt to save tokens
   const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
 
-  const commitMessagePromises = [];
+  const commitMessagePromises = [] as Promise<string | undefined>[];
 
   for (const fileDiff of mergedFilesDiffs) {
     if (tokenCount(fileDiff) >= maxDiffLength) {

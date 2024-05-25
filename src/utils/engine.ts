@@ -1,19 +1,24 @@
 import { AiEngine } from '../engine/Engine';
-import { api } from '../engine/openAi';
+import { OpenAi } from '../engine/openAi';
+import { Gemini } from '../engine/gemini';
 import { getConfig } from '../commands/config';
-import { ollamaAi } from '../engine/ollama';
-import { anthropicAi } from '../engine/anthropic'
-import { testAi } from '../engine/testAi';
+import { OllamaAi } from '../engine/ollama';
+import { AnthropicAi } from '../engine/anthropic'
+import { TestAi } from '../engine/testAi';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
+  
   if (config?.OCO_AI_PROVIDER == 'ollama') {
-    return ollamaAi;
+    return new OllamaAi();
   } else if (config?.OCO_AI_PROVIDER == 'anthropic') {
-    return anthropicAi;
+    return new AnthropicAi();
   } else if (config?.OCO_AI_PROVIDER == 'test') {
-    return testAi;
+    return new TestAi();
+  } else if (config?.OCO_AI_PROVIDER == 'gemini') {
+    return new Gemini();  
   }
+  
   //open ai gpt by default
-  return api;
+  return new OpenAi();
 }

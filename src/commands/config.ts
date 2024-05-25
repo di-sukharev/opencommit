@@ -14,6 +14,8 @@ import { getI18nLocal } from '../i18n';
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
   OCO_ANTHROPIC_API_KEY = 'OCO_ANTHROPIC_API_KEY',
+  OCO_GEMINI_API_KEY = 'OCO_GEMINI_API_KEY',
+  OCO_GEMINI_BASE_PATH = 'OCO_GEMINI_BASE_PATH',
   OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
   OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
   OCO_OPENAI_BASE_PATH = 'OCO_OPENAI_BASE_PATH',
@@ -34,18 +36,32 @@ export enum CONFIG_MODES {
 }
 
 export const MODEL_LIST = {
-  openai: ['gpt-3.5-turbo',
-          'gpt-3.5-turbo-0125',
-          'gpt-4',
-          'gpt-4-turbo',
-          'gpt-4-1106-preview',
-          'gpt-4-turbo-preview',
-          'gpt-4-0125-preview',
-          'gpt-4o'],
+  
+  openai: [
+    'gpt-3.5-turbo',
+    'gpt-3.5-turbo-0125',
+    'gpt-4',
+    'gpt-4-turbo',
+    'gpt-4-1106-preview',
+    'gpt-4-turbo-preview',
+    'gpt-4-0125-preview',
+    'gpt-4o',
+  ],
 
-  anthropic: ['claude-3-haiku-20240307',
-              'claude-3-sonnet-20240229',
-              'claude-3-opus-20240229']
+  anthropic: [
+    'claude-3-haiku-20240307',
+    'claude-3-sonnet-20240229',
+    'claude-3-opus-20240229',
+  ],
+              
+  gemini: [
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
+    'gemini-1.0-pro',
+    'gemini-pro-vision',
+    'text-embedding-004',
+  ],
+  
 }
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -261,6 +277,7 @@ export const getConfig = ({
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
+    OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
     OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
       ? Number(process.env.OCO_TOKENS_MAX_INPUT)
       : undefined,
@@ -268,6 +285,7 @@ export const getConfig = ({
       ? Number(process.env.OCO_TOKENS_MAX_OUTPUT)
       : undefined,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
+    OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
