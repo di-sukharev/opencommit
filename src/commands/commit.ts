@@ -41,7 +41,8 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
 const generateCommitMessageFromGitDiff = async (
   diff: string,
   extraArgs: string[],
-  fullGitMojiSpec: boolean
+  fullGitMojiSpec: boolean,
+  skipCommitConfirmation: boolean
 ): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
@@ -76,7 +77,7 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser = await confirm({
+    const isCommitConfirmedByUser = skipCommitConfirmation || await confirm({
       message: 'Confirm the commit message?'
     });
 
@@ -154,6 +155,18 @@ ${chalk.grey('——————————————————')}`
         } else outro(`${chalk.gray('✖')} process cancelled`);
       }
     }
+    if (!isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
+      const regenerateMessage = await confirm({
+        message: 'Do you want to regenerate the message ?'
+      });
+      if (regenerateMessage && !isCancel(isCommitConfirmedByUser)) {
+        await generateCommitMessageFromGitDiff(
+          diff,
+          extraArgs,
+          fullGitMojiSpec
+        )
+      }
+    }
   } catch (error) {
     commitSpinner.stop('📝 Commit message generated');
 
@@ -166,7 +179,8 @@ ${chalk.grey('——————————————————')}`
 export async function commit(
   extraArgs: string[] = [],
   isStageAllFlag: Boolean = false,
-  fullGitMojiSpec: boolean = false
+  fullGitMojiSpec: boolean = false,
+  skipCommitConfirmation: boolean = false
 ) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
@@ -238,7 +252,8 @@ export async function commit(
     generateCommitMessageFromGitDiff(
       await getDiff({ files: stagedFiles }),
       extraArgs,
-      fullGitMojiSpec
+      fullGitMojiSpec,
+      skipCommitConfirmation
     )
   );
 

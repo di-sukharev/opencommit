@@ -84,6 +84,14 @@ This is due to limit the number of tokens sent in each request. However, if you 
 oco --fgm
 ```
 
+#### Skip Commit Confirmation
+
+This flag allows users to automatically commit the changes without having to manually confirm the commit message. This is useful for users who want to streamline the commit process and avoid additional steps. To use this flag, you can run the following command:
+
+```
+oco --yes
+```
+
 ## Configuration
 
 ### Local per repo configuration
@@ -97,7 +105,7 @@ OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
-OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'>
+OCO_MODEL=<either 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
@@ -149,6 +157,20 @@ oco config set OCO_MODEL=gpt-4-0125-preview
 ```
 
 Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
+
+### Switch to Azure OpenAI
+
+By default OpenCommit uses [OpenAI](https://openai.com).
+
+You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cognitive-services/openai/)🚀
+
+```sh
+opencommit config set OCO_AI_PROVIDER=azure
+```
+
+Of course need to set 'OPENAI_API_KEY'. And also need to set the
+'OPENAI_BASE_PATH' for the endpoint and set the deployment name to
+'model'.
 
 ### Locale configuration
 

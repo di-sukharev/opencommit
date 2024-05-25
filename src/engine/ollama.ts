@@ -9,10 +9,15 @@ import {
 const config = getConfig();
 
 export class OllamaAi implements AiEngine {
+  private model = "mistral"; // as default model of Ollama
+
+  setModel(model: string) {
+    this.model = model ?? config?.OCO_MODEL ?? 'mistral';
+  }
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> {
-    const model = config?.OCO_MODEL || 'mistral';
+    const model = this.model;
 
     //console.log(messages);
     //process.exit()
@@ -21,7 +26,7 @@ export class OllamaAi implements AiEngine {
     const p = {
       model,
       messages,
-      options: {temperature: 0, top_p: 0.1},
+      options: { temperature: 0, top_p: 0.1 },
       stream: false
     };
     try {
