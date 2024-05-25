@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "target": "ES2023",
     "lib": ["ES5", "ES6"],
 
-    "module": "ESNext",
-    // "rootDir": "./src",
+    "module": "CommonJS",
+    
     "resolveJsonModule": true,
     "moduleResolution": "node",
 
