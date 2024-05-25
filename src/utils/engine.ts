@@ -11,7 +11,7 @@ export function getEngine(): AiEngine {
   const config = getConfig();
   const provider = config?.OCO_AI_PROVIDER;
   
-  if (provider == 'ollama') {
+  if (provider?.startsWith('ollama')) {
     const ollamaAi = new OllamaAi();
     const model = provider.split('/')[1];
     if (model) {
