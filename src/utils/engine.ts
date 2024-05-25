@@ -14,9 +14,8 @@ export function getEngine(): AiEngine {
   if (provider?.startsWith('ollama')) {
     const ollamaAi = new OllamaAi();
     const model = provider.split('/')[1];
-    if (model) {
-      ollamaAi.setModel(model);
-    }
+    if (model) ollamaAi.setModel(model);
+    
     return ollamaAi;
   } else if (provider == 'anthropic') {
     return new AnthropicAi();

@@ -12,7 +12,7 @@ export class OllamaAi implements AiEngine {
   private model = "mistral"; // as default model of Ollama
 
   setModel(model: string) {
-    this.model = model;
+    this.model = model ?? config?.OCO_MODEL ?? 'mistral';
   }
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
