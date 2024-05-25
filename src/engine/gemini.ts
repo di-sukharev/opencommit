@@ -39,8 +39,8 @@ export class Gemini implements AiEngine {
       systemInstruction,
     });
     
-    const contents = messages.filter(m => m.role !== 'user' && m.role !== 'system')
-      .map(m => ({ parts: [{ text: m.content } as Part], role: m.role } as Content));
+    const contents = messages.filter(m => m.role !== 'system')
+      .map(m => ({ parts: [{ text: m.content } as Part], role: m.role == 'user' ? m.role : 'model', } as Content));
       
     try {
       const result = await this.ai.generateContent({
@@ -114,7 +114,7 @@ export class Gemini implements AiEngine {
       process.exit(1);
     }
     
-    this.model = this.config.OCO_MODEL || 'gemini-1.5-flash';
+    this.model = this.config.OCO_MODEL || MODEL_LIST.gemini[0];
     
     if (provider === 'gemini' &&
       !MODEL_LIST.gemini.includes(this.model) &&

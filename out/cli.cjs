@@ -29485,6 +29485,8 @@ var getDefaultModel = (provider3) => {
       return "";
     case "anthropic":
       return MODEL_LIST.anthropic[0];
+    case "gemini":
+      return MODEL_LIST.gemini[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -33754,7 +33756,7 @@ var Gemini = class {
       model: this.model,
       systemInstruction
     });
-    const contents = messages.filter((m5) => m5.role !== "user" && m5.role !== "system").map((m5) => ({ parts: [{ text: m5.content }], role: m5.role }));
+    const contents = messages.filter((m5) => m5.role !== "system").map((m5) => ({ parts: [{ text: m5.content }], role: m5.role == "user" ? m5.role : "model" }));
     try {
       const result = await this.ai.generateContent({
         contents,
@@ -33814,7 +33816,7 @@ var Gemini = class {
       );
       process.exit(1);
     }
-    this.model = this.config.OCO_MODEL || "gemini-1.5-flash";
+    this.model = this.config.OCO_MODEL || MODEL_LIST.gemini[0];
     if (provider3 === "gemini" && !MODEL_LIST.gemini.includes(this.model) && command3 !== "config" && mode3 !== "set" /* set */) {
       ce(
         `${source_default.red("\u2716")} Unsupported model ${this.model} for Gemini. Supported models are: ${MODEL_LIST.gemini.join(

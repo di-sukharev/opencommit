@@ -70,6 +70,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return '';
     case 'anthropic':
       return MODEL_LIST.anthropic[0];
+    case 'gemini':
+      return MODEL_LIST.gemini[0];
     default:
       return MODEL_LIST.openai[0];
   }
