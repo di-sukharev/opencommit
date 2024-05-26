@@ -35038,10 +35038,10 @@ var OllamaAi = class {
     this.model = "mistral";
   }
   setModel(model) {
-    this.model = model;
+    this.model = model ?? config4?.OCO_MODEL ?? "mistral";
   }
   async generateCommitMessage(messages) {
-    const model = config4?.OCO_MODEL || "mistral";
+    const model = this.model;
     const url2 = "http://localhost:11434/api/chat";
     const p4 = {
       model,
@@ -40943,12 +40943,11 @@ var azure = new Azure();
 function getEngine() {
   const config11 = getConfig();
   const provider4 = config11?.OCO_AI_PROVIDER;
-  if (provider4 == "ollama") {
+  if (provider4?.startsWith("ollama")) {
     const ollamaAi = new OllamaAi();
     const model = provider4.split("/")[1];
-    if (model) {
+    if (model)
       ollamaAi.setModel(model);
-    }
     return ollamaAi;
   } else if (provider4 == "anthropic") {
     return new AnthropicAi();
