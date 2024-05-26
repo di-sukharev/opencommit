@@ -52,7 +52,8 @@
     "test:docker-build": "docker build -t oco-test -f test/Dockerfile .",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest test/unit",
     "test:unit:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:unit",
-    "test:e2e": "jest test/e2e",
+    "test:e2e": "npm run test:e2e:setup && jest test/e2e",
+    "test:e2e:setup": "sh test/e2e/setup.sh",
     "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e"
   },
   "devDependencies": {
