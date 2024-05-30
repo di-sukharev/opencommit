@@ -70,6 +70,11 @@ You can also run it with local model through ollama:
 git add <files...>
 OCO_AI_PROVIDER='ollama' opencommit
 ```
+If you want to use a model other than mistral, you can do so by setting the `OCO_AI_PROVIDER` environment variable as follows:
+
+```sh
+OCO_AI_PROVIDER='ollama/llama3:8b' opencommit
+```
 
 ### Flags
 
@@ -110,6 +115,7 @@ OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
+OCO_AI_PROVIDER=<anthropic, azure, ollama or ollama/model default ollama model: mistral>
 ```
 
 ### Global config for all repos
