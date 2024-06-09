@@ -9,4 +9,3 @@ export class TestAi implements AiEngine {
   }
 }
 
-export const testAi = new TestAi();

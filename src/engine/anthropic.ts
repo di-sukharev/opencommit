@@ -59,7 +59,7 @@ if (provider === 'anthropic' &&
   process.exit(1);
 }
 
-class AnthropicAi implements AiEngine {
+export class AnthropicAi implements AiEngine {
   private anthropicAiApiConfiguration = {
     apiKey: apiKey
   };
@@ -120,5 +120,3 @@ class AnthropicAi implements AiEngine {
     }
   };
 }
-
-export const anthropicAi = new AnthropicAi();

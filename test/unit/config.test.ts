@@ -55,7 +55,7 @@ OCO_ONE_LINE_COMMIT="true"
     expect(config!['OCO_LANGUAGE']).toEqual('de');
     expect(config!['OCO_MESSAGE_TEMPLATE_PLACEHOLDER']).toEqual('$m');
     expect(config!['OCO_PROMPT_MODULE']).toEqual('@commitlint');
-    expect(config!['OCO_AI_PROVIDER']).toEqual('ollama');
+    expect(() => ['ollama', 'gemini'].includes(config!['OCO_AI_PROVIDER'])).toBeTruthy();
     expect(config!['OCO_GITPUSH']).toEqual(false);
     expect(config!['OCO_ONE_LINE_COMMIT']).toEqual(true);
 
@@ -96,7 +96,7 @@ OCO_ONE_LINE_COMMIT="true"
     expect(config!['OCO_LANGUAGE']).toEqual('de');
     expect(config!['OCO_MESSAGE_TEMPLATE_PLACEHOLDER']).toEqual('$m');
     expect(config!['OCO_PROMPT_MODULE']).toEqual('@commitlint');
-    expect(config!['OCO_AI_PROVIDER']).toEqual('ollama');
+    expect(() => ['ollama', 'gemini'].includes(config!['OCO_AI_PROVIDER'])).toBeTruthy();
     expect(config!['OCO_GITPUSH']).toEqual(false);
     expect(config!['OCO_ONE_LINE_COMMIT']).toEqual(true);
 

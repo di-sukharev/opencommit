@@ -54,7 +54,7 @@ if (
 
 const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
 
-class Azure implements AiEngine {
+export class Azure implements AiEngine {
   private openAI!: OpenAIClient;
 
   constructor() {
