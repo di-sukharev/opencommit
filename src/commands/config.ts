@@ -28,6 +28,7 @@ export enum CONFIG_KEYS {
   OCO_GITPUSH = 'OCO_GITPUSH',
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT'
+  OCO_OLLAMA_API_URL = 'OCO_API_URL',
 }
 
 export enum CONFIG_MODES {
@@ -268,6 +269,14 @@ export const configValidators = {
       'Must be in format "https://<resource name>.openai.azure.com/"'
     );
 
+    return value;
+  },
+  [CONFIG_KEYS.OCO_OLLAMA_API_URL](value: any) { // add simple api validator
+    validateConfig(
+      CONFIG_KEYS.OCO_API_URL,
+      typeof value === 'string' && value.startsWith('http'),
+      `${value} is not a valid URL`
+    );
     return value;
   },
 };
