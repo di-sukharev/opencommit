@@ -70,6 +70,13 @@ You can also run it with local model through ollama:
 git add <files...>
 OCO_AI_PROVIDER='ollama' opencommit
 ```
+if you have ollama that is set up in docker/ on another machine with GPUs (not locally), you can change the default endpoint url.
+You can do so by setting the `OCO_OLLAMA_API_URL` environment variable as follows:
+
+```sh
+OCO_OLLAMA_API_URL='http://192.168.1.10:11434/api/chat' opencommit
+```
+where 192.168.1.10 is example of endpoint URL, where you have ollama set up.
 
 ### Flags
 
