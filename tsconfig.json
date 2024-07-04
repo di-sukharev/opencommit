@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["ES5", "ES6"],
+    "target": "ES2020",
+    "lib": ["ES6", "ES2020"],
 
-    "module": "ESNext",
-    // "rootDir": "./src",
+    "module": "CommonJS",
+    
     "resolveJsonModule": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
 
     "allowJs": true,
 
