@@ -219,7 +219,7 @@ Replace `<module>` with either `conventional-commit` or `@commitlint`.
 
 #### Example:
 
-To switch to using th` '@commitlint` prompt module, run:
+To switch to using the `'@commitlint` prompt module, run:
 
 ```sh
 oco config set OCO_PROMPT_MODULE=@commitlint
