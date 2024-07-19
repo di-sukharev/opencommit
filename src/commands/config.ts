@@ -44,7 +44,9 @@ export const MODEL_LIST = {
           'gpt-4-1106-preview',
           'gpt-4-turbo-preview',
           'gpt-4-0125-preview',
-          'gpt-4o'],
+          'gpt-4o',
+          'gpt-4o-mini',
+          'gpt-4o-mini-2024-07-18'],
 
   anthropic: ['claude-3-haiku-20240307',
               'claude-3-sonnet-20240229',
