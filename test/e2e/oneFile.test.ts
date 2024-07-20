@@ -10,7 +10,6 @@ it('cli flow to generate commit message for 1 new file (staged)', async () => {
   await render('git' ,['add index.ts'], { cwd: gitDir });
 
   const { queryByText, findByText, userEvent } = await render(`OCO_AI_PROVIDER='test' node`, [resolve('./out/cli.cjs')], { cwd: gitDir });
-
   expect(await queryByText('No files are staged')).not.toBeInTheConsole();
   expect(await queryByText('Do you want to stage all files and generate commit message?')).not.toBeInTheConsole();
 

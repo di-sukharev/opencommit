@@ -66,7 +66,8 @@ if (provider === 'openai' &&
   process.exit(1);
 }
 
-class OpenAi implements AiEngine {
+export class OpenAi implements AiEngine {
+  
   private openAiApiConfiguration = new OpenAiApiConfiguration({
     apiKey: apiKey
   });
@@ -91,7 +92,7 @@ class OpenAi implements AiEngine {
     };
     try {
       const REQUEST_TOKENS = messages
-        .map((msg) => tokenCount(msg.content) + 4)
+        .map((msg) => tokenCount(msg.content as string) + 4)
         .reduce((a, b) => a + b, 0);
 
       if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
@@ -124,6 +125,6 @@ class OpenAi implements AiEngine {
       throw err;
     }
   };
+  
 }
 
-export const api = new OpenAi();

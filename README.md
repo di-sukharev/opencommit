@@ -58,7 +58,7 @@ git add <files...>
 oco
 ```
 
-Link to the GitMoji specification: https://gitmoji.dev/
+### Running locally with Ollama
 
 You can also run it with local model through ollama:
 
@@ -70,12 +70,20 @@ You can also run it with local model through ollama:
 git add <files...>
 OCO_AI_PROVIDER='ollama' opencommit
 ```
+
+If you want to use a model other than mistral, you can do so by setting the `OCO_AI_PROVIDER` environment variable as follows:
+
+```sh
+OCO_AI_PROVIDER='ollama/llama3:8b' opencommit
+```
+
 if you have ollama that is set up in docker/ on another machine with GPUs (not locally), you can change the default endpoint url.
 You can do so by setting the `OCO_OLLAMA_API_URL` environment variable as follows:
 
 ```sh
 OCO_OLLAMA_API_URL='http://192.168.1.10:11434/api/chat' opencommit
 ```
+
 where 192.168.1.10 is example of endpoint URL, where you have ollama set up.
 
 ### Flags
@@ -83,6 +91,8 @@ where 192.168.1.10 is example of endpoint URL, where you have ollama set up.
 There are multiple optional flags that can be used with the `oco` command:
 
 #### Use Full GitMoji Specification
+
+Link to the GitMoji specification: https://gitmoji.dev/
 
 This flag can only be used if the `OCO_EMOJI` configuration item is set to `true`. This flag allows users to use all emojis in the GitMoji specification, By default, the GitMoji full specification is set to `false`, which only includes 10 emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡).
 This is due to limit the number of tokens sent in each request. However, if you would like to use the full GitMoji specification, you can use the `--fgm` flag.
@@ -112,11 +122,12 @@ OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
-OCO_MODEL=<either 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'>
+OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
+OCO_AI_PROVIDER=<anthropic, azure, ollama or ollama/model default ollama model: mistral>
 ```
 
 ### Global config for all repos
@@ -126,7 +137,7 @@ Local config still has more priority than Global config, but you may set `OCO_MO
 Simply set any of the variables above like this:
 
 ```sh
-oco config set OCO_MODEL=gpt-4
+oco config set OCO_MODEL=gpt-4o
 ```
 
 Configure [GitMoji](https://gitmoji.dev/) to preface a message.
@@ -143,7 +154,7 @@ oco config set OCO_EMOJI=false
 
 ### Switch to GPT-4 or other models
 
-By default, OpenCommit uses `gpt-3.5-turbo` model.
+By default, OpenCommit uses `gpt-4o` model.
 
 You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
 
@@ -154,16 +165,8 @@ oco config set OCO_MODEL=gpt-4
 or for as a cheaper option:
 
 ```sh
-oco config set OCO_MODEL=gpt-3.5-turbo
+oco config set OCO_MODEL=gpt-4o-mini
 ```
-
-or for GPT-4 Turbo (Preview) which is more capable, has knowledge of world events up to April 2023, a 128k context window and 2-3x cheaper vs GPT-4:
-
-```sh
-oco config set OCO_MODEL=gpt-4-0125-preview
-```
-
-Make sure that you spell it `gpt-4` (lowercase) and that you have API access to the 4th model. Even if you have ChatGPT+, that doesn't necessarily mean that you have API access to GPT-4.
 
 ### Switch to Azure OpenAI
 
@@ -220,7 +223,7 @@ Replace `<module>` with either `conventional-commit` or `@commitlint`.
 
 #### Example:
 
-To switch to using th` '@commitlint` prompt module, run:
+To switch to using the `'@commitlint` prompt module, run:
 
 ```sh
 oco config set OCO_PROMPT_MODULE=@commitlint
@@ -388,7 +391,7 @@ jobs:
           OCO_OPENAI_BASE_PATH: ''
           OCO_DESCRIPTION: false
           OCO_EMOJI: false
-          OCO_MODEL: gpt-3.5-turbo
+          OCO_MODEL: gpt-4o
           OCO_LANGUAGE: en
           OCO_PROMPT_MODULE: conventional-commit
 ```

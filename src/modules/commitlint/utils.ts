@@ -20,8 +20,8 @@ export const getJSONBlock = (input: string): string => {
   const jsonIndex = input.search('```json');
   if (jsonIndex > -1) {
     input = input.slice(jsonIndex + 8);
-    const endJsonIndex = consistency.search('```');
-    input = input.slice(0, endJsonIndex);
+    const endJsonIndex = input.search('```');
+    input = input.slice(0, endJsonIndex); 
   }
   return input;
 };
