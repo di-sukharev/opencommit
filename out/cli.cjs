@@ -34,7 +34,7 @@ var require_windows = __commonJS({
   "node_modules/isexe/windows.js"(exports, module2) {
     module2.exports = isexe;
     isexe.sync = sync;
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     function checkPathExt(path5, options) {
       var pathext = options.pathExt !== void 0 ? options.pathExt : process.env.PATHEXT;
       if (!pathext) {
@@ -59,12 +59,12 @@ var require_windows = __commonJS({
       return checkPathExt(path5, options);
     }
     function isexe(path5, options, cb) {
-      fs5.stat(path5, function(er2, stat) {
+      fs6.stat(path5, function(er2, stat) {
         cb(er2, er2 ? false : checkStat(stat, path5, options));
       });
     }
     function sync(path5, options) {
-      return checkStat(fs5.statSync(path5), path5, options);
+      return checkStat(fs6.statSync(path5), path5, options);
     }
   }
 });
@@ -74,14 +74,14 @@ var require_mode = __commonJS({
   "node_modules/isexe/mode.js"(exports, module2) {
     module2.exports = isexe;
     isexe.sync = sync;
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     function isexe(path5, options, cb) {
-      fs5.stat(path5, function(er2, stat) {
+      fs6.stat(path5, function(er2, stat) {
         cb(er2, er2 ? false : checkStat(stat, options));
       });
     }
     function sync(path5, options) {
-      return checkStat(fs5.statSync(path5), options);
+      return checkStat(fs6.statSync(path5), options);
     }
     function checkStat(stat, options) {
       return stat.isFile() && checkMode(stat, options);
@@ -105,7 +105,7 @@ var require_mode = __commonJS({
 // node_modules/isexe/index.js
 var require_isexe = __commonJS({
   "node_modules/isexe/index.js"(exports, module2) {
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     var core;
     if (process.platform === "win32" || global.TESTING_WINDOWS) {
       core = require_windows();
@@ -367,16 +367,16 @@ var require_shebang_command = __commonJS({
 var require_readShebang = __commonJS({
   "node_modules/cross-spawn/lib/util/readShebang.js"(exports, module2) {
     "use strict";
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     var shebangCommand = require_shebang_command();
     function readShebang(command4) {
       const size = 150;
       const buffer = Buffer.alloc(size);
       let fd;
       try {
-        fd = fs5.openSync(command4, "r");
-        fs5.readSync(fd, buffer, 0, size, 0);
-        fs5.closeSync(fd);
+        fd = fs6.openSync(command4, "r");
+        fs6.readSync(fd, buffer, 0, size, 0);
+        fs6.closeSync(fd);
       } catch (e3) {
       }
       return shebangCommand(buffer.toString());
@@ -14177,7 +14177,7 @@ var require_form_data = __commonJS({
     var http3 = require("http");
     var https3 = require("https");
     var parseUrl = require("url").parse;
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     var Stream2 = require("stream").Stream;
     var mime = require_mime_types();
     var asynckit = require_asynckit();
@@ -14242,7 +14242,7 @@ var require_form_data = __commonJS({
         if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
           callback(null, value.end + 1 - (value.start ? value.start : 0));
         } else {
-          fs5.stat(value.path, function(err, stat) {
+          fs6.stat(value.path, function(err, stat) {
             var fileSize;
             if (err) {
               callback(err);
@@ -14618,7 +14618,7 @@ var require_package2 = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports, module2) {
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     var path5 = require("path");
     var os4 = require("os");
     var crypto2 = require("crypto");
@@ -14725,7 +14725,7 @@ var require_main = __commonJS({
       if (options && options.path && options.path.length > 0) {
         if (Array.isArray(options.path)) {
           for (const filepath of options.path) {
-            if (fs5.existsSync(filepath)) {
+            if (fs6.existsSync(filepath)) {
               possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
             }
           }
@@ -14735,7 +14735,7 @@ var require_main = __commonJS({
       } else {
         possibleVaultPath = path5.resolve(process.cwd(), ".env.vault");
       }
-      if (fs5.existsSync(possibleVaultPath)) {
+      if (fs6.existsSync(possibleVaultPath)) {
         return possibleVaultPath;
       }
       return null;
@@ -14779,7 +14779,7 @@ var require_main = __commonJS({
       const parsedAll = {};
       for (const path6 of optionPaths) {
         try {
-          const parsed = DotenvModule.parse(fs5.readFileSync(path6, { encoding }));
+          const parsed = DotenvModule.parse(fs6.readFileSync(path6, { encoding }));
           DotenvModule.populate(parsedAll, parsed, options);
         } catch (e3) {
           if (debug2) {
@@ -15569,7 +15569,7 @@ var require_tiktoken = __commonJS({
     var imports = {};
     imports["./tiktoken_bg.js"] = wasm;
     var path5 = require("path");
-    var fs5 = require("fs");
+    var fs6 = require("fs");
     var candidates = __dirname.split(path5.sep).reduce((memo, _7, index, array) => {
       const prefix = array.slice(0, index + 1).join(path5.sep) + path5.sep;
       if (!prefix.includes("node_modules" + path5.sep)) {
@@ -15589,7 +15589,7 @@ var require_tiktoken = __commonJS({
     var bytes = null;
     for (const candidate of candidates) {
       try {
-        bytes = fs5.readFileSync(candidate);
+        bytes = fs6.readFileSync(candidate);
         break;
       } catch {
       }
@@ -28111,7 +28111,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.15",
+  version: "3.0.16",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -28165,7 +28165,8 @@ var package_default = {
     "test:docker-build": "docker build -t oco-test -f test/Dockerfile .",
     "test:unit": "NODE_OPTIONS=--experimental-vm-modules jest test/unit",
     "test:unit:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:unit",
-    "test:e2e": "jest test/e2e",
+    "test:e2e": "npm run test:e2e:setup && jest test/e2e",
+    "test:e2e:setup": "sh test/e2e/setup.sh",
     "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e"
   },
   devDependencies: {
@@ -30631,17 +30632,59 @@ function getI18nLocal(value) {
   return false;
 }
 
+// src/engine/testAi.ts
+var TEST_MOCK_TYPES = [
+  "commit-message",
+  "prompt-module-commitlint-config"
+];
+var TestAi = class {
+  async generateCommitMessage(_messages) {
+    const config11 = getConfig();
+    switch (config11?.OCO_TEST_MOCK_TYPE) {
+      case "commit-message":
+        return "fix(testAi.ts): test commit message";
+      case "prompt-module-commitlint-config":
+        return `{
+  "localLanguage": "english",
+  "commitFix": "fix(server): Change 'port' variable to uppercase 'PORT'",
+  "commitFeat": "feat(server): Allow server to listen on a port specified through environment variable",
+  "commitDescription": "Change 'port' variable to uppercase 'PORT'. Allow server to listen on a port specified through environment variable."
+}`;
+      default:
+        throw Error("unsupported test mock type");
+    }
+  }
+};
+
 // src/commands/config.ts
 var MODEL_LIST = {
   openai: [
     "gpt-3.5-turbo",
+    "gpt-3.5-turbo-instruct",
+    "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-0301",
+    "gpt-3.5-turbo-1106",
     "gpt-3.5-turbo-0125",
+    "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-16k-0613",
+    "gpt-3.5-turbo-16k-0301",
     "gpt-4",
-    "gpt-4-turbo",
+    "gpt-4-0314",
+    "gpt-4-0613",
     "gpt-4-1106-preview",
-    "gpt-4-turbo-preview",
     "gpt-4-0125-preview",
-    "gpt-4o"
+    "gpt-4-turbo-preview",
+    "gpt-4-vision-preview",
+    "gpt-4-1106-vision-preview",
+    "gpt-4-turbo",
+    "gpt-4-turbo-2024-04-09",
+    "gpt-4-32k",
+    "gpt-4-32k-0314",
+    "gpt-4-32k-0613",
+    "gpt-4o",
+    "gpt-4o-2024-05-13",
+    "gpt-4o-mini",
+    "gpt-4o-mini-2024-07-18"
   ],
   anthropic: [
     "claude-3-haiku-20240307",
@@ -30696,14 +30739,6 @@ var configValidators = {
     validateConfig(
       "ANTHROPIC_API_KEY",
       value || config11.OCO_OPENAI_API_KEY || config11.OCO_AZURE_API_KEY || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "test",
-      "You need to provide an OpenAI/Anthropic/Azure API key"
-    );
-    return value;
-  },
-  ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config11 = {}) {
-    validateConfig(
-      "ANTHROPIC_API_KEY",
-      value || config11.OCO_OPENAI_API_KEY || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic/Azure API key"
     );
     return value;
@@ -30793,10 +30828,18 @@ var configValidators = {
   ["OCO_MODEL" /* OCO_MODEL */](value, config11 = {}) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].includes(value) || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "azure" || config11.OCO_AI_PROVIDER == "test",
+      [
+        ...MODEL_LIST.openai,
+        ...MODEL_LIST.anthropic,
+        ...MODEL_LIST.gemini
+      ].includes(value) || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "azure" || config11.OCO_AI_PROVIDER == "test",
       `${value} is not supported yet, use:
 
- ${[...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].join("\n")}`
+ ${[
+        ...MODEL_LIST.openai,
+        ...MODEL_LIST.anthropic,
+        ...MODEL_LIST.gemini
+      ].join("\n")}`
     );
     return value;
   },
@@ -30827,14 +30870,7 @@ var configValidators = {
   ["OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */](value) {
     validateConfig(
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
-      [
-        "",
-        "openai",
-        "anthropic",
-        "gemini",
-        "azure",
-        "test"
-      ].includes(value) || value.startsWith("ollama"),
+      ["", "openai", "anthropic", "gemini", "azure", "test"].includes(value) || value.startsWith("ollama"),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini' or 'openai' (default)`
     );
     return value;
@@ -30852,6 +30888,24 @@ var configValidators = {
       "OCO_AZURE_ENDPOINT" /* OCO_AZURE_ENDPOINT */,
       value.includes("openai.azure.com"),
       'Must be in format "https://<resource name>.openai.azure.com/"'
+    );
+    return value;
+  },
+  ["OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */](value) {
+    validateConfig(
+      "OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */,
+      TEST_MOCK_TYPES.includes(value),
+      `${value} is not supported yet, use ${TEST_MOCK_TYPES.map(
+        (t2) => `'${t2}'`
+      ).join(", ")}`
+    );
+    return value;
+  },
+  ["OCO_OLLAMA_API_URL" /* OCO_OLLAMA_API_URL */](value) {
+    validateConfig(
+      "OCO_API_URL" /* OCO_API_URL */,
+      typeof value === "string" && value.startsWith("http"),
+      `${value} is not a valid URL`
     );
     return value;
   }
@@ -30881,7 +30935,8 @@ var getConfig = ({
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || "openai",
     OCO_GITPUSH: process.env.OCO_GITPUSH === "false" ? false : true,
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || ""
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || "",
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message"
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -31117,15 +31172,38 @@ var commitlintPrompts = {
 };
 
 // src/modules/commitlint/pwd-commitlint.ts
+var import_promises = __toESM(require("fs/promises"), 1);
 var import_path2 = __toESM(require("path"), 1);
-var nodeModulesPath = import_path2.default.join(
-  process.env.PWD || process.cwd(),
-  "node_modules",
-  "@commitlint",
-  "load"
-);
+var getCommitLintModuleType = async () => {
+  const packageFile = "node_modules/@commitlint/load/package.json";
+  const packageJsonPath = import_path2.default.join(
+    process.env.PWD || process.cwd(),
+    packageFile
+  );
+  const packageJson = JSON.parse(await import_promises.default.readFile(packageJsonPath, "utf8"));
+  if (!packageJson) {
+    throw new Error(`Failed to parse ${packageFile}`);
+  }
+  return packageJson.type === "module" ? "esm" : "cjs";
+};
 var getCommitLintPWDConfig = async () => {
-  const load = require(nodeModulesPath).default;
+  let load, nodeModulesPath;
+  switch (await getCommitLintModuleType()) {
+    case "cjs":
+      nodeModulesPath = import_path2.default.join(
+        process.env.PWD || process.cwd(),
+        "node_modules/@commitlint/load"
+      );
+      load = require(nodeModulesPath).default;
+      break;
+    case "esm":
+      nodeModulesPath = import_path2.default.join(
+        process.env.PWD || process.cwd(),
+        "node_modules/@commitlint/load/lib/load.js"
+      );
+      load = (await import(nodeModulesPath)).default;
+      break;
+  }
   if (load && typeof load === "function") {
     return await load();
   }
@@ -31133,7 +31211,7 @@ var getCommitLintPWDConfig = async () => {
 };
 
 // src/modules/commitlint/utils.ts
-var import_promises = __toESM(require("fs/promises"), 1);
+var import_promises2 = __toESM(require("fs/promises"), 1);
 var removeDoubleNewlines = (input) => {
   const pattern = /\\n\\n/g;
   if (pattern.test(input)) {
@@ -31146,7 +31224,7 @@ var getJSONBlock = (input) => {
   const jsonIndex = input.search("```json");
   if (jsonIndex > -1) {
     input = input.slice(jsonIndex + 8);
-    const endJsonIndex = consistency.search("```");
+    const endJsonIndex = input.search("```");
     input = input.slice(0, endJsonIndex);
   }
   return input;
@@ -31154,7 +31232,7 @@ var getJSONBlock = (input) => {
 var commitlintLLMConfigExists = async () => {
   let exists;
   try {
-    await import_promises.default.access(COMMITLINT_LLM_CONFIG_PATH);
+    await import_promises2.default.access(COMMITLINT_LLM_CONFIG_PATH);
     exists = true;
   } catch (e3) {
     exists = false;
@@ -31162,13 +31240,13 @@ var commitlintLLMConfigExists = async () => {
   return exists;
 };
 var writeCommitlintLLMConfig = async (commitlintLLMConfig) => {
-  await import_promises.default.writeFile(
+  await import_promises2.default.writeFile(
     COMMITLINT_LLM_CONFIG_PATH,
     JSON.stringify(commitlintLLMConfig, null, 2)
   );
 };
 var getCommitlintLLMConfig = async () => {
-  const content = await import_promises.default.readFile(COMMITLINT_LLM_CONFIG_PATH);
+  const content = await import_promises2.default.readFile(COMMITLINT_LLM_CONFIG_PATH);
   const commitLintLLMConfig = JSON.parse(
     content.toString()
   );
@@ -35036,13 +35114,17 @@ var config4 = getConfig();
 var OllamaAi = class {
   constructor() {
     this.model = "mistral";
+    this.url = "http://localhost:11434/api/chat";
   }
   setModel(model) {
     this.model = model ?? config4?.OCO_MODEL ?? "mistral";
   }
+  setUrl(url2) {
+    this.url = url2 ?? config4?.OCO_OLLAMA_API_URL ?? "http://localhost:11434/api/chat";
+  }
   async generateCommitMessage(messages) {
     const model = this.model;
-    const url2 = "http://localhost:11434/api/chat";
+    const url2 = this.url;
     const p4 = {
       model,
       messages,
@@ -37218,13 +37300,6 @@ var AnthropicAi = class {
       }
     };
     this.anthropicAI = new sdk_default(this.anthropicAiApiConfiguration);
-  }
-};
-
-// src/engine/testAi.ts
-var TestAi = class {
-  async generateCommitMessage(messages) {
-    return "test commit message";
   }
 };
 
@@ -40968,7 +41043,16 @@ var configureCommitlintIntegration = async (force = false) => {
   const spin = le();
   spin.start("Loading @commitlint configuration");
   const fileExists = await commitlintLLMConfigExists();
-  let commitLintConfig = await getCommitLintPWDConfig();
+  const commitLintConfig = await getCommitLintPWDConfig();
+  if (commitLintConfig === null) {
+    throw new Error(
+      `Failed to load @commitlint config. Please check the following:
+      * @commitlint >= 9.0.0 is installed in the local directory.
+      * 'node_modules/@commitlint/load' package exists.
+      * A valid @commitlint configuration exists.
+      `
+    );
+  }
   const hash = await computeHash(JSON.stringify(commitLintConfig));
   spin.stop(`Read @commitlint configuration (hash: ${hash})`);
   if (fileExists) {
@@ -40984,16 +41068,16 @@ var configureCommitlintIntegration = async (force = false) => {
   const prompts = inferPromptsFromCommitlintConfig(commitLintConfig);
   const consistencyPrompts = commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
   const engine = getEngine();
-  let consistency2 = await engine.generateCommitMessage(consistencyPrompts) || "{}";
-  prompts.forEach((prompt) => consistency2 = consistency2.replace(prompt, ""));
-  consistency2 = getJSONBlock(consistency2);
-  consistency2 = removeDoubleNewlines(consistency2);
+  let consistency = await engine.generateCommitMessage(consistencyPrompts) || "{}";
+  prompts.forEach((prompt) => consistency = consistency.replace(prompt, ""));
+  consistency = getJSONBlock(consistency);
+  consistency = removeDoubleNewlines(consistency);
   const commitlintLLMConfig = {
     hash,
     prompts,
     consistency: {
       [translation2.localLanguage]: {
-        ...JSON.parse(consistency2)
+        ...JSON.parse(consistency)
       }
     }
   };
@@ -41546,7 +41630,7 @@ var commitlintConfigCommand = G3(
 
 // src/commands/githook.ts
 var import_fs4 = require("fs");
-var import_promises2 = __toESM(require("fs/promises"), 1);
+var import_promises3 = __toESM(require("fs/promises"), 1);
 var import_path4 = __toESM(require("path"), 1);
 var HOOK_NAME = "prepare-commit-msg";
 var DEFAULT_SYMLINK_URL = import_path4.default.join(".git", "hooks", HOOK_NAME);
@@ -41582,7 +41666,7 @@ var hookCommand = G3(
         if (await isHookExists()) {
           let realPath;
           try {
-            realPath = await import_promises2.default.realpath(SYMLINK_URL);
+            realPath = await import_promises3.default.realpath(SYMLINK_URL);
           } catch (error) {
             ce(error);
             realPath = null;
@@ -41593,9 +41677,9 @@ var hookCommand = G3(
             `Different ${HOOK_NAME} is already set. Remove it before setting opencommit as '${HOOK_NAME}' hook.`
           );
         }
-        await import_promises2.default.mkdir(import_path4.default.dirname(SYMLINK_URL), { recursive: true });
-        await import_promises2.default.symlink(HOOK_URL, SYMLINK_URL, "file");
-        await import_promises2.default.chmod(SYMLINK_URL, 493);
+        await import_promises3.default.mkdir(import_path4.default.dirname(SYMLINK_URL), { recursive: true });
+        await import_promises3.default.symlink(HOOK_URL, SYMLINK_URL, "file");
+        await import_promises3.default.chmod(SYMLINK_URL, 493);
         return ce(`${source_default.green("\u2714")} Hook set`);
       }
       if (mode4 === "unset") {
@@ -41607,13 +41691,13 @@ var hookCommand = G3(
             `OpenCommit wasn't previously set as '${HOOK_NAME}' hook, nothing to remove`
           );
         }
-        const realpath = await import_promises2.default.realpath(SYMLINK_URL);
+        const realpath = await import_promises3.default.realpath(SYMLINK_URL);
         if (realpath !== HOOK_URL) {
           return ce(
             `OpenCommit wasn't previously set as '${HOOK_NAME}' hook, but different hook was, if you want to remove it \u2014 do it manually`
           );
         }
-        await import_promises2.default.rm(SYMLINK_URL);
+        await import_promises3.default.rm(SYMLINK_URL);
         return ce(`${source_default.green("\u2714")} Hook is removed`);
       }
       throw new Error(
@@ -41627,7 +41711,7 @@ var hookCommand = G3(
 );
 
 // src/commands/prepare-commit-msg-hook.ts
-var import_promises3 = __toESM(require("fs/promises"), 1);
+var import_promises4 = __toESM(require("fs/promises"), 1);
 var [messageFilePath, commitSource] = process.argv.slice(2);
 var prepareCommitMessageHook = async (isStageAllFlag = false) => {
   try {
@@ -41663,8 +41747,8 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
       await getDiff({ files: staged })
     );
     spin.stop("Done");
-    const fileContent = await import_promises3.default.readFile(messageFilePath);
-    await import_promises3.default.writeFile(
+    const fileContent = await import_promises4.default.readFile(messageFilePath);
+    await import_promises4.default.writeFile(
       messageFilePath,
       commitMessage + "\n" + fileContent.toString()
     );

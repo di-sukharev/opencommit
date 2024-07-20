@@ -10,9 +10,14 @@ const config = getConfig();
 
 export class OllamaAi implements AiEngine {
   private model = "mistral"; // as default model of Ollama
+  private url = "http://localhost:11434/api/chat"; // default URL of Ollama API
 
   setModel(model: string) {
     this.model = model ?? config?.OCO_MODEL ?? 'mistral';
+  }
+  
+  setUrl(url: string) {
+    this.url = url ?? config?.OCO_OLLAMA_API_URL ?? 'http://localhost:11434/api/chat';
   }
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
@@ -22,7 +27,7 @@ export class OllamaAi implements AiEngine {
     //console.log(messages);
     //process.exit()
 
-    const url = 'http://localhost:11434/api/chat';
+    const url = this.url;
     const p = {
       model,
       messages,

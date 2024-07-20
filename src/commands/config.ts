@@ -32,6 +32,8 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
+  OCO_API_URL = 'OCO_API_URL',
+  OCO_OLLAMA_API_URL = 'OCO_OLLAMA_API_URL'
 }
 
 export enum CONFIG_MODES {
@@ -40,33 +42,49 @@ export enum CONFIG_MODES {
 }
 
 export const MODEL_LIST = {
-  
   openai: [
     'gpt-3.5-turbo',
+    'gpt-3.5-turbo-instruct',
+    'gpt-3.5-turbo-0613',
+    'gpt-3.5-turbo-0301',
+    'gpt-3.5-turbo-1106',
     'gpt-3.5-turbo-0125',
+    'gpt-3.5-turbo-16k',
+    'gpt-3.5-turbo-16k-0613',
+    'gpt-3.5-turbo-16k-0301',
     'gpt-4',
-    'gpt-4-turbo',
+    'gpt-4-0314',
+    'gpt-4-0613',
     'gpt-4-1106-preview',
-    'gpt-4-turbo-preview',
     'gpt-4-0125-preview',
+    'gpt-4-turbo-preview',
+    'gpt-4-vision-preview',
+    'gpt-4-1106-vision-preview',
+    'gpt-4-turbo',
+    'gpt-4-turbo-2024-04-09',
+    'gpt-4-32k',
+    'gpt-4-32k-0314',
+    'gpt-4-32k-0613',
     'gpt-4o',
+    'gpt-4o-2024-05-13',
+    'gpt-4o-mini',
+    'gpt-4o-mini-2024-07-18'
   ],
 
   anthropic: [
     'claude-3-haiku-20240307',
     'claude-3-sonnet-20240229',
-    'claude-3-opus-20240229',
+    'claude-3-opus-20240229'
   ],
-              
+
   gemini: [
     'gemini-1.5-flash',
     'gemini-1.5-pro',
     'gemini-1.0-pro',
     'gemini-pro-vision',
-    'text-embedding-004',
-  ],
-  
-}
+    'text-embedding-004'
+  ]
+};
 
 const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
@@ -103,11 +121,15 @@ const validateConfig = (
 export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
     if (config.OCO_AI_PROVIDER == 'gemini') return value;
-    
+
     //need api key unless running locally with ollama
     validateConfig(
       'OpenAI API_KEY',
-      value || config.OCO_ANTHROPIC_API_KEY || config.OCO_AI_PROVIDER.startsWith('ollama') || config.OCO_AZURE_API_KEY || config.OCO_AI_PROVIDER == 'test' ,
+      value ||
+        config.OCO_ANTHROPIC_API_KEY ||
+        config.OCO_AI_PROVIDER.startsWith('ollama') ||
+        config.OCO_AZURE_API_KEY ||
+        config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
     validateConfig(
@@ -122,27 +144,21 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AZURE_API_KEY](value: any, config: any = {}) {
     validateConfig(
       'ANTHROPIC_API_KEY',
-      value || config.OCO_OPENAI_API_KEY || config.OCO_AZURE_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      value ||
+        config.OCO_OPENAI_API_KEY ||
+        config.OCO_AZURE_API_KEY ||
+        config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
 
     return value;
   },
 
-  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
-    validateConfig(
-      'ANTHROPIC_API_KEY',
-      value || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
-      'You need to provide an OpenAI/Anthropic/Azure API key'
-    );
-
-    return value;
-  },
-  
   [CONFIG_KEYS.OCO_GEMINI_API_KEY](value: any, config: any = {}) {
     // only need to check for gemini api key if using gemini
     if (config.OCO_AI_PROVIDER != 'gemini') return value;
-    
+
     validateConfig(
       'Gemini API Key',
       value || config.OCO_GEMINI_API_KEY || config.OCO_AI_PROVIDER == 'test',
@@ -155,7 +171,10 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
     validateConfig(
       'ANTHROPIC_API_KEY',
-      value || config.OCO_OPENAI_API_KEY || config.OCO_AI_PROVIDER == 'ollama' || config.OCO_AI_PROVIDER == 'test',
+      value ||
+        config.OCO_OPENAI_API_KEY ||
+        config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic API key'
     );
 
@@ -241,11 +260,19 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_MODEL](value: any, config: any = {}) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].includes(value) || 
-      config.OCO_AI_PROVIDER == 'ollama' || 
-	  config.OCO_AI_PROVIDER == 'azure' ||
-      config.OCO_AI_PROVIDER == 'test',
-      `${value} is not supported yet, use:\n\n ${[...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].join('\n')}`
+      [
+        ...MODEL_LIST.openai,
+        ...MODEL_LIST.anthropic,
+        ...MODEL_LIST.gemini
+      ].includes(value) ||
+        config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'azure' ||
+        config.OCO_AI_PROVIDER == 'test',
+      `${value} is not supported yet, use:\n\n ${[
+        ...MODEL_LIST.openai,
+        ...MODEL_LIST.anthropic,
+        ...MODEL_LIST.gemini
+      ].join('\n')}`
     );
     return value;
   },
@@ -280,14 +307,8 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      [
-        '', 
-        'openai', 
-        'anthropic',
-        'gemini',
-		'azure',
-        'test'
-      ].includes(value) || value.startsWith('ollama'),
+      ['', 'openai', 'anthropic', 'gemini', 'azure', 'test'].includes(value) ||
+        value.startsWith('ollama'),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini' or 'openai' (default)`
     );
     return value;
@@ -315,10 +336,22 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_TEST_MOCK_TYPE,
       TEST_MOCK_TYPES.includes(value),
-      `${value} is not supported yet, use ${TEST_MOCK_TYPES.map(t => `'${t}'`).join(', ')}`
+      `${value} is not supported yet, use ${TEST_MOCK_TYPES.map(
+        (t) => `'${t}'`
+      ).join(', ')}`
     );
     return value;
   },
+
+  [CONFIG_KEYS.OCO_OLLAMA_API_URL](value: any) {
+    // add simple api validator
+    validateConfig(
+      CONFIG_KEYS.OCO_API_URL,
+      typeof value === 'string' && value.startsWith('http'),
+      `${value} is not a valid URL`
+    );
+    return value;
+  }
 };
 
 export type ConfigType = {
@@ -332,8 +365,8 @@ export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
 }: {
-  configPath?: string
-  envPath?: string
+  configPath?: string;
+  envPath?: string;
 } = {}): ConfigType | null => {
   dotenv.config({ path: envPath });
   const configFromEnv = {
@@ -351,7 +384,8 @@ export const getConfig = ({
     OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
     OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
+    OCO_MODEL:
+      process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
@@ -371,9 +405,7 @@ export const getConfig = ({
   const config = iniParse(configFile);
 
   for (const configKey of Object.keys(config)) {
-    if (
-      ['null', 'undefined'].includes(config[configKey])
-    ) {
+    if (['null', 'undefined'].includes(config[configKey])) {
       config[configKey] = undefined;
       continue;
     }
@@ -397,7 +429,10 @@ export const getConfig = ({
   return config;
 };
 
-export const setConfig = (keyValues: [key: string, value: string][], configPath: string = defaultConfigPath) => {
+export const setConfig = (
+  keyValues: [key: string, value: string][],
+  configPath: string = defaultConfigPath
+) => {
   const config = getConfig() || {};
 
   for (const [configKey, configValue] of keyValues) {

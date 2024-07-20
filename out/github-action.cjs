@@ -672,7 +672,7 @@ var require_file_command = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
-    var fs3 = __importStar2(require("fs"));
+    var fs4 = __importStar2(require("fs"));
     var os3 = __importStar2(require("os"));
     var uuid_1 = require_dist();
     var utils_1 = require_utils();
@@ -681,10 +681,10 @@ var require_file_command = __commonJS({
       if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command4}`);
       }
-      if (!fs3.existsSync(filePath)) {
+      if (!fs4.existsSync(filePath)) {
         throw new Error(`Missing file at path: ${filePath}`);
       }
-      fs3.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os3.EOL}`, {
+      fs4.appendFileSync(filePath, `${utils_1.toCommandValue(message)}${os3.EOL}`, {
         encoding: "utf8"
       });
     }
@@ -18739,12 +18739,12 @@ var require_io_util = __commonJS({
     var _a4;
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getCmdPath = exports.tryGetExecutablePath = exports.isRooted = exports.isDirectory = exports.exists = exports.READONLY = exports.UV_FS_O_EXLOCK = exports.IS_WINDOWS = exports.unlink = exports.symlink = exports.stat = exports.rmdir = exports.rm = exports.rename = exports.readlink = exports.readdir = exports.open = exports.mkdir = exports.lstat = exports.copyFile = exports.chmod = void 0;
-    var fs3 = __importStar2(require("fs"));
+    var fs4 = __importStar2(require("fs"));
     var path2 = __importStar2(require("path"));
-    _a4 = fs3.promises, exports.chmod = _a4.chmod, exports.copyFile = _a4.copyFile, exports.lstat = _a4.lstat, exports.mkdir = _a4.mkdir, exports.open = _a4.open, exports.readdir = _a4.readdir, exports.readlink = _a4.readlink, exports.rename = _a4.rename, exports.rm = _a4.rm, exports.rmdir = _a4.rmdir, exports.stat = _a4.stat, exports.symlink = _a4.symlink, exports.unlink = _a4.unlink;
+    _a4 = fs4.promises, exports.chmod = _a4.chmod, exports.copyFile = _a4.copyFile, exports.lstat = _a4.lstat, exports.mkdir = _a4.mkdir, exports.open = _a4.open, exports.readdir = _a4.readdir, exports.readlink = _a4.readlink, exports.rename = _a4.rename, exports.rm = _a4.rm, exports.rmdir = _a4.rmdir, exports.stat = _a4.stat, exports.symlink = _a4.symlink, exports.unlink = _a4.unlink;
     exports.IS_WINDOWS = process.platform === "win32";
     exports.UV_FS_O_EXLOCK = 268435456;
-    exports.READONLY = fs3.constants.O_RDONLY;
+    exports.READONLY = fs4.constants.O_RDONLY;
     function exists(fsPath) {
       return __awaiter2(this, void 0, void 0, function* () {
         try {
@@ -38442,7 +38442,7 @@ var require_form_data = __commonJS({
     var http3 = require("http");
     var https3 = require("https");
     var parseUrl = require("url").parse;
-    var fs3 = require("fs");
+    var fs4 = require("fs");
     var Stream2 = require("stream").Stream;
     var mime = require_mime_types();
     var asynckit = require_asynckit();
@@ -38507,7 +38507,7 @@ var require_form_data = __commonJS({
         if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
           callback(null, value.end + 1 - (value.start ? value.start : 0));
         } else {
-          fs3.stat(value.path, function(err, stat) {
+          fs4.stat(value.path, function(err, stat) {
             var fileSize;
             if (err) {
               callback(err);
@@ -38883,7 +38883,7 @@ var require_package2 = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main2 = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports, module2) {
-    var fs3 = require("fs");
+    var fs4 = require("fs");
     var path2 = require("path");
     var os3 = require("os");
     var crypto2 = require("crypto");
@@ -38990,7 +38990,7 @@ var require_main2 = __commonJS({
       if (options && options.path && options.path.length > 0) {
         if (Array.isArray(options.path)) {
           for (const filepath of options.path) {
-            if (fs3.existsSync(filepath)) {
+            if (fs4.existsSync(filepath)) {
               possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
             }
           }
@@ -39000,7 +39000,7 @@ var require_main2 = __commonJS({
       } else {
         possibleVaultPath = path2.resolve(process.cwd(), ".env.vault");
       }
-      if (fs3.existsSync(possibleVaultPath)) {
+      if (fs4.existsSync(possibleVaultPath)) {
         return possibleVaultPath;
       }
       return null;
@@ -39044,7 +39044,7 @@ var require_main2 = __commonJS({
       const parsedAll = {};
       for (const path3 of optionPaths) {
         try {
-          const parsed = DotenvModule.parse(fs3.readFileSync(path3, { encoding }));
+          const parsed = DotenvModule.parse(fs4.readFileSync(path3, { encoding }));
           DotenvModule.populate(parsedAll, parsed, options);
         } catch (e3) {
           if (debug2) {
@@ -39834,7 +39834,7 @@ var require_tiktoken = __commonJS({
     var imports = {};
     imports["./tiktoken_bg.js"] = wasm;
     var path2 = require("path");
-    var fs3 = require("fs");
+    var fs4 = require("fs");
     var candidates = __dirname.split(path2.sep).reduce((memo, _3, index, array) => {
       const prefix = array.slice(0, index + 1).join(path2.sep) + path2.sep;
       if (!prefix.includes("node_modules" + path2.sep)) {
@@ -39854,7 +39854,7 @@ var require_tiktoken = __commonJS({
     var bytes = null;
     for (const candidate of candidates) {
       try {
-        bytes = fs3.readFileSync(candidate);
+        bytes = fs4.readFileSync(candidate);
         break;
       } catch {
       }
@@ -49443,17 +49443,59 @@ function getI18nLocal(value) {
   return false;
 }
 
+// src/engine/testAi.ts
+var TEST_MOCK_TYPES = [
+  "commit-message",
+  "prompt-module-commitlint-config"
+];
+var TestAi = class {
+  async generateCommitMessage(_messages) {
+    const config10 = getConfig();
+    switch (config10?.OCO_TEST_MOCK_TYPE) {
+      case "commit-message":
+        return "fix(testAi.ts): test commit message";
+      case "prompt-module-commitlint-config":
+        return `{
+  "localLanguage": "english",
+  "commitFix": "fix(server): Change 'port' variable to uppercase 'PORT'",
+  "commitFeat": "feat(server): Allow server to listen on a port specified through environment variable",
+  "commitDescription": "Change 'port' variable to uppercase 'PORT'. Allow server to listen on a port specified through environment variable."
+}`;
+      default:
+        throw Error("unsupported test mock type");
+    }
+  }
+};
+
 // src/commands/config.ts
 var MODEL_LIST = {
   openai: [
     "gpt-3.5-turbo",
+    "gpt-3.5-turbo-instruct",
+    "gpt-3.5-turbo-0613",
+    "gpt-3.5-turbo-0301",
+    "gpt-3.5-turbo-1106",
     "gpt-3.5-turbo-0125",
+    "gpt-3.5-turbo-16k",
+    "gpt-3.5-turbo-16k-0613",
+    "gpt-3.5-turbo-16k-0301",
     "gpt-4",
-    "gpt-4-turbo",
+    "gpt-4-0314",
+    "gpt-4-0613",
     "gpt-4-1106-preview",
-    "gpt-4-turbo-preview",
     "gpt-4-0125-preview",
-    "gpt-4o"
+    "gpt-4-turbo-preview",
+    "gpt-4-vision-preview",
+    "gpt-4-1106-vision-preview",
+    "gpt-4-turbo",
+    "gpt-4-turbo-2024-04-09",
+    "gpt-4-32k",
+    "gpt-4-32k-0314",
+    "gpt-4-32k-0613",
+    "gpt-4o",
+    "gpt-4o-2024-05-13",
+    "gpt-4o-mini",
+    "gpt-4o-mini-2024-07-18"
   ],
   anthropic: [
     "claude-3-haiku-20240307",
@@ -49508,14 +49550,6 @@ var configValidators = {
     validateConfig(
       "ANTHROPIC_API_KEY",
       value || config10.OCO_OPENAI_API_KEY || config10.OCO_AZURE_API_KEY || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "test",
-      "You need to provide an OpenAI/Anthropic/Azure API key"
-    );
-    return value;
-  },
-  ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config10 = {}) {
-    validateConfig(
-      "ANTHROPIC_API_KEY",
-      value || config10.OCO_OPENAI_API_KEY || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "test",
       "You need to provide an OpenAI/Anthropic/Azure API key"
     );
     return value;
@@ -49605,10 +49639,18 @@ var configValidators = {
   ["OCO_MODEL" /* OCO_MODEL */](value, config10 = {}) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      [...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].includes(value) || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "azure" || config10.OCO_AI_PROVIDER == "test",
+      [
+        ...MODEL_LIST.openai,
+        ...MODEL_LIST.anthropic,
+        ...MODEL_LIST.gemini
+      ].includes(value) || config10.OCO_AI_PROVIDER == "ollama" || config10.OCO_AI_PROVIDER == "azure" || config10.OCO_AI_PROVIDER == "test",
       `${value} is not supported yet, use:
 
- ${[...MODEL_LIST.openai, ...MODEL_LIST.anthropic, ...MODEL_LIST.gemini].join("\n")}`
+ ${[
+        ...MODEL_LIST.openai,
+        ...MODEL_LIST.anthropic,
+        ...MODEL_LIST.gemini
+      ].join("\n")}`
     );
     return value;
   },
@@ -49639,14 +49681,7 @@ var configValidators = {
   ["OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */](value) {
     validateConfig(
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
-      [
-        "",
-        "openai",
-        "anthropic",
-        "gemini",
-        "azure",
-        "test"
-      ].includes(value) || value.startsWith("ollama"),
+      ["", "openai", "anthropic", "gemini", "azure", "test"].includes(value) || value.startsWith("ollama"),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini' or 'openai' (default)`
     );
     return value;
@@ -49664,6 +49699,24 @@ var configValidators = {
       "OCO_AZURE_ENDPOINT" /* OCO_AZURE_ENDPOINT */,
       value.includes("openai.azure.com"),
       'Must be in format "https://<resource name>.openai.azure.com/"'
+    );
+    return value;
+  },
+  ["OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */](value) {
+    validateConfig(
+      "OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */,
+      TEST_MOCK_TYPES.includes(value),
+      `${value} is not supported yet, use ${TEST_MOCK_TYPES.map(
+        (t2) => `'${t2}'`
+      ).join(", ")}`
+    );
+    return value;
+  },
+  ["OCO_OLLAMA_API_URL" /* OCO_OLLAMA_API_URL */](value) {
+    validateConfig(
+      "OCO_API_URL" /* OCO_API_URL */,
+      typeof value === "string" && value.startsWith("http"),
+      `${value} is not a valid URL`
     );
     return value;
   }
@@ -49693,7 +49746,8 @@ var getConfig = ({
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || "openai",
     OCO_GITPUSH: process.env.OCO_GITPUSH === "false" ? false : true,
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || ""
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || "",
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message"
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -49929,15 +49983,38 @@ var commitlintPrompts = {
 };
 
 // src/modules/commitlint/pwd-commitlint.ts
+var import_promises = __toESM(require("fs/promises"), 1);
 var import_path2 = __toESM(require("path"), 1);
-var nodeModulesPath = import_path2.default.join(
-  process.env.PWD || process.cwd(),
-  "node_modules",
-  "@commitlint",
-  "load"
-);
+var getCommitLintModuleType = async () => {
+  const packageFile = "node_modules/@commitlint/load/package.json";
+  const packageJsonPath = import_path2.default.join(
+    process.env.PWD || process.cwd(),
+    packageFile
+  );
+  const packageJson = JSON.parse(await import_promises.default.readFile(packageJsonPath, "utf8"));
+  if (!packageJson) {
+    throw new Error(`Failed to parse ${packageFile}`);
+  }
+  return packageJson.type === "module" ? "esm" : "cjs";
+};
 var getCommitLintPWDConfig = async () => {
-  const load = require(nodeModulesPath).default;
+  let load, nodeModulesPath;
+  switch (await getCommitLintModuleType()) {
+    case "cjs":
+      nodeModulesPath = import_path2.default.join(
+        process.env.PWD || process.cwd(),
+        "node_modules/@commitlint/load"
+      );
+      load = require(nodeModulesPath).default;
+      break;
+    case "esm":
+      nodeModulesPath = import_path2.default.join(
+        process.env.PWD || process.cwd(),
+        "node_modules/@commitlint/load/lib/load.js"
+      );
+      load = (await import(nodeModulesPath)).default;
+      break;
+  }
   if (load && typeof load === "function") {
     return await load();
   }
@@ -49945,7 +50022,7 @@ var getCommitLintPWDConfig = async () => {
 };
 
 // src/modules/commitlint/utils.ts
-var import_promises = __toESM(require("fs/promises"), 1);
+var import_promises2 = __toESM(require("fs/promises"), 1);
 var removeDoubleNewlines = (input) => {
   const pattern = /\\n\\n/g;
   if (pattern.test(input)) {
@@ -49958,7 +50035,7 @@ var getJSONBlock = (input) => {
   const jsonIndex = input.search("```json");
   if (jsonIndex > -1) {
     input = input.slice(jsonIndex + 8);
-    const endJsonIndex = consistency.search("```");
+    const endJsonIndex = input.search("```");
     input = input.slice(0, endJsonIndex);
   }
   return input;
@@ -49966,7 +50043,7 @@ var getJSONBlock = (input) => {
 var commitlintLLMConfigExists = async () => {
   let exists;
   try {
-    await import_promises.default.access(COMMITLINT_LLM_CONFIG_PATH);
+    await import_promises2.default.access(COMMITLINT_LLM_CONFIG_PATH);
     exists = true;
   } catch (e3) {
     exists = false;
@@ -49974,13 +50051,13 @@ var commitlintLLMConfigExists = async () => {
   return exists;
 };
 var writeCommitlintLLMConfig = async (commitlintLLMConfig) => {
-  await import_promises.default.writeFile(
+  await import_promises2.default.writeFile(
     COMMITLINT_LLM_CONFIG_PATH,
     JSON.stringify(commitlintLLMConfig, null, 2)
   );
 };
 var getCommitlintLLMConfig = async () => {
-  const content = await import_promises.default.readFile(COMMITLINT_LLM_CONFIG_PATH);
+  const content = await import_promises2.default.readFile(COMMITLINT_LLM_CONFIG_PATH);
   const commitLintLLMConfig = JSON.parse(
     content.toString()
   );
@@ -53848,13 +53925,17 @@ var config4 = getConfig();
 var OllamaAi = class {
   constructor() {
     this.model = "mistral";
+    this.url = "http://localhost:11434/api/chat";
   }
   setModel(model) {
     this.model = model ?? config4?.OCO_MODEL ?? "mistral";
   }
+  setUrl(url2) {
+    this.url = url2 ?? config4?.OCO_OLLAMA_API_URL ?? "http://localhost:11434/api/chat";
+  }
   async generateCommitMessage(messages) {
     const model = this.model;
-    const url2 = "http://localhost:11434/api/chat";
+    const url2 = this.url;
     const p3 = {
       model,
       messages,
@@ -56030,13 +56111,6 @@ var AnthropicAi = class {
       }
     };
     this.anthropicAI = new sdk_default(this.anthropicAiApiConfiguration);
-  }
-};
-
-// src/engine/testAi.ts
-var TestAi = class {
-  async generateCommitMessage(messages) {
-    return "test commit message";
   }
 };
 
@@ -59780,7 +59854,16 @@ var configureCommitlintIntegration = async (force = false) => {
   const spin = le();
   spin.start("Loading @commitlint configuration");
   const fileExists = await commitlintLLMConfigExists();
-  let commitLintConfig = await getCommitLintPWDConfig();
+  const commitLintConfig = await getCommitLintPWDConfig();
+  if (commitLintConfig === null) {
+    throw new Error(
+      `Failed to load @commitlint config. Please check the following:
+      * @commitlint >= 9.0.0 is installed in the local directory.
+      * 'node_modules/@commitlint/load' package exists.
+      * A valid @commitlint configuration exists.
+      `
+    );
+  }
   const hash = await computeHash(JSON.stringify(commitLintConfig));
   spin.stop(`Read @commitlint configuration (hash: ${hash})`);
   if (fileExists) {
@@ -59796,16 +59879,16 @@ var configureCommitlintIntegration = async (force = false) => {
   const prompts = inferPromptsFromCommitlintConfig(commitLintConfig);
   const consistencyPrompts = commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
   const engine = getEngine();
-  let consistency2 = await engine.generateCommitMessage(consistencyPrompts) || "{}";
-  prompts.forEach((prompt) => consistency2 = consistency2.replace(prompt, ""));
-  consistency2 = getJSONBlock(consistency2);
-  consistency2 = removeDoubleNewlines(consistency2);
+  let consistency = await engine.generateCommitMessage(consistencyPrompts) || "{}";
+  prompts.forEach((prompt) => consistency = consistency.replace(prompt, ""));
+  consistency = getJSONBlock(consistency);
+  consistency = removeDoubleNewlines(consistency);
   const commitlintLLMConfig = {
     hash,
     prompts,
     consistency: {
       [translation2.localLanguage]: {
-        ...JSON.parse(consistency2)
+        ...JSON.parse(consistency)
       }
     }
   };
