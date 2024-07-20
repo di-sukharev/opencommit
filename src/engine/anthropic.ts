@@ -48,6 +48,7 @@ if (
 
 const MODEL = config?.OCO_MODEL;
 if (provider === 'anthropic' &&
+  MODEL.typeof !== 'string' && 
   command !== 'config' &&
   mode !== CONFIG_MODES.set) {
 outro(
