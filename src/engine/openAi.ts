@@ -54,15 +54,11 @@ if (
 
 const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
 if (provider === 'openai' &&
-    !MODEL_LIST.openai.includes(MODEL) &&
     command !== 'config' &&
     mode !== CONFIG_MODES.set) {
   outro(
-    `${chalk.red('✖')} Unsupported model ${MODEL} for OpenAI. Supported models are: ${MODEL_LIST.openai.join(
-      ', '
-    )}`
+    `${chalk.red('✖')} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
   );
-
   process.exit(1);
 }
 
