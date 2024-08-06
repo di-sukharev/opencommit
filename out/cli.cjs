@@ -30938,7 +30938,8 @@ var getConfig = ({
     OCO_GITPUSH: process.env.OCO_GITPUSH === "false" ? false : true,
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false,
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || "",
-    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message"
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message",
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || void 0
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -41022,9 +41023,11 @@ function getEngine() {
   const provider4 = config11?.OCO_AI_PROVIDER;
   if (provider4?.startsWith("ollama")) {
     const ollamaAi = new OllamaAi();
-    const model = provider4.split("/")[1];
-    if (model)
+    const model = provider4.replace("ollama/", "");
+    if (model) {
       ollamaAi.setModel(model);
+      ollamaAi.setUrl(config11?.OCO_OLLAMA_API_URL);
+    }
     return ollamaAi;
   } else if (provider4 == "anthropic") {
     return new AnthropicAi();
