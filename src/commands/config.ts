@@ -395,7 +395,7 @@ export const getConfig = ({
     OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
     OCO_ONE_LINE_COMMIT:
       process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || '',
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || undefined,
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message'
   };
 
