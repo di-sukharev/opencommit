@@ -30691,14 +30691,7 @@ var MODEL_LIST = {
     "claude-3-5-sonnet-20240620",
     "claude-3-opus-20240229",
     "claude-3-sonnet-20240229",
-    "claude-3-haiku-20240307"
-  ],
-  gemini: [
-    "gemini-1.5-flash",
-    "gemini-1.5-pro",
-    "gemini-1.0-pro",
-    "gemini-pro-vision",
-    "text-embedding-004"
+    "claude-3-opus-20240229"
   ]
 };
 var getDefaultModel = (provider4) => {
