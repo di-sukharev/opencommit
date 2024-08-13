@@ -6,6 +6,7 @@ import { OllamaAi } from '../engine/ollama';
 import { AnthropicAi } from '../engine/anthropic'
 import { TestAi } from '../engine/testAi';
 import { Azure } from '../engine/azure';
+import { LlmService } from '../engine/llmservice';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
@@ -25,6 +26,8 @@ export function getEngine(): AiEngine {
     return new Gemini();  
   } else if (provider == 'azure') {
   	return new Azure();
+  } else if(provider == 'llmservice'){
+    return new LlmService();
   }
   
   //open ai gpt by default

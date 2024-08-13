@@ -33,7 +33,9 @@ export enum CONFIG_KEYS {
   OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
-  OCO_OLLAMA_API_URL = 'OCO_OLLAMA_API_URL'
+  OCO_OLLAMA_API_URL = 'OCO_OLLAMA_API_URL',
+  OCO_BACKEND_ENDPOINT = 'OCO_BACKEND_ENDPOINT',
+  OCO_BACKEND_PATH = 'OCO_BACKEND_PATH'
 }
 
 export enum CONFIG_MODES {
@@ -130,6 +132,7 @@ export const configValidators = {
         config.OCO_ANTHROPIC_API_KEY ||
         config.OCO_AI_PROVIDER.startsWith('ollama') ||
         config.OCO_AZURE_API_KEY ||
+        config.OCO_AI_PROVIDER == 'llmservice' ||
         config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
@@ -149,6 +152,7 @@ export const configValidators = {
         config.OCO_OPENAI_API_KEY ||
         config.OCO_AZURE_API_KEY ||
         config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'llmservice' ||
         config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
@@ -175,6 +179,7 @@ export const configValidators = {
       value ||
         config.OCO_OPENAI_API_KEY ||
         config.OCO_AI_PROVIDER == 'ollama' ||
+        config.OCO_AI_PROVIDER == 'llmservice' ||
         config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic API key'
     );
@@ -268,6 +273,7 @@ export const configValidators = {
       ].includes(value) ||
         config.OCO_AI_PROVIDER == 'ollama' ||
         config.OCO_AI_PROVIDER == 'azure' ||
+        config.OCO_AI_PROVIDER == 'llmservice' ||
         config.OCO_AI_PROVIDER == 'test',
       `${value} is not supported yet, use:\n\n ${[
         ...MODEL_LIST.openai,
@@ -308,9 +314,9 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      ['', 'openai', 'anthropic', 'gemini', 'azure', 'test'].includes(value) ||
+      ['', 'openai', 'anthropic', 'gemini', 'azure', 'llmservice', 'test'].includes(value) ||
         value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llmservice', 'anthropic', 'azure', 'gemini', or 'openai' (default)`
     );
     return value;
   },
@@ -352,7 +358,26 @@ export const configValidators = {
       `${value} is not a valid URL`
     );
     return value;
+  },
+
+  [CONFIG_KEYS.OCO_BACKEND_ENDPOINT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_BACKEND_ENDPOINT,
+      typeof value === 'string',
+      'Must be string'
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_BACKEND_PATH](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_BACKEND_PATH,
+      typeof value === 'string',
+      'Must be string'
+    );
+    return value;
   }
+
 };
 
 export type ConfigType = {
@@ -396,7 +421,9 @@ export const getConfig = ({
     OCO_ONE_LINE_COMMIT:
       process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || undefined,
-    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message'
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message',
+    OCO_BACKEND_ENDPOINT: process.env.OCO_BACKEND_ENDPOINT || 'localhost:8000',
+    OCO_BACKEND_PATH: process.env.OCO_BACKEND_PATH || 'api/generate'
   };
 
   const configExists = existsSync(configPath);
