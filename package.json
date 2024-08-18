@@ -98,5 +98,8 @@
     "ini": "^3.0.1",
     "inquirer": "^9.1.4",
     "openai": "^3.2.1"
+  },
+  "overrides": {
+    "whatwg-url": "13.0.0"
   }
 }
