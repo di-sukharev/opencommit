@@ -28111,7 +28111,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.16",
+  version: "3.0.17",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -28157,7 +28157,8 @@ var package_default = {
     "dev:gemini": "OCO_AI_PROVIDER='gemini' ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
-    deploy: "npm version patch && npm run build:push && git push --tags && npm publish --tag latest",
+    deploy: "npm run build:push && git push --tags && npm publish --tag latest",
+    "deploy:patch": "npm version patch && npm run deploy",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src",
     test: "node --no-warnings --experimental-vm-modules $( [ -f ./node_modules/.bin/jest ] && echo ./node_modules/.bin/jest || which jest ) test/unit",
@@ -30687,7 +30688,8 @@ var MODEL_LIST = {
     "gpt-4o-mini-2024-07-18"
   ],
   anthropic: [
-    "claude-3-haiku-20240307",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-opus-20240229",
     "claude-3-sonnet-20240229",
     "claude-3-opus-20240229"
   ],
