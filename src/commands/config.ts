@@ -33,7 +33,9 @@ export enum CONFIG_KEYS {
   OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
-  OCO_OLLAMA_API_URL = 'OCO_OLLAMA_API_URL'
+  OCO_OLLAMA_API_URL = 'OCO_OLLAMA_API_URL',
+  OCO_FLOWISE_ENDPOINT = 'OCO_FLOWISE_ENDPOINT',
+  OCO_FLOWISE_API_KEY = 'OCO_FLOWISE_API_KEY'
 }
 
 export enum CONFIG_MODES {
@@ -130,7 +132,8 @@ export const configValidators = {
         config.OCO_ANTHROPIC_API_KEY ||
         config.OCO_AI_PROVIDER.startsWith('ollama') ||
         config.OCO_AZURE_API_KEY ||
-        config.OCO_AI_PROVIDER == 'test',
+        config.OCO_AI_PROVIDER == 'test' ||
+        config.OCO_AI_PROVIDER == 'flowise',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
     validateConfig(
@@ -149,7 +152,8 @@ export const configValidators = {
         config.OCO_OPENAI_API_KEY ||
         config.OCO_AZURE_API_KEY ||
         config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'test',
+        config.OCO_AI_PROVIDER == 'test' ||
+        config.OCO_AI_PROVIDER == 'flowise',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
 
@@ -175,8 +179,19 @@ export const configValidators = {
       value ||
         config.OCO_OPENAI_API_KEY ||
         config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'test',
+        config.OCO_AI_PROVIDER == 'test' ||
+        config.OCO_AI_PROVIDER == 'flowise',
       'You need to provide an OpenAI/Anthropic API key'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_FLOWISE_API_KEY](value: any, config: any = {}) {
+    validateConfig(
+      CONFIG_KEYS.OCO_FLOWISE_API_KEY,
+      value || config.OCO_AI_PROVIDER != 'flowise',
+      'You need to provide a flowise API key'
     );
 
     return value;
@@ -268,7 +283,8 @@ export const configValidators = {
       ].includes(value) ||
         config.OCO_AI_PROVIDER == 'ollama' ||
         config.OCO_AI_PROVIDER == 'azure' ||
-        config.OCO_AI_PROVIDER == 'test',
+        config.OCO_AI_PROVIDER == 'test' ||
+        config.OCO_AI_PROVIDER == 'flowise',
       `${value} is not supported yet, use:\n\n ${[
         ...MODEL_LIST.openai,
         ...MODEL_LIST.anthropic,
@@ -308,9 +324,16 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      ['', 'openai', 'anthropic', 'gemini', 'azure', 'test'].includes(value) ||
-        value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini' or 'openai' (default)`
+      [
+        '',
+        'openai',
+        'anthropic',
+        'gemini',
+        'azure',
+        'test',
+        'flowise'
+      ].includes(value) || value.startsWith('ollama'),
+      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
     return value;
   },
@@ -324,6 +347,7 @@ export const configValidators = {
 
     return value;
   },
+
   [CONFIG_KEYS.OCO_AZURE_ENDPOINT](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AZURE_ENDPOINT,
@@ -333,6 +357,17 @@ export const configValidators = {
 
     return value;
   },
+
+  [CONFIG_KEYS.OCO_FLOWISE_ENDPOINT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_FLOWISE_ENDPOINT,
+      typeof value === 'string' && value.includes(':'),
+      'Value must be string and should include both I.P. and port number' // Considering the possibility of DNS lookup or feeding the I.P. explicitely, there is no pattern to verify, except a column for the port number
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_TEST_MOCK_TYPE,
@@ -361,7 +396,6 @@ export type ConfigType = {
 
 const defaultConfigPath = pathJoin(homedir(), '.opencommit');
 const defaultEnvPath = pathResolve(process.cwd(), '.env');
-
 export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
@@ -397,9 +431,10 @@ export const getConfig = ({
       process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || undefined,
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message',
-    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined,
+    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ':',
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || undefined,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined
   };
-
   const configExists = existsSync(configPath);
   if (!configExists) return configFromEnv;
 
