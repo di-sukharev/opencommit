@@ -49774,7 +49774,8 @@ var getConfig = ({
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || void 0,
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message",
     OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ":",
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || void 0
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || void 0,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || void 0
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -53041,11 +53042,9 @@ if (provider === "openai" && !apiKey && command !== "config" && mode !== "set" /
   process.exit(1);
 }
 var MODEL = config3?.OCO_MODEL || "gpt-3.5-turbo";
-if (provider === "openai" && !MODEL_LIST.openai.includes(MODEL) && command !== "config" && mode !== "set" /* set */) {
+if (provider === "openai" && MODEL.typeof !== "string" && command !== "config" && mode !== "set" /* set */) {
   ce(
-    `${source_default.red("\u2716")} Unsupported model ${MODEL} for OpenAI. Supported models are: ${MODEL_LIST.openai.join(
-      ", "
-    )}`
+    `${source_default.red("\u2716")} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
   );
   process.exit(1);
 }
@@ -56090,11 +56089,9 @@ if (provider2 === "anthropic" && !apiKey2 && command2 !== "config" && mode2 !== 
   process.exit(1);
 }
 var MODEL2 = config5?.OCO_MODEL;
-if (provider2 === "anthropic" && !MODEL_LIST.anthropic.includes(MODEL2) && command2 !== "config" && mode2 !== "set" /* set */) {
+if (provider2 === "anthropic" && MODEL2.typeof !== "string" && command2 !== "config" && mode2 !== "set" /* set */) {
   ce(
-    `${source_default.red("\u2716")} Unsupported model ${MODEL2} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
-      ", "
-    )}`
+    `${source_default.red("\u2716")} Unsupported model ${MODEL2}. The model can be any string, but the current configuration is not supported.`
   );
   process.exit(1);
 }
@@ -59886,9 +59883,11 @@ function getEngine() {
   const provider4 = config11?.OCO_AI_PROVIDER;
   if (provider4?.startsWith("ollama")) {
     const ollamaAi = new OllamaAi();
-    const model = provider4.split("/")[1];
-    if (model)
+    const model = provider4.substring("ollama/".length);
+    if (model) {
       ollamaAi.setModel(model);
+      ollamaAi.setUrl(config11?.OCO_OLLAMA_API_URL);
+    }
     return ollamaAi;
   } else if (provider4 == "anthropic") {
     return new AnthropicAi();

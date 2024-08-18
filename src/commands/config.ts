@@ -432,7 +432,8 @@ export const getConfig = ({
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || undefined,
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message',
     OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ':',
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || undefined
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || undefined,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined
   };
   const configExists = existsSync(configPath);
   if (!configExists) return configFromEnv;
