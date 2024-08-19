@@ -15,7 +15,7 @@ export class LlmService implements AiEngine {
   ): Promise<string | undefined> {
 
     const gitDiff = messages[ messages.length - 1 ]?.content;
-    const url = `http://${config?.OCO_BACKEND_ENDPOINT}/${config?.OCO_BACKEND_PATH}`; // this key is specific to flowise
+    const url = `http://${config?.OCO_BACKEND_ENDPOINT}/${config?.OCO_BACKEND_PATH}`; 
     const payload = {
         user_prompt: gitDiff
     }
@@ -27,7 +27,6 @@ export class LlmService implements AiEngine {
         }
       });
       const message = response.data;
-      // have to check the returned message from flowise, it's not documented in their api page
 
       return message;
     } catch (err: any) {
