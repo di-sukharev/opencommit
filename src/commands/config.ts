@@ -48,6 +48,7 @@ export enum CONFIG_MODES {
 export const MODEL_LIST = {
   openai: [
     'gpt-4o-mini',
+    'gpt-4o-mini',
     'gpt-3.5-turbo',
     'gpt-3.5-turbo-instruct',
     'gpt-3.5-turbo-0613',
@@ -282,6 +283,7 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
       typeof value === 'string',
+      typeof value === 'string',
       `${value} is not supported yet, use:\n\n ${[
         ...MODEL_LIST.openai,
         ...MODEL_LIST.anthropic,
@@ -478,6 +480,7 @@ export const getConfig = ({
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
+
 
       process.exit(1);
     }
