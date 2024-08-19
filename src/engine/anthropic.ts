@@ -1,12 +1,12 @@
+import Anthropic from '@anthropic-ai/sdk';
+import {
+  MessageCreateParamsNonStreaming,
+  MessageParam
+} from '@anthropic-ai/sdk/resources/messages.mjs';
+import { intro, outro } from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
-
-import Anthropic from '@anthropic-ai/sdk';
-import {ChatCompletionRequestMessage} from 'openai'
-import { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources';
-
-import { intro, outro } from '@clack/prompts';
-
+import { ChatCompletionRequestMessage } from 'openai';
 import {
   CONFIG_MODES,
   DEFAULT_TOKEN_LIMITS,
@@ -15,7 +15,6 @@ import {
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine } from './Engine';
-import { MODEL_LIST } from '../commands/config';
 
 const config = getConfig();
 
@@ -47,14 +46,18 @@ if (
 }
 
 const MODEL = config?.OCO_MODEL;
-if (provider === 'anthropic' &&
-  typeof MODEL !== 'string' && 
+if (
+  provider === 'anthropic' &&
+  typeof MODEL !== 'string' &&
   command !== 'config' &&
-  mode !== CONFIG_MODES.set) {
-outro(
-  `${chalk.red('✖')} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
-);
-process.exit(1);
+  mode !== CONFIG_MODES.set
+) {
+  outro(
+    `${chalk.red(
+      '✖'
+    )} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
+  );
+  process.exit(1);
 }
 
 export class AnthropicAi implements AiEngine {
@@ -70,9 +73,11 @@ export class AnthropicAi implements AiEngine {
   public generateCommitMessage = async (
     messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> => {
-
-    const systemMessage = messages.find(msg => msg.role === 'system')?.content as string;
-    const restMessages = messages.filter((msg) => msg.role !== 'system') as MessageParam[];
+    const systemMessage = messages.find((msg) => msg.role === 'system')
+      ?.content as string;
+    const restMessages = messages.filter(
+      (msg) => msg.role !== 'system'
+    ) as MessageParam[];
 
     const params: MessageCreateParamsNonStreaming = {
       model: MODEL,
@@ -91,7 +96,7 @@ export class AnthropicAi implements AiEngine {
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
       }
 
-      const data  = await this.anthropicAI.messages.create(params);
+      const data = await this.anthropicAI.messages.create(params);
 
       const message = data?.content[0].text;
 

@@ -1,14 +1,8 @@
+import { AzureKeyCredential, OpenAIClient } from '@azure/openai';
+import { intro, outro } from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
-import { execa } from 'execa';
-import {
-  ChatCompletionRequestMessage,
-} from 'openai';
-
-import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
-
-import { intro, outro } from '@clack/prompts';
-
+import { ChatCompletionRequestMessage } from 'openai';
 import {
   CONFIG_MODES,
   DEFAULT_TOKEN_LIMITS,
@@ -59,7 +53,10 @@ export class Azure implements AiEngine {
 
   constructor() {
     if (provider === 'azure') {
-      this.openAI = new OpenAIClient(apiEndpoint, new AzureKeyCredential(apiKey));
+      this.openAI = new OpenAIClient(
+        apiEndpoint,
+        new AzureKeyCredential(apiKey)
+      );
     }
   }
 

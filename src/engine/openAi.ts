@@ -1,15 +1,11 @@
+import { intro, outro } from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
-import { execa } from 'execa';
-
 import {
   ChatCompletionRequestMessage,
-  Configuration as OpenAiApiConfiguration,
-  OpenAIApi
+  OpenAIApi,
+  Configuration as OpenAiApiConfiguration
 } from 'openai';
-
-import { intro, outro } from '@clack/prompts';
-
 import {
   CONFIG_MODES,
   DEFAULT_TOKEN_LIMITS,
@@ -18,7 +14,6 @@ import {
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine } from './Engine';
-import { MODEL_LIST } from '../commands/config';
 
 const config = getConfig();
 
@@ -53,18 +48,21 @@ if (
 }
 
 const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
-if (provider === 'openai' &&
-  typeof MODEL !== 'string' && 
-    command !== 'config' &&
-    mode !== CONFIG_MODES.set) {
+if (
+  provider === 'openai' &&
+  typeof MODEL !== 'string' &&
+  command !== 'config' &&
+  mode !== CONFIG_MODES.set
+) {
   outro(
-    `${chalk.red('✖')} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
+    `${chalk.red(
+      '✖'
+    )} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
   );
   process.exit(1);
 }
 
 export class OpenAi implements AiEngine {
-  
   private openAiApiConfiguration = new OpenAiApiConfiguration({
     apiKey: apiKey
   });
@@ -122,6 +120,4 @@ export class OpenAi implements AiEngine {
       throw err;
     }
   };
-  
 }
-

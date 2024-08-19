@@ -1,23 +1,21 @@
-import axios, { AxiosError } from 'axios';
+import axios from 'axios';
 import { ChatCompletionRequestMessage } from 'openai';
+import { getConfig } from '../commands/config';
 import { AiEngine } from './Engine';
-
-import {
-  getConfig
-} from '../commands/config';
 
 const config = getConfig();
 
 export class OllamaAi implements AiEngine {
-  private model = "mistral"; // as default model of Ollama
-  private url = "http://localhost:11434/api/chat"; // default URL of Ollama API
+  private model = 'mistral'; // as default model of Ollama
+  private url = 'http://localhost:11434/api/chat'; // default URL of Ollama API
 
   setModel(model: string) {
     this.model = model ?? config?.OCO_MODEL ?? 'mistral';
   }
-  
+
   setUrl(url: string) {
-    this.url = url ?? config?.OCO_OLLAMA_API_URL ?? 'http://localhost:11434/api/chat';
+    this.url =
+      url ?? config?.OCO_OLLAMA_API_URL ?? 'http://localhost:11434/api/chat';
   }
   async generateCommitMessage(
     messages: Array<ChatCompletionRequestMessage>
