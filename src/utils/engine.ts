@@ -7,6 +7,7 @@ import { AnthropicAi } from '../engine/anthropic'
 import { TestAi } from '../engine/testAi';
 import { Azure } from '../engine/azure';
 import { LlmService } from '../engine/llmservice';
+import { FlowiseAi } from '../engine/flowise'
 
 export function getEngine(): AiEngine {
   const config = getConfig();
@@ -14,9 +15,11 @@ export function getEngine(): AiEngine {
   
   if (provider?.startsWith('ollama')) {
     const ollamaAi = new OllamaAi();
-    const model = provider.split('/')[1];
-    if (model) ollamaAi.setModel(model);
-    
+    const model = provider.substring('ollama/'.length);
+    if (model) {
+      ollamaAi.setModel(model);
+      ollamaAi.setUrl(config?.OCO_OLLAMA_API_URL);
+    }
     return ollamaAi;
   } else if (provider == 'anthropic') {
     return new AnthropicAi();
@@ -28,6 +31,8 @@ export function getEngine(): AiEngine {
   	return new Azure();
   } else if(provider == 'llmservice'){
     return new LlmService();
+  } else if( provider == 'flowise'){
+    return new FlowiseAi();
   }
   
   //open ai gpt by default

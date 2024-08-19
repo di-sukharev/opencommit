@@ -49470,6 +49470,7 @@ var TestAi = class {
 // src/commands/config.ts
 var MODEL_LIST = {
   openai: [
+    "gpt-4o-mini",
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-instruct",
     "gpt-3.5-turbo-0613",
@@ -49494,7 +49495,6 @@ var MODEL_LIST = {
     "gpt-4-32k-0613",
     "gpt-4o",
     "gpt-4o-2024-05-13",
-    "gpt-4o-mini",
     "gpt-4o-mini-2024-07-18"
   ],
   anthropic: [
@@ -49537,8 +49537,8 @@ var configValidators = {
       return value;
     validateConfig(
       "OpenAI API_KEY",
-      value || config11.OCO_ANTHROPIC_API_KEY || config11.OCO_AI_PROVIDER.startsWith("ollama") || config11.OCO_AZURE_API_KEY || config11.OCO_AI_PROVIDER == "llmservice" || config11.OCO_AI_PROVIDER == "test",
-      "You need to provide an OpenAI/Anthropic/Azure API key"
+      value || config11.OCO_ANTHROPIC_API_KEY || config11.OCO_AI_PROVIDER.startsWith("ollama") || config11.OCO_AZURE_API_KEY || config11.OCO_AI_PROVIDER == "test" || config11.OCO_AI_PROVIDER == "flowise",
+      "You need to provide an OpenAI/Anthropic/Azure or other provider API key via `oco config set OCO_OPENAI_API_KEY=your_key`, for help refer to docs https://github.com/di-sukharev/opencommit"
     );
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
@@ -49550,7 +49550,7 @@ var configValidators = {
   ["OCO_AZURE_API_KEY" /* OCO_AZURE_API_KEY */](value, config11 = {}) {
     validateConfig(
       "ANTHROPIC_API_KEY",
-      value || config11.OCO_OPENAI_API_KEY || config11.OCO_AZURE_API_KEY || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "llmservice" || config11.OCO_AI_PROVIDER == "test",
+      value || config11.OCO_OPENAI_API_KEY || config11.OCO_AZURE_API_KEY || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "test" || config11.OCO_AI_PROVIDER == "flowise",
       "You need to provide an OpenAI/Anthropic/Azure API key"
     );
     return value;
@@ -49568,8 +49568,16 @@ var configValidators = {
   ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config11 = {}) {
     validateConfig(
       "ANTHROPIC_API_KEY",
-      value || config11.OCO_OPENAI_API_KEY || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "llmservice" || config11.OCO_AI_PROVIDER == "test",
+      value || config11.OCO_OPENAI_API_KEY || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "test" || config11.OCO_AI_PROVIDER == "flowise",
       "You need to provide an OpenAI/Anthropic API key"
+    );
+    return value;
+  },
+  ["OCO_FLOWISE_API_KEY" /* OCO_FLOWISE_API_KEY */](value, config11 = {}) {
+    validateConfig(
+      "OCO_FLOWISE_API_KEY" /* OCO_FLOWISE_API_KEY */,
+      value || config11.OCO_AI_PROVIDER != "flowise",
+      "You need to provide a flowise API key"
     );
     return value;
   },
@@ -49640,11 +49648,7 @@ var configValidators = {
   ["OCO_MODEL" /* OCO_MODEL */](value, config11 = {}) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      [
-        ...MODEL_LIST.openai,
-        ...MODEL_LIST.anthropic,
-        ...MODEL_LIST.gemini
-      ].includes(value) || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "azure" || config11.OCO_AI_PROVIDER == "llmservice" || config11.OCO_AI_PROVIDER == "test",
+      typeof value === "string",
       `${value} is not supported yet, use:
 
  ${[
@@ -49682,8 +49686,16 @@ var configValidators = {
   ["OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */](value) {
     validateConfig(
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
-      ["", "openai", "anthropic", "gemini", "azure", "llmservice", "test"].includes(value) || value.startsWith("ollama"),
-      `${value} is not supported yet, use 'ollama', 'llmservice', 'anthropic', 'azure', 'gemini', or 'openai' (default)`
+      [
+        "",
+        "openai",
+        "anthropic",
+        "gemini",
+        "azure",
+        "test",
+        "flowise"
+      ].includes(value) || value.startsWith("ollama"),
+      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
     return value;
   },
@@ -49703,6 +49715,14 @@ var configValidators = {
     );
     return value;
   },
+  ["OCO_FLOWISE_ENDPOINT" /* OCO_FLOWISE_ENDPOINT */](value) {
+    validateConfig(
+      "OCO_FLOWISE_ENDPOINT" /* OCO_FLOWISE_ENDPOINT */,
+      typeof value === "string" && value.includes(":"),
+      "Value must be string and should include both I.P. and port number"
+    );
+    return value;
+  },
   ["OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */](value) {
     validateConfig(
       "OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */,
@@ -49718,22 +49738,6 @@ var configValidators = {
       "OCO_API_URL" /* OCO_API_URL */,
       typeof value === "string" && value.startsWith("http"),
       `${value} is not a valid URL`
-    );
-    return value;
-  },
-  ["OCO_BACKEND_ENDPOINT" /* OCO_BACKEND_ENDPOINT */](value) {
-    validateConfig(
-      "OCO_BACKEND_ENDPOINT" /* OCO_BACKEND_ENDPOINT */,
-      typeof value === "string",
-      "Must be string"
-    );
-    return value;
-  },
-  ["OCO_BACKEND_PATH" /* OCO_BACKEND_PATH */](value) {
-    validateConfig(
-      "OCO_BACKEND_PATH" /* OCO_BACKEND_PATH */,
-      typeof value === "string",
-      "Must be string"
     );
     return value;
   }
@@ -49765,8 +49769,9 @@ var getConfig = ({
     OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false,
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || void 0,
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message",
-    OCO_BACKEND_ENDPOINT: process.env.OCO_BACKEND_ENDPOINT || "localhost:8000",
-    OCO_BACKEND_PATH: process.env.OCO_BACKEND_PATH || "api/generate"
+    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ":",
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || void 0,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || void 0
   };
   const configExists = (0, import_fs.existsSync)(configPath);
   if (!configExists)
@@ -53033,11 +53038,9 @@ if (provider === "openai" && !apiKey && command !== "config" && mode !== "set" /
   process.exit(1);
 }
 var MODEL = config3?.OCO_MODEL || "gpt-3.5-turbo";
-if (provider === "openai" && !MODEL_LIST.openai.includes(MODEL) && command !== "config" && mode !== "set" /* set */) {
+if (provider === "openai" && MODEL.typeof !== "string" && command !== "config" && mode !== "set" /* set */) {
   ce(
-    `${source_default.red("\u2716")} Unsupported model ${MODEL} for OpenAI. Supported models are: ${MODEL_LIST.openai.join(
-      ", "
-    )}`
+    `${source_default.red("\u2716")} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
   );
   process.exit(1);
 }
@@ -56082,11 +56085,9 @@ if (provider2 === "anthropic" && !apiKey2 && command2 !== "config" && mode2 !== 
   process.exit(1);
 }
 var MODEL2 = config5?.OCO_MODEL;
-if (provider2 === "anthropic" && !MODEL_LIST.anthropic.includes(MODEL2) && command2 !== "config" && mode2 !== "set" /* set */) {
+if (provider2 === "anthropic" && MODEL2.typeof !== "string" && command2 !== "config" && mode2 !== "set" /* set */) {
   ce(
-    `${source_default.red("\u2716")} Unsupported model ${MODEL2} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
-      ", "
-    )}`
+    `${source_default.red("\u2716")} Unsupported model ${MODEL2}. The model can be any string, but the current configuration is not supported.`
   );
   process.exit(1);
 }
@@ -59844,15 +59845,18 @@ var Azure = class {
 };
 var azure = new Azure();
 
-// src/engine/llmservice.ts
+// src/engine/flowise.ts
 var config7 = getConfig();
-var LlmService = class {
+var FlowiseAi = class {
   async generateCommitMessage(messages) {
-    const gitDiff = messages[messages.length - 1]?.content;
-    const url2 = `http://${config7?.OCO_BACKEND_ENDPOINT}/${config7?.OCO_BACKEND_PATH}`;
+    const gitDiff = messages[messages.length - 1]?.content?.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\r/g, "\\r").replace(/\t/g, "\\t");
+    const url2 = `http://${config7?.OCO_FLOWISE_ENDPOINT}/api/v1/prediction/${config7?.OCO_FLOWISE_API_KEY}`;
     const payload = {
-      system_prompt: messages[0]?.content,
-      user_prompt: gitDiff
+      question: gitDiff,
+      overrideConfig: {
+        systemMessagePrompt: messages[0]?.content
+      },
+      history: messages.slice(1, -1)
     };
     try {
       const response = await axios_default.post(url2, payload, {
@@ -59861,7 +59865,7 @@ var LlmService = class {
         }
       });
       const message = response.data;
-      return message;
+      return message?.text;
     } catch (err) {
       const message = err.response?.data?.error ?? err.message;
       throw new Error("local model issues. details: " + message);
@@ -59875,9 +59879,11 @@ function getEngine() {
   const provider4 = config11?.OCO_AI_PROVIDER;
   if (provider4?.startsWith("ollama")) {
     const ollamaAi = new OllamaAi();
-    const model = provider4.split("/")[1];
-    if (model)
+    const model = provider4.substring("ollama/".length);
+    if (model) {
       ollamaAi.setModel(model);
+      ollamaAi.setUrl(config11?.OCO_OLLAMA_API_URL);
+    }
     return ollamaAi;
   } else if (provider4 == "anthropic") {
     return new AnthropicAi();
@@ -59887,8 +59893,8 @@ function getEngine() {
     return new Gemini();
   } else if (provider4 == "azure") {
     return new Azure();
-  } else if (provider4 == "llmservice") {
-    return new LlmService();
+  } else if (provider4 == "flowise") {
+    return new FlowiseAi();
   }
   return new OpenAi();
 }

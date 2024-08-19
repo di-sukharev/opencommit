@@ -35,7 +35,9 @@ export enum CONFIG_KEYS {
   OCO_API_URL = 'OCO_API_URL',
   OCO_OLLAMA_API_URL = 'OCO_OLLAMA_API_URL',
   OCO_BACKEND_ENDPOINT = 'OCO_BACKEND_ENDPOINT',
-  OCO_BACKEND_PATH = 'OCO_BACKEND_PATH'
+  OCO_BACKEND_PATH = 'OCO_BACKEND_PATH',
+  OCO_FLOWISE_ENDPOINT = 'OCO_FLOWISE_ENDPOINT',
+  OCO_FLOWISE_API_KEY = 'OCO_FLOWISE_API_KEY'
 }
 
 export enum CONFIG_MODES {
@@ -45,6 +47,7 @@ export enum CONFIG_MODES {
 
 export const MODEL_LIST = {
   openai: [
+    'gpt-4o-mini',
     'gpt-3.5-turbo',
     'gpt-3.5-turbo-instruct',
     'gpt-3.5-turbo-0613',
@@ -69,7 +72,6 @@ export const MODEL_LIST = {
     'gpt-4-32k-0613',
     'gpt-4o',
     'gpt-4o-2024-05-13',
-    'gpt-4o-mini',
     'gpt-4o-mini-2024-07-18'
   ],
 
@@ -132,9 +134,10 @@ export const configValidators = {
         config.OCO_ANTHROPIC_API_KEY ||
         config.OCO_AI_PROVIDER.startsWith('ollama') ||
         config.OCO_AZURE_API_KEY ||
+        config.OCO_AI_PROVIDER == 'flowise' ||
         config.OCO_AI_PROVIDER == 'llmservice' ||
         config.OCO_AI_PROVIDER == 'test',
-      'You need to provide an OpenAI/Anthropic/Azure API key'
+      'You need to provide an OpenAI/Anthropic/Azure or other provider API key via `oco config set OCO_OPENAI_API_KEY=your_key`, for help refer to docs https://github.com/di-sukharev/opencommit'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
@@ -153,6 +156,7 @@ export const configValidators = {
         config.OCO_AZURE_API_KEY ||
         config.OCO_AI_PROVIDER == 'ollama' ||
         config.OCO_AI_PROVIDER == 'llmservice' ||
+        config.OCO_AI_PROVIDER == 'flowise' ||
         config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic/Azure API key'
     );
@@ -180,8 +184,19 @@ export const configValidators = {
         config.OCO_OPENAI_API_KEY ||
         config.OCO_AI_PROVIDER == 'ollama' ||
         config.OCO_AI_PROVIDER == 'llmservice' ||
+        config.OCO_AI_PROVIDER == 'flowise' ||
         config.OCO_AI_PROVIDER == 'test',
       'You need to provide an OpenAI/Anthropic API key'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_FLOWISE_API_KEY](value: any, config: any = {}) {
+    validateConfig(
+      CONFIG_KEYS.OCO_FLOWISE_API_KEY,
+      value || config.OCO_AI_PROVIDER != 'flowise',
+      'You need to provide a flowise API key'
     );
 
     return value;
@@ -266,15 +281,7 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_MODEL](value: any, config: any = {}) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      [
-        ...MODEL_LIST.openai,
-        ...MODEL_LIST.anthropic,
-        ...MODEL_LIST.gemini
-      ].includes(value) ||
-        config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'azure' ||
-        config.OCO_AI_PROVIDER == 'llmservice' ||
-        config.OCO_AI_PROVIDER == 'test',
+      typeof value === 'string',
       `${value} is not supported yet, use:\n\n ${[
         ...MODEL_LIST.openai,
         ...MODEL_LIST.anthropic,
@@ -314,9 +321,17 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      ['', 'openai', 'anthropic', 'gemini', 'azure', 'llmservice', 'test'].includes(value) ||
-        value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'llmservice', 'anthropic', 'azure', 'gemini', or 'openai' (default)`
+      [
+        '',
+        'openai',
+        'anthropic',
+        'gemini',
+        'azure',
+        'test',
+        'flowise',
+        'llmservice'
+      ].includes(value) || value.startsWith('ollama'),
+      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise', 'llmservice' or 'openai' (default)`
     );
     return value;
   },
@@ -330,6 +345,7 @@ export const configValidators = {
 
     return value;
   },
+
   [CONFIG_KEYS.OCO_AZURE_ENDPOINT](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_AZURE_ENDPOINT,
@@ -339,6 +355,17 @@ export const configValidators = {
 
     return value;
   },
+
+  [CONFIG_KEYS.OCO_FLOWISE_ENDPOINT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_FLOWISE_ENDPOINT,
+      typeof value === 'string' && value.includes(':'),
+      'Value must be string and should include both I.P. and port number' // Considering the possibility of DNS lookup or feeding the I.P. explicitely, there is no pattern to verify, except a column for the port number
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_TEST_MOCK_TYPE,
@@ -386,7 +413,6 @@ export type ConfigType = {
 
 const defaultConfigPath = pathJoin(homedir(), '.opencommit');
 const defaultEnvPath = pathResolve(process.cwd(), '.env');
-
 export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
@@ -423,9 +449,11 @@ export const getConfig = ({
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || undefined,
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message',
     OCO_BACKEND_ENDPOINT: process.env.OCO_BACKEND_ENDPOINT || 'localhost:8000',
-    OCO_BACKEND_PATH: process.env.OCO_BACKEND_PATH || 'api/generate'
+    OCO_BACKEND_PATH: process.env.OCO_BACKEND_PATH || 'api/generate',
+    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ':',
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || undefined,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined
   };
-
   const configExists = existsSync(configPath);
   if (!configExists) return configFromEnv;
 
@@ -450,6 +478,7 @@ export const getConfig = ({
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
+
       process.exit(1);
     }
   }

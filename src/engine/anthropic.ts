@@ -48,15 +48,13 @@ if (
 
 const MODEL = config?.OCO_MODEL;
 if (provider === 'anthropic' &&
-    !MODEL_LIST.anthropic.includes(MODEL) &&
-    command !== 'config' &&
-    mode !== CONFIG_MODES.set) {
-  outro(
-    `${chalk.red('✖')} Unsupported model ${MODEL} for Anthropic. Supported models are: ${MODEL_LIST.anthropic.join(
-      ', '
-    )}`
-  );
-  process.exit(1);
+  MODEL.typeof !== 'string' && 
+  command !== 'config' &&
+  mode !== CONFIG_MODES.set) {
+outro(
+  `${chalk.red('✖')} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
+);
+process.exit(1);
 }
 
 export class AnthropicAi implements AiEngine {
