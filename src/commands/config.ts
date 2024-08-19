@@ -283,7 +283,6 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
       typeof value === 'string',
-      typeof value === 'string',
       `${value} is not supported yet, use:\n\n ${[
         ...MODEL_LIST.openai,
         ...MODEL_LIST.anthropic,
