@@ -4,7 +4,7 @@ import { command } from 'cleye';
 import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
-import { COMMANDS } from '../CommandsEnum.js';
+import { COMMANDS } from '../ENUMS.js';
 import { assertGitRepo, getCoreHooksPath } from '../utils/git.js';
 
 const HOOK_NAME = 'prepare-commit-msg';

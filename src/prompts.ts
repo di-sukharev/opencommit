@@ -95,7 +95,7 @@ const FULL_GITMOJI_SPEC = `${GITMOJI_HELP}
 🦺, Add or update code related to validation.`;
 
 const CONVENTIONAL_COMMIT_KEYWORDS =
-  'Do not preface the commit with anything. Conventional commit keywords: fix, feat, build, chore, ci, docs, style, refactor, perf, test.';
+  'Do not preface the commit with anything, except for the conventional commit keywords: fix, feat, build, chore, ci, docs, style, refactor, perf, test.';
 
 const getCommitConvention = (fullGitMojiSpec: boolean) =>
   config.OCO_EMOJI
@@ -167,9 +167,11 @@ const getContent = (translation: ConsistencyPrompt) => {
   const fix = config.OCO_EMOJI
     ? `🐛 ${removeConventionalCommitWord(translation.commitFix)}`
     : translation.commitFix;
+
   const feat = config.OCO_EMOJI
     ? `✨ ${removeConventionalCommitWord(translation.commitFeat)}`
     : translation.commitFeat;
+
   const description = config.OCO_DESCRIPTION
     ? translation.commitDescription
     : '';

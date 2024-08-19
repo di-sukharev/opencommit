@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { parse as iniParse, stringify as iniStringify } from 'ini';
 import { homedir } from 'os';
 import { join as pathJoin, resolve as pathResolve } from 'path';
-import { COMMANDS } from '../CommandsEnum';
+import { COMMANDS } from '../ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
 

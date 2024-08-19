@@ -3,7 +3,7 @@ import { command } from 'cleye';
 
 import { intro, outro } from '@clack/prompts';
 
-import { COMMANDS } from '../CommandsEnum';
+import { COMMANDS } from '../ENUMS';
 import { configureCommitlintIntegration } from '../modules/commitlint/config';
 import { getCommitlintLLMConfig } from '../modules/commitlint/utils';
 
