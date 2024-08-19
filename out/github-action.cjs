@@ -20300,117 +20300,200 @@ var require_dist_node2 = __commonJS({
 
 // node_modules/webidl-conversions/lib/index.js
 var require_lib2 = __commonJS({
-  "node_modules/webidl-conversions/lib/index.js"(exports, module2) {
+  "node_modules/webidl-conversions/lib/index.js"(exports) {
     "use strict";
-    var conversions = {};
-    module2.exports = conversions;
+    function makeException(ErrorType, message, options) {
+      if (options.globals) {
+        ErrorType = options.globals[ErrorType.name];
+      }
+      return new ErrorType(`${options.context ? options.context : "Value"} ${message}.`);
+    }
+    function toNumber(value, options) {
+      if (typeof value === "bigint") {
+        throw makeException(TypeError, "is a BigInt which cannot be converted to a number", options);
+      }
+      if (!options.globals) {
+        return Number(value);
+      }
+      return options.globals.Number(value);
+    }
+    function evenRound(x2) {
+      if (x2 > 0 && x2 % 1 === 0.5 && (x2 & 1) === 0 || x2 < 0 && x2 % 1 === -0.5 && (x2 & 1) === 1) {
+        return censorNegativeZero(Math.floor(x2));
+      }
+      return censorNegativeZero(Math.round(x2));
+    }
+    function integerPart(n2) {
+      return censorNegativeZero(Math.trunc(n2));
+    }
     function sign(x2) {
       return x2 < 0 ? -1 : 1;
     }
-    function evenRound(x2) {
-      if (x2 % 1 === 0.5 && (x2 & 1) === 0) {
-        return Math.floor(x2);
-      } else {
-        return Math.round(x2);
+    function modulo(x2, y4) {
+      const signMightNotMatch = x2 % y4;
+      if (sign(y4) !== sign(signMightNotMatch)) {
+        return signMightNotMatch + y4;
       }
+      return signMightNotMatch;
     }
-    function createNumberConversion(bitLength, typeOpts) {
-      if (!typeOpts.unsigned) {
-        --bitLength;
+    function censorNegativeZero(x2) {
+      return x2 === 0 ? 0 : x2;
+    }
+    function createIntegerConversion(bitLength, { unsigned }) {
+      let lowerBound, upperBound;
+      if (unsigned) {
+        lowerBound = 0;
+        upperBound = 2 ** bitLength - 1;
+      } else {
+        lowerBound = -(2 ** (bitLength - 1));
+        upperBound = 2 ** (bitLength - 1) - 1;
       }
-      const lowerBound = typeOpts.unsigned ? 0 : -Math.pow(2, bitLength);
-      const upperBound = Math.pow(2, bitLength) - 1;
-      const moduloVal = typeOpts.moduloBitLength ? Math.pow(2, typeOpts.moduloBitLength) : Math.pow(2, bitLength);
-      const moduloBound = typeOpts.moduloBitLength ? Math.pow(2, typeOpts.moduloBitLength - 1) : Math.pow(2, bitLength - 1);
-      return function(V4, opts) {
-        if (!opts)
-          opts = {};
-        let x2 = +V4;
-        if (opts.enforceRange) {
+      const twoToTheBitLength = 2 ** bitLength;
+      const twoToOneLessThanTheBitLength = 2 ** (bitLength - 1);
+      return (value, options = {}) => {
+        let x2 = toNumber(value, options);
+        x2 = censorNegativeZero(x2);
+        if (options.enforceRange) {
           if (!Number.isFinite(x2)) {
-            throw new TypeError("Argument is not a finite number");
+            throw makeException(TypeError, "is not a finite number", options);
           }
-          x2 = sign(x2) * Math.floor(Math.abs(x2));
+          x2 = integerPart(x2);
           if (x2 < lowerBound || x2 > upperBound) {
-            throw new TypeError("Argument is not in byte range");
+            throw makeException(
+              TypeError,
+              `is outside the accepted range of ${lowerBound} to ${upperBound}, inclusive`,
+              options
+            );
           }
           return x2;
         }
-        if (!isNaN(x2) && opts.clamp) {
+        if (!Number.isNaN(x2) && options.clamp) {
+          x2 = Math.min(Math.max(x2, lowerBound), upperBound);
           x2 = evenRound(x2);
-          if (x2 < lowerBound)
-            x2 = lowerBound;
-          if (x2 > upperBound)
-            x2 = upperBound;
           return x2;
         }
         if (!Number.isFinite(x2) || x2 === 0) {
           return 0;
         }
-        x2 = sign(x2) * Math.floor(Math.abs(x2));
-        x2 = x2 % moduloVal;
-        if (!typeOpts.unsigned && x2 >= moduloBound) {
-          return x2 - moduloVal;
-        } else if (typeOpts.unsigned) {
-          if (x2 < 0) {
-            x2 += moduloVal;
-          } else if (x2 === -0) {
-            return 0;
-          }
+        x2 = integerPart(x2);
+        if (x2 >= lowerBound && x2 <= upperBound) {
+          return x2;
+        }
+        x2 = modulo(x2, twoToTheBitLength);
+        if (!unsigned && x2 >= twoToOneLessThanTheBitLength) {
+          return x2 - twoToTheBitLength;
         }
         return x2;
       };
     }
-    conversions["void"] = function() {
+    function createLongLongConversion(bitLength, { unsigned }) {
+      const upperBound = Number.MAX_SAFE_INTEGER;
+      const lowerBound = unsigned ? 0 : Number.MIN_SAFE_INTEGER;
+      const asBigIntN = unsigned ? BigInt.asUintN : BigInt.asIntN;
+      return (value, options = {}) => {
+        let x2 = toNumber(value, options);
+        x2 = censorNegativeZero(x2);
+        if (options.enforceRange) {
+          if (!Number.isFinite(x2)) {
+            throw makeException(TypeError, "is not a finite number", options);
+          }
+          x2 = integerPart(x2);
+          if (x2 < lowerBound || x2 > upperBound) {
+            throw makeException(
+              TypeError,
+              `is outside the accepted range of ${lowerBound} to ${upperBound}, inclusive`,
+              options
+            );
+          }
+          return x2;
+        }
+        if (!Number.isNaN(x2) && options.clamp) {
+          x2 = Math.min(Math.max(x2, lowerBound), upperBound);
+          x2 = evenRound(x2);
+          return x2;
+        }
+        if (!Number.isFinite(x2) || x2 === 0) {
+          return 0;
+        }
+        let xBigInt = BigInt(integerPart(x2));
+        xBigInt = asBigIntN(bitLength, xBigInt);
+        return Number(xBigInt);
+      };
+    }
+    exports.any = (value) => {
+      return value;
+    };
+    exports.undefined = () => {
       return void 0;
     };
-    conversions["boolean"] = function(val) {
-      return !!val;
+    exports.boolean = (value) => {
+      return Boolean(value);
     };
-    conversions["byte"] = createNumberConversion(8, { unsigned: false });
-    conversions["octet"] = createNumberConversion(8, { unsigned: true });
-    conversions["short"] = createNumberConversion(16, { unsigned: false });
-    conversions["unsigned short"] = createNumberConversion(16, { unsigned: true });
-    conversions["long"] = createNumberConversion(32, { unsigned: false });
-    conversions["unsigned long"] = createNumberConversion(32, { unsigned: true });
-    conversions["long long"] = createNumberConversion(32, { unsigned: false, moduloBitLength: 64 });
-    conversions["unsigned long long"] = createNumberConversion(32, { unsigned: true, moduloBitLength: 64 });
-    conversions["double"] = function(V4) {
-      const x2 = +V4;
+    exports.byte = createIntegerConversion(8, { unsigned: false });
+    exports.octet = createIntegerConversion(8, { unsigned: true });
+    exports.short = createIntegerConversion(16, { unsigned: false });
+    exports["unsigned short"] = createIntegerConversion(16, { unsigned: true });
+    exports.long = createIntegerConversion(32, { unsigned: false });
+    exports["unsigned long"] = createIntegerConversion(32, { unsigned: true });
+    exports["long long"] = createLongLongConversion(64, { unsigned: false });
+    exports["unsigned long long"] = createLongLongConversion(64, { unsigned: true });
+    exports.double = (value, options = {}) => {
+      const x2 = toNumber(value, options);
       if (!Number.isFinite(x2)) {
-        throw new TypeError("Argument is not a finite floating-point value");
+        throw makeException(TypeError, "is not a finite floating-point value", options);
       }
       return x2;
     };
-    conversions["unrestricted double"] = function(V4) {
-      const x2 = +V4;
+    exports["unrestricted double"] = (value, options = {}) => {
+      const x2 = toNumber(value, options);
+      return x2;
+    };
+    exports.float = (value, options = {}) => {
+      const x2 = toNumber(value, options);
+      if (!Number.isFinite(x2)) {
+        throw makeException(TypeError, "is not a finite floating-point value", options);
+      }
+      if (Object.is(x2, -0)) {
+        return x2;
+      }
+      const y4 = Math.fround(x2);
+      if (!Number.isFinite(y4)) {
+        throw makeException(TypeError, "is outside the range of a single-precision floating-point value", options);
+      }
+      return y4;
+    };
+    exports["unrestricted float"] = (value, options = {}) => {
+      const x2 = toNumber(value, options);
       if (isNaN(x2)) {
-        throw new TypeError("Argument is NaN");
+        return x2;
       }
-      return x2;
+      if (Object.is(x2, -0)) {
+        return x2;
+      }
+      return Math.fround(x2);
     };
-    conversions["float"] = conversions["double"];
-    conversions["unrestricted float"] = conversions["unrestricted double"];
-    conversions["DOMString"] = function(V4, opts) {
-      if (!opts)
-        opts = {};
-      if (opts.treatNullAsEmptyString && V4 === null) {
+    exports.DOMString = (value, options = {}) => {
+      if (options.treatNullAsEmptyString && value === null) {
         return "";
       }
-      return String(V4);
+      if (typeof value === "symbol") {
+        throw makeException(TypeError, "is a symbol, which cannot be converted to a string", options);
+      }
+      const StringCtor = options.globals ? options.globals.String : String;
+      return StringCtor(value);
     };
-    conversions["ByteString"] = function(V4, opts) {
-      const x2 = String(V4);
-      let c2 = void 0;
+    exports.ByteString = (value, options = {}) => {
+      const x2 = exports.DOMString(value, options);
+      let c2;
       for (let i3 = 0; (c2 = x2.codePointAt(i3)) !== void 0; ++i3) {
         if (c2 > 255) {
-          throw new TypeError("Argument is not a valid bytestring");
+          throw makeException(TypeError, "is not a valid ByteString", options);
         }
       }
       return x2;
     };
-    conversions["USVString"] = function(V4) {
-      const S3 = String(V4);
+    exports.USVString = (value, options = {}) => {
+      const S3 = exports.DOMString(value, options);
       const n2 = S3.length;
       const U5 = [];
       for (let i3 = 0; i3 < n2; ++i3) {
@@ -20419,39 +20502,145 @@ var require_lib2 = __commonJS({
           U5.push(String.fromCodePoint(c2));
         } else if (56320 <= c2 && c2 <= 57343) {
           U5.push(String.fromCodePoint(65533));
+        } else if (i3 === n2 - 1) {
+          U5.push(String.fromCodePoint(65533));
         } else {
-          if (i3 === n2 - 1) {
-            U5.push(String.fromCodePoint(65533));
+          const d5 = S3.charCodeAt(i3 + 1);
+          if (56320 <= d5 && d5 <= 57343) {
+            const a3 = c2 & 1023;
+            const b3 = d5 & 1023;
+            U5.push(String.fromCodePoint((2 << 15) + (2 << 9) * a3 + b3));
+            ++i3;
           } else {
-            const d5 = S3.charCodeAt(i3 + 1);
-            if (56320 <= d5 && d5 <= 57343) {
-              const a3 = c2 & 1023;
-              const b3 = d5 & 1023;
-              U5.push(String.fromCodePoint((2 << 15) + (2 << 9) * a3 + b3));
-              ++i3;
-            } else {
-              U5.push(String.fromCodePoint(65533));
-            }
+            U5.push(String.fromCodePoint(65533));
           }
         }
       }
       return U5.join("");
     };
-    conversions["Date"] = function(V4, opts) {
-      if (!(V4 instanceof Date)) {
-        throw new TypeError("Argument is not a Date object");
+    exports.object = (value, options = {}) => {
+      if (value === null || typeof value !== "object" && typeof value !== "function") {
+        throw makeException(TypeError, "is not an object", options);
       }
-      if (isNaN(V4)) {
-        return void 0;
-      }
-      return V4;
+      return value;
     };
-    conversions["RegExp"] = function(V4, opts) {
-      if (!(V4 instanceof RegExp)) {
-        V4 = new RegExp(V4);
+    var abByteLengthGetter = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength").get;
+    var sabByteLengthGetter = typeof SharedArrayBuffer === "function" ? Object.getOwnPropertyDescriptor(SharedArrayBuffer.prototype, "byteLength").get : null;
+    function isNonSharedArrayBuffer(value) {
+      try {
+        abByteLengthGetter.call(value);
+        return true;
+      } catch {
+        return false;
       }
-      return V4;
+    }
+    function isSharedArrayBuffer(value) {
+      try {
+        sabByteLengthGetter.call(value);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    function isArrayBufferDetached(value) {
+      try {
+        new Uint8Array(value);
+        return false;
+      } catch {
+        return true;
+      }
+    }
+    exports.ArrayBuffer = (value, options = {}) => {
+      if (!isNonSharedArrayBuffer(value)) {
+        if (options.allowShared && !isSharedArrayBuffer(value)) {
+          throw makeException(TypeError, "is not an ArrayBuffer or SharedArrayBuffer", options);
+        }
+        throw makeException(TypeError, "is not an ArrayBuffer", options);
+      }
+      if (isArrayBufferDetached(value)) {
+        throw makeException(TypeError, "is a detached ArrayBuffer", options);
+      }
+      return value;
     };
+    var dvByteLengthGetter = Object.getOwnPropertyDescriptor(DataView.prototype, "byteLength").get;
+    exports.DataView = (value, options = {}) => {
+      try {
+        dvByteLengthGetter.call(value);
+      } catch (e3) {
+        throw makeException(TypeError, "is not a DataView", options);
+      }
+      if (!options.allowShared && isSharedArrayBuffer(value.buffer)) {
+        throw makeException(TypeError, "is backed by a SharedArrayBuffer, which is not allowed", options);
+      }
+      if (isArrayBufferDetached(value.buffer)) {
+        throw makeException(TypeError, "is backed by a detached ArrayBuffer", options);
+      }
+      return value;
+    };
+    var typedArrayNameGetter = Object.getOwnPropertyDescriptor(
+      Object.getPrototypeOf(Uint8Array).prototype,
+      Symbol.toStringTag
+    ).get;
+    [
+      Int8Array,
+      Int16Array,
+      Int32Array,
+      Uint8Array,
+      Uint16Array,
+      Uint32Array,
+      Uint8ClampedArray,
+      Float32Array,
+      Float64Array
+    ].forEach((func) => {
+      const { name } = func;
+      const article = /^[AEIOU]/u.test(name) ? "an" : "a";
+      exports[name] = (value, options = {}) => {
+        if (!ArrayBuffer.isView(value) || typedArrayNameGetter.call(value) !== name) {
+          throw makeException(TypeError, `is not ${article} ${name} object`, options);
+        }
+        if (!options.allowShared && isSharedArrayBuffer(value.buffer)) {
+          throw makeException(TypeError, "is a view on a SharedArrayBuffer, which is not allowed", options);
+        }
+        if (isArrayBufferDetached(value.buffer)) {
+          throw makeException(TypeError, "is a view on a detached ArrayBuffer", options);
+        }
+        return value;
+      };
+    });
+    exports.ArrayBufferView = (value, options = {}) => {
+      if (!ArrayBuffer.isView(value)) {
+        throw makeException(TypeError, "is not a view on an ArrayBuffer or SharedArrayBuffer", options);
+      }
+      if (!options.allowShared && isSharedArrayBuffer(value.buffer)) {
+        throw makeException(TypeError, "is a view on a SharedArrayBuffer, which is not allowed", options);
+      }
+      if (isArrayBufferDetached(value.buffer)) {
+        throw makeException(TypeError, "is a view on a detached ArrayBuffer", options);
+      }
+      return value;
+    };
+    exports.BufferSource = (value, options = {}) => {
+      if (ArrayBuffer.isView(value)) {
+        if (!options.allowShared && isSharedArrayBuffer(value.buffer)) {
+          throw makeException(TypeError, "is a view on a SharedArrayBuffer, which is not allowed", options);
+        }
+        if (isArrayBufferDetached(value.buffer)) {
+          throw makeException(TypeError, "is a view on a detached ArrayBuffer", options);
+        }
+        return value;
+      }
+      if (!options.allowShared && !isNonSharedArrayBuffer(value)) {
+        throw makeException(TypeError, "is not an ArrayBuffer or a view on one", options);
+      }
+      if (options.allowShared && !isSharedArrayBuffer(value) && !isNonSharedArrayBuffer(value)) {
+        throw makeException(TypeError, "is not an ArrayBuffer, SharedArrayBuffer, or a view on one", options);
+      }
+      if (isArrayBufferDetached(value)) {
+        throw makeException(TypeError, "is a detached ArrayBuffer", options);
+      }
+      return value;
+    };
+    exports.DOMTimeStamp = exports["unsigned long long"];
   }
 });
 
@@ -20459,19 +20648,423 @@ var require_lib2 = __commonJS({
 var require_utils4 = __commonJS({
   "node_modules/whatwg-url/lib/utils.js"(exports, module2) {
     "use strict";
-    module2.exports.mixin = function mixin(target, source) {
-      const keys = Object.getOwnPropertyNames(source);
-      for (let i3 = 0; i3 < keys.length; ++i3) {
-        Object.defineProperty(target, keys[i3], Object.getOwnPropertyDescriptor(source, keys[i3]));
+    function isObject3(value) {
+      return typeof value === "object" && value !== null || typeof value === "function";
+    }
+    var hasOwn2 = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+    function define2(target, source) {
+      for (const key of Reflect.ownKeys(source)) {
+        const descriptor = Reflect.getOwnPropertyDescriptor(source, key);
+        if (descriptor && !Reflect.defineProperty(target, key, descriptor)) {
+          throw new TypeError(`Cannot redefine property: ${String(key)}`);
+        }
       }
+    }
+    function newObjectInRealm(globalObject, object) {
+      const ctorRegistry = initCtorRegistry(globalObject);
+      return Object.defineProperties(
+        Object.create(ctorRegistry["%Object.prototype%"]),
+        Object.getOwnPropertyDescriptors(object)
+      );
+    }
+    var wrapperSymbol = Symbol("wrapper");
+    var implSymbol = Symbol("impl");
+    var sameObjectCaches = Symbol("SameObject caches");
+    var ctorRegistrySymbol = Symbol.for("[webidl2js] constructor registry");
+    var AsyncIteratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf(async function* () {
+    }).prototype);
+    function initCtorRegistry(globalObject) {
+      if (hasOwn2(globalObject, ctorRegistrySymbol)) {
+        return globalObject[ctorRegistrySymbol];
+      }
+      const ctorRegistry = /* @__PURE__ */ Object.create(null);
+      ctorRegistry["%Object.prototype%"] = globalObject.Object.prototype;
+      ctorRegistry["%IteratorPrototype%"] = Object.getPrototypeOf(
+        Object.getPrototypeOf(new globalObject.Array()[Symbol.iterator]())
+      );
+      try {
+        ctorRegistry["%AsyncIteratorPrototype%"] = Object.getPrototypeOf(
+          Object.getPrototypeOf(
+            globalObject.eval("(async function* () {})").prototype
+          )
+        );
+      } catch {
+        ctorRegistry["%AsyncIteratorPrototype%"] = AsyncIteratorPrototype;
+      }
+      globalObject[ctorRegistrySymbol] = ctorRegistry;
+      return ctorRegistry;
+    }
+    function getSameObject(wrapper, prop, creator) {
+      if (!wrapper[sameObjectCaches]) {
+        wrapper[sameObjectCaches] = /* @__PURE__ */ Object.create(null);
+      }
+      if (prop in wrapper[sameObjectCaches]) {
+        return wrapper[sameObjectCaches][prop];
+      }
+      wrapper[sameObjectCaches][prop] = creator();
+      return wrapper[sameObjectCaches][prop];
+    }
+    function wrapperForImpl(impl) {
+      return impl ? impl[wrapperSymbol] : null;
+    }
+    function implForWrapper(wrapper) {
+      return wrapper ? wrapper[implSymbol] : null;
+    }
+    function tryWrapperForImpl(impl) {
+      const wrapper = wrapperForImpl(impl);
+      return wrapper ? wrapper : impl;
+    }
+    function tryImplForWrapper(wrapper) {
+      const impl = implForWrapper(wrapper);
+      return impl ? impl : wrapper;
+    }
+    var iterInternalSymbol = Symbol("internal");
+    function isArrayIndexPropName(P3) {
+      if (typeof P3 !== "string") {
+        return false;
+      }
+      const i3 = P3 >>> 0;
+      if (i3 === 2 ** 32 - 1) {
+        return false;
+      }
+      const s2 = `${i3}`;
+      if (P3 !== s2) {
+        return false;
+      }
+      return true;
+    }
+    var byteLengthGetter = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength").get;
+    function isArrayBuffer3(value) {
+      try {
+        byteLengthGetter.call(value);
+        return true;
+      } catch (e3) {
+        return false;
+      }
+    }
+    function iteratorResult([key, value], kind2) {
+      let result;
+      switch (kind2) {
+        case "key":
+          result = key;
+          break;
+        case "value":
+          result = value;
+          break;
+        case "key+value":
+          result = [key, value];
+          break;
+      }
+      return { value: result, done: false };
+    }
+    var supportsPropertyIndex = Symbol("supports property index");
+    var supportedPropertyIndices = Symbol("supported property indices");
+    var supportsPropertyName = Symbol("supports property name");
+    var supportedPropertyNames = Symbol("supported property names");
+    var indexedGet = Symbol("indexed property get");
+    var indexedSetNew = Symbol("indexed property set new");
+    var indexedSetExisting = Symbol("indexed property set existing");
+    var namedGet = Symbol("named property get");
+    var namedSetNew = Symbol("named property set new");
+    var namedSetExisting = Symbol("named property set existing");
+    var namedDelete = Symbol("named property delete");
+    var asyncIteratorNext = Symbol("async iterator get the next iteration result");
+    var asyncIteratorReturn = Symbol("async iterator return steps");
+    var asyncIteratorInit = Symbol("async iterator initialization steps");
+    var asyncIteratorEOI = Symbol("async iterator end of iteration");
+    module2.exports = exports = {
+      isObject: isObject3,
+      hasOwn: hasOwn2,
+      define: define2,
+      newObjectInRealm,
+      wrapperSymbol,
+      implSymbol,
+      getSameObject,
+      ctorRegistrySymbol,
+      initCtorRegistry,
+      wrapperForImpl,
+      implForWrapper,
+      tryWrapperForImpl,
+      tryImplForWrapper,
+      iterInternalSymbol,
+      isArrayBuffer: isArrayBuffer3,
+      isArrayIndexPropName,
+      supportsPropertyIndex,
+      supportedPropertyIndices,
+      supportsPropertyName,
+      supportedPropertyNames,
+      indexedGet,
+      indexedSetNew,
+      indexedSetExisting,
+      namedGet,
+      namedSetNew,
+      namedSetExisting,
+      namedDelete,
+      asyncIteratorNext,
+      asyncIteratorReturn,
+      asyncIteratorInit,
+      asyncIteratorEOI,
+      iteratorResult
     };
-    module2.exports.wrapperSymbol = Symbol("wrapper");
-    module2.exports.implSymbol = Symbol("impl");
-    module2.exports.wrapperForImpl = function(impl) {
-      return impl[module2.exports.wrapperSymbol];
+  }
+});
+
+// node_modules/punycode/punycode.js
+var require_punycode = __commonJS({
+  "node_modules/punycode/punycode.js"(exports, module2) {
+    "use strict";
+    var maxInt = 2147483647;
+    var base = 36;
+    var tMin = 1;
+    var tMax = 26;
+    var skew = 38;
+    var damp = 700;
+    var initialBias = 72;
+    var initialN = 128;
+    var delimiter = "-";
+    var regexPunycode = /^xn--/;
+    var regexNonASCII = /[^\0-\x7F]/;
+    var regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g;
+    var errors = {
+      "overflow": "Overflow: input needs wider integers to process",
+      "not-basic": "Illegal input >= 0x80 (not a basic code point)",
+      "invalid-input": "Invalid input"
     };
-    module2.exports.implForWrapper = function(wrapper) {
-      return wrapper[module2.exports.implSymbol];
+    var baseMinusTMin = base - tMin;
+    var floor = Math.floor;
+    var stringFromCharCode = String.fromCharCode;
+    function error(type2) {
+      throw new RangeError(errors[type2]);
+    }
+    function map(array, callback) {
+      const result = [];
+      let length = array.length;
+      while (length--) {
+        result[length] = callback(array[length]);
+      }
+      return result;
+    }
+    function mapDomain(domain, callback) {
+      const parts = domain.split("@");
+      let result = "";
+      if (parts.length > 1) {
+        result = parts[0] + "@";
+        domain = parts[1];
+      }
+      domain = domain.replace(regexSeparators, ".");
+      const labels = domain.split(".");
+      const encoded = map(labels, callback).join(".");
+      return result + encoded;
+    }
+    function ucs2decode(string) {
+      const output = [];
+      let counter = 0;
+      const length = string.length;
+      while (counter < length) {
+        const value = string.charCodeAt(counter++);
+        if (value >= 55296 && value <= 56319 && counter < length) {
+          const extra = string.charCodeAt(counter++);
+          if ((extra & 64512) == 56320) {
+            output.push(((value & 1023) << 10) + (extra & 1023) + 65536);
+          } else {
+            output.push(value);
+            counter--;
+          }
+        } else {
+          output.push(value);
+        }
+      }
+      return output;
+    }
+    var ucs2encode = (codePoints) => String.fromCodePoint(...codePoints);
+    var basicToDigit = function(codePoint) {
+      if (codePoint >= 48 && codePoint < 58) {
+        return 26 + (codePoint - 48);
+      }
+      if (codePoint >= 65 && codePoint < 91) {
+        return codePoint - 65;
+      }
+      if (codePoint >= 97 && codePoint < 123) {
+        return codePoint - 97;
+      }
+      return base;
+    };
+    var digitToBasic = function(digit, flag) {
+      return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+    };
+    var adapt = function(delta, numPoints, firstTime) {
+      let k4 = 0;
+      delta = firstTime ? floor(delta / damp) : delta >> 1;
+      delta += floor(delta / numPoints);
+      for (; delta > baseMinusTMin * tMax >> 1; k4 += base) {
+        delta = floor(delta / baseMinusTMin);
+      }
+      return floor(k4 + (baseMinusTMin + 1) * delta / (delta + skew));
+    };
+    var decode = function(input) {
+      const output = [];
+      const inputLength = input.length;
+      let i3 = 0;
+      let n2 = initialN;
+      let bias = initialBias;
+      let basic = input.lastIndexOf(delimiter);
+      if (basic < 0) {
+        basic = 0;
+      }
+      for (let j4 = 0; j4 < basic; ++j4) {
+        if (input.charCodeAt(j4) >= 128) {
+          error("not-basic");
+        }
+        output.push(input.charCodeAt(j4));
+      }
+      for (let index = basic > 0 ? basic + 1 : 0; index < inputLength; ) {
+        const oldi = i3;
+        for (let w4 = 1, k4 = base; ; k4 += base) {
+          if (index >= inputLength) {
+            error("invalid-input");
+          }
+          const digit = basicToDigit(input.charCodeAt(index++));
+          if (digit >= base) {
+            error("invalid-input");
+          }
+          if (digit > floor((maxInt - i3) / w4)) {
+            error("overflow");
+          }
+          i3 += digit * w4;
+          const t2 = k4 <= bias ? tMin : k4 >= bias + tMax ? tMax : k4 - bias;
+          if (digit < t2) {
+            break;
+          }
+          const baseMinusT = base - t2;
+          if (w4 > floor(maxInt / baseMinusT)) {
+            error("overflow");
+          }
+          w4 *= baseMinusT;
+        }
+        const out = output.length + 1;
+        bias = adapt(i3 - oldi, out, oldi == 0);
+        if (floor(i3 / out) > maxInt - n2) {
+          error("overflow");
+        }
+        n2 += floor(i3 / out);
+        i3 %= out;
+        output.splice(i3++, 0, n2);
+      }
+      return String.fromCodePoint(...output);
+    };
+    var encode3 = function(input) {
+      const output = [];
+      input = ucs2decode(input);
+      const inputLength = input.length;
+      let n2 = initialN;
+      let delta = 0;
+      let bias = initialBias;
+      for (const currentValue of input) {
+        if (currentValue < 128) {
+          output.push(stringFromCharCode(currentValue));
+        }
+      }
+      const basicLength = output.length;
+      let handledCPCount = basicLength;
+      if (basicLength) {
+        output.push(delimiter);
+      }
+      while (handledCPCount < inputLength) {
+        let m4 = maxInt;
+        for (const currentValue of input) {
+          if (currentValue >= n2 && currentValue < m4) {
+            m4 = currentValue;
+          }
+        }
+        const handledCPCountPlusOne = handledCPCount + 1;
+        if (m4 - n2 > floor((maxInt - delta) / handledCPCountPlusOne)) {
+          error("overflow");
+        }
+        delta += (m4 - n2) * handledCPCountPlusOne;
+        n2 = m4;
+        for (const currentValue of input) {
+          if (currentValue < n2 && ++delta > maxInt) {
+            error("overflow");
+          }
+          if (currentValue === n2) {
+            let q3 = delta;
+            for (let k4 = base; ; k4 += base) {
+              const t2 = k4 <= bias ? tMin : k4 >= bias + tMax ? tMax : k4 - bias;
+              if (q3 < t2) {
+                break;
+              }
+              const qMinusT = q3 - t2;
+              const baseMinusT = base - t2;
+              output.push(
+                stringFromCharCode(digitToBasic(t2 + qMinusT % baseMinusT, 0))
+              );
+              q3 = floor(qMinusT / baseMinusT);
+            }
+            output.push(stringFromCharCode(digitToBasic(q3, 0)));
+            bias = adapt(delta, handledCPCountPlusOne, handledCPCount === basicLength);
+            delta = 0;
+            ++handledCPCount;
+          }
+        }
+        ++delta;
+        ++n2;
+      }
+      return output.join("");
+    };
+    var toUnicode = function(input) {
+      return mapDomain(input, function(string) {
+        return regexPunycode.test(string) ? decode(string.slice(4).toLowerCase()) : string;
+      });
+    };
+    var toASCII = function(input) {
+      return mapDomain(input, function(string) {
+        return regexNonASCII.test(string) ? "xn--" + encode3(string) : string;
+      });
+    };
+    var punycode = {
+      "version": "2.3.1",
+      "ucs2": {
+        "decode": ucs2decode,
+        "encode": ucs2encode
+      },
+      "decode": decode,
+      "encode": encode3,
+      "toASCII": toASCII,
+      "toUnicode": toUnicode
+    };
+    module2.exports = punycode;
+  }
+});
+
+// node_modules/tr46/lib/regexes.js
+var require_regexes = __commonJS({
+  "node_modules/tr46/lib/regexes.js"(exports, module2) {
+    "use strict";
+    var combiningMarks = /[\u0300-\u036F\u0483-\u0489\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u0711\u0730-\u074A\u07A6-\u07B0\u07EB-\u07F3\u07FD\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u0898-\u089F\u08CA-\u08E1\u08E3-\u0903\u093A-\u093C\u093E-\u094F\u0951-\u0957\u0962\u0963\u0981-\u0983\u09BC\u09BE-\u09C4\u09C7\u09C8\u09CB-\u09CD\u09D7\u09E2\u09E3\u09FE\u0A01-\u0A03\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A70\u0A71\u0A75\u0A81-\u0A83\u0ABC\u0ABE-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AE2\u0AE3\u0AFA-\u0AFF\u0B01-\u0B03\u0B3C\u0B3E-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B55-\u0B57\u0B62\u0B63\u0B82\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD7\u0C00-\u0C04\u0C3C\u0C3E-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C81-\u0C83\u0CBC\u0CBE-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CE2\u0CE3\u0CF3\u0D00-\u0D03\u0D3B\u0D3C\u0D3E-\u0D44\u0D46-\u0D48\u0D4A-\u0D4D\u0D57\u0D62\u0D63\u0D81-\u0D83\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DF2\u0DF3\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0EB1\u0EB4-\u0EBC\u0EC8-\u0ECE\u0F18\u0F19\u0F35\u0F37\u0F39\u0F3E\u0F3F\u0F71-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102B-\u103E\u1056-\u1059\u105E-\u1060\u1062-\u1064\u1067-\u106D\u1071-\u1074\u1082-\u108D\u108F\u109A-\u109D\u135D-\u135F\u1712-\u1715\u1732-\u1734\u1752\u1753\u1772\u1773\u17B4-\u17D3\u17DD\u180B-\u180D\u180F\u1885\u1886\u18A9\u1920-\u192B\u1930-\u193B\u1A17-\u1A1B\u1A55-\u1A5E\u1A60-\u1A7C\u1A7F\u1AB0-\u1ACE\u1B00-\u1B04\u1B34-\u1B44\u1B6B-\u1B73\u1B80-\u1B82\u1BA1-\u1BAD\u1BE6-\u1BF3\u1C24-\u1C37\u1CD0-\u1CD2\u1CD4-\u1CE8\u1CED\u1CF4\u1CF7-\u1CF9\u1DC0-\u1DFF\u20D0-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302F\u3099\u309A\uA66F-\uA672\uA674-\uA67D\uA69E\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA823-\uA827\uA82C\uA880\uA881\uA8B4-\uA8C5\uA8E0-\uA8F1\uA8FF\uA926-\uA92D\uA947-\uA953\uA980-\uA983\uA9B3-\uA9C0\uA9E5\uAA29-\uAA36\uAA43\uAA4C\uAA4D\uAA7B-\uAA7D\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEB-\uAAEF\uAAF5\uAAF6\uABE3-\uABEA\uABEC\uABED\uFB1E\uFE00-\uFE0F\uFE20-\uFE2F\u{101FD}\u{102E0}\u{10376}-\u{1037A}\u{10A01}-\u{10A03}\u{10A05}\u{10A06}\u{10A0C}-\u{10A0F}\u{10A38}-\u{10A3A}\u{10A3F}\u{10AE5}\u{10AE6}\u{10D24}-\u{10D27}\u{10EAB}\u{10EAC}\u{10EFD}-\u{10EFF}\u{10F46}-\u{10F50}\u{10F82}-\u{10F85}\u{11000}-\u{11002}\u{11038}-\u{11046}\u{11070}\u{11073}\u{11074}\u{1107F}-\u{11082}\u{110B0}-\u{110BA}\u{110C2}\u{11100}-\u{11102}\u{11127}-\u{11134}\u{11145}\u{11146}\u{11173}\u{11180}-\u{11182}\u{111B3}-\u{111C0}\u{111C9}-\u{111CC}\u{111CE}\u{111CF}\u{1122C}-\u{11237}\u{1123E}\u{11241}\u{112DF}-\u{112EA}\u{11300}-\u{11303}\u{1133B}\u{1133C}\u{1133E}-\u{11344}\u{11347}\u{11348}\u{1134B}-\u{1134D}\u{11357}\u{11362}\u{11363}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{11435}-\u{11446}\u{1145E}\u{114B0}-\u{114C3}\u{115AF}-\u{115B5}\u{115B8}-\u{115C0}\u{115DC}\u{115DD}\u{11630}-\u{11640}\u{116AB}-\u{116B7}\u{1171D}-\u{1172B}\u{1182C}-\u{1183A}\u{11930}-\u{11935}\u{11937}\u{11938}\u{1193B}-\u{1193E}\u{11940}\u{11942}\u{11943}\u{119D1}-\u{119D7}\u{119DA}-\u{119E0}\u{119E4}\u{11A01}-\u{11A0A}\u{11A33}-\u{11A39}\u{11A3B}-\u{11A3E}\u{11A47}\u{11A51}-\u{11A5B}\u{11A8A}-\u{11A99}\u{11C2F}-\u{11C36}\u{11C38}-\u{11C3F}\u{11C92}-\u{11CA7}\u{11CA9}-\u{11CB6}\u{11D31}-\u{11D36}\u{11D3A}\u{11D3C}\u{11D3D}\u{11D3F}-\u{11D45}\u{11D47}\u{11D8A}-\u{11D8E}\u{11D90}\u{11D91}\u{11D93}-\u{11D97}\u{11EF3}-\u{11EF6}\u{11F00}\u{11F01}\u{11F03}\u{11F34}-\u{11F3A}\u{11F3E}-\u{11F42}\u{13440}\u{13447}-\u{13455}\u{16AF0}-\u{16AF4}\u{16B30}-\u{16B36}\u{16F4F}\u{16F51}-\u{16F87}\u{16F8F}-\u{16F92}\u{16FE4}\u{16FF0}\u{16FF1}\u{1BC9D}\u{1BC9E}\u{1CF00}-\u{1CF2D}\u{1CF30}-\u{1CF46}\u{1D165}-\u{1D169}\u{1D16D}-\u{1D172}\u{1D17B}-\u{1D182}\u{1D185}-\u{1D18B}\u{1D1AA}-\u{1D1AD}\u{1D242}-\u{1D244}\u{1DA00}-\u{1DA36}\u{1DA3B}-\u{1DA6C}\u{1DA75}\u{1DA84}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}\u{1E024}\u{1E026}-\u{1E02A}\u{1E08F}\u{1E130}-\u{1E136}\u{1E2AE}\u{1E2EC}-\u{1E2EF}\u{1E4EC}-\u{1E4EF}\u{1E8D0}-\u{1E8D6}\u{1E944}-\u{1E94A}\u{E0100}-\u{E01EF}]/u;
+    var combiningClassVirama = /[\u094D\u09CD\u0A4D\u0ACD\u0B4D\u0BCD\u0C4D\u0CCD\u0D3B\u0D3C\u0D4D\u0DCA\u0E3A\u0EBA\u0F84\u1039\u103A\u1714\u1734\u17D2\u1A60\u1B44\u1BAA\u1BAB\u1BF2\u1BF3\u2D7F\uA806\uA8C4\uA953\uA9C0\uAAF6\uABED\u{10A3F}\u{11046}\u{1107F}\u{110B9}\u{11133}\u{11134}\u{111C0}\u{11235}\u{112EA}\u{1134D}\u{11442}\u{114C2}\u{115BF}\u{1163F}\u{116B6}\u{1172B}\u{11839}\u{119E0}\u{11A34}\u{11A47}\u{11A99}\u{11C3F}\u{11D44}\u{11D45}\u{11D97}]/u;
+    var validZWNJ = /[\u0620\u0626\u0628\u062A-\u062E\u0633-\u063F\u0641-\u0647\u0649\u064A\u066E\u066F\u0678-\u0687\u069A-\u06BF\u06C1\u06C2\u06CC\u06CE\u06D0\u06D1\u06FA-\u06FC\u06FF\u0712-\u0714\u071A-\u071D\u071F-\u0727\u0729\u072B\u072D\u072E\u074E-\u0758\u075C-\u076A\u076D-\u0770\u0772\u0775-\u0777\u077A-\u077F\u07CA-\u07EA\u0841-\u0845\u0848\u084A-\u0853\u0855\u0860\u0862-\u0865\u0868\u08A0-\u08A9\u08AF\u08B0\u08B3\u08B4\u08B6-\u08B8\u08BA-\u08BD\u1807\u1820-\u1878\u1887-\u18A8\u18AA\uA840-\uA872\u{10AC0}-\u{10AC4}\u{10ACD}\u{10AD3}-\u{10ADC}\u{10ADE}-\u{10AE0}\u{10AEB}-\u{10AEE}\u{10B80}\u{10B82}\u{10B86}-\u{10B88}\u{10B8A}\u{10B8B}\u{10B8D}\u{10B90}\u{10BAD}\u{10BAE}\u{10D00}-\u{10D21}\u{10D23}\u{10F30}-\u{10F32}\u{10F34}-\u{10F44}\u{10F51}-\u{10F53}\u{1E900}-\u{1E943}][\xAD\u0300-\u036F\u0483-\u0489\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u061C\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u070F\u0711\u0730-\u074A\u07A6-\u07B0\u07EB-\u07F3\u07FD\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u08D3-\u08E1\u08E3-\u0902\u093A\u093C\u0941-\u0948\u094D\u0951-\u0957\u0962\u0963\u0981\u09BC\u09C1-\u09C4\u09CD\u09E2\u09E3\u09FE\u0A01\u0A02\u0A3C\u0A41\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A70\u0A71\u0A75\u0A81\u0A82\u0ABC\u0AC1-\u0AC5\u0AC7\u0AC8\u0ACD\u0AE2\u0AE3\u0AFA-\u0AFF\u0B01\u0B3C\u0B3F\u0B41-\u0B44\u0B4D\u0B56\u0B62\u0B63\u0B82\u0BC0\u0BCD\u0C00\u0C04\u0C3E-\u0C40\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C81\u0CBC\u0CBF\u0CC6\u0CCC\u0CCD\u0CE2\u0CE3\u0D00\u0D01\u0D3B\u0D3C\u0D41-\u0D44\u0D4D\u0D62\u0D63\u0DCA\u0DD2-\u0DD4\u0DD6\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0EB1\u0EB4-\u0EBC\u0EC8-\u0ECD\u0F18\u0F19\u0F35\u0F37\u0F39\u0F71-\u0F7E\u0F80-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102D-\u1030\u1032-\u1037\u1039\u103A\u103D\u103E\u1058\u1059\u105E-\u1060\u1071-\u1074\u1082\u1085\u1086\u108D\u109D\u135D-\u135F\u1712-\u1714\u1732-\u1734\u1752\u1753\u1772\u1773\u17B4\u17B5\u17B7-\u17BD\u17C6\u17C9-\u17D3\u17DD\u180B-\u180D\u1885\u1886\u18A9\u1920-\u1922\u1927\u1928\u1932\u1939-\u193B\u1A17\u1A18\u1A1B\u1A56\u1A58-\u1A5E\u1A60\u1A62\u1A65-\u1A6C\u1A73-\u1A7C\u1A7F\u1AB0-\u1ABE\u1B00-\u1B03\u1B34\u1B36-\u1B3A\u1B3C\u1B42\u1B6B-\u1B73\u1B80\u1B81\u1BA2-\u1BA5\u1BA8\u1BA9\u1BAB-\u1BAD\u1BE6\u1BE8\u1BE9\u1BED\u1BEF-\u1BF1\u1C2C-\u1C33\u1C36\u1C37\u1CD0-\u1CD2\u1CD4-\u1CE0\u1CE2-\u1CE8\u1CED\u1CF4\u1CF8\u1CF9\u1DC0-\u1DF9\u1DFB-\u1DFF\u200B\u200E\u200F\u202A-\u202E\u2060-\u2064\u206A-\u206F\u20D0-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302D\u3099\u309A\uA66F-\uA672\uA674-\uA67D\uA69E\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA825\uA826\uA8C4\uA8C5\uA8E0-\uA8F1\uA8FF\uA926-\uA92D\uA947-\uA951\uA980-\uA982\uA9B3\uA9B6-\uA9B9\uA9BC\uA9BD\uA9E5\uAA29-\uAA2E\uAA31\uAA32\uAA35\uAA36\uAA43\uAA4C\uAA7C\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEC\uAAED\uAAF6\uABE5\uABE8\uABED\uFB1E\uFE00-\uFE0F\uFE20-\uFE2F\uFEFF\uFFF9-\uFFFB\u{101FD}\u{102E0}\u{10376}-\u{1037A}\u{10A01}-\u{10A03}\u{10A05}\u{10A06}\u{10A0C}-\u{10A0F}\u{10A38}-\u{10A3A}\u{10A3F}\u{10AE5}\u{10AE6}\u{10D24}-\u{10D27}\u{10F46}-\u{10F50}\u{11001}\u{11038}-\u{11046}\u{1107F}-\u{11081}\u{110B3}-\u{110B6}\u{110B9}\u{110BA}\u{11100}-\u{11102}\u{11127}-\u{1112B}\u{1112D}-\u{11134}\u{11173}\u{11180}\u{11181}\u{111B6}-\u{111BE}\u{111C9}-\u{111CC}\u{1122F}-\u{11231}\u{11234}\u{11236}\u{11237}\u{1123E}\u{112DF}\u{112E3}-\u{112EA}\u{11300}\u{11301}\u{1133B}\u{1133C}\u{11340}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{11438}-\u{1143F}\u{11442}-\u{11444}\u{11446}\u{1145E}\u{114B3}-\u{114B8}\u{114BA}\u{114BF}\u{114C0}\u{114C2}\u{114C3}\u{115B2}-\u{115B5}\u{115BC}\u{115BD}\u{115BF}\u{115C0}\u{115DC}\u{115DD}\u{11633}-\u{1163A}\u{1163D}\u{1163F}\u{11640}\u{116AB}\u{116AD}\u{116B0}-\u{116B5}\u{116B7}\u{1171D}-\u{1171F}\u{11722}-\u{11725}\u{11727}-\u{1172B}\u{1182F}-\u{11837}\u{11839}\u{1183A}\u{119D4}-\u{119D7}\u{119DA}\u{119DB}\u{119E0}\u{11A01}-\u{11A0A}\u{11A33}-\u{11A38}\u{11A3B}-\u{11A3E}\u{11A47}\u{11A51}-\u{11A56}\u{11A59}-\u{11A5B}\u{11A8A}-\u{11A96}\u{11A98}\u{11A99}\u{11C30}-\u{11C36}\u{11C38}-\u{11C3D}\u{11C3F}\u{11C92}-\u{11CA7}\u{11CAA}-\u{11CB0}\u{11CB2}\u{11CB3}\u{11CB5}\u{11CB6}\u{11D31}-\u{11D36}\u{11D3A}\u{11D3C}\u{11D3D}\u{11D3F}-\u{11D45}\u{11D47}\u{11D90}\u{11D91}\u{11D95}\u{11D97}\u{11EF3}\u{11EF4}\u{13430}-\u{13438}\u{16AF0}-\u{16AF4}\u{16B30}-\u{16B36}\u{16F4F}\u{16F8F}-\u{16F92}\u{1BC9D}\u{1BC9E}\u{1BCA0}-\u{1BCA3}\u{1D167}-\u{1D169}\u{1D173}-\u{1D182}\u{1D185}-\u{1D18B}\u{1D1AA}-\u{1D1AD}\u{1D242}-\u{1D244}\u{1DA00}-\u{1DA36}\u{1DA3B}-\u{1DA6C}\u{1DA75}\u{1DA84}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}\u{1E024}\u{1E026}-\u{1E02A}\u{1E130}-\u{1E136}\u{1E2EC}-\u{1E2EF}\u{1E8D0}-\u{1E8D6}\u{1E944}-\u{1E94B}\u{E0001}\u{E0020}-\u{E007F}\u{E0100}-\u{E01EF}]*\u200C[\xAD\u0300-\u036F\u0483-\u0489\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u061C\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u070F\u0711\u0730-\u074A\u07A6-\u07B0\u07EB-\u07F3\u07FD\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u08D3-\u08E1\u08E3-\u0902\u093A\u093C\u0941-\u0948\u094D\u0951-\u0957\u0962\u0963\u0981\u09BC\u09C1-\u09C4\u09CD\u09E2\u09E3\u09FE\u0A01\u0A02\u0A3C\u0A41\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A70\u0A71\u0A75\u0A81\u0A82\u0ABC\u0AC1-\u0AC5\u0AC7\u0AC8\u0ACD\u0AE2\u0AE3\u0AFA-\u0AFF\u0B01\u0B3C\u0B3F\u0B41-\u0B44\u0B4D\u0B56\u0B62\u0B63\u0B82\u0BC0\u0BCD\u0C00\u0C04\u0C3E-\u0C40\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C81\u0CBC\u0CBF\u0CC6\u0CCC\u0CCD\u0CE2\u0CE3\u0D00\u0D01\u0D3B\u0D3C\u0D41-\u0D44\u0D4D\u0D62\u0D63\u0DCA\u0DD2-\u0DD4\u0DD6\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0EB1\u0EB4-\u0EBC\u0EC8-\u0ECD\u0F18\u0F19\u0F35\u0F37\u0F39\u0F71-\u0F7E\u0F80-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102D-\u1030\u1032-\u1037\u1039\u103A\u103D\u103E\u1058\u1059\u105E-\u1060\u1071-\u1074\u1082\u1085\u1086\u108D\u109D\u135D-\u135F\u1712-\u1714\u1732-\u1734\u1752\u1753\u1772\u1773\u17B4\u17B5\u17B7-\u17BD\u17C6\u17C9-\u17D3\u17DD\u180B-\u180D\u1885\u1886\u18A9\u1920-\u1922\u1927\u1928\u1932\u1939-\u193B\u1A17\u1A18\u1A1B\u1A56\u1A58-\u1A5E\u1A60\u1A62\u1A65-\u1A6C\u1A73-\u1A7C\u1A7F\u1AB0-\u1ABE\u1B00-\u1B03\u1B34\u1B36-\u1B3A\u1B3C\u1B42\u1B6B-\u1B73\u1B80\u1B81\u1BA2-\u1BA5\u1BA8\u1BA9\u1BAB-\u1BAD\u1BE6\u1BE8\u1BE9\u1BED\u1BEF-\u1BF1\u1C2C-\u1C33\u1C36\u1C37\u1CD0-\u1CD2\u1CD4-\u1CE0\u1CE2-\u1CE8\u1CED\u1CF4\u1CF8\u1CF9\u1DC0-\u1DF9\u1DFB-\u1DFF\u200B\u200E\u200F\u202A-\u202E\u2060-\u2064\u206A-\u206F\u20D0-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302D\u3099\u309A\uA66F-\uA672\uA674-\uA67D\uA69E\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA825\uA826\uA8C4\uA8C5\uA8E0-\uA8F1\uA8FF\uA926-\uA92D\uA947-\uA951\uA980-\uA982\uA9B3\uA9B6-\uA9B9\uA9BC\uA9BD\uA9E5\uAA29-\uAA2E\uAA31\uAA32\uAA35\uAA36\uAA43\uAA4C\uAA7C\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEC\uAAED\uAAF6\uABE5\uABE8\uABED\uFB1E\uFE00-\uFE0F\uFE20-\uFE2F\uFEFF\uFFF9-\uFFFB\u{101FD}\u{102E0}\u{10376}-\u{1037A}\u{10A01}-\u{10A03}\u{10A05}\u{10A06}\u{10A0C}-\u{10A0F}\u{10A38}-\u{10A3A}\u{10A3F}\u{10AE5}\u{10AE6}\u{10D24}-\u{10D27}\u{10F46}-\u{10F50}\u{11001}\u{11038}-\u{11046}\u{1107F}-\u{11081}\u{110B3}-\u{110B6}\u{110B9}\u{110BA}\u{11100}-\u{11102}\u{11127}-\u{1112B}\u{1112D}-\u{11134}\u{11173}\u{11180}\u{11181}\u{111B6}-\u{111BE}\u{111C9}-\u{111CC}\u{1122F}-\u{11231}\u{11234}\u{11236}\u{11237}\u{1123E}\u{112DF}\u{112E3}-\u{112EA}\u{11300}\u{11301}\u{1133B}\u{1133C}\u{11340}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{11438}-\u{1143F}\u{11442}-\u{11444}\u{11446}\u{1145E}\u{114B3}-\u{114B8}\u{114BA}\u{114BF}\u{114C0}\u{114C2}\u{114C3}\u{115B2}-\u{115B5}\u{115BC}\u{115BD}\u{115BF}\u{115C0}\u{115DC}\u{115DD}\u{11633}-\u{1163A}\u{1163D}\u{1163F}\u{11640}\u{116AB}\u{116AD}\u{116B0}-\u{116B5}\u{116B7}\u{1171D}-\u{1171F}\u{11722}-\u{11725}\u{11727}-\u{1172B}\u{1182F}-\u{11837}\u{11839}\u{1183A}\u{119D4}-\u{119D7}\u{119DA}\u{119DB}\u{119E0}\u{11A01}-\u{11A0A}\u{11A33}-\u{11A38}\u{11A3B}-\u{11A3E}\u{11A47}\u{11A51}-\u{11A56}\u{11A59}-\u{11A5B}\u{11A8A}-\u{11A96}\u{11A98}\u{11A99}\u{11C30}-\u{11C36}\u{11C38}-\u{11C3D}\u{11C3F}\u{11C92}-\u{11CA7}\u{11CAA}-\u{11CB0}\u{11CB2}\u{11CB3}\u{11CB5}\u{11CB6}\u{11D31}-\u{11D36}\u{11D3A}\u{11D3C}\u{11D3D}\u{11D3F}-\u{11D45}\u{11D47}\u{11D90}\u{11D91}\u{11D95}\u{11D97}\u{11EF3}\u{11EF4}\u{13430}-\u{13438}\u{16AF0}-\u{16AF4}\u{16B30}-\u{16B36}\u{16F4F}\u{16F8F}-\u{16F92}\u{1BC9D}\u{1BC9E}\u{1BCA0}-\u{1BCA3}\u{1D167}-\u{1D169}\u{1D173}-\u{1D182}\u{1D185}-\u{1D18B}\u{1D1AA}-\u{1D1AD}\u{1D242}-\u{1D244}\u{1DA00}-\u{1DA36}\u{1DA3B}-\u{1DA6C}\u{1DA75}\u{1DA84}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}\u{1E024}\u{1E026}-\u{1E02A}\u{1E130}-\u{1E136}\u{1E2EC}-\u{1E2EF}\u{1E8D0}-\u{1E8D6}\u{1E944}-\u{1E94B}\u{E0001}\u{E0020}-\u{E007F}\u{E0100}-\u{E01EF}]*[\u0620\u0622-\u063F\u0641-\u064A\u066E\u066F\u0671-\u0673\u0675-\u06D3\u06D5\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u077F\u07CA-\u07EA\u0840-\u0855\u0860\u0862-\u0865\u0867-\u086A\u08A0-\u08AC\u08AE-\u08B4\u08B6-\u08BD\u1807\u1820-\u1878\u1887-\u18A8\u18AA\uA840-\uA871\u{10AC0}-\u{10AC5}\u{10AC7}\u{10AC9}\u{10ACA}\u{10ACE}-\u{10AD6}\u{10AD8}-\u{10AE1}\u{10AE4}\u{10AEB}-\u{10AEF}\u{10B80}-\u{10B91}\u{10BA9}-\u{10BAE}\u{10D01}-\u{10D23}\u{10F30}-\u{10F44}\u{10F51}-\u{10F54}\u{1E900}-\u{1E943}]/u;
+    var bidiDomain = /[\u05BE\u05C0\u05C3\u05C6\u05D0-\u05EA\u05EF-\u05F4\u0600-\u0605\u0608\u060B\u060D\u061B-\u064A\u0660-\u0669\u066B-\u066F\u0671-\u06D5\u06DD\u06E5\u06E6\u06EE\u06EF\u06FA-\u070D\u070F\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07C0-\u07EA\u07F4\u07F5\u07FA\u07FE-\u0815\u081A\u0824\u0828\u0830-\u083E\u0840-\u0858\u085E\u0860-\u086A\u0870-\u088E\u0890\u0891\u08A0-\u08C9\u08E2\u200F\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBC2\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFC\uFE70-\uFE74\uFE76-\uFEFC\u{10800}-\u{10805}\u{10808}\u{1080A}-\u{10835}\u{10837}\u{10838}\u{1083C}\u{1083F}-\u{10855}\u{10857}-\u{1089E}\u{108A7}-\u{108AF}\u{108E0}-\u{108F2}\u{108F4}\u{108F5}\u{108FB}-\u{1091B}\u{10920}-\u{10939}\u{1093F}\u{10980}-\u{109B7}\u{109BC}-\u{109CF}\u{109D2}-\u{10A00}\u{10A10}-\u{10A13}\u{10A15}-\u{10A17}\u{10A19}-\u{10A35}\u{10A40}-\u{10A48}\u{10A50}-\u{10A58}\u{10A60}-\u{10A9F}\u{10AC0}-\u{10AE4}\u{10AEB}-\u{10AF6}\u{10B00}-\u{10B35}\u{10B40}-\u{10B55}\u{10B58}-\u{10B72}\u{10B78}-\u{10B91}\u{10B99}-\u{10B9C}\u{10BA9}-\u{10BAF}\u{10C00}-\u{10C48}\u{10C80}-\u{10CB2}\u{10CC0}-\u{10CF2}\u{10CFA}-\u{10D23}\u{10D30}-\u{10D39}\u{10E60}-\u{10E7E}\u{10E80}-\u{10EA9}\u{10EAD}\u{10EB0}\u{10EB1}\u{10F00}-\u{10F27}\u{10F30}-\u{10F45}\u{10F51}-\u{10F59}\u{10F70}-\u{10F81}\u{10F86}-\u{10F89}\u{10FB0}-\u{10FCB}\u{10FE0}-\u{10FF6}\u{1E800}-\u{1E8C4}\u{1E8C7}-\u{1E8CF}\u{1E900}-\u{1E943}\u{1E94B}\u{1E950}-\u{1E959}\u{1E95E}\u{1E95F}\u{1EC71}-\u{1ECB4}\u{1ED01}-\u{1ED3D}\u{1EE00}-\u{1EE03}\u{1EE05}-\u{1EE1F}\u{1EE21}\u{1EE22}\u{1EE24}\u{1EE27}\u{1EE29}-\u{1EE32}\u{1EE34}-\u{1EE37}\u{1EE39}\u{1EE3B}\u{1EE42}\u{1EE47}\u{1EE49}\u{1EE4B}\u{1EE4D}-\u{1EE4F}\u{1EE51}\u{1EE52}\u{1EE54}\u{1EE57}\u{1EE59}\u{1EE5B}\u{1EE5D}\u{1EE5F}\u{1EE61}\u{1EE62}\u{1EE64}\u{1EE67}-\u{1EE6A}\u{1EE6C}-\u{1EE72}\u{1EE74}-\u{1EE77}\u{1EE79}-\u{1EE7C}\u{1EE7E}\u{1EE80}-\u{1EE89}\u{1EE8B}-\u{1EE9B}\u{1EEA1}-\u{1EEA3}\u{1EEA5}-\u{1EEA9}\u{1EEAB}-\u{1EEBB}]/u;
+    var bidiS1LTR = /[A-Za-z\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02B8\u02BB-\u02C1\u02D0\u02D1\u02E0-\u02E4\u02EE\u0370-\u0373\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0482\u048A-\u052F\u0531-\u0556\u0559-\u0589\u0903-\u0939\u093B\u093D-\u0940\u0949-\u094C\u094E-\u0950\u0958-\u0961\u0964-\u0980\u0982\u0983\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD-\u09C0\u09C7\u09C8\u09CB\u09CC\u09CE\u09D7\u09DC\u09DD\u09DF-\u09E1\u09E6-\u09F1\u09F4-\u09FA\u09FC\u09FD\u0A03\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A3E-\u0A40\u0A59-\u0A5C\u0A5E\u0A66-\u0A6F\u0A72-\u0A74\u0A76\u0A83\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD-\u0AC0\u0AC9\u0ACB\u0ACC\u0AD0\u0AE0\u0AE1\u0AE6-\u0AF0\u0AF9\u0B02\u0B03\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B3E\u0B40\u0B47\u0B48\u0B4B\u0B4C\u0B57\u0B5C\u0B5D\u0B5F-\u0B61\u0B66-\u0B77\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BBE\u0BBF\u0BC1\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCC\u0BD0\u0BD7\u0BE6-\u0BF2\u0C01-\u0C03\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C41-\u0C44\u0C58-\u0C5A\u0C5D\u0C60\u0C61\u0C66-\u0C6F\u0C77\u0C7F\u0C80\u0C82-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD-\u0CC4\u0CC6-\u0CC8\u0CCA\u0CCB\u0CD5\u0CD6\u0CDD\u0CDE\u0CE0\u0CE1\u0CE6-\u0CEF\u0CF1-\u0CF3\u0D02-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D-\u0D40\u0D46-\u0D48\u0D4A-\u0D4C\u0D4E\u0D4F\u0D54-\u0D61\u0D66-\u0D7F\u0D82\u0D83\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0DCF-\u0DD1\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2-\u0DF4\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E4F-\u0E5B\u0E81\u0E82\u0E84\u0E86-\u0E8A\u0E8C-\u0EA3\u0EA5\u0EA7-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0ED0-\u0ED9\u0EDC-\u0EDF\u0F00-\u0F17\u0F1A-\u0F34\u0F36\u0F38\u0F3E-\u0F47\u0F49-\u0F6C\u0F7F\u0F85\u0F88-\u0F8C\u0FBE-\u0FC5\u0FC7-\u0FCC\u0FCE-\u0FDA\u1000-\u102C\u1031\u1038\u103B\u103C\u103F-\u1057\u105A-\u105D\u1061-\u1070\u1075-\u1081\u1083\u1084\u1087-\u108C\u108E-\u109C\u109E-\u10C5\u10C7\u10CD\u10D0-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1360-\u137C\u1380-\u138F\u13A0-\u13F5\u13F8-\u13FD\u1401-\u167F\u1681-\u169A\u16A0-\u16F8\u1700-\u1711\u1715\u171F-\u1731\u1734-\u1736\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17B6\u17BE-\u17C5\u17C7\u17C8\u17D4-\u17DA\u17DC\u17E0-\u17E9\u1810-\u1819\u1820-\u1878\u1880-\u1884\u1887-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1923-\u1926\u1929-\u192B\u1930\u1931\u1933-\u1938\u1946-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u19D0-\u19DA\u1A00-\u1A16\u1A19\u1A1A\u1A1E-\u1A55\u1A57\u1A61\u1A63\u1A64\u1A6D-\u1A72\u1A80-\u1A89\u1A90-\u1A99\u1AA0-\u1AAD\u1B04-\u1B33\u1B35\u1B3B\u1B3D-\u1B41\u1B43-\u1B4C\u1B50-\u1B6A\u1B74-\u1B7E\u1B82-\u1BA1\u1BA6\u1BA7\u1BAA\u1BAE-\u1BE5\u1BE7\u1BEA-\u1BEC\u1BEE\u1BF2\u1BF3\u1BFC-\u1C2B\u1C34\u1C35\u1C3B-\u1C49\u1C4D-\u1C88\u1C90-\u1CBA\u1CBD-\u1CC7\u1CD3\u1CE1\u1CE9-\u1CEC\u1CEE-\u1CF3\u1CF5-\u1CF7\u1CFA\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u200E\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u214F\u2160-\u2188\u2336-\u237A\u2395\u249C-\u24E9\u26AC\u2800-\u28FF\u2C00-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D70\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u3005-\u3007\u3021-\u3029\u302E\u302F\u3031-\u3035\u3038-\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312F\u3131-\u318E\u3190-\u31BF\u31F0-\u321C\u3220-\u324F\u3260-\u327B\u327F-\u32B0\u32C0-\u32CB\u32D0-\u3376\u337B-\u33DD\u33E0-\u33FE\u3400-\u4DBF\u4E00-\uA48C\uA4D0-\uA60C\uA610-\uA62B\uA640-\uA66E\uA680-\uA69D\uA6A0-\uA6EF\uA6F2-\uA6F7\uA722-\uA787\uA789-\uA7CA\uA7D0\uA7D1\uA7D3\uA7D5-\uA7D9\uA7F2-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA824\uA827\uA830-\uA837\uA840-\uA873\uA880-\uA8C3\uA8CE-\uA8D9\uA8F2-\uA8FE\uA900-\uA925\uA92E-\uA946\uA952\uA953\uA95F-\uA97C\uA983-\uA9B2\uA9B4\uA9B5\uA9BA\uA9BB\uA9BE-\uA9CD\uA9CF-\uA9D9\uA9DE-\uA9E4\uA9E6-\uA9FE\uAA00-\uAA28\uAA2F\uAA30\uAA33\uAA34\uAA40-\uAA42\uAA44-\uAA4B\uAA4D\uAA50-\uAA59\uAA5C-\uAA7B\uAA7D-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAAEB\uAAEE-\uAAF5\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB69\uAB70-\uABE4\uABE6\uABE7\uABE9-\uABEC\uABF0-\uABF9\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uD800-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\u{10000}-\u{1000B}\u{1000D}-\u{10026}\u{10028}-\u{1003A}\u{1003C}\u{1003D}\u{1003F}-\u{1004D}\u{10050}-\u{1005D}\u{10080}-\u{100FA}\u{10100}\u{10102}\u{10107}-\u{10133}\u{10137}-\u{1013F}\u{1018D}\u{1018E}\u{101D0}-\u{101FC}\u{10280}-\u{1029C}\u{102A0}-\u{102D0}\u{10300}-\u{10323}\u{1032D}-\u{1034A}\u{10350}-\u{10375}\u{10380}-\u{1039D}\u{1039F}-\u{103C3}\u{103C8}-\u{103D5}\u{10400}-\u{1049D}\u{104A0}-\u{104A9}\u{104B0}-\u{104D3}\u{104D8}-\u{104FB}\u{10500}-\u{10527}\u{10530}-\u{10563}\u{1056F}-\u{1057A}\u{1057C}-\u{1058A}\u{1058C}-\u{10592}\u{10594}\u{10595}\u{10597}-\u{105A1}\u{105A3}-\u{105B1}\u{105B3}-\u{105B9}\u{105BB}\u{105BC}\u{10600}-\u{10736}\u{10740}-\u{10755}\u{10760}-\u{10767}\u{10780}-\u{10785}\u{10787}-\u{107B0}\u{107B2}-\u{107BA}\u{11000}\u{11002}-\u{11037}\u{11047}-\u{1104D}\u{11066}-\u{1106F}\u{11071}\u{11072}\u{11075}\u{11082}-\u{110B2}\u{110B7}\u{110B8}\u{110BB}-\u{110C1}\u{110CD}\u{110D0}-\u{110E8}\u{110F0}-\u{110F9}\u{11103}-\u{11126}\u{1112C}\u{11136}-\u{11147}\u{11150}-\u{11172}\u{11174}-\u{11176}\u{11182}-\u{111B5}\u{111BF}-\u{111C8}\u{111CD}\u{111CE}\u{111D0}-\u{111DF}\u{111E1}-\u{111F4}\u{11200}-\u{11211}\u{11213}-\u{1122E}\u{11232}\u{11233}\u{11235}\u{11238}-\u{1123D}\u{1123F}\u{11240}\u{11280}-\u{11286}\u{11288}\u{1128A}-\u{1128D}\u{1128F}-\u{1129D}\u{1129F}-\u{112A9}\u{112B0}-\u{112DE}\u{112E0}-\u{112E2}\u{112F0}-\u{112F9}\u{11302}\u{11303}\u{11305}-\u{1130C}\u{1130F}\u{11310}\u{11313}-\u{11328}\u{1132A}-\u{11330}\u{11332}\u{11333}\u{11335}-\u{11339}\u{1133D}-\u{1133F}\u{11341}-\u{11344}\u{11347}\u{11348}\u{1134B}-\u{1134D}\u{11350}\u{11357}\u{1135D}-\u{11363}\u{11400}-\u{11437}\u{11440}\u{11441}\u{11445}\u{11447}-\u{1145B}\u{1145D}\u{1145F}-\u{11461}\u{11480}-\u{114B2}\u{114B9}\u{114BB}-\u{114BE}\u{114C1}\u{114C4}-\u{114C7}\u{114D0}-\u{114D9}\u{11580}-\u{115B1}\u{115B8}-\u{115BB}\u{115BE}\u{115C1}-\u{115DB}\u{11600}-\u{11632}\u{1163B}\u{1163C}\u{1163E}\u{11641}-\u{11644}\u{11650}-\u{11659}\u{11680}-\u{116AA}\u{116AC}\u{116AE}\u{116AF}\u{116B6}\u{116B8}\u{116B9}\u{116C0}-\u{116C9}\u{11700}-\u{1171A}\u{11720}\u{11721}\u{11726}\u{11730}-\u{11746}\u{11800}-\u{1182E}\u{11838}\u{1183B}\u{118A0}-\u{118F2}\u{118FF}-\u{11906}\u{11909}\u{1190C}-\u{11913}\u{11915}\u{11916}\u{11918}-\u{11935}\u{11937}\u{11938}\u{1193D}\u{1193F}-\u{11942}\u{11944}-\u{11946}\u{11950}-\u{11959}\u{119A0}-\u{119A7}\u{119AA}-\u{119D3}\u{119DC}-\u{119DF}\u{119E1}-\u{119E4}\u{11A00}\u{11A07}\u{11A08}\u{11A0B}-\u{11A32}\u{11A39}\u{11A3A}\u{11A3F}-\u{11A46}\u{11A50}\u{11A57}\u{11A58}\u{11A5C}-\u{11A89}\u{11A97}\u{11A9A}-\u{11AA2}\u{11AB0}-\u{11AF8}\u{11B00}-\u{11B09}\u{11C00}-\u{11C08}\u{11C0A}-\u{11C2F}\u{11C3E}-\u{11C45}\u{11C50}-\u{11C6C}\u{11C70}-\u{11C8F}\u{11CA9}\u{11CB1}\u{11CB4}\u{11D00}-\u{11D06}\u{11D08}\u{11D09}\u{11D0B}-\u{11D30}\u{11D46}\u{11D50}-\u{11D59}\u{11D60}-\u{11D65}\u{11D67}\u{11D68}\u{11D6A}-\u{11D8E}\u{11D93}\u{11D94}\u{11D96}\u{11D98}\u{11DA0}-\u{11DA9}\u{11EE0}-\u{11EF2}\u{11EF5}-\u{11EF8}\u{11F02}-\u{11F10}\u{11F12}-\u{11F35}\u{11F3E}\u{11F3F}\u{11F41}\u{11F43}-\u{11F59}\u{11FB0}\u{11FC0}-\u{11FD4}\u{11FFF}-\u{12399}\u{12400}-\u{1246E}\u{12470}-\u{12474}\u{12480}-\u{12543}\u{12F90}-\u{12FF2}\u{13000}-\u{1343F}\u{13441}-\u{13446}\u{14400}-\u{14646}\u{16800}-\u{16A38}\u{16A40}-\u{16A5E}\u{16A60}-\u{16A69}\u{16A6E}-\u{16ABE}\u{16AC0}-\u{16AC9}\u{16AD0}-\u{16AED}\u{16AF5}\u{16B00}-\u{16B2F}\u{16B37}-\u{16B45}\u{16B50}-\u{16B59}\u{16B5B}-\u{16B61}\u{16B63}-\u{16B77}\u{16B7D}-\u{16B8F}\u{16E40}-\u{16E9A}\u{16F00}-\u{16F4A}\u{16F50}-\u{16F87}\u{16F93}-\u{16F9F}\u{16FE0}\u{16FE1}\u{16FE3}\u{16FF0}\u{16FF1}\u{17000}-\u{187F7}\u{18800}-\u{18CD5}\u{18D00}-\u{18D08}\u{1AFF0}-\u{1AFF3}\u{1AFF5}-\u{1AFFB}\u{1AFFD}\u{1AFFE}\u{1B000}-\u{1B122}\u{1B132}\u{1B150}-\u{1B152}\u{1B155}\u{1B164}-\u{1B167}\u{1B170}-\u{1B2FB}\u{1BC00}-\u{1BC6A}\u{1BC70}-\u{1BC7C}\u{1BC80}-\u{1BC88}\u{1BC90}-\u{1BC99}\u{1BC9C}\u{1BC9F}\u{1CF50}-\u{1CFC3}\u{1D000}-\u{1D0F5}\u{1D100}-\u{1D126}\u{1D129}-\u{1D166}\u{1D16A}-\u{1D172}\u{1D183}\u{1D184}\u{1D18C}-\u{1D1A9}\u{1D1AE}-\u{1D1E8}\u{1D2C0}-\u{1D2D3}\u{1D2E0}-\u{1D2F3}\u{1D360}-\u{1D378}\u{1D400}-\u{1D454}\u{1D456}-\u{1D49C}\u{1D49E}\u{1D49F}\u{1D4A2}\u{1D4A5}\u{1D4A6}\u{1D4A9}-\u{1D4AC}\u{1D4AE}-\u{1D4B9}\u{1D4BB}\u{1D4BD}-\u{1D4C3}\u{1D4C5}-\u{1D505}\u{1D507}-\u{1D50A}\u{1D50D}-\u{1D514}\u{1D516}-\u{1D51C}\u{1D51E}-\u{1D539}\u{1D53B}-\u{1D53E}\u{1D540}-\u{1D544}\u{1D546}\u{1D54A}-\u{1D550}\u{1D552}-\u{1D6A5}\u{1D6A8}-\u{1D6DA}\u{1D6DC}-\u{1D714}\u{1D716}-\u{1D74E}\u{1D750}-\u{1D788}\u{1D78A}-\u{1D7C2}\u{1D7C4}-\u{1D7CB}\u{1D800}-\u{1D9FF}\u{1DA37}-\u{1DA3A}\u{1DA6D}-\u{1DA74}\u{1DA76}-\u{1DA83}\u{1DA85}-\u{1DA8B}\u{1DF00}-\u{1DF1E}\u{1DF25}-\u{1DF2A}\u{1E030}-\u{1E06D}\u{1E100}-\u{1E12C}\u{1E137}-\u{1E13D}\u{1E140}-\u{1E149}\u{1E14E}\u{1E14F}\u{1E290}-\u{1E2AD}\u{1E2C0}-\u{1E2EB}\u{1E2F0}-\u{1E2F9}\u{1E4D0}-\u{1E4EB}\u{1E4F0}-\u{1E4F9}\u{1E7E0}-\u{1E7E6}\u{1E7E8}-\u{1E7EB}\u{1E7ED}\u{1E7EE}\u{1E7F0}-\u{1E7FE}\u{1F110}-\u{1F12E}\u{1F130}-\u{1F169}\u{1F170}-\u{1F1AC}\u{1F1E6}-\u{1F202}\u{1F210}-\u{1F23B}\u{1F240}-\u{1F248}\u{1F250}\u{1F251}\u{20000}-\u{2A6DF}\u{2A700}-\u{2B739}\u{2B740}-\u{2B81D}\u{2B820}-\u{2CEA1}\u{2CEB0}-\u{2EBE0}\u{2F800}-\u{2FA1D}\u{30000}-\u{3134A}\u{31350}-\u{323AF}\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]/u;
+    var bidiS1RTL = /[\u05BE\u05C0\u05C3\u05C6\u05D0-\u05EA\u05EF-\u05F4\u0608\u060B\u060D\u061B-\u064A\u066D-\u066F\u0671-\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u070D\u070F\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07C0-\u07EA\u07F4\u07F5\u07FA\u07FE-\u0815\u081A\u0824\u0828\u0830-\u083E\u0840-\u0858\u085E\u0860-\u086A\u0870-\u088E\u08A0-\u08C9\u200F\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBC2\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFC\uFE70-\uFE74\uFE76-\uFEFC\u{10800}-\u{10805}\u{10808}\u{1080A}-\u{10835}\u{10837}\u{10838}\u{1083C}\u{1083F}-\u{10855}\u{10857}-\u{1089E}\u{108A7}-\u{108AF}\u{108E0}-\u{108F2}\u{108F4}\u{108F5}\u{108FB}-\u{1091B}\u{10920}-\u{10939}\u{1093F}\u{10980}-\u{109B7}\u{109BC}-\u{109CF}\u{109D2}-\u{10A00}\u{10A10}-\u{10A13}\u{10A15}-\u{10A17}\u{10A19}-\u{10A35}\u{10A40}-\u{10A48}\u{10A50}-\u{10A58}\u{10A60}-\u{10A9F}\u{10AC0}-\u{10AE4}\u{10AEB}-\u{10AF6}\u{10B00}-\u{10B35}\u{10B40}-\u{10B55}\u{10B58}-\u{10B72}\u{10B78}-\u{10B91}\u{10B99}-\u{10B9C}\u{10BA9}-\u{10BAF}\u{10C00}-\u{10C48}\u{10C80}-\u{10CB2}\u{10CC0}-\u{10CF2}\u{10CFA}-\u{10D23}\u{10E80}-\u{10EA9}\u{10EAD}\u{10EB0}\u{10EB1}\u{10F00}-\u{10F27}\u{10F30}-\u{10F45}\u{10F51}-\u{10F59}\u{10F70}-\u{10F81}\u{10F86}-\u{10F89}\u{10FB0}-\u{10FCB}\u{10FE0}-\u{10FF6}\u{1E800}-\u{1E8C4}\u{1E8C7}-\u{1E8CF}\u{1E900}-\u{1E943}\u{1E94B}\u{1E950}-\u{1E959}\u{1E95E}\u{1E95F}\u{1EC71}-\u{1ECB4}\u{1ED01}-\u{1ED3D}\u{1EE00}-\u{1EE03}\u{1EE05}-\u{1EE1F}\u{1EE21}\u{1EE22}\u{1EE24}\u{1EE27}\u{1EE29}-\u{1EE32}\u{1EE34}-\u{1EE37}\u{1EE39}\u{1EE3B}\u{1EE42}\u{1EE47}\u{1EE49}\u{1EE4B}\u{1EE4D}-\u{1EE4F}\u{1EE51}\u{1EE52}\u{1EE54}\u{1EE57}\u{1EE59}\u{1EE5B}\u{1EE5D}\u{1EE5F}\u{1EE61}\u{1EE62}\u{1EE64}\u{1EE67}-\u{1EE6A}\u{1EE6C}-\u{1EE72}\u{1EE74}-\u{1EE77}\u{1EE79}-\u{1EE7C}\u{1EE7E}\u{1EE80}-\u{1EE89}\u{1EE8B}-\u{1EE9B}\u{1EEA1}-\u{1EEA3}\u{1EEA5}-\u{1EEA9}\u{1EEAB}-\u{1EEBB}]/u;
+    var bidiS2 = /^[\0-\x08\x0E-\x1B!-@\[-`\{-\x84\x86-\xA9\xAB-\xB4\xB6-\xB9\xBB-\xBF\xD7\xF7\u02B9\u02BA\u02C2-\u02CF\u02D2-\u02DF\u02E5-\u02ED\u02EF-\u036F\u0374\u0375\u037E\u0384\u0385\u0387\u03F6\u0483-\u0489\u058A\u058D-\u058F\u0591-\u05C7\u05D0-\u05EA\u05EF-\u05F4\u0600-\u070D\u070F-\u074A\u074D-\u07B1\u07C0-\u07FA\u07FD-\u082D\u0830-\u083E\u0840-\u085B\u085E\u0860-\u086A\u0870-\u088E\u0890\u0891\u0898-\u0902\u093A\u093C\u0941-\u0948\u094D\u0951-\u0957\u0962\u0963\u0981\u09BC\u09C1-\u09C4\u09CD\u09E2\u09E3\u09F2\u09F3\u09FB\u09FE\u0A01\u0A02\u0A3C\u0A41\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A70\u0A71\u0A75\u0A81\u0A82\u0ABC\u0AC1-\u0AC5\u0AC7\u0AC8\u0ACD\u0AE2\u0AE3\u0AF1\u0AFA-\u0AFF\u0B01\u0B3C\u0B3F\u0B41-\u0B44\u0B4D\u0B55\u0B56\u0B62\u0B63\u0B82\u0BC0\u0BCD\u0BF3-\u0BFA\u0C00\u0C04\u0C3C\u0C3E-\u0C40\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C78-\u0C7E\u0C81\u0CBC\u0CCC\u0CCD\u0CE2\u0CE3\u0D00\u0D01\u0D3B\u0D3C\u0D41-\u0D44\u0D4D\u0D62\u0D63\u0D81\u0DCA\u0DD2-\u0DD4\u0DD6\u0E31\u0E34-\u0E3A\u0E3F\u0E47-\u0E4E\u0EB1\u0EB4-\u0EBC\u0EC8-\u0ECE\u0F18\u0F19\u0F35\u0F37\u0F39-\u0F3D\u0F71-\u0F7E\u0F80-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102D-\u1030\u1032-\u1037\u1039\u103A\u103D\u103E\u1058\u1059\u105E-\u1060\u1071-\u1074\u1082\u1085\u1086\u108D\u109D\u135D-\u135F\u1390-\u1399\u1400\u169B\u169C\u1712-\u1714\u1732\u1733\u1752\u1753\u1772\u1773\u17B4\u17B5\u17B7-\u17BD\u17C6\u17C9-\u17D3\u17DB\u17DD\u17F0-\u17F9\u1800-\u180F\u1885\u1886\u18A9\u1920-\u1922\u1927\u1928\u1932\u1939-\u193B\u1940\u1944\u1945\u19DE-\u19FF\u1A17\u1A18\u1A1B\u1A56\u1A58-\u1A5E\u1A60\u1A62\u1A65-\u1A6C\u1A73-\u1A7C\u1A7F\u1AB0-\u1ACE\u1B00-\u1B03\u1B34\u1B36-\u1B3A\u1B3C\u1B42\u1B6B-\u1B73\u1B80\u1B81\u1BA2-\u1BA5\u1BA8\u1BA9\u1BAB-\u1BAD\u1BE6\u1BE8\u1BE9\u1BED\u1BEF-\u1BF1\u1C2C-\u1C33\u1C36\u1C37\u1CD0-\u1CD2\u1CD4-\u1CE0\u1CE2-\u1CE8\u1CED\u1CF4\u1CF8\u1CF9\u1DC0-\u1DFF\u1FBD\u1FBF-\u1FC1\u1FCD-\u1FCF\u1FDD-\u1FDF\u1FED-\u1FEF\u1FFD\u1FFE\u200B-\u200D\u200F-\u2027\u202F-\u205E\u2060-\u2064\u206A-\u2070\u2074-\u207E\u2080-\u208E\u20A0-\u20C0\u20D0-\u20F0\u2100\u2101\u2103-\u2106\u2108\u2109\u2114\u2116-\u2118\u211E-\u2123\u2125\u2127\u2129\u212E\u213A\u213B\u2140-\u2144\u214A-\u214D\u2150-\u215F\u2189-\u218B\u2190-\u2335\u237B-\u2394\u2396-\u2426\u2440-\u244A\u2460-\u249B\u24EA-\u26AB\u26AD-\u27FF\u2900-\u2B73\u2B76-\u2B95\u2B97-\u2BFF\u2CE5-\u2CEA\u2CEF-\u2CF1\u2CF9-\u2CFF\u2D7F\u2DE0-\u2E5D\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u2FF0-\u2FFB\u3001-\u3004\u3008-\u3020\u302A-\u302D\u3030\u3036\u3037\u303D-\u303F\u3099-\u309C\u30A0\u30FB\u31C0-\u31E3\u321D\u321E\u3250-\u325F\u327C-\u327E\u32B1-\u32BF\u32CC-\u32CF\u3377-\u337A\u33DE\u33DF\u33FF\u4DC0-\u4DFF\uA490-\uA4C6\uA60D-\uA60F\uA66F-\uA67F\uA69E\uA69F\uA6F0\uA6F1\uA700-\uA721\uA788\uA802\uA806\uA80B\uA825\uA826\uA828-\uA82C\uA838\uA839\uA874-\uA877\uA8C4\uA8C5\uA8E0-\uA8F1\uA8FF\uA926-\uA92D\uA947-\uA951\uA980-\uA982\uA9B3\uA9B6-\uA9B9\uA9BC\uA9BD\uA9E5\uAA29-\uAA2E\uAA31\uAA32\uAA35\uAA36\uAA43\uAA4C\uAA7C\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEC\uAAED\uAAF6\uAB6A\uAB6B\uABE5\uABE8\uABED\uFB1D-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBC2\uFBD3-\uFD8F\uFD92-\uFDC7\uFDCF\uFDF0-\uFE19\uFE20-\uFE52\uFE54-\uFE66\uFE68-\uFE6B\uFE70-\uFE74\uFE76-\uFEFC\uFEFF\uFF01-\uFF20\uFF3B-\uFF40\uFF5B-\uFF65\uFFE0-\uFFE6\uFFE8-\uFFEE\uFFF9-\uFFFD\u{10101}\u{10140}-\u{1018C}\u{10190}-\u{1019C}\u{101A0}\u{101FD}\u{102E0}-\u{102FB}\u{10376}-\u{1037A}\u{10800}-\u{10805}\u{10808}\u{1080A}-\u{10835}\u{10837}\u{10838}\u{1083C}\u{1083F}-\u{10855}\u{10857}-\u{1089E}\u{108A7}-\u{108AF}\u{108E0}-\u{108F2}\u{108F4}\u{108F5}\u{108FB}-\u{1091B}\u{1091F}-\u{10939}\u{1093F}\u{10980}-\u{109B7}\u{109BC}-\u{109CF}\u{109D2}-\u{10A03}\u{10A05}\u{10A06}\u{10A0C}-\u{10A13}\u{10A15}-\u{10A17}\u{10A19}-\u{10A35}\u{10A38}-\u{10A3A}\u{10A3F}-\u{10A48}\u{10A50}-\u{10A58}\u{10A60}-\u{10A9F}\u{10AC0}-\u{10AE6}\u{10AEB}-\u{10AF6}\u{10B00}-\u{10B35}\u{10B39}-\u{10B55}\u{10B58}-\u{10B72}\u{10B78}-\u{10B91}\u{10B99}-\u{10B9C}\u{10BA9}-\u{10BAF}\u{10C00}-\u{10C48}\u{10C80}-\u{10CB2}\u{10CC0}-\u{10CF2}\u{10CFA}-\u{10D27}\u{10D30}-\u{10D39}\u{10E60}-\u{10E7E}\u{10E80}-\u{10EA9}\u{10EAB}-\u{10EAD}\u{10EB0}\u{10EB1}\u{10EFD}-\u{10F27}\u{10F30}-\u{10F59}\u{10F70}-\u{10F89}\u{10FB0}-\u{10FCB}\u{10FE0}-\u{10FF6}\u{11001}\u{11038}-\u{11046}\u{11052}-\u{11065}\u{11070}\u{11073}\u{11074}\u{1107F}-\u{11081}\u{110B3}-\u{110B6}\u{110B9}\u{110BA}\u{110C2}\u{11100}-\u{11102}\u{11127}-\u{1112B}\u{1112D}-\u{11134}\u{11173}\u{11180}\u{11181}\u{111B6}-\u{111BE}\u{111C9}-\u{111CC}\u{111CF}\u{1122F}-\u{11231}\u{11234}\u{11236}\u{11237}\u{1123E}\u{11241}\u{112DF}\u{112E3}-\u{112EA}\u{11300}\u{11301}\u{1133B}\u{1133C}\u{11340}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{11438}-\u{1143F}\u{11442}-\u{11444}\u{11446}\u{1145E}\u{114B3}-\u{114B8}\u{114BA}\u{114BF}\u{114C0}\u{114C2}\u{114C3}\u{115B2}-\u{115B5}\u{115BC}\u{115BD}\u{115BF}\u{115C0}\u{115DC}\u{115DD}\u{11633}-\u{1163A}\u{1163D}\u{1163F}\u{11640}\u{11660}-\u{1166C}\u{116AB}\u{116AD}\u{116B0}-\u{116B5}\u{116B7}\u{1171D}-\u{1171F}\u{11722}-\u{11725}\u{11727}-\u{1172B}\u{1182F}-\u{11837}\u{11839}\u{1183A}\u{1193B}\u{1193C}\u{1193E}\u{11943}\u{119D4}-\u{119D7}\u{119DA}\u{119DB}\u{119E0}\u{11A01}-\u{11A06}\u{11A09}\u{11A0A}\u{11A33}-\u{11A38}\u{11A3B}-\u{11A3E}\u{11A47}\u{11A51}-\u{11A56}\u{11A59}-\u{11A5B}\u{11A8A}-\u{11A96}\u{11A98}\u{11A99}\u{11C30}-\u{11C36}\u{11C38}-\u{11C3D}\u{11C92}-\u{11CA7}\u{11CAA}-\u{11CB0}\u{11CB2}\u{11CB3}\u{11CB5}\u{11CB6}\u{11D31}-\u{11D36}\u{11D3A}\u{11D3C}\u{11D3D}\u{11D3F}-\u{11D45}\u{11D47}\u{11D90}\u{11D91}\u{11D95}\u{11D97}\u{11EF3}\u{11EF4}\u{11F00}\u{11F01}\u{11F36}-\u{11F3A}\u{11F40}\u{11F42}\u{11FD5}-\u{11FF1}\u{13440}\u{13447}-\u{13455}\u{16AF0}-\u{16AF4}\u{16B30}-\u{16B36}\u{16F4F}\u{16F8F}-\u{16F92}\u{16FE2}\u{16FE4}\u{1BC9D}\u{1BC9E}\u{1BCA0}-\u{1BCA3}\u{1CF00}-\u{1CF2D}\u{1CF30}-\u{1CF46}\u{1D167}-\u{1D169}\u{1D173}-\u{1D182}\u{1D185}-\u{1D18B}\u{1D1AA}-\u{1D1AD}\u{1D1E9}\u{1D1EA}\u{1D200}-\u{1D245}\u{1D300}-\u{1D356}\u{1D6DB}\u{1D715}\u{1D74F}\u{1D789}\u{1D7C3}\u{1D7CE}-\u{1D7FF}\u{1DA00}-\u{1DA36}\u{1DA3B}-\u{1DA6C}\u{1DA75}\u{1DA84}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}\u{1E024}\u{1E026}-\u{1E02A}\u{1E08F}\u{1E130}-\u{1E136}\u{1E2AE}\u{1E2EC}-\u{1E2EF}\u{1E2FF}\u{1E4EC}-\u{1E4EF}\u{1E800}-\u{1E8C4}\u{1E8C7}-\u{1E8D6}\u{1E900}-\u{1E94B}\u{1E950}-\u{1E959}\u{1E95E}\u{1E95F}\u{1EC71}-\u{1ECB4}\u{1ED01}-\u{1ED3D}\u{1EE00}-\u{1EE03}\u{1EE05}-\u{1EE1F}\u{1EE21}\u{1EE22}\u{1EE24}\u{1EE27}\u{1EE29}-\u{1EE32}\u{1EE34}-\u{1EE37}\u{1EE39}\u{1EE3B}\u{1EE42}\u{1EE47}\u{1EE49}\u{1EE4B}\u{1EE4D}-\u{1EE4F}\u{1EE51}\u{1EE52}\u{1EE54}\u{1EE57}\u{1EE59}\u{1EE5B}\u{1EE5D}\u{1EE5F}\u{1EE61}\u{1EE62}\u{1EE64}\u{1EE67}-\u{1EE6A}\u{1EE6C}-\u{1EE72}\u{1EE74}-\u{1EE77}\u{1EE79}-\u{1EE7C}\u{1EE7E}\u{1EE80}-\u{1EE89}\u{1EE8B}-\u{1EE9B}\u{1EEA1}-\u{1EEA3}\u{1EEA5}-\u{1EEA9}\u{1EEAB}-\u{1EEBB}\u{1EEF0}\u{1EEF1}\u{1F000}-\u{1F02B}\u{1F030}-\u{1F093}\u{1F0A0}-\u{1F0AE}\u{1F0B1}-\u{1F0BF}\u{1F0C1}-\u{1F0CF}\u{1F0D1}-\u{1F0F5}\u{1F100}-\u{1F10F}\u{1F12F}\u{1F16A}-\u{1F16F}\u{1F1AD}\u{1F260}-\u{1F265}\u{1F300}-\u{1F6D7}\u{1F6DC}-\u{1F6EC}\u{1F6F0}-\u{1F6FC}\u{1F700}-\u{1F776}\u{1F77B}-\u{1F7D9}\u{1F7E0}-\u{1F7EB}\u{1F7F0}\u{1F800}-\u{1F80B}\u{1F810}-\u{1F847}\u{1F850}-\u{1F859}\u{1F860}-\u{1F887}\u{1F890}-\u{1F8AD}\u{1F8B0}\u{1F8B1}\u{1F900}-\u{1FA53}\u{1FA60}-\u{1FA6D}\u{1FA70}-\u{1FA7C}\u{1FA80}-\u{1FA88}\u{1FA90}-\u{1FABD}\u{1FABF}-\u{1FAC5}\u{1FACE}-\u{1FADB}\u{1FAE0}-\u{1FAE8}\u{1FAF0}-\u{1FAF8}\u{1FB00}-\u{1FB92}\u{1FB94}-\u{1FBCA}\u{1FBF0}-\u{1FBF9}\u{E0001}\u{E0020}-\u{E007F}\u{E0100}-\u{E01EF}]*$/u;
+    var bidiS3 = /[0-9\xB2\xB3\xB9\u05BE\u05C0\u05C3\u05C6\u05D0-\u05EA\u05EF-\u05F4\u0600-\u0605\u0608\u060B\u060D\u061B-\u064A\u0660-\u0669\u066B-\u066F\u0671-\u06D5\u06DD\u06E5\u06E6\u06EE-\u070D\u070F\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07C0-\u07EA\u07F4\u07F5\u07FA\u07FE-\u0815\u081A\u0824\u0828\u0830-\u083E\u0840-\u0858\u085E\u0860-\u086A\u0870-\u088E\u0890\u0891\u08A0-\u08C9\u08E2\u200F\u2070\u2074-\u2079\u2080-\u2089\u2488-\u249B\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBC2\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFC\uFE70-\uFE74\uFE76-\uFEFC\uFF10-\uFF19\u{102E1}-\u{102FB}\u{10800}-\u{10805}\u{10808}\u{1080A}-\u{10835}\u{10837}\u{10838}\u{1083C}\u{1083F}-\u{10855}\u{10857}-\u{1089E}\u{108A7}-\u{108AF}\u{108E0}-\u{108F2}\u{108F4}\u{108F5}\u{108FB}-\u{1091B}\u{10920}-\u{10939}\u{1093F}\u{10980}-\u{109B7}\u{109BC}-\u{109CF}\u{109D2}-\u{10A00}\u{10A10}-\u{10A13}\u{10A15}-\u{10A17}\u{10A19}-\u{10A35}\u{10A40}-\u{10A48}\u{10A50}-\u{10A58}\u{10A60}-\u{10A9F}\u{10AC0}-\u{10AE4}\u{10AEB}-\u{10AF6}\u{10B00}-\u{10B35}\u{10B40}-\u{10B55}\u{10B58}-\u{10B72}\u{10B78}-\u{10B91}\u{10B99}-\u{10B9C}\u{10BA9}-\u{10BAF}\u{10C00}-\u{10C48}\u{10C80}-\u{10CB2}\u{10CC0}-\u{10CF2}\u{10CFA}-\u{10D23}\u{10D30}-\u{10D39}\u{10E60}-\u{10E7E}\u{10E80}-\u{10EA9}\u{10EAD}\u{10EB0}\u{10EB1}\u{10F00}-\u{10F27}\u{10F30}-\u{10F45}\u{10F51}-\u{10F59}\u{10F70}-\u{10F81}\u{10F86}-\u{10F89}\u{10FB0}-\u{10FCB}\u{10FE0}-\u{10FF6}\u{1D7CE}-\u{1D7FF}\u{1E800}-\u{1E8C4}\u{1E8C7}-\u{1E8CF}\u{1E900}-\u{1E943}\u{1E94B}\u{1E950}-\u{1E959}\u{1E95E}\u{1E95F}\u{1EC71}-\u{1ECB4}\u{1ED01}-\u{1ED3D}\u{1EE00}-\u{1EE03}\u{1EE05}-\u{1EE1F}\u{1EE21}\u{1EE22}\u{1EE24}\u{1EE27}\u{1EE29}-\u{1EE32}\u{1EE34}-\u{1EE37}\u{1EE39}\u{1EE3B}\u{1EE42}\u{1EE47}\u{1EE49}\u{1EE4B}\u{1EE4D}-\u{1EE4F}\u{1EE51}\u{1EE52}\u{1EE54}\u{1EE57}\u{1EE59}\u{1EE5B}\u{1EE5D}\u{1EE5F}\u{1EE61}\u{1EE62}\u{1EE64}\u{1EE67}-\u{1EE6A}\u{1EE6C}-\u{1EE72}\u{1EE74}-\u{1EE77}\u{1EE79}-\u{1EE7C}\u{1EE7E}\u{1EE80}-\u{1EE89}\u{1EE8B}-\u{1EE9B}\u{1EEA1}-\u{1EEA3}\u{1EEA5}-\u{1EEA9}\u{1EEAB}-\u{1EEBB}\u{1F100}-\u{1F10A}\u{1FBF0}-\u{1FBF9}][\u0300-\u036F\u0483-\u0489\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u0711\u0730-\u074A\u07A6-\u07B0\u07EB-\u07F3\u07FD\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u0898-\u089F\u08CA-\u08E1\u08E3-\u0902\u093A\u093C\u0941-\u0948\u094D\u0951-\u0957\u0962\u0963\u0981\u09BC\u09C1-\u09C4\u09CD\u09E2\u09E3\u09FE\u0A01\u0A02\u0A3C\u0A41\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A70\u0A71\u0A75\u0A81\u0A82\u0ABC\u0AC1-\u0AC5\u0AC7\u0AC8\u0ACD\u0AE2\u0AE3\u0AFA-\u0AFF\u0B01\u0B3C\u0B3F\u0B41-\u0B44\u0B4D\u0B55\u0B56\u0B62\u0B63\u0B82\u0BC0\u0BCD\u0C00\u0C04\u0C3C\u0C3E-\u0C40\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C81\u0CBC\u0CCC\u0CCD\u0CE2\u0CE3\u0D00\u0D01\u0D3B\u0D3C\u0D41-\u0D44\u0D4D\u0D62\u0D63\u0D81\u0DCA\u0DD2-\u0DD4\u0DD6\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0EB1\u0EB4-\u0EBC\u0EC8-\u0ECE\u0F18\u0F19\u0F35\u0F37\u0F39\u0F71-\u0F7E\u0F80-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102D-\u1030\u1032-\u1037\u1039\u103A\u103D\u103E\u1058\u1059\u105E-\u1060\u1071-\u1074\u1082\u1085\u1086\u108D\u109D\u135D-\u135F\u1712-\u1714\u1732\u1733\u1752\u1753\u1772\u1773\u17B4\u17B5\u17B7-\u17BD\u17C6\u17C9-\u17D3\u17DD\u180B-\u180D\u180F\u1885\u1886\u18A9\u1920-\u1922\u1927\u1928\u1932\u1939-\u193B\u1A17\u1A18\u1A1B\u1A56\u1A58-\u1A5E\u1A60\u1A62\u1A65-\u1A6C\u1A73-\u1A7C\u1A7F\u1AB0-\u1ACE\u1B00-\u1B03\u1B34\u1B36-\u1B3A\u1B3C\u1B42\u1B6B-\u1B73\u1B80\u1B81\u1BA2-\u1BA5\u1BA8\u1BA9\u1BAB-\u1BAD\u1BE6\u1BE8\u1BE9\u1BED\u1BEF-\u1BF1\u1C2C-\u1C33\u1C36\u1C37\u1CD0-\u1CD2\u1CD4-\u1CE0\u1CE2-\u1CE8\u1CED\u1CF4\u1CF8\u1CF9\u1DC0-\u1DFF\u20D0-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302D\u3099\u309A\uA66F-\uA672\uA674-\uA67D\uA69E\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA825\uA826\uA82C\uA8C4\uA8C5\uA8E0-\uA8F1\uA8FF\uA926-\uA92D\uA947-\uA951\uA980-\uA982\uA9B3\uA9B6-\uA9B9\uA9BC\uA9BD\uA9E5\uAA29-\uAA2E\uAA31\uAA32\uAA35\uAA36\uAA43\uAA4C\uAA7C\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEC\uAAED\uAAF6\uABE5\uABE8\uABED\uFB1E\uFE00-\uFE0F\uFE20-\uFE2F\u{101FD}\u{102E0}\u{10376}-\u{1037A}\u{10A01}-\u{10A03}\u{10A05}\u{10A06}\u{10A0C}-\u{10A0F}\u{10A38}-\u{10A3A}\u{10A3F}\u{10AE5}\u{10AE6}\u{10D24}-\u{10D27}\u{10EAB}\u{10EAC}\u{10EFD}-\u{10EFF}\u{10F46}-\u{10F50}\u{10F82}-\u{10F85}\u{11001}\u{11038}-\u{11046}\u{11070}\u{11073}\u{11074}\u{1107F}-\u{11081}\u{110B3}-\u{110B6}\u{110B9}\u{110BA}\u{110C2}\u{11100}-\u{11102}\u{11127}-\u{1112B}\u{1112D}-\u{11134}\u{11173}\u{11180}\u{11181}\u{111B6}-\u{111BE}\u{111C9}-\u{111CC}\u{111CF}\u{1122F}-\u{11231}\u{11234}\u{11236}\u{11237}\u{1123E}\u{11241}\u{112DF}\u{112E3}-\u{112EA}\u{11300}\u{11301}\u{1133B}\u{1133C}\u{11340}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{11438}-\u{1143F}\u{11442}-\u{11444}\u{11446}\u{1145E}\u{114B3}-\u{114B8}\u{114BA}\u{114BF}\u{114C0}\u{114C2}\u{114C3}\u{115B2}-\u{115B5}\u{115BC}\u{115BD}\u{115BF}\u{115C0}\u{115DC}\u{115DD}\u{11633}-\u{1163A}\u{1163D}\u{1163F}\u{11640}\u{116AB}\u{116AD}\u{116B0}-\u{116B5}\u{116B7}\u{1171D}-\u{1171F}\u{11722}-\u{11725}\u{11727}-\u{1172B}\u{1182F}-\u{11837}\u{11839}\u{1183A}\u{1193B}\u{1193C}\u{1193E}\u{11943}\u{119D4}-\u{119D7}\u{119DA}\u{119DB}\u{119E0}\u{11A01}-\u{11A06}\u{11A09}\u{11A0A}\u{11A33}-\u{11A38}\u{11A3B}-\u{11A3E}\u{11A47}\u{11A51}-\u{11A56}\u{11A59}-\u{11A5B}\u{11A8A}-\u{11A96}\u{11A98}\u{11A99}\u{11C30}-\u{11C36}\u{11C38}-\u{11C3D}\u{11C92}-\u{11CA7}\u{11CAA}-\u{11CB0}\u{11CB2}\u{11CB3}\u{11CB5}\u{11CB6}\u{11D31}-\u{11D36}\u{11D3A}\u{11D3C}\u{11D3D}\u{11D3F}-\u{11D45}\u{11D47}\u{11D90}\u{11D91}\u{11D95}\u{11D97}\u{11EF3}\u{11EF4}\u{11F00}\u{11F01}\u{11F36}-\u{11F3A}\u{11F40}\u{11F42}\u{13440}\u{13447}-\u{13455}\u{16AF0}-\u{16AF4}\u{16B30}-\u{16B36}\u{16F4F}\u{16F8F}-\u{16F92}\u{16FE4}\u{1BC9D}\u{1BC9E}\u{1CF00}-\u{1CF2D}\u{1CF30}-\u{1CF46}\u{1D167}-\u{1D169}\u{1D17B}-\u{1D182}\u{1D185}-\u{1D18B}\u{1D1AA}-\u{1D1AD}\u{1D242}-\u{1D244}\u{1DA00}-\u{1DA36}\u{1DA3B}-\u{1DA6C}\u{1DA75}\u{1DA84}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}\u{1E024}\u{1E026}-\u{1E02A}\u{1E08F}\u{1E130}-\u{1E136}\u{1E2AE}\u{1E2EC}-\u{1E2EF}\u{1E4EC}-\u{1E4EF}\u{1E8D0}-\u{1E8D6}\u{1E944}-\u{1E94A}\u{E0100}-\u{E01EF}]*$/u;
+    var bidiS4EN = /[0-9\xB2\xB3\xB9\u06F0-\u06F9\u2070\u2074-\u2079\u2080-\u2089\u2488-\u249B\uFF10-\uFF19\u{102E1}-\u{102FB}\u{1D7CE}-\u{1D7FF}\u{1F100}-\u{1F10A}\u{1FBF0}-\u{1FBF9}]/u;
+    var bidiS4AN = /[\u0600-\u0605\u0660-\u0669\u066B\u066C\u06DD\u0890\u0891\u08E2\u{10D30}-\u{10D39}\u{10E60}-\u{10E7E}]/u;
+    var bidiS5 = /^[\0-\x08\x0E-\x1B!-\x84\x86-\u0377\u037A-\u037F\u0384-\u038A\u038C\u038E-\u03A1\u03A3-\u052F\u0531-\u0556\u0559-\u058A\u058D-\u058F\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0606\u0607\u0609\u060A\u060C\u060E-\u061A\u064B-\u065F\u066A\u0670\u06D6-\u06DC\u06DE-\u06E4\u06E7-\u06ED\u06F0-\u06F9\u0711\u0730-\u074A\u07A6-\u07B0\u07EB-\u07F3\u07F6-\u07F9\u07FD\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u0898-\u089F\u08CA-\u08E1\u08E3-\u0983\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BC-\u09C4\u09C7\u09C8\u09CB-\u09CE\u09D7\u09DC\u09DD\u09DF-\u09E3\u09E6-\u09FE\u0A01-\u0A03\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A59-\u0A5C\u0A5E\u0A66-\u0A76\u0A81-\u0A83\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABC-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AD0\u0AE0-\u0AE3\u0AE6-\u0AF1\u0AF9-\u0AFF\u0B01-\u0B03\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3C-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B55-\u0B57\u0B5C\u0B5D\u0B5F-\u0B63\u0B66-\u0B77\u0B82\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD0\u0BD7\u0BE6-\u0BFA\u0C00-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3C-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C58-\u0C5A\u0C5D\u0C60-\u0C63\u0C66-\u0C6F\u0C77-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBC-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CDD\u0CDE\u0CE0-\u0CE3\u0CE6-\u0CEF\u0CF1-\u0CF3\u0D00-\u0D0C\u0D0E-\u0D10\u0D12-\u0D44\u0D46-\u0D48\u0D4A-\u0D4F\u0D54-\u0D63\u0D66-\u0D7F\u0D81-\u0D83\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2-\u0DF4\u0E01-\u0E3A\u0E3F-\u0E5B\u0E81\u0E82\u0E84\u0E86-\u0E8A\u0E8C-\u0EA3\u0EA5\u0EA7-\u0EBD\u0EC0-\u0EC4\u0EC6\u0EC8-\u0ECE\u0ED0-\u0ED9\u0EDC-\u0EDF\u0F00-\u0F47\u0F49-\u0F6C\u0F71-\u0F97\u0F99-\u0FBC\u0FBE-\u0FCC\u0FCE-\u0FDA\u1000-\u10C5\u10C7\u10CD\u10D0-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u135D-\u137C\u1380-\u1399\u13A0-\u13F5\u13F8-\u13FD\u1400-\u167F\u1681-\u169C\u16A0-\u16F8\u1700-\u1715\u171F-\u1736\u1740-\u1753\u1760-\u176C\u176E-\u1770\u1772\u1773\u1780-\u17DD\u17E0-\u17E9\u17F0-\u17F9\u1800-\u1819\u1820-\u1878\u1880-\u18AA\u18B0-\u18F5\u1900-\u191E\u1920-\u192B\u1930-\u193B\u1940\u1944-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u19D0-\u19DA\u19DE-\u1A1B\u1A1E-\u1A5E\u1A60-\u1A7C\u1A7F-\u1A89\u1A90-\u1A99\u1AA0-\u1AAD\u1AB0-\u1ACE\u1B00-\u1B4C\u1B50-\u1B7E\u1B80-\u1BF3\u1BFC-\u1C37\u1C3B-\u1C49\u1C4D-\u1C88\u1C90-\u1CBA\u1CBD-\u1CC7\u1CD0-\u1CFA\u1D00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FC4\u1FC6-\u1FD3\u1FD6-\u1FDB\u1FDD-\u1FEF\u1FF2-\u1FF4\u1FF6-\u1FFE\u200B-\u200E\u2010-\u2027\u202F-\u205E\u2060-\u2064\u206A-\u2071\u2074-\u208E\u2090-\u209C\u20A0-\u20C0\u20D0-\u20F0\u2100-\u218B\u2190-\u2426\u2440-\u244A\u2460-\u2B73\u2B76-\u2B95\u2B97-\u2CF3\u2CF9-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D70\u2D7F-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u2DE0-\u2E5D\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u2FF0-\u2FFB\u3001-\u303F\u3041-\u3096\u3099-\u30FF\u3105-\u312F\u3131-\u318E\u3190-\u31E3\u31F0-\u321E\u3220-\uA48C\uA490-\uA4C6\uA4D0-\uA62B\uA640-\uA6F7\uA700-\uA7CA\uA7D0\uA7D1\uA7D3\uA7D5-\uA7D9\uA7F2-\uA82C\uA830-\uA839\uA840-\uA877\uA880-\uA8C5\uA8CE-\uA8D9\uA8E0-\uA953\uA95F-\uA97C\uA980-\uA9CD\uA9CF-\uA9D9\uA9DE-\uA9FE\uAA00-\uAA36\uAA40-\uAA4D\uAA50-\uAA59\uAA5C-\uAAC2\uAADB-\uAAF6\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB6B\uAB70-\uABED\uABF0-\uABF9\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uD800-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1E\uFB29\uFD3E-\uFD4F\uFDCF\uFDFD-\uFE19\uFE20-\uFE52\uFE54-\uFE66\uFE68-\uFE6B\uFEFF\uFF01-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\uFFE0-\uFFE6\uFFE8-\uFFEE\uFFF9-\uFFFD\u{10000}-\u{1000B}\u{1000D}-\u{10026}\u{10028}-\u{1003A}\u{1003C}\u{1003D}\u{1003F}-\u{1004D}\u{10050}-\u{1005D}\u{10080}-\u{100FA}\u{10100}-\u{10102}\u{10107}-\u{10133}\u{10137}-\u{1018E}\u{10190}-\u{1019C}\u{101A0}\u{101D0}-\u{101FD}\u{10280}-\u{1029C}\u{102A0}-\u{102D0}\u{102E0}-\u{102FB}\u{10300}-\u{10323}\u{1032D}-\u{1034A}\u{10350}-\u{1037A}\u{10380}-\u{1039D}\u{1039F}-\u{103C3}\u{103C8}-\u{103D5}\u{10400}-\u{1049D}\u{104A0}-\u{104A9}\u{104B0}-\u{104D3}\u{104D8}-\u{104FB}\u{10500}-\u{10527}\u{10530}-\u{10563}\u{1056F}-\u{1057A}\u{1057C}-\u{1058A}\u{1058C}-\u{10592}\u{10594}\u{10595}\u{10597}-\u{105A1}\u{105A3}-\u{105B1}\u{105B3}-\u{105B9}\u{105BB}\u{105BC}\u{10600}-\u{10736}\u{10740}-\u{10755}\u{10760}-\u{10767}\u{10780}-\u{10785}\u{10787}-\u{107B0}\u{107B2}-\u{107BA}\u{1091F}\u{10A01}-\u{10A03}\u{10A05}\u{10A06}\u{10A0C}-\u{10A0F}\u{10A38}-\u{10A3A}\u{10A3F}\u{10AE5}\u{10AE6}\u{10B39}-\u{10B3F}\u{10D24}-\u{10D27}\u{10EAB}\u{10EAC}\u{10EFD}-\u{10EFF}\u{10F46}-\u{10F50}\u{10F82}-\u{10F85}\u{11000}-\u{1104D}\u{11052}-\u{11075}\u{1107F}-\u{110C2}\u{110CD}\u{110D0}-\u{110E8}\u{110F0}-\u{110F9}\u{11100}-\u{11134}\u{11136}-\u{11147}\u{11150}-\u{11176}\u{11180}-\u{111DF}\u{111E1}-\u{111F4}\u{11200}-\u{11211}\u{11213}-\u{11241}\u{11280}-\u{11286}\u{11288}\u{1128A}-\u{1128D}\u{1128F}-\u{1129D}\u{1129F}-\u{112A9}\u{112B0}-\u{112EA}\u{112F0}-\u{112F9}\u{11300}-\u{11303}\u{11305}-\u{1130C}\u{1130F}\u{11310}\u{11313}-\u{11328}\u{1132A}-\u{11330}\u{11332}\u{11333}\u{11335}-\u{11339}\u{1133B}-\u{11344}\u{11347}\u{11348}\u{1134B}-\u{1134D}\u{11350}\u{11357}\u{1135D}-\u{11363}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{11400}-\u{1145B}\u{1145D}-\u{11461}\u{11480}-\u{114C7}\u{114D0}-\u{114D9}\u{11580}-\u{115B5}\u{115B8}-\u{115DD}\u{11600}-\u{11644}\u{11650}-\u{11659}\u{11660}-\u{1166C}\u{11680}-\u{116B9}\u{116C0}-\u{116C9}\u{11700}-\u{1171A}\u{1171D}-\u{1172B}\u{11730}-\u{11746}\u{11800}-\u{1183B}\u{118A0}-\u{118F2}\u{118FF}-\u{11906}\u{11909}\u{1190C}-\u{11913}\u{11915}\u{11916}\u{11918}-\u{11935}\u{11937}\u{11938}\u{1193B}-\u{11946}\u{11950}-\u{11959}\u{119A0}-\u{119A7}\u{119AA}-\u{119D7}\u{119DA}-\u{119E4}\u{11A00}-\u{11A47}\u{11A50}-\u{11AA2}\u{11AB0}-\u{11AF8}\u{11B00}-\u{11B09}\u{11C00}-\u{11C08}\u{11C0A}-\u{11C36}\u{11C38}-\u{11C45}\u{11C50}-\u{11C6C}\u{11C70}-\u{11C8F}\u{11C92}-\u{11CA7}\u{11CA9}-\u{11CB6}\u{11D00}-\u{11D06}\u{11D08}\u{11D09}\u{11D0B}-\u{11D36}\u{11D3A}\u{11D3C}\u{11D3D}\u{11D3F}-\u{11D47}\u{11D50}-\u{11D59}\u{11D60}-\u{11D65}\u{11D67}\u{11D68}\u{11D6A}-\u{11D8E}\u{11D90}\u{11D91}\u{11D93}-\u{11D98}\u{11DA0}-\u{11DA9}\u{11EE0}-\u{11EF8}\u{11F00}-\u{11F10}\u{11F12}-\u{11F3A}\u{11F3E}-\u{11F59}\u{11FB0}\u{11FC0}-\u{11FF1}\u{11FFF}-\u{12399}\u{12400}-\u{1246E}\u{12470}-\u{12474}\u{12480}-\u{12543}\u{12F90}-\u{12FF2}\u{13000}-\u{13455}\u{14400}-\u{14646}\u{16800}-\u{16A38}\u{16A40}-\u{16A5E}\u{16A60}-\u{16A69}\u{16A6E}-\u{16ABE}\u{16AC0}-\u{16AC9}\u{16AD0}-\u{16AED}\u{16AF0}-\u{16AF5}\u{16B00}-\u{16B45}\u{16B50}-\u{16B59}\u{16B5B}-\u{16B61}\u{16B63}-\u{16B77}\u{16B7D}-\u{16B8F}\u{16E40}-\u{16E9A}\u{16F00}-\u{16F4A}\u{16F4F}-\u{16F87}\u{16F8F}-\u{16F9F}\u{16FE0}-\u{16FE4}\u{16FF0}\u{16FF1}\u{17000}-\u{187F7}\u{18800}-\u{18CD5}\u{18D00}-\u{18D08}\u{1AFF0}-\u{1AFF3}\u{1AFF5}-\u{1AFFB}\u{1AFFD}\u{1AFFE}\u{1B000}-\u{1B122}\u{1B132}\u{1B150}-\u{1B152}\u{1B155}\u{1B164}-\u{1B167}\u{1B170}-\u{1B2FB}\u{1BC00}-\u{1BC6A}\u{1BC70}-\u{1BC7C}\u{1BC80}-\u{1BC88}\u{1BC90}-\u{1BC99}\u{1BC9C}-\u{1BCA3}\u{1CF00}-\u{1CF2D}\u{1CF30}-\u{1CF46}\u{1CF50}-\u{1CFC3}\u{1D000}-\u{1D0F5}\u{1D100}-\u{1D126}\u{1D129}-\u{1D1EA}\u{1D200}-\u{1D245}\u{1D2C0}-\u{1D2D3}\u{1D2E0}-\u{1D2F3}\u{1D300}-\u{1D356}\u{1D360}-\u{1D378}\u{1D400}-\u{1D454}\u{1D456}-\u{1D49C}\u{1D49E}\u{1D49F}\u{1D4A2}\u{1D4A5}\u{1D4A6}\u{1D4A9}-\u{1D4AC}\u{1D4AE}-\u{1D4B9}\u{1D4BB}\u{1D4BD}-\u{1D4C3}\u{1D4C5}-\u{1D505}\u{1D507}-\u{1D50A}\u{1D50D}-\u{1D514}\u{1D516}-\u{1D51C}\u{1D51E}-\u{1D539}\u{1D53B}-\u{1D53E}\u{1D540}-\u{1D544}\u{1D546}\u{1D54A}-\u{1D550}\u{1D552}-\u{1D6A5}\u{1D6A8}-\u{1D7CB}\u{1D7CE}-\u{1DA8B}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1DF00}-\u{1DF1E}\u{1DF25}-\u{1DF2A}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}\u{1E024}\u{1E026}-\u{1E02A}\u{1E030}-\u{1E06D}\u{1E08F}\u{1E100}-\u{1E12C}\u{1E130}-\u{1E13D}\u{1E140}-\u{1E149}\u{1E14E}\u{1E14F}\u{1E290}-\u{1E2AE}\u{1E2C0}-\u{1E2F9}\u{1E2FF}\u{1E4D0}-\u{1E4F9}\u{1E7E0}-\u{1E7E6}\u{1E7E8}-\u{1E7EB}\u{1E7ED}\u{1E7EE}\u{1E7F0}-\u{1E7FE}\u{1E8D0}-\u{1E8D6}\u{1E944}-\u{1E94A}\u{1EEF0}\u{1EEF1}\u{1F000}-\u{1F02B}\u{1F030}-\u{1F093}\u{1F0A0}-\u{1F0AE}\u{1F0B1}-\u{1F0BF}\u{1F0C1}-\u{1F0CF}\u{1F0D1}-\u{1F0F5}\u{1F100}-\u{1F1AD}\u{1F1E6}-\u{1F202}\u{1F210}-\u{1F23B}\u{1F240}-\u{1F248}\u{1F250}\u{1F251}\u{1F260}-\u{1F265}\u{1F300}-\u{1F6D7}\u{1F6DC}-\u{1F6EC}\u{1F6F0}-\u{1F6FC}\u{1F700}-\u{1F776}\u{1F77B}-\u{1F7D9}\u{1F7E0}-\u{1F7EB}\u{1F7F0}\u{1F800}-\u{1F80B}\u{1F810}-\u{1F847}\u{1F850}-\u{1F859}\u{1F860}-\u{1F887}\u{1F890}-\u{1F8AD}\u{1F8B0}\u{1F8B1}\u{1F900}-\u{1FA53}\u{1FA60}-\u{1FA6D}\u{1FA70}-\u{1FA7C}\u{1FA80}-\u{1FA88}\u{1FA90}-\u{1FABD}\u{1FABF}-\u{1FAC5}\u{1FACE}-\u{1FADB}\u{1FAE0}-\u{1FAE8}\u{1FAF0}-\u{1FAF8}\u{1FB00}-\u{1FB92}\u{1FB94}-\u{1FBCA}\u{1FBF0}-\u{1FBF9}\u{20000}-\u{2A6DF}\u{2A700}-\u{2B739}\u{2B740}-\u{2B81D}\u{2B820}-\u{2CEA1}\u{2CEB0}-\u{2EBE0}\u{2F800}-\u{2FA1D}\u{30000}-\u{3134A}\u{31350}-\u{323AF}\u{E0001}\u{E0020}-\u{E007F}\u{E0100}-\u{E01EF}\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}]*$/u;
+    var bidiS6 = /[0-9A-Za-z\xAA\xB2\xB3\xB5\xB9\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02B8\u02BB-\u02C1\u02D0\u02D1\u02E0-\u02E4\u02EE\u0370-\u0373\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0482\u048A-\u052F\u0531-\u0556\u0559-\u0589\u06F0-\u06F9\u0903-\u0939\u093B\u093D-\u0940\u0949-\u094C\u094E-\u0950\u0958-\u0961\u0964-\u0980\u0982\u0983\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD-\u09C0\u09C7\u09C8\u09CB\u09CC\u09CE\u09D7\u09DC\u09DD\u09DF-\u09E1\u09E6-\u09F1\u09F4-\u09FA\u09FC\u09FD\u0A03\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A3E-\u0A40\u0A59-\u0A5C\u0A5E\u0A66-\u0A6F\u0A72-\u0A74\u0A76\u0A83\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD-\u0AC0\u0AC9\u0ACB\u0ACC\u0AD0\u0AE0\u0AE1\u0AE6-\u0AF0\u0AF9\u0B02\u0B03\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B3E\u0B40\u0B47\u0B48\u0B4B\u0B4C\u0B57\u0B5C\u0B5D\u0B5F-\u0B61\u0B66-\u0B77\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BBE\u0BBF\u0BC1\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCC\u0BD0\u0BD7\u0BE6-\u0BF2\u0C01-\u0C03\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C41-\u0C44\u0C58-\u0C5A\u0C5D\u0C60\u0C61\u0C66-\u0C6F\u0C77\u0C7F\u0C80\u0C82-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD-\u0CC4\u0CC6-\u0CC8\u0CCA\u0CCB\u0CD5\u0CD6\u0CDD\u0CDE\u0CE0\u0CE1\u0CE6-\u0CEF\u0CF1-\u0CF3\u0D02-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D-\u0D40\u0D46-\u0D48\u0D4A-\u0D4C\u0D4E\u0D4F\u0D54-\u0D61\u0D66-\u0D7F\u0D82\u0D83\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0DCF-\u0DD1\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2-\u0DF4\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E4F-\u0E5B\u0E81\u0E82\u0E84\u0E86-\u0E8A\u0E8C-\u0EA3\u0EA5\u0EA7-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0ED0-\u0ED9\u0EDC-\u0EDF\u0F00-\u0F17\u0F1A-\u0F34\u0F36\u0F38\u0F3E-\u0F47\u0F49-\u0F6C\u0F7F\u0F85\u0F88-\u0F8C\u0FBE-\u0FC5\u0FC7-\u0FCC\u0FCE-\u0FDA\u1000-\u102C\u1031\u1038\u103B\u103C\u103F-\u1057\u105A-\u105D\u1061-\u1070\u1075-\u1081\u1083\u1084\u1087-\u108C\u108E-\u109C\u109E-\u10C5\u10C7\u10CD\u10D0-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1360-\u137C\u1380-\u138F\u13A0-\u13F5\u13F8-\u13FD\u1401-\u167F\u1681-\u169A\u16A0-\u16F8\u1700-\u1711\u1715\u171F-\u1731\u1734-\u1736\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17B6\u17BE-\u17C5\u17C7\u17C8\u17D4-\u17DA\u17DC\u17E0-\u17E9\u1810-\u1819\u1820-\u1878\u1880-\u1884\u1887-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1923-\u1926\u1929-\u192B\u1930\u1931\u1933-\u1938\u1946-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u19D0-\u19DA\u1A00-\u1A16\u1A19\u1A1A\u1A1E-\u1A55\u1A57\u1A61\u1A63\u1A64\u1A6D-\u1A72\u1A80-\u1A89\u1A90-\u1A99\u1AA0-\u1AAD\u1B04-\u1B33\u1B35\u1B3B\u1B3D-\u1B41\u1B43-\u1B4C\u1B50-\u1B6A\u1B74-\u1B7E\u1B82-\u1BA1\u1BA6\u1BA7\u1BAA\u1BAE-\u1BE5\u1BE7\u1BEA-\u1BEC\u1BEE\u1BF2\u1BF3\u1BFC-\u1C2B\u1C34\u1C35\u1C3B-\u1C49\u1C4D-\u1C88\u1C90-\u1CBA\u1CBD-\u1CC7\u1CD3\u1CE1\u1CE9-\u1CEC\u1CEE-\u1CF3\u1CF5-\u1CF7\u1CFA\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u200E\u2070\u2071\u2074-\u2079\u207F-\u2089\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2119-\u211D\u2124\u2126\u2128\u212A-\u212D\u212F-\u2139\u213C-\u213F\u2145-\u2149\u214E\u214F\u2160-\u2188\u2336-\u237A\u2395\u2488-\u24E9\u26AC\u2800-\u28FF\u2C00-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D70\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u3005-\u3007\u3021-\u3029\u302E\u302F\u3031-\u3035\u3038-\u303C\u3041-\u3096\u309D-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312F\u3131-\u318E\u3190-\u31BF\u31F0-\u321C\u3220-\u324F\u3260-\u327B\u327F-\u32B0\u32C0-\u32CB\u32D0-\u3376\u337B-\u33DD\u33E0-\u33FE\u3400-\u4DBF\u4E00-\uA48C\uA4D0-\uA60C\uA610-\uA62B\uA640-\uA66E\uA680-\uA69D\uA6A0-\uA6EF\uA6F2-\uA6F7\uA722-\uA787\uA789-\uA7CA\uA7D0\uA7D1\uA7D3\uA7D5-\uA7D9\uA7F2-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA824\uA827\uA830-\uA837\uA840-\uA873\uA880-\uA8C3\uA8CE-\uA8D9\uA8F2-\uA8FE\uA900-\uA925\uA92E-\uA946\uA952\uA953\uA95F-\uA97C\uA983-\uA9B2\uA9B4\uA9B5\uA9BA\uA9BB\uA9BE-\uA9CD\uA9CF-\uA9D9\uA9DE-\uA9E4\uA9E6-\uA9FE\uAA00-\uAA28\uAA2F\uAA30\uAA33\uAA34\uAA40-\uAA42\uAA44-\uAA4B\uAA4D\uAA50-\uAA59\uAA5C-\uAA7B\uAA7D-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAAEB\uAAEE-\uAAF5\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB69\uAB70-\uABE4\uABE6\uABE7\uABE9-\uABEC\uABF0-\uABF9\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uD800-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFF10-\uFF19\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC\u{10000}-\u{1000B}\u{1000D}-\u{10026}\u{10028}-\u{1003A}\u{1003C}\u{1003D}\u{1003F}-\u{1004D}\u{10050}-\u{1005D}\u{10080}-\u{100FA}\u{10100}\u{10102}\u{10107}-\u{10133}\u{10137}-\u{1013F}\u{1018D}\u{1018E}\u{101D0}-\u{101FC}\u{10280}-\u{1029C}\u{102A0}-\u{102D0}\u{102E1}-\u{102FB}\u{10300}-\u{10323}\u{1032D}-\u{1034A}\u{10350}-\u{10375}\u{10380}-\u{1039D}\u{1039F}-\u{103C3}\u{103C8}-\u{103D5}\u{10400}-\u{1049D}\u{104A0}-\u{104A9}\u{104B0}-\u{104D3}\u{104D8}-\u{104FB}\u{10500}-\u{10527}\u{10530}-\u{10563}\u{1056F}-\u{1057A}\u{1057C}-\u{1058A}\u{1058C}-\u{10592}\u{10594}\u{10595}\u{10597}-\u{105A1}\u{105A3}-\u{105B1}\u{105B3}-\u{105B9}\u{105BB}\u{105BC}\u{10600}-\u{10736}\u{10740}-\u{10755}\u{10760}-\u{10767}\u{10780}-\u{10785}\u{10787}-\u{107B0}\u{107B2}-\u{107BA}\u{11000}\u{11002}-\u{11037}\u{11047}-\u{1104D}\u{11066}-\u{1106F}\u{11071}\u{11072}\u{11075}\u{11082}-\u{110B2}\u{110B7}\u{110B8}\u{110BB}-\u{110C1}\u{110CD}\u{110D0}-\u{110E8}\u{110F0}-\u{110F9}\u{11103}-\u{11126}\u{1112C}\u{11136}-\u{11147}\u{11150}-\u{11172}\u{11174}-\u{11176}\u{11182}-\u{111B5}\u{111BF}-\u{111C8}\u{111CD}\u{111CE}\u{111D0}-\u{111DF}\u{111E1}-\u{111F4}\u{11200}-\u{11211}\u{11213}-\u{1122E}\u{11232}\u{11233}\u{11235}\u{11238}-\u{1123D}\u{1123F}\u{11240}\u{11280}-\u{11286}\u{11288}\u{1128A}-\u{1128D}\u{1128F}-\u{1129D}\u{1129F}-\u{112A9}\u{112B0}-\u{112DE}\u{112E0}-\u{112E2}\u{112F0}-\u{112F9}\u{11302}\u{11303}\u{11305}-\u{1130C}\u{1130F}\u{11310}\u{11313}-\u{11328}\u{1132A}-\u{11330}\u{11332}\u{11333}\u{11335}-\u{11339}\u{1133D}-\u{1133F}\u{11341}-\u{11344}\u{11347}\u{11348}\u{1134B}-\u{1134D}\u{11350}\u{11357}\u{1135D}-\u{11363}\u{11400}-\u{11437}\u{11440}\u{11441}\u{11445}\u{11447}-\u{1145B}\u{1145D}\u{1145F}-\u{11461}\u{11480}-\u{114B2}\u{114B9}\u{114BB}-\u{114BE}\u{114C1}\u{114C4}-\u{114C7}\u{114D0}-\u{114D9}\u{11580}-\u{115B1}\u{115B8}-\u{115BB}\u{115BE}\u{115C1}-\u{115DB}\u{11600}-\u{11632}\u{1163B}\u{1163C}\u{1163E}\u{11641}-\u{11644}\u{11650}-\u{11659}\u{11680}-\u{116AA}\u{116AC}\u{116AE}\u{116AF}\u{116B6}\u{116B8}\u{116B9}\u{116C0}-\u{116C9}\u{11700}-\u{1171A}\u{11720}\u{11721}\u{11726}\u{11730}-\u{11746}\u{11800}-\u{1182E}\u{11838}\u{1183B}\u{118A0}-\u{118F2}\u{118FF}-\u{11906}\u{11909}\u{1190C}-\u{11913}\u{11915}\u{11916}\u{11918}-\u{11935}\u{11937}\u{11938}\u{1193D}\u{1193F}-\u{11942}\u{11944}-\u{11946}\u{11950}-\u{11959}\u{119A0}-\u{119A7}\u{119AA}-\u{119D3}\u{119DC}-\u{119DF}\u{119E1}-\u{119E4}\u{11A00}\u{11A07}\u{11A08}\u{11A0B}-\u{11A32}\u{11A39}\u{11A3A}\u{11A3F}-\u{11A46}\u{11A50}\u{11A57}\u{11A58}\u{11A5C}-\u{11A89}\u{11A97}\u{11A9A}-\u{11AA2}\u{11AB0}-\u{11AF8}\u{11B00}-\u{11B09}\u{11C00}-\u{11C08}\u{11C0A}-\u{11C2F}\u{11C3E}-\u{11C45}\u{11C50}-\u{11C6C}\u{11C70}-\u{11C8F}\u{11CA9}\u{11CB1}\u{11CB4}\u{11D00}-\u{11D06}\u{11D08}\u{11D09}\u{11D0B}-\u{11D30}\u{11D46}\u{11D50}-\u{11D59}\u{11D60}-\u{11D65}\u{11D67}\u{11D68}\u{11D6A}-\u{11D8E}\u{11D93}\u{11D94}\u{11D96}\u{11D98}\u{11DA0}-\u{11DA9}\u{11EE0}-\u{11EF2}\u{11EF5}-\u{11EF8}\u{11F02}-\u{11F10}\u{11F12}-\u{11F35}\u{11F3E}\u{11F3F}\u{11F41}\u{11F43}-\u{11F59}\u{11FB0}\u{11FC0}-\u{11FD4}\u{11FFF}-\u{12399}\u{12400}-\u{1246E}\u{12470}-\u{12474}\u{12480}-\u{12543}\u{12F90}-\u{12FF2}\u{13000}-\u{1343F}\u{13441}-\u{13446}\u{14400}-\u{14646}\u{16800}-\u{16A38}\u{16A40}-\u{16A5E}\u{16A60}-\u{16A69}\u{16A6E}-\u{16ABE}\u{16AC0}-\u{16AC9}\u{16AD0}-\u{16AED}\u{16AF5}\u{16B00}-\u{16B2F}\u{16B37}-\u{16B45}\u{16B50}-\u{16B59}\u{16B5B}-\u{16B61}\u{16B63}-\u{16B77}\u{16B7D}-\u{16B8F}\u{16E40}-\u{16E9A}\u{16F00}-\u{16F4A}\u{16F50}-\u{16F87}\u{16F93}-\u{16F9F}\u{16FE0}\u{16FE1}\u{16FE3}\u{16FF0}\u{16FF1}\u{17000}-\u{187F7}\u{18800}-\u{18CD5}\u{18D00}-\u{18D08}\u{1AFF0}-\u{1AFF3}\u{1AFF5}-\u{1AFFB}\u{1AFFD}\u{1AFFE}\u{1B000}-\u{1B122}\u{1B132}\u{1B150}-\u{1B152}\u{1B155}\u{1B164}-\u{1B167}\u{1B170}-\u{1B2FB}\u{1BC00}-\u{1BC6A}\u{1BC70}-\u{1BC7C}\u{1BC80}-\u{1BC88}\u{1BC90}-\u{1BC99}\u{1BC9C}\u{1BC9F}\u{1CF50}-\u{1CFC3}\u{1D000}-\u{1D0F5}\u{1D100}-\u{1D126}\u{1D129}-\u{1D166}\u{1D16A}-\u{1D172}\u{1D183}\u{1D184}\u{1D18C}-\u{1D1A9}\u{1D1AE}-\u{1D1E8}\u{1D2C0}-\u{1D2D3}\u{1D2E0}-\u{1D2F3}\u{1D360}-\u{1D378}\u{1D400}-\u{1D454}\u{1D456}-\u{1D49C}\u{1D49E}\u{1D49F}\u{1D4A2}\u{1D4A5}\u{1D4A6}\u{1D4A9}-\u{1D4AC}\u{1D4AE}-\u{1D4B9}\u{1D4BB}\u{1D4BD}-\u{1D4C3}\u{1D4C5}-\u{1D505}\u{1D507}-\u{1D50A}\u{1D50D}-\u{1D514}\u{1D516}-\u{1D51C}\u{1D51E}-\u{1D539}\u{1D53B}-\u{1D53E}\u{1D540}-\u{1D544}\u{1D546}\u{1D54A}-\u{1D550}\u{1D552}-\u{1D6A5}\u{1D6A8}-\u{1D6DA}\u{1D6DC}-\u{1D714}\u{1D716}-\u{1D74E}\u{1D750}-\u{1D788}\u{1D78A}-\u{1D7C2}\u{1D7C4}-\u{1D7CB}\u{1D7CE}-\u{1D9FF}\u{1DA37}-\u{1DA3A}\u{1DA6D}-\u{1DA74}\u{1DA76}-\u{1DA83}\u{1DA85}-\u{1DA8B}\u{1DF00}-\u{1DF1E}\u{1DF25}-\u{1DF2A}\u{1E030}-\u{1E06D}\u{1E100}-\u{1E12C}\u{1E137}-\u{1E13D}\u{1E140}-\u{1E149}\u{1E14E}\u{1E14F}\u{1E290}-\u{1E2AD}\u{1E2C0}-\u{1E2EB}\u{1E2F0}-\u{1E2F9}\u{1E4D0}-\u{1E4EB}\u{1E4F0}-\u{1E4F9}\u{1E7E0}-\u{1E7E6}\u{1E7E8}-\u{1E7EB}\u{1E7ED}\u{1E7EE}\u{1E7F0}-\u{1E7FE}\u{1F100}-\u{1F10A}\u{1F110}-\u{1F12E}\u{1F130}-\u{1F169}\u{1F170}-\u{1F1AC}\u{1F1E6}-\u{1F202}\u{1F210}-\u{1F23B}\u{1F240}-\u{1F248}\u{1F250}\u{1F251}\u{1FBF0}-\u{1FBF9}\u{20000}-\u{2A6DF}\u{2A700}-\u{2B739}\u{2B740}-\u{2B81D}\u{2B820}-\u{2CEA1}\u{2CEB0}-\u{2EBE0}\u{2F800}-\u{2FA1D}\u{30000}-\u{3134A}\u{31350}-\u{323AF}\u{F0000}-\u{FFFFD}\u{100000}-\u{10FFFD}][\u0300-\u036F\u0483-\u0489\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u0711\u0730-\u074A\u07A6-\u07B0\u07EB-\u07F3\u07FD\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u0898-\u089F\u08CA-\u08E1\u08E3-\u0902\u093A\u093C\u0941-\u0948\u094D\u0951-\u0957\u0962\u0963\u0981\u09BC\u09C1-\u09C4\u09CD\u09E2\u09E3\u09FE\u0A01\u0A02\u0A3C\u0A41\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A70\u0A71\u0A75\u0A81\u0A82\u0ABC\u0AC1-\u0AC5\u0AC7\u0AC8\u0ACD\u0AE2\u0AE3\u0AFA-\u0AFF\u0B01\u0B3C\u0B3F\u0B41-\u0B44\u0B4D\u0B55\u0B56\u0B62\u0B63\u0B82\u0BC0\u0BCD\u0C00\u0C04\u0C3C\u0C3E-\u0C40\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C81\u0CBC\u0CCC\u0CCD\u0CE2\u0CE3\u0D00\u0D01\u0D3B\u0D3C\u0D41-\u0D44\u0D4D\u0D62\u0D63\u0D81\u0DCA\u0DD2-\u0DD4\u0DD6\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0EB1\u0EB4-\u0EBC\u0EC8-\u0ECE\u0F18\u0F19\u0F35\u0F37\u0F39\u0F71-\u0F7E\u0F80-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102D-\u1030\u1032-\u1037\u1039\u103A\u103D\u103E\u1058\u1059\u105E-\u1060\u1071-\u1074\u1082\u1085\u1086\u108D\u109D\u135D-\u135F\u1712-\u1714\u1732\u1733\u1752\u1753\u1772\u1773\u17B4\u17B5\u17B7-\u17BD\u17C6\u17C9-\u17D3\u17DD\u180B-\u180D\u180F\u1885\u1886\u18A9\u1920-\u1922\u1927\u1928\u1932\u1939-\u193B\u1A17\u1A18\u1A1B\u1A56\u1A58-\u1A5E\u1A60\u1A62\u1A65-\u1A6C\u1A73-\u1A7C\u1A7F\u1AB0-\u1ACE\u1B00-\u1B03\u1B34\u1B36-\u1B3A\u1B3C\u1B42\u1B6B-\u1B73\u1B80\u1B81\u1BA2-\u1BA5\u1BA8\u1BA9\u1BAB-\u1BAD\u1BE6\u1BE8\u1BE9\u1BED\u1BEF-\u1BF1\u1C2C-\u1C33\u1C36\u1C37\u1CD0-\u1CD2\u1CD4-\u1CE0\u1CE2-\u1CE8\u1CED\u1CF4\u1CF8\u1CF9\u1DC0-\u1DFF\u20D0-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302D\u3099\u309A\uA66F-\uA672\uA674-\uA67D\uA69E\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA825\uA826\uA82C\uA8C4\uA8C5\uA8E0-\uA8F1\uA8FF\uA926-\uA92D\uA947-\uA951\uA980-\uA982\uA9B3\uA9B6-\uA9B9\uA9BC\uA9BD\uA9E5\uAA29-\uAA2E\uAA31\uAA32\uAA35\uAA36\uAA43\uAA4C\uAA7C\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEC\uAAED\uAAF6\uABE5\uABE8\uABED\uFB1E\uFE00-\uFE0F\uFE20-\uFE2F\u{101FD}\u{102E0}\u{10376}-\u{1037A}\u{10A01}-\u{10A03}\u{10A05}\u{10A06}\u{10A0C}-\u{10A0F}\u{10A38}-\u{10A3A}\u{10A3F}\u{10AE5}\u{10AE6}\u{10D24}-\u{10D27}\u{10EAB}\u{10EAC}\u{10EFD}-\u{10EFF}\u{10F46}-\u{10F50}\u{10F82}-\u{10F85}\u{11001}\u{11038}-\u{11046}\u{11070}\u{11073}\u{11074}\u{1107F}-\u{11081}\u{110B3}-\u{110B6}\u{110B9}\u{110BA}\u{110C2}\u{11100}-\u{11102}\u{11127}-\u{1112B}\u{1112D}-\u{11134}\u{11173}\u{11180}\u{11181}\u{111B6}-\u{111BE}\u{111C9}-\u{111CC}\u{111CF}\u{1122F}-\u{11231}\u{11234}\u{11236}\u{11237}\u{1123E}\u{11241}\u{112DF}\u{112E3}-\u{112EA}\u{11300}\u{11301}\u{1133B}\u{1133C}\u{11340}\u{11366}-\u{1136C}\u{11370}-\u{11374}\u{11438}-\u{1143F}\u{11442}-\u{11444}\u{11446}\u{1145E}\u{114B3}-\u{114B8}\u{114BA}\u{114BF}\u{114C0}\u{114C2}\u{114C3}\u{115B2}-\u{115B5}\u{115BC}\u{115BD}\u{115BF}\u{115C0}\u{115DC}\u{115DD}\u{11633}-\u{1163A}\u{1163D}\u{1163F}\u{11640}\u{116AB}\u{116AD}\u{116B0}-\u{116B5}\u{116B7}\u{1171D}-\u{1171F}\u{11722}-\u{11725}\u{11727}-\u{1172B}\u{1182F}-\u{11837}\u{11839}\u{1183A}\u{1193B}\u{1193C}\u{1193E}\u{11943}\u{119D4}-\u{119D7}\u{119DA}\u{119DB}\u{119E0}\u{11A01}-\u{11A06}\u{11A09}\u{11A0A}\u{11A33}-\u{11A38}\u{11A3B}-\u{11A3E}\u{11A47}\u{11A51}-\u{11A56}\u{11A59}-\u{11A5B}\u{11A8A}-\u{11A96}\u{11A98}\u{11A99}\u{11C30}-\u{11C36}\u{11C38}-\u{11C3D}\u{11C92}-\u{11CA7}\u{11CAA}-\u{11CB0}\u{11CB2}\u{11CB3}\u{11CB5}\u{11CB6}\u{11D31}-\u{11D36}\u{11D3A}\u{11D3C}\u{11D3D}\u{11D3F}-\u{11D45}\u{11D47}\u{11D90}\u{11D91}\u{11D95}\u{11D97}\u{11EF3}\u{11EF4}\u{11F00}\u{11F01}\u{11F36}-\u{11F3A}\u{11F40}\u{11F42}\u{13440}\u{13447}-\u{13455}\u{16AF0}-\u{16AF4}\u{16B30}-\u{16B36}\u{16F4F}\u{16F8F}-\u{16F92}\u{16FE4}\u{1BC9D}\u{1BC9E}\u{1CF00}-\u{1CF2D}\u{1CF30}-\u{1CF46}\u{1D167}-\u{1D169}\u{1D17B}-\u{1D182}\u{1D185}-\u{1D18B}\u{1D1AA}-\u{1D1AD}\u{1D242}-\u{1D244}\u{1DA00}-\u{1DA36}\u{1DA3B}-\u{1DA6C}\u{1DA75}\u{1DA84}\u{1DA9B}-\u{1DA9F}\u{1DAA1}-\u{1DAAF}\u{1E000}-\u{1E006}\u{1E008}-\u{1E018}\u{1E01B}-\u{1E021}\u{1E023}\u{1E024}\u{1E026}-\u{1E02A}\u{1E08F}\u{1E130}-\u{1E136}\u{1E2AE}\u{1E2EC}-\u{1E2EF}\u{1E4EC}-\u{1E4EF}\u{1E8D0}-\u{1E8D6}\u{1E944}-\u{1E94A}\u{E0100}-\u{E01EF}]*$/u;
+    module2.exports = {
+      combiningMarks,
+      combiningClassVirama,
+      validZWNJ,
+      bidiDomain,
+      bidiS1LTR,
+      bidiS1RTL,
+      bidiS2,
+      bidiS3,
+      bidiS4EN,
+      bidiS4AN,
+      bidiS5,
+      bidiS6
     };
   }
 });
@@ -20479,7 +21072,23 @@ var require_utils4 = __commonJS({
 // node_modules/tr46/lib/mappingTable.json
 var require_mappingTable = __commonJS({
   "node_modules/tr46/lib/mappingTable.json"(exports, module2) {
-    module2.exports = [[[0, 44], "disallowed_STD3_valid"], [[45, 46], "valid"], [[47, 47], "disallowed_STD3_valid"], [[48, 57], "valid"], [[58, 64], "disallowed_STD3_valid"], [[65, 65], "mapped", [97]], [[66, 66], "mapped", [98]], [[67, 67], "mapped", [99]], [[68, 68], "mapped", [100]], [[69, 69], "mapped", [101]], [[70, 70], "mapped", [102]], [[71, 71], "mapped", [103]], [[72, 72], "mapped", [104]], [[73, 73], "mapped", [105]], [[74, 74], "mapped", [106]], [[75, 75], "mapped", [107]], [[76, 76], "mapped", [108]], [[77, 77], "mapped", [109]], [[78, 78], "mapped", [110]], [[79, 79], "mapped", [111]], [[80, 80], "mapped", [112]], [[81, 81], "mapped", [113]], [[82, 82], "mapped", [114]], [[83, 83], "mapped", [115]], [[84, 84], "mapped", [116]], [[85, 85], "mapped", [117]], [[86, 86], "mapped", [118]], [[87, 87], "mapped", [119]], [[88, 88], "mapped", [120]], [[89, 89], "mapped", [121]], [[90, 90], "mapped", [122]], [[91, 96], "disallowed_STD3_valid"], [[97, 122], "valid"], [[123, 127], "disallowed_STD3_valid"], [[128, 159], "disallowed"], [[160, 160], "disallowed_STD3_mapped", [32]], [[161, 167], "valid", [], "NV8"], [[168, 168], "disallowed_STD3_mapped", [32, 776]], [[169, 169], "valid", [], "NV8"], [[170, 170], "mapped", [97]], [[171, 172], "valid", [], "NV8"], [[173, 173], "ignored"], [[174, 174], "valid", [], "NV8"], [[175, 175], "disallowed_STD3_mapped", [32, 772]], [[176, 177], "valid", [], "NV8"], [[178, 178], "mapped", [50]], [[179, 179], "mapped", [51]], [[180, 180], "disallowed_STD3_mapped", [32, 769]], [[181, 181], "mapped", [956]], [[182, 182], "valid", [], "NV8"], [[183, 183], "valid"], [[184, 184], "disallowed_STD3_mapped", [32, 807]], [[185, 185], "mapped", [49]], [[186, 186], "mapped", [111]], [[187, 187], "valid", [], "NV8"], [[188, 188], "mapped", [49, 8260, 52]], [[189, 189], "mapped", [49, 8260, 50]], [[190, 190], "mapped", [51, 8260, 52]], [[191, 191], "valid", [], "NV8"], [[192, 192], "mapped", [224]], [[193, 193], "mapped", [225]], [[194, 194], "mapped", [226]], [[195, 195], "mapped", [227]], [[196, 196], "mapped", [228]], [[197, 197], "mapped", [229]], [[198, 198], "mapped", [230]], [[199, 199], "mapped", [231]], [[200, 200], "mapped", [232]], [[201, 201], "mapped", [233]], [[202, 202], "mapped", [234]], [[203, 203], "mapped", [235]], [[204, 204], "mapped", [236]], [[205, 205], "mapped", [237]], [[206, 206], "mapped", [238]], [[207, 207], "mapped", [239]], [[208, 208], "mapped", [240]], [[209, 209], "mapped", [241]], [[210, 210], "mapped", [242]], [[211, 211], "mapped", [243]], [[212, 212], "mapped", [244]], [[213, 213], "mapped", [245]], [[214, 214], "mapped", [246]], [[215, 215], "valid", [], "NV8"], [[216, 216], "mapped", [248]], [[217, 217], "mapped", [249]], [[218, 218], "mapped", [250]], [[219, 219], "mapped", [251]], [[220, 220], "mapped", [252]], [[221, 221], "mapped", [253]], [[222, 222], "mapped", [254]], [[223, 223], "deviation", [115, 115]], [[224, 246], "valid"], [[247, 247], "valid", [], "NV8"], [[248, 255], "valid"], [[256, 256], "mapped", [257]], [[257, 257], "valid"], [[258, 258], "mapped", [259]], [[259, 259], "valid"], [[260, 260], "mapped", [261]], [[261, 261], "valid"], [[262, 262], "mapped", [263]], [[263, 263], "valid"], [[264, 264], "mapped", [265]], [[265, 265], "valid"], [[266, 266], "mapped", [267]], [[267, 267], "valid"], [[268, 268], "mapped", [269]], [[269, 269], "valid"], [[270, 270], "mapped", [271]], [[271, 271], "valid"], [[272, 272], "mapped", [273]], [[273, 273], "valid"], [[274, 274], "mapped", [275]], [[275, 275], "valid"], [[276, 276], "mapped", [277]], [[277, 277], "valid"], [[278, 278], "mapped", [279]], [[279, 279], "valid"], [[280, 280], "mapped", [281]], [[281, 281], "valid"], [[282, 282], "mapped", [283]], [[283, 283], "valid"], [[284, 284], "mapped", [285]], [[285, 285], "valid"], [[286, 286], "mapped", [287]], [[287, 287], "valid"], [[288, 288], "mapped", [289]], [[289, 289], "valid"], [[290, 290], "mapped", [291]], [[291, 291], "valid"], [[292, 292], "mapped", [293]], [[293, 293], "valid"], [[294, 294], "mapped", [295]], [[295, 295], "valid"], [[296, 296], "mapped", [297]], [[297, 297], "valid"], [[298, 298], "mapped", [299]], [[299, 299], "valid"], [[300, 300], "mapped", [301]], [[301, 301], "valid"], [[302, 302], "mapped", [303]], [[303, 303], "valid"], [[304, 304], "mapped", [105, 775]], [[305, 305], "valid"], [[306, 307], "mapped", [105, 106]], [[308, 308], "mapped", [309]], [[309, 309], "valid"], [[310, 310], "mapped", [311]], [[311, 312], "valid"], [[313, 313], "mapped", [314]], [[314, 314], "valid"], [[315, 315], "mapped", [316]], [[316, 316], "valid"], [[317, 317], "mapped", [318]], [[318, 318], "valid"], [[319, 320], "mapped", [108, 183]], [[321, 321], "mapped", [322]], [[322, 322], "valid"], [[323, 323], "mapped", [324]], [[324, 324], "valid"], [[325, 325], "mapped", [326]], [[326, 326], "valid"], [[327, 327], "mapped", [328]], [[328, 328], "valid"], [[329, 329], "mapped", [700, 110]], [[330, 330], "mapped", [331]], [[331, 331], "valid"], [[332, 332], "mapped", [333]], [[333, 333], "valid"], [[334, 334], "mapped", [335]], [[335, 335], "valid"], [[336, 336], "mapped", [337]], [[337, 337], "valid"], [[338, 338], "mapped", [339]], [[339, 339], "valid"], [[340, 340], "mapped", [341]], [[341, 341], "valid"], [[342, 342], "mapped", [343]], [[343, 343], "valid"], [[344, 344], "mapped", [345]], [[345, 345], "valid"], [[346, 346], "mapped", [347]], [[347, 347], "valid"], [[348, 348], "mapped", [349]], [[349, 349], "valid"], [[350, 350], "mapped", [351]], [[351, 351], "valid"], [[352, 352], "mapped", [353]], [[353, 353], "valid"], [[354, 354], "mapped", [355]], [[355, 355], "valid"], [[356, 356], "mapped", [357]], [[357, 357], "valid"], [[358, 358], "mapped", [359]], [[359, 359], "valid"], [[360, 360], "mapped", [361]], [[361, 361], "valid"], [[362, 362], "mapped", [363]], [[363, 363], "valid"], [[364, 364], "mapped", [365]], [[365, 365], "valid"], [[366, 366], "mapped", [367]], [[367, 367], "valid"], [[368, 368], "mapped", [369]], [[369, 369], "valid"], [[370, 370], "mapped", [371]], [[371, 371], "valid"], [[372, 372], "mapped", [373]], [[373, 373], "valid"], [[374, 374], "mapped", [375]], [[375, 375], "valid"], [[376, 376], "mapped", [255]], [[377, 377], "mapped", [378]], [[378, 378], "valid"], [[379, 379], "mapped", [380]], [[380, 380], "valid"], [[381, 381], "mapped", [382]], [[382, 382], "valid"], [[383, 383], "mapped", [115]], [[384, 384], "valid"], [[385, 385], "mapped", [595]], [[386, 386], "mapped", [387]], [[387, 387], "valid"], [[388, 388], "mapped", [389]], [[389, 389], "valid"], [[390, 390], "mapped", [596]], [[391, 391], "mapped", [392]], [[392, 392], "valid"], [[393, 393], "mapped", [598]], [[394, 394], "mapped", [599]], [[395, 395], "mapped", [396]], [[396, 397], "valid"], [[398, 398], "mapped", [477]], [[399, 399], "mapped", [601]], [[400, 400], "mapped", [603]], [[401, 401], "mapped", [402]], [[402, 402], "valid"], [[403, 403], "mapped", [608]], [[404, 404], "mapped", [611]], [[405, 405], "valid"], [[406, 406], "mapped", [617]], [[407, 407], "mapped", [616]], [[408, 408], "mapped", [409]], [[409, 411], "valid"], [[412, 412], "mapped", [623]], [[413, 413], "mapped", [626]], [[414, 414], "valid"], [[415, 415], "mapped", [629]], [[416, 416], "mapped", [417]], [[417, 417], "valid"], [[418, 418], "mapped", [419]], [[419, 419], "valid"], [[420, 420], "mapped", [421]], [[421, 421], "valid"], [[422, 422], "mapped", [640]], [[423, 423], "mapped", [424]], [[424, 424], "valid"], [[425, 425], "mapped", [643]], [[426, 427], "valid"], [[428, 428], "mapped", [429]], [[429, 429], "valid"], [[430, 430], "mapped", [648]], [[431, 431], "mapped", [432]], [[432, 432], "valid"], [[433, 433], "mapped", [650]], [[434, 434], "mapped", [651]], [[435, 435], "mapped", [436]], [[436, 436], "valid"], [[437, 437], "mapped", [438]], [[438, 438], "valid"], [[439, 439], "mapped", [658]], [[440, 440], "mapped", [441]], [[441, 443], "valid"], [[444, 444], "mapped", [445]], [[445, 451], "valid"], [[452, 454], "mapped", [100, 382]], [[455, 457], "mapped", [108, 106]], [[458, 460], "mapped", [110, 106]], [[461, 461], "mapped", [462]], [[462, 462], "valid"], [[463, 463], "mapped", [464]], [[464, 464], "valid"], [[465, 465], "mapped", [466]], [[466, 466], "valid"], [[467, 467], "mapped", [468]], [[468, 468], "valid"], [[469, 469], "mapped", [470]], [[470, 470], "valid"], [[471, 471], "mapped", [472]], [[472, 472], "valid"], [[473, 473], "mapped", [474]], [[474, 474], "valid"], [[475, 475], "mapped", [476]], [[476, 477], "valid"], [[478, 478], "mapped", [479]], [[479, 479], "valid"], [[480, 480], "mapped", [481]], [[481, 481], "valid"], [[482, 482], "mapped", [483]], [[483, 483], "valid"], [[484, 484], "mapped", [485]], [[485, 485], "valid"], [[486, 486], "mapped", [487]], [[487, 487], "valid"], [[488, 488], "mapped", [489]], [[489, 489], "valid"], [[490, 490], "mapped", [491]], [[491, 491], "valid"], [[492, 492], "mapped", [493]], [[493, 493], "valid"], [[494, 494], "mapped", [495]], [[495, 496], "valid"], [[497, 499], "mapped", [100, 122]], [[500, 500], "mapped", [501]], [[501, 501], "valid"], [[502, 502], "mapped", [405]], [[503, 503], "mapped", [447]], [[504, 504], "mapped", [505]], [[505, 505], "valid"], [[506, 506], "mapped", [507]], [[507, 507], "valid"], [[508, 508], "mapped", [509]], [[509, 509], "valid"], [[510, 510], "mapped", [511]], [[511, 511], "valid"], [[512, 512], "mapped", [513]], [[513, 513], "valid"], [[514, 514], "mapped", [515]], [[515, 515], "valid"], [[516, 516], "mapped", [517]], [[517, 517], "valid"], [[518, 518], "mapped", [519]], [[519, 519], "valid"], [[520, 520], "mapped", [521]], [[521, 521], "valid"], [[522, 522], "mapped", [523]], [[523, 523], "valid"], [[524, 524], "mapped", [525]], [[525, 525], "valid"], [[526, 526], "mapped", [527]], [[527, 527], "valid"], [[528, 528], "mapped", [529]], [[529, 529], "valid"], [[530, 530], "mapped", [531]], [[531, 531], "valid"], [[532, 532], "mapped", [533]], [[533, 533], "valid"], [[534, 534], "mapped", [535]], [[535, 535], "valid"], [[536, 536], "mapped", [537]], [[537, 537], "valid"], [[538, 538], "mapped", [539]], [[539, 539], "valid"], [[540, 540], "mapped", [541]], [[541, 541], "valid"], [[542, 542], "mapped", [543]], [[543, 543], "valid"], [[544, 544], "mapped", [414]], [[545, 545], "valid"], [[546, 546], "mapped", [547]], [[547, 547], "valid"], [[548, 548], "mapped", [549]], [[549, 549], "valid"], [[550, 550], "mapped", [551]], [[551, 551], "valid"], [[552, 552], "mapped", [553]], [[553, 553], "valid"], [[554, 554], "mapped", [555]], [[555, 555], "valid"], [[556, 556], "mapped", [557]], [[557, 557], "valid"], [[558, 558], "mapped", [559]], [[559, 559], "valid"], [[560, 560], "mapped", [561]], [[561, 561], "valid"], [[562, 562], "mapped", [563]], [[563, 563], "valid"], [[564, 566], "valid"], [[567, 569], "valid"], [[570, 570], "mapped", [11365]], [[571, 571], "mapped", [572]], [[572, 572], "valid"], [[573, 573], "mapped", [410]], [[574, 574], "mapped", [11366]], [[575, 576], "valid"], [[577, 577], "mapped", [578]], [[578, 578], "valid"], [[579, 579], "mapped", [384]], [[580, 580], "mapped", [649]], [[581, 581], "mapped", [652]], [[582, 582], "mapped", [583]], [[583, 583], "valid"], [[584, 584], "mapped", [585]], [[585, 585], "valid"], [[586, 586], "mapped", [587]], [[587, 587], "valid"], [[588, 588], "mapped", [589]], [[589, 589], "valid"], [[590, 590], "mapped", [591]], [[591, 591], "valid"], [[592, 680], "valid"], [[681, 685], "valid"], [[686, 687], "valid"], [[688, 688], "mapped", [104]], [[689, 689], "mapped", [614]], [[690, 690], "mapped", [106]], [[691, 691], "mapped", [114]], [[692, 692], "mapped", [633]], [[693, 693], "mapped", [635]], [[694, 694], "mapped", [641]], [[695, 695], "mapped", [119]], [[696, 696], "mapped", [121]], [[697, 705], "valid"], [[706, 709], "valid", [], "NV8"], [[710, 721], "valid"], [[722, 727], "valid", [], "NV8"], [[728, 728], "disallowed_STD3_mapped", [32, 774]], [[729, 729], "disallowed_STD3_mapped", [32, 775]], [[730, 730], "disallowed_STD3_mapped", [32, 778]], [[731, 731], "disallowed_STD3_mapped", [32, 808]], [[732, 732], "disallowed_STD3_mapped", [32, 771]], [[733, 733], "disallowed_STD3_mapped", [32, 779]], [[734, 734], "valid", [], "NV8"], [[735, 735], "valid", [], "NV8"], [[736, 736], "mapped", [611]], [[737, 737], "mapped", [108]], [[738, 738], "mapped", [115]], [[739, 739], "mapped", [120]], [[740, 740], "mapped", [661]], [[741, 745], "valid", [], "NV8"], [[746, 747], "valid", [], "NV8"], [[748, 748], "valid"], [[749, 749], "valid", [], "NV8"], [[750, 750], "valid"], [[751, 767], "valid", [], "NV8"], [[768, 831], "valid"], [[832, 832], "mapped", [768]], [[833, 833], "mapped", [769]], [[834, 834], "valid"], [[835, 835], "mapped", [787]], [[836, 836], "mapped", [776, 769]], [[837, 837], "mapped", [953]], [[838, 846], "valid"], [[847, 847], "ignored"], [[848, 855], "valid"], [[856, 860], "valid"], [[861, 863], "valid"], [[864, 865], "valid"], [[866, 866], "valid"], [[867, 879], "valid"], [[880, 880], "mapped", [881]], [[881, 881], "valid"], [[882, 882], "mapped", [883]], [[883, 883], "valid"], [[884, 884], "mapped", [697]], [[885, 885], "valid"], [[886, 886], "mapped", [887]], [[887, 887], "valid"], [[888, 889], "disallowed"], [[890, 890], "disallowed_STD3_mapped", [32, 953]], [[891, 893], "valid"], [[894, 894], "disallowed_STD3_mapped", [59]], [[895, 895], "mapped", [1011]], [[896, 899], "disallowed"], [[900, 900], "disallowed_STD3_mapped", [32, 769]], [[901, 901], "disallowed_STD3_mapped", [32, 776, 769]], [[902, 902], "mapped", [940]], [[903, 903], "mapped", [183]], [[904, 904], "mapped", [941]], [[905, 905], "mapped", [942]], [[906, 906], "mapped", [943]], [[907, 907], "disallowed"], [[908, 908], "mapped", [972]], [[909, 909], "disallowed"], [[910, 910], "mapped", [973]], [[911, 911], "mapped", [974]], [[912, 912], "valid"], [[913, 913], "mapped", [945]], [[914, 914], "mapped", [946]], [[915, 915], "mapped", [947]], [[916, 916], "mapped", [948]], [[917, 917], "mapped", [949]], [[918, 918], "mapped", [950]], [[919, 919], "mapped", [951]], [[920, 920], "mapped", [952]], [[921, 921], "mapped", [953]], [[922, 922], "mapped", [954]], [[923, 923], "mapped", [955]], [[924, 924], "mapped", [956]], [[925, 925], "mapped", [957]], [[926, 926], "mapped", [958]], [[927, 927], "mapped", [959]], [[928, 928], "mapped", [960]], [[929, 929], "mapped", [961]], [[930, 930], "disallowed"], [[931, 931], "mapped", [963]], [[932, 932], "mapped", [964]], [[933, 933], "mapped", [965]], [[934, 934], "mapped", [966]], [[935, 935], "mapped", [967]], [[936, 936], "mapped", [968]], [[937, 937], "mapped", [969]], [[938, 938], "mapped", [970]], [[939, 939], "mapped", [971]], [[940, 961], "valid"], [[962, 962], "deviation", [963]], [[963, 974], "valid"], [[975, 975], "mapped", [983]], [[976, 976], "mapped", [946]], [[977, 977], "mapped", [952]], [[978, 978], "mapped", [965]], [[979, 979], "mapped", [973]], [[980, 980], "mapped", [971]], [[981, 981], "mapped", [966]], [[982, 982], "mapped", [960]], [[983, 983], "valid"], [[984, 984], "mapped", [985]], [[985, 985], "valid"], [[986, 986], "mapped", [987]], [[987, 987], "valid"], [[988, 988], "mapped", [989]], [[989, 989], "valid"], [[990, 990], "mapped", [991]], [[991, 991], "valid"], [[992, 992], "mapped", [993]], [[993, 993], "valid"], [[994, 994], "mapped", [995]], [[995, 995], "valid"], [[996, 996], "mapped", [997]], [[997, 997], "valid"], [[998, 998], "mapped", [999]], [[999, 999], "valid"], [[1e3, 1e3], "mapped", [1001]], [[1001, 1001], "valid"], [[1002, 1002], "mapped", [1003]], [[1003, 1003], "valid"], [[1004, 1004], "mapped", [1005]], [[1005, 1005], "valid"], [[1006, 1006], "mapped", [1007]], [[1007, 1007], "valid"], [[1008, 1008], "mapped", [954]], [[1009, 1009], "mapped", [961]], [[1010, 1010], "mapped", [963]], [[1011, 1011], "valid"], [[1012, 1012], "mapped", [952]], [[1013, 1013], "mapped", [949]], [[1014, 1014], "valid", [], "NV8"], [[1015, 1015], "mapped", [1016]], [[1016, 1016], "valid"], [[1017, 1017], "mapped", [963]], [[1018, 1018], "mapped", [1019]], [[1019, 1019], "valid"], [[1020, 1020], "valid"], [[1021, 1021], "mapped", [891]], [[1022, 1022], "mapped", [892]], [[1023, 1023], "mapped", [893]], [[1024, 1024], "mapped", [1104]], [[1025, 1025], "mapped", [1105]], [[1026, 1026], "mapped", [1106]], [[1027, 1027], "mapped", [1107]], [[1028, 1028], "mapped", [1108]], [[1029, 1029], "mapped", [1109]], [[1030, 1030], "mapped", [1110]], [[1031, 1031], "mapped", [1111]], [[1032, 1032], "mapped", [1112]], [[1033, 1033], "mapped", [1113]], [[1034, 1034], "mapped", [1114]], [[1035, 1035], "mapped", [1115]], [[1036, 1036], "mapped", [1116]], [[1037, 1037], "mapped", [1117]], [[1038, 1038], "mapped", [1118]], [[1039, 1039], "mapped", [1119]], [[1040, 1040], "mapped", [1072]], [[1041, 1041], "mapped", [1073]], [[1042, 1042], "mapped", [1074]], [[1043, 1043], "mapped", [1075]], [[1044, 1044], "mapped", [1076]], [[1045, 1045], "mapped", [1077]], [[1046, 1046], "mapped", [1078]], [[1047, 1047], "mapped", [1079]], [[1048, 1048], "mapped", [1080]], [[1049, 1049], "mapped", [1081]], [[1050, 1050], "mapped", [1082]], [[1051, 1051], "mapped", [1083]], [[1052, 1052], "mapped", [1084]], [[1053, 1053], "mapped", [1085]], [[1054, 1054], "mapped", [1086]], [[1055, 1055], "mapped", [1087]], [[1056, 1056], "mapped", [1088]], [[1057, 1057], "mapped", [1089]], [[1058, 1058], "mapped", [1090]], [[1059, 1059], "mapped", [1091]], [[1060, 1060], "mapped", [1092]], [[1061, 1061], "mapped", [1093]], [[1062, 1062], "mapped", [1094]], [[1063, 1063], "mapped", [1095]], [[1064, 1064], "mapped", [1096]], [[1065, 1065], "mapped", [1097]], [[1066, 1066], "mapped", [1098]], [[1067, 1067], "mapped", [1099]], [[1068, 1068], "mapped", [1100]], [[1069, 1069], "mapped", [1101]], [[1070, 1070], "mapped", [1102]], [[1071, 1071], "mapped", [1103]], [[1072, 1103], "valid"], [[1104, 1104], "valid"], [[1105, 1116], "valid"], [[1117, 1117], "valid"], [[1118, 1119], "valid"], [[1120, 1120], "mapped", [1121]], [[1121, 1121], "valid"], [[1122, 1122], "mapped", [1123]], [[1123, 1123], "valid"], [[1124, 1124], "mapped", [1125]], [[1125, 1125], "valid"], [[1126, 1126], "mapped", [1127]], [[1127, 1127], "valid"], [[1128, 1128], "mapped", [1129]], [[1129, 1129], "valid"], [[1130, 1130], "mapped", [1131]], [[1131, 1131], "valid"], [[1132, 1132], "mapped", [1133]], [[1133, 1133], "valid"], [[1134, 1134], "mapped", [1135]], [[1135, 1135], "valid"], [[1136, 1136], "mapped", [1137]], [[1137, 1137], "valid"], [[1138, 1138], "mapped", [1139]], [[1139, 1139], "valid"], [[1140, 1140], "mapped", [1141]], [[1141, 1141], "valid"], [[1142, 1142], "mapped", [1143]], [[1143, 1143], "valid"], [[1144, 1144], "mapped", [1145]], [[1145, 1145], "valid"], [[1146, 1146], "mapped", [1147]], [[1147, 1147], "valid"], [[1148, 1148], "mapped", [1149]], [[1149, 1149], "valid"], [[1150, 1150], "mapped", [1151]], [[1151, 1151], "valid"], [[1152, 1152], "mapped", [1153]], [[1153, 1153], "valid"], [[1154, 1154], "valid", [], "NV8"], [[1155, 1158], "valid"], [[1159, 1159], "valid"], [[1160, 1161], "valid", [], "NV8"], [[1162, 1162], "mapped", [1163]], [[1163, 1163], "valid"], [[1164, 1164], "mapped", [1165]], [[1165, 1165], "valid"], [[1166, 1166], "mapped", [1167]], [[1167, 1167], "valid"], [[1168, 1168], "mapped", [1169]], [[1169, 1169], "valid"], [[1170, 1170], "mapped", [1171]], [[1171, 1171], "valid"], [[1172, 1172], "mapped", [1173]], [[1173, 1173], "valid"], [[1174, 1174], "mapped", [1175]], [[1175, 1175], "valid"], [[1176, 1176], "mapped", [1177]], [[1177, 1177], "valid"], [[1178, 1178], "mapped", [1179]], [[1179, 1179], "valid"], [[1180, 1180], "mapped", [1181]], [[1181, 1181], "valid"], [[1182, 1182], "mapped", [1183]], [[1183, 1183], "valid"], [[1184, 1184], "mapped", [1185]], [[1185, 1185], "valid"], [[1186, 1186], "mapped", [1187]], [[1187, 1187], "valid"], [[1188, 1188], "mapped", [1189]], [[1189, 1189], "valid"], [[1190, 1190], "mapped", [1191]], [[1191, 1191], "valid"], [[1192, 1192], "mapped", [1193]], [[1193, 1193], "valid"], [[1194, 1194], "mapped", [1195]], [[1195, 1195], "valid"], [[1196, 1196], "mapped", [1197]], [[1197, 1197], "valid"], [[1198, 1198], "mapped", [1199]], [[1199, 1199], "valid"], [[1200, 1200], "mapped", [1201]], [[1201, 1201], "valid"], [[1202, 1202], "mapped", [1203]], [[1203, 1203], "valid"], [[1204, 1204], "mapped", [1205]], [[1205, 1205], "valid"], [[1206, 1206], "mapped", [1207]], [[1207, 1207], "valid"], [[1208, 1208], "mapped", [1209]], [[1209, 1209], "valid"], [[1210, 1210], "mapped", [1211]], [[1211, 1211], "valid"], [[1212, 1212], "mapped", [1213]], [[1213, 1213], "valid"], [[1214, 1214], "mapped", [1215]], [[1215, 1215], "valid"], [[1216, 1216], "disallowed"], [[1217, 1217], "mapped", [1218]], [[1218, 1218], "valid"], [[1219, 1219], "mapped", [1220]], [[1220, 1220], "valid"], [[1221, 1221], "mapped", [1222]], [[1222, 1222], "valid"], [[1223, 1223], "mapped", [1224]], [[1224, 1224], "valid"], [[1225, 1225], "mapped", [1226]], [[1226, 1226], "valid"], [[1227, 1227], "mapped", [1228]], [[1228, 1228], "valid"], [[1229, 1229], "mapped", [1230]], [[1230, 1230], "valid"], [[1231, 1231], "valid"], [[1232, 1232], "mapped", [1233]], [[1233, 1233], "valid"], [[1234, 1234], "mapped", [1235]], [[1235, 1235], "valid"], [[1236, 1236], "mapped", [1237]], [[1237, 1237], "valid"], [[1238, 1238], "mapped", [1239]], [[1239, 1239], "valid"], [[1240, 1240], "mapped", [1241]], [[1241, 1241], "valid"], [[1242, 1242], "mapped", [1243]], [[1243, 1243], "valid"], [[1244, 1244], "mapped", [1245]], [[1245, 1245], "valid"], [[1246, 1246], "mapped", [1247]], [[1247, 1247], "valid"], [[1248, 1248], "mapped", [1249]], [[1249, 1249], "valid"], [[1250, 1250], "mapped", [1251]], [[1251, 1251], "valid"], [[1252, 1252], "mapped", [1253]], [[1253, 1253], "valid"], [[1254, 1254], "mapped", [1255]], [[1255, 1255], "valid"], [[1256, 1256], "mapped", [1257]], [[1257, 1257], "valid"], [[1258, 1258], "mapped", [1259]], [[1259, 1259], "valid"], [[1260, 1260], "mapped", [1261]], [[1261, 1261], "valid"], [[1262, 1262], "mapped", [1263]], [[1263, 1263], "valid"], [[1264, 1264], "mapped", [1265]], [[1265, 1265], "valid"], [[1266, 1266], "mapped", [1267]], [[1267, 1267], "valid"], [[1268, 1268], "mapped", [1269]], [[1269, 1269], "valid"], [[1270, 1270], "mapped", [1271]], [[1271, 1271], "valid"], [[1272, 1272], "mapped", [1273]], [[1273, 1273], "valid"], [[1274, 1274], "mapped", [1275]], [[1275, 1275], "valid"], [[1276, 1276], "mapped", [1277]], [[1277, 1277], "valid"], [[1278, 1278], "mapped", [1279]], [[1279, 1279], "valid"], [[1280, 1280], "mapped", [1281]], [[1281, 1281], "valid"], [[1282, 1282], "mapped", [1283]], [[1283, 1283], "valid"], [[1284, 1284], "mapped", [1285]], [[1285, 1285], "valid"], [[1286, 1286], "mapped", [1287]], [[1287, 1287], "valid"], [[1288, 1288], "mapped", [1289]], [[1289, 1289], "valid"], [[1290, 1290], "mapped", [1291]], [[1291, 1291], "valid"], [[1292, 1292], "mapped", [1293]], [[1293, 1293], "valid"], [[1294, 1294], "mapped", [1295]], [[1295, 1295], "valid"], [[1296, 1296], "mapped", [1297]], [[1297, 1297], "valid"], [[1298, 1298], "mapped", [1299]], [[1299, 1299], "valid"], [[1300, 1300], "mapped", [1301]], [[1301, 1301], "valid"], [[1302, 1302], "mapped", [1303]], [[1303, 1303], "valid"], [[1304, 1304], "mapped", [1305]], [[1305, 1305], "valid"], [[1306, 1306], "mapped", [1307]], [[1307, 1307], "valid"], [[1308, 1308], "mapped", [1309]], [[1309, 1309], "valid"], [[1310, 1310], "mapped", [1311]], [[1311, 1311], "valid"], [[1312, 1312], "mapped", [1313]], [[1313, 1313], "valid"], [[1314, 1314], "mapped", [1315]], [[1315, 1315], "valid"], [[1316, 1316], "mapped", [1317]], [[1317, 1317], "valid"], [[1318, 1318], "mapped", [1319]], [[1319, 1319], "valid"], [[1320, 1320], "mapped", [1321]], [[1321, 1321], "valid"], [[1322, 1322], "mapped", [1323]], [[1323, 1323], "valid"], [[1324, 1324], "mapped", [1325]], [[1325, 1325], "valid"], [[1326, 1326], "mapped", [1327]], [[1327, 1327], "valid"], [[1328, 1328], "disallowed"], [[1329, 1329], "mapped", [1377]], [[1330, 1330], "mapped", [1378]], [[1331, 1331], "mapped", [1379]], [[1332, 1332], "mapped", [1380]], [[1333, 1333], "mapped", [1381]], [[1334, 1334], "mapped", [1382]], [[1335, 1335], "mapped", [1383]], [[1336, 1336], "mapped", [1384]], [[1337, 1337], "mapped", [1385]], [[1338, 1338], "mapped", [1386]], [[1339, 1339], "mapped", [1387]], [[1340, 1340], "mapped", [1388]], [[1341, 1341], "mapped", [1389]], [[1342, 1342], "mapped", [1390]], [[1343, 1343], "mapped", [1391]], [[1344, 1344], "mapped", [1392]], [[1345, 1345], "mapped", [1393]], [[1346, 1346], "mapped", [1394]], [[1347, 1347], "mapped", [1395]], [[1348, 1348], "mapped", [1396]], [[1349, 1349], "mapped", [1397]], [[1350, 1350], "mapped", [1398]], [[1351, 1351], "mapped", [1399]], [[1352, 1352], "mapped", [1400]], [[1353, 1353], "mapped", [1401]], [[1354, 1354], "mapped", [1402]], [[1355, 1355], "mapped", [1403]], [[1356, 1356], "mapped", [1404]], [[1357, 1357], "mapped", [1405]], [[1358, 1358], "mapped", [1406]], [[1359, 1359], "mapped", [1407]], [[1360, 1360], "mapped", [1408]], [[1361, 1361], "mapped", [1409]], [[1362, 1362], "mapped", [1410]], [[1363, 1363], "mapped", [1411]], [[1364, 1364], "mapped", [1412]], [[1365, 1365], "mapped", [1413]], [[1366, 1366], "mapped", [1414]], [[1367, 1368], "disallowed"], [[1369, 1369], "valid"], [[1370, 1375], "valid", [], "NV8"], [[1376, 1376], "disallowed"], [[1377, 1414], "valid"], [[1415, 1415], "mapped", [1381, 1410]], [[1416, 1416], "disallowed"], [[1417, 1417], "valid", [], "NV8"], [[1418, 1418], "valid", [], "NV8"], [[1419, 1420], "disallowed"], [[1421, 1422], "valid", [], "NV8"], [[1423, 1423], "valid", [], "NV8"], [[1424, 1424], "disallowed"], [[1425, 1441], "valid"], [[1442, 1442], "valid"], [[1443, 1455], "valid"], [[1456, 1465], "valid"], [[1466, 1466], "valid"], [[1467, 1469], "valid"], [[1470, 1470], "valid", [], "NV8"], [[1471, 1471], "valid"], [[1472, 1472], "valid", [], "NV8"], [[1473, 1474], "valid"], [[1475, 1475], "valid", [], "NV8"], [[1476, 1476], "valid"], [[1477, 1477], "valid"], [[1478, 1478], "valid", [], "NV8"], [[1479, 1479], "valid"], [[1480, 1487], "disallowed"], [[1488, 1514], "valid"], [[1515, 1519], "disallowed"], [[1520, 1524], "valid"], [[1525, 1535], "disallowed"], [[1536, 1539], "disallowed"], [[1540, 1540], "disallowed"], [[1541, 1541], "disallowed"], [[1542, 1546], "valid", [], "NV8"], [[1547, 1547], "valid", [], "NV8"], [[1548, 1548], "valid", [], "NV8"], [[1549, 1551], "valid", [], "NV8"], [[1552, 1557], "valid"], [[1558, 1562], "valid"], [[1563, 1563], "valid", [], "NV8"], [[1564, 1564], "disallowed"], [[1565, 1565], "disallowed"], [[1566, 1566], "valid", [], "NV8"], [[1567, 1567], "valid", [], "NV8"], [[1568, 1568], "valid"], [[1569, 1594], "valid"], [[1595, 1599], "valid"], [[1600, 1600], "valid", [], "NV8"], [[1601, 1618], "valid"], [[1619, 1621], "valid"], [[1622, 1624], "valid"], [[1625, 1630], "valid"], [[1631, 1631], "valid"], [[1632, 1641], "valid"], [[1642, 1645], "valid", [], "NV8"], [[1646, 1647], "valid"], [[1648, 1652], "valid"], [[1653, 1653], "mapped", [1575, 1652]], [[1654, 1654], "mapped", [1608, 1652]], [[1655, 1655], "mapped", [1735, 1652]], [[1656, 1656], "mapped", [1610, 1652]], [[1657, 1719], "valid"], [[1720, 1721], "valid"], [[1722, 1726], "valid"], [[1727, 1727], "valid"], [[1728, 1742], "valid"], [[1743, 1743], "valid"], [[1744, 1747], "valid"], [[1748, 1748], "valid", [], "NV8"], [[1749, 1756], "valid"], [[1757, 1757], "disallowed"], [[1758, 1758], "valid", [], "NV8"], [[1759, 1768], "valid"], [[1769, 1769], "valid", [], "NV8"], [[1770, 1773], "valid"], [[1774, 1775], "valid"], [[1776, 1785], "valid"], [[1786, 1790], "valid"], [[1791, 1791], "valid"], [[1792, 1805], "valid", [], "NV8"], [[1806, 1806], "disallowed"], [[1807, 1807], "disallowed"], [[1808, 1836], "valid"], [[1837, 1839], "valid"], [[1840, 1866], "valid"], [[1867, 1868], "disallowed"], [[1869, 1871], "valid"], [[1872, 1901], "valid"], [[1902, 1919], "valid"], [[1920, 1968], "valid"], [[1969, 1969], "valid"], [[1970, 1983], "disallowed"], [[1984, 2037], "valid"], [[2038, 2042], "valid", [], "NV8"], [[2043, 2047], "disallowed"], [[2048, 2093], "valid"], [[2094, 2095], "disallowed"], [[2096, 2110], "valid", [], "NV8"], [[2111, 2111], "disallowed"], [[2112, 2139], "valid"], [[2140, 2141], "disallowed"], [[2142, 2142], "valid", [], "NV8"], [[2143, 2207], "disallowed"], [[2208, 2208], "valid"], [[2209, 2209], "valid"], [[2210, 2220], "valid"], [[2221, 2226], "valid"], [[2227, 2228], "valid"], [[2229, 2274], "disallowed"], [[2275, 2275], "valid"], [[2276, 2302], "valid"], [[2303, 2303], "valid"], [[2304, 2304], "valid"], [[2305, 2307], "valid"], [[2308, 2308], "valid"], [[2309, 2361], "valid"], [[2362, 2363], "valid"], [[2364, 2381], "valid"], [[2382, 2382], "valid"], [[2383, 2383], "valid"], [[2384, 2388], "valid"], [[2389, 2389], "valid"], [[2390, 2391], "valid"], [[2392, 2392], "mapped", [2325, 2364]], [[2393, 2393], "mapped", [2326, 2364]], [[2394, 2394], "mapped", [2327, 2364]], [[2395, 2395], "mapped", [2332, 2364]], [[2396, 2396], "mapped", [2337, 2364]], [[2397, 2397], "mapped", [2338, 2364]], [[2398, 2398], "mapped", [2347, 2364]], [[2399, 2399], "mapped", [2351, 2364]], [[2400, 2403], "valid"], [[2404, 2405], "valid", [], "NV8"], [[2406, 2415], "valid"], [[2416, 2416], "valid", [], "NV8"], [[2417, 2418], "valid"], [[2419, 2423], "valid"], [[2424, 2424], "valid"], [[2425, 2426], "valid"], [[2427, 2428], "valid"], [[2429, 2429], "valid"], [[2430, 2431], "valid"], [[2432, 2432], "valid"], [[2433, 2435], "valid"], [[2436, 2436], "disallowed"], [[2437, 2444], "valid"], [[2445, 2446], "disallowed"], [[2447, 2448], "valid"], [[2449, 2450], "disallowed"], [[2451, 2472], "valid"], [[2473, 2473], "disallowed"], [[2474, 2480], "valid"], [[2481, 2481], "disallowed"], [[2482, 2482], "valid"], [[2483, 2485], "disallowed"], [[2486, 2489], "valid"], [[2490, 2491], "disallowed"], [[2492, 2492], "valid"], [[2493, 2493], "valid"], [[2494, 2500], "valid"], [[2501, 2502], "disallowed"], [[2503, 2504], "valid"], [[2505, 2506], "disallowed"], [[2507, 2509], "valid"], [[2510, 2510], "valid"], [[2511, 2518], "disallowed"], [[2519, 2519], "valid"], [[2520, 2523], "disallowed"], [[2524, 2524], "mapped", [2465, 2492]], [[2525, 2525], "mapped", [2466, 2492]], [[2526, 2526], "disallowed"], [[2527, 2527], "mapped", [2479, 2492]], [[2528, 2531], "valid"], [[2532, 2533], "disallowed"], [[2534, 2545], "valid"], [[2546, 2554], "valid", [], "NV8"], [[2555, 2555], "valid", [], "NV8"], [[2556, 2560], "disallowed"], [[2561, 2561], "valid"], [[2562, 2562], "valid"], [[2563, 2563], "valid"], [[2564, 2564], "disallowed"], [[2565, 2570], "valid"], [[2571, 2574], "disallowed"], [[2575, 2576], "valid"], [[2577, 2578], "disallowed"], [[2579, 2600], "valid"], [[2601, 2601], "disallowed"], [[2602, 2608], "valid"], [[2609, 2609], "disallowed"], [[2610, 2610], "valid"], [[2611, 2611], "mapped", [2610, 2620]], [[2612, 2612], "disallowed"], [[2613, 2613], "valid"], [[2614, 2614], "mapped", [2616, 2620]], [[2615, 2615], "disallowed"], [[2616, 2617], "valid"], [[2618, 2619], "disallowed"], [[2620, 2620], "valid"], [[2621, 2621], "disallowed"], [[2622, 2626], "valid"], [[2627, 2630], "disallowed"], [[2631, 2632], "valid"], [[2633, 2634], "disallowed"], [[2635, 2637], "valid"], [[2638, 2640], "disallowed"], [[2641, 2641], "valid"], [[2642, 2648], "disallowed"], [[2649, 2649], "mapped", [2582, 2620]], [[2650, 2650], "mapped", [2583, 2620]], [[2651, 2651], "mapped", [2588, 2620]], [[2652, 2652], "valid"], [[2653, 2653], "disallowed"], [[2654, 2654], "mapped", [2603, 2620]], [[2655, 2661], "disallowed"], [[2662, 2676], "valid"], [[2677, 2677], "valid"], [[2678, 2688], "disallowed"], [[2689, 2691], "valid"], [[2692, 2692], "disallowed"], [[2693, 2699], "valid"], [[2700, 2700], "valid"], [[2701, 2701], "valid"], [[2702, 2702], "disallowed"], [[2703, 2705], "valid"], [[2706, 2706], "disallowed"], [[2707, 2728], "valid"], [[2729, 2729], "disallowed"], [[2730, 2736], "valid"], [[2737, 2737], "disallowed"], [[2738, 2739], "valid"], [[2740, 2740], "disallowed"], [[2741, 2745], "valid"], [[2746, 2747], "disallowed"], [[2748, 2757], "valid"], [[2758, 2758], "disallowed"], [[2759, 2761], "valid"], [[2762, 2762], "disallowed"], [[2763, 2765], "valid"], [[2766, 2767], "disallowed"], [[2768, 2768], "valid"], [[2769, 2783], "disallowed"], [[2784, 2784], "valid"], [[2785, 2787], "valid"], [[2788, 2789], "disallowed"], [[2790, 2799], "valid"], [[2800, 2800], "valid", [], "NV8"], [[2801, 2801], "valid", [], "NV8"], [[2802, 2808], "disallowed"], [[2809, 2809], "valid"], [[2810, 2816], "disallowed"], [[2817, 2819], "valid"], [[2820, 2820], "disallowed"], [[2821, 2828], "valid"], [[2829, 2830], "disallowed"], [[2831, 2832], "valid"], [[2833, 2834], "disallowed"], [[2835, 2856], "valid"], [[2857, 2857], "disallowed"], [[2858, 2864], "valid"], [[2865, 2865], "disallowed"], [[2866, 2867], "valid"], [[2868, 2868], "disallowed"], [[2869, 2869], "valid"], [[2870, 2873], "valid"], [[2874, 2875], "disallowed"], [[2876, 2883], "valid"], [[2884, 2884], "valid"], [[2885, 2886], "disallowed"], [[2887, 2888], "valid"], [[2889, 2890], "disallowed"], [[2891, 2893], "valid"], [[2894, 2901], "disallowed"], [[2902, 2903], "valid"], [[2904, 2907], "disallowed"], [[2908, 2908], "mapped", [2849, 2876]], [[2909, 2909], "mapped", [2850, 2876]], [[2910, 2910], "disallowed"], [[2911, 2913], "valid"], [[2914, 2915], "valid"], [[2916, 2917], "disallowed"], [[2918, 2927], "valid"], [[2928, 2928], "valid", [], "NV8"], [[2929, 2929], "valid"], [[2930, 2935], "valid", [], "NV8"], [[2936, 2945], "disallowed"], [[2946, 2947], "valid"], [[2948, 2948], "disallowed"], [[2949, 2954], "valid"], [[2955, 2957], "disallowed"], [[2958, 2960], "valid"], [[2961, 2961], "disallowed"], [[2962, 2965], "valid"], [[2966, 2968], "disallowed"], [[2969, 2970], "valid"], [[2971, 2971], "disallowed"], [[2972, 2972], "valid"], [[2973, 2973], "disallowed"], [[2974, 2975], "valid"], [[2976, 2978], "disallowed"], [[2979, 2980], "valid"], [[2981, 2983], "disallowed"], [[2984, 2986], "valid"], [[2987, 2989], "disallowed"], [[2990, 2997], "valid"], [[2998, 2998], "valid"], [[2999, 3001], "valid"], [[3002, 3005], "disallowed"], [[3006, 3010], "valid"], [[3011, 3013], "disallowed"], [[3014, 3016], "valid"], [[3017, 3017], "disallowed"], [[3018, 3021], "valid"], [[3022, 3023], "disallowed"], [[3024, 3024], "valid"], [[3025, 3030], "disallowed"], [[3031, 3031], "valid"], [[3032, 3045], "disallowed"], [[3046, 3046], "valid"], [[3047, 3055], "valid"], [[3056, 3058], "valid", [], "NV8"], [[3059, 3066], "valid", [], "NV8"], [[3067, 3071], "disallowed"], [[3072, 3072], "valid"], [[3073, 3075], "valid"], [[3076, 3076], "disallowed"], [[3077, 3084], "valid"], [[3085, 3085], "disallowed"], [[3086, 3088], "valid"], [[3089, 3089], "disallowed"], [[3090, 3112], "valid"], [[3113, 3113], "disallowed"], [[3114, 3123], "valid"], [[3124, 3124], "valid"], [[3125, 3129], "valid"], [[3130, 3132], "disallowed"], [[3133, 3133], "valid"], [[3134, 3140], "valid"], [[3141, 3141], "disallowed"], [[3142, 3144], "valid"], [[3145, 3145], "disallowed"], [[3146, 3149], "valid"], [[3150, 3156], "disallowed"], [[3157, 3158], "valid"], [[3159, 3159], "disallowed"], [[3160, 3161], "valid"], [[3162, 3162], "valid"], [[3163, 3167], "disallowed"], [[3168, 3169], "valid"], [[3170, 3171], "valid"], [[3172, 3173], "disallowed"], [[3174, 3183], "valid"], [[3184, 3191], "disallowed"], [[3192, 3199], "valid", [], "NV8"], [[3200, 3200], "disallowed"], [[3201, 3201], "valid"], [[3202, 3203], "valid"], [[3204, 3204], "disallowed"], [[3205, 3212], "valid"], [[3213, 3213], "disallowed"], [[3214, 3216], "valid"], [[3217, 3217], "disallowed"], [[3218, 3240], "valid"], [[3241, 3241], "disallowed"], [[3242, 3251], "valid"], [[3252, 3252], "disallowed"], [[3253, 3257], "valid"], [[3258, 3259], "disallowed"], [[3260, 3261], "valid"], [[3262, 3268], "valid"], [[3269, 3269], "disallowed"], [[3270, 3272], "valid"], [[3273, 3273], "disallowed"], [[3274, 3277], "valid"], [[3278, 3284], "disallowed"], [[3285, 3286], "valid"], [[3287, 3293], "disallowed"], [[3294, 3294], "valid"], [[3295, 3295], "disallowed"], [[3296, 3297], "valid"], [[3298, 3299], "valid"], [[3300, 3301], "disallowed"], [[3302, 3311], "valid"], [[3312, 3312], "disallowed"], [[3313, 3314], "valid"], [[3315, 3328], "disallowed"], [[3329, 3329], "valid"], [[3330, 3331], "valid"], [[3332, 3332], "disallowed"], [[3333, 3340], "valid"], [[3341, 3341], "disallowed"], [[3342, 3344], "valid"], [[3345, 3345], "disallowed"], [[3346, 3368], "valid"], [[3369, 3369], "valid"], [[3370, 3385], "valid"], [[3386, 3386], "valid"], [[3387, 3388], "disallowed"], [[3389, 3389], "valid"], [[3390, 3395], "valid"], [[3396, 3396], "valid"], [[3397, 3397], "disallowed"], [[3398, 3400], "valid"], [[3401, 3401], "disallowed"], [[3402, 3405], "valid"], [[3406, 3406], "valid"], [[3407, 3414], "disallowed"], [[3415, 3415], "valid"], [[3416, 3422], "disallowed"], [[3423, 3423], "valid"], [[3424, 3425], "valid"], [[3426, 3427], "valid"], [[3428, 3429], "disallowed"], [[3430, 3439], "valid"], [[3440, 3445], "valid", [], "NV8"], [[3446, 3448], "disallowed"], [[3449, 3449], "valid", [], "NV8"], [[3450, 3455], "valid"], [[3456, 3457], "disallowed"], [[3458, 3459], "valid"], [[3460, 3460], "disallowed"], [[3461, 3478], "valid"], [[3479, 3481], "disallowed"], [[3482, 3505], "valid"], [[3506, 3506], "disallowed"], [[3507, 3515], "valid"], [[3516, 3516], "disallowed"], [[3517, 3517], "valid"], [[3518, 3519], "disallowed"], [[3520, 3526], "valid"], [[3527, 3529], "disallowed"], [[3530, 3530], "valid"], [[3531, 3534], "disallowed"], [[3535, 3540], "valid"], [[3541, 3541], "disallowed"], [[3542, 3542], "valid"], [[3543, 3543], "disallowed"], [[3544, 3551], "valid"], [[3552, 3557], "disallowed"], [[3558, 3567], "valid"], [[3568, 3569], "disallowed"], [[3570, 3571], "valid"], [[3572, 3572], "valid", [], "NV8"], [[3573, 3584], "disallowed"], [[3585, 3634], "valid"], [[3635, 3635], "mapped", [3661, 3634]], [[3636, 3642], "valid"], [[3643, 3646], "disallowed"], [[3647, 3647], "valid", [], "NV8"], [[3648, 3662], "valid"], [[3663, 3663], "valid", [], "NV8"], [[3664, 3673], "valid"], [[3674, 3675], "valid", [], "NV8"], [[3676, 3712], "disallowed"], [[3713, 3714], "valid"], [[3715, 3715], "disallowed"], [[3716, 3716], "valid"], [[3717, 3718], "disallowed"], [[3719, 3720], "valid"], [[3721, 3721], "disallowed"], [[3722, 3722], "valid"], [[3723, 3724], "disallowed"], [[3725, 3725], "valid"], [[3726, 3731], "disallowed"], [[3732, 3735], "valid"], [[3736, 3736], "disallowed"], [[3737, 3743], "valid"], [[3744, 3744], "disallowed"], [[3745, 3747], "valid"], [[3748, 3748], "disallowed"], [[3749, 3749], "valid"], [[3750, 3750], "disallowed"], [[3751, 3751], "valid"], [[3752, 3753], "disallowed"], [[3754, 3755], "valid"], [[3756, 3756], "disallowed"], [[3757, 3762], "valid"], [[3763, 3763], "mapped", [3789, 3762]], [[3764, 3769], "valid"], [[3770, 3770], "disallowed"], [[3771, 3773], "valid"], [[3774, 3775], "disallowed"], [[3776, 3780], "valid"], [[3781, 3781], "disallowed"], [[3782, 3782], "valid"], [[3783, 3783], "disallowed"], [[3784, 3789], "valid"], [[3790, 3791], "disallowed"], [[3792, 3801], "valid"], [[3802, 3803], "disallowed"], [[3804, 3804], "mapped", [3755, 3737]], [[3805, 3805], "mapped", [3755, 3745]], [[3806, 3807], "valid"], [[3808, 3839], "disallowed"], [[3840, 3840], "valid"], [[3841, 3850], "valid", [], "NV8"], [[3851, 3851], "valid"], [[3852, 3852], "mapped", [3851]], [[3853, 3863], "valid", [], "NV8"], [[3864, 3865], "valid"], [[3866, 3871], "valid", [], "NV8"], [[3872, 3881], "valid"], [[3882, 3892], "valid", [], "NV8"], [[3893, 3893], "valid"], [[3894, 3894], "valid", [], "NV8"], [[3895, 3895], "valid"], [[3896, 3896], "valid", [], "NV8"], [[3897, 3897], "valid"], [[3898, 3901], "valid", [], "NV8"], [[3902, 3906], "valid"], [[3907, 3907], "mapped", [3906, 4023]], [[3908, 3911], "valid"], [[3912, 3912], "disallowed"], [[3913, 3916], "valid"], [[3917, 3917], "mapped", [3916, 4023]], [[3918, 3921], "valid"], [[3922, 3922], "mapped", [3921, 4023]], [[3923, 3926], "valid"], [[3927, 3927], "mapped", [3926, 4023]], [[3928, 3931], "valid"], [[3932, 3932], "mapped", [3931, 4023]], [[3933, 3944], "valid"], [[3945, 3945], "mapped", [3904, 4021]], [[3946, 3946], "valid"], [[3947, 3948], "valid"], [[3949, 3952], "disallowed"], [[3953, 3954], "valid"], [[3955, 3955], "mapped", [3953, 3954]], [[3956, 3956], "valid"], [[3957, 3957], "mapped", [3953, 3956]], [[3958, 3958], "mapped", [4018, 3968]], [[3959, 3959], "mapped", [4018, 3953, 3968]], [[3960, 3960], "mapped", [4019, 3968]], [[3961, 3961], "mapped", [4019, 3953, 3968]], [[3962, 3968], "valid"], [[3969, 3969], "mapped", [3953, 3968]], [[3970, 3972], "valid"], [[3973, 3973], "valid", [], "NV8"], [[3974, 3979], "valid"], [[3980, 3983], "valid"], [[3984, 3986], "valid"], [[3987, 3987], "mapped", [3986, 4023]], [[3988, 3989], "valid"], [[3990, 3990], "valid"], [[3991, 3991], "valid"], [[3992, 3992], "disallowed"], [[3993, 3996], "valid"], [[3997, 3997], "mapped", [3996, 4023]], [[3998, 4001], "valid"], [[4002, 4002], "mapped", [4001, 4023]], [[4003, 4006], "valid"], [[4007, 4007], "mapped", [4006, 4023]], [[4008, 4011], "valid"], [[4012, 4012], "mapped", [4011, 4023]], [[4013, 4013], "valid"], [[4014, 4016], "valid"], [[4017, 4023], "valid"], [[4024, 4024], "valid"], [[4025, 4025], "mapped", [3984, 4021]], [[4026, 4028], "valid"], [[4029, 4029], "disallowed"], [[4030, 4037], "valid", [], "NV8"], [[4038, 4038], "valid"], [[4039, 4044], "valid", [], "NV8"], [[4045, 4045], "disallowed"], [[4046, 4046], "valid", [], "NV8"], [[4047, 4047], "valid", [], "NV8"], [[4048, 4049], "valid", [], "NV8"], [[4050, 4052], "valid", [], "NV8"], [[4053, 4056], "valid", [], "NV8"], [[4057, 4058], "valid", [], "NV8"], [[4059, 4095], "disallowed"], [[4096, 4129], "valid"], [[4130, 4130], "valid"], [[4131, 4135], "valid"], [[4136, 4136], "valid"], [[4137, 4138], "valid"], [[4139, 4139], "valid"], [[4140, 4146], "valid"], [[4147, 4149], "valid"], [[4150, 4153], "valid"], [[4154, 4159], "valid"], [[4160, 4169], "valid"], [[4170, 4175], "valid", [], "NV8"], [[4176, 4185], "valid"], [[4186, 4249], "valid"], [[4250, 4253], "valid"], [[4254, 4255], "valid", [], "NV8"], [[4256, 4293], "disallowed"], [[4294, 4294], "disallowed"], [[4295, 4295], "mapped", [11559]], [[4296, 4300], "disallowed"], [[4301, 4301], "mapped", [11565]], [[4302, 4303], "disallowed"], [[4304, 4342], "valid"], [[4343, 4344], "valid"], [[4345, 4346], "valid"], [[4347, 4347], "valid", [], "NV8"], [[4348, 4348], "mapped", [4316]], [[4349, 4351], "valid"], [[4352, 4441], "valid", [], "NV8"], [[4442, 4446], "valid", [], "NV8"], [[4447, 4448], "disallowed"], [[4449, 4514], "valid", [], "NV8"], [[4515, 4519], "valid", [], "NV8"], [[4520, 4601], "valid", [], "NV8"], [[4602, 4607], "valid", [], "NV8"], [[4608, 4614], "valid"], [[4615, 4615], "valid"], [[4616, 4678], "valid"], [[4679, 4679], "valid"], [[4680, 4680], "valid"], [[4681, 4681], "disallowed"], [[4682, 4685], "valid"], [[4686, 4687], "disallowed"], [[4688, 4694], "valid"], [[4695, 4695], "disallowed"], [[4696, 4696], "valid"], [[4697, 4697], "disallowed"], [[4698, 4701], "valid"], [[4702, 4703], "disallowed"], [[4704, 4742], "valid"], [[4743, 4743], "valid"], [[4744, 4744], "valid"], [[4745, 4745], "disallowed"], [[4746, 4749], "valid"], [[4750, 4751], "disallowed"], [[4752, 4782], "valid"], [[4783, 4783], "valid"], [[4784, 4784], "valid"], [[4785, 4785], "disallowed"], [[4786, 4789], "valid"], [[4790, 4791], "disallowed"], [[4792, 4798], "valid"], [[4799, 4799], "disallowed"], [[4800, 4800], "valid"], [[4801, 4801], "disallowed"], [[4802, 4805], "valid"], [[4806, 4807], "disallowed"], [[4808, 4814], "valid"], [[4815, 4815], "valid"], [[4816, 4822], "valid"], [[4823, 4823], "disallowed"], [[4824, 4846], "valid"], [[4847, 4847], "valid"], [[4848, 4878], "valid"], [[4879, 4879], "valid"], [[4880, 4880], "valid"], [[4881, 4881], "disallowed"], [[4882, 4885], "valid"], [[4886, 4887], "disallowed"], [[4888, 4894], "valid"], [[4895, 4895], "valid"], [[4896, 4934], "valid"], [[4935, 4935], "valid"], [[4936, 4954], "valid"], [[4955, 4956], "disallowed"], [[4957, 4958], "valid"], [[4959, 4959], "valid"], [[4960, 4960], "valid", [], "NV8"], [[4961, 4988], "valid", [], "NV8"], [[4989, 4991], "disallowed"], [[4992, 5007], "valid"], [[5008, 5017], "valid", [], "NV8"], [[5018, 5023], "disallowed"], [[5024, 5108], "valid"], [[5109, 5109], "valid"], [[5110, 5111], "disallowed"], [[5112, 5112], "mapped", [5104]], [[5113, 5113], "mapped", [5105]], [[5114, 5114], "mapped", [5106]], [[5115, 5115], "mapped", [5107]], [[5116, 5116], "mapped", [5108]], [[5117, 5117], "mapped", [5109]], [[5118, 5119], "disallowed"], [[5120, 5120], "valid", [], "NV8"], [[5121, 5740], "valid"], [[5741, 5742], "valid", [], "NV8"], [[5743, 5750], "valid"], [[5751, 5759], "valid"], [[5760, 5760], "disallowed"], [[5761, 5786], "valid"], [[5787, 5788], "valid", [], "NV8"], [[5789, 5791], "disallowed"], [[5792, 5866], "valid"], [[5867, 5872], "valid", [], "NV8"], [[5873, 5880], "valid"], [[5881, 5887], "disallowed"], [[5888, 5900], "valid"], [[5901, 5901], "disallowed"], [[5902, 5908], "valid"], [[5909, 5919], "disallowed"], [[5920, 5940], "valid"], [[5941, 5942], "valid", [], "NV8"], [[5943, 5951], "disallowed"], [[5952, 5971], "valid"], [[5972, 5983], "disallowed"], [[5984, 5996], "valid"], [[5997, 5997], "disallowed"], [[5998, 6e3], "valid"], [[6001, 6001], "disallowed"], [[6002, 6003], "valid"], [[6004, 6015], "disallowed"], [[6016, 6067], "valid"], [[6068, 6069], "disallowed"], [[6070, 6099], "valid"], [[6100, 6102], "valid", [], "NV8"], [[6103, 6103], "valid"], [[6104, 6107], "valid", [], "NV8"], [[6108, 6108], "valid"], [[6109, 6109], "valid"], [[6110, 6111], "disallowed"], [[6112, 6121], "valid"], [[6122, 6127], "disallowed"], [[6128, 6137], "valid", [], "NV8"], [[6138, 6143], "disallowed"], [[6144, 6149], "valid", [], "NV8"], [[6150, 6150], "disallowed"], [[6151, 6154], "valid", [], "NV8"], [[6155, 6157], "ignored"], [[6158, 6158], "disallowed"], [[6159, 6159], "disallowed"], [[6160, 6169], "valid"], [[6170, 6175], "disallowed"], [[6176, 6263], "valid"], [[6264, 6271], "disallowed"], [[6272, 6313], "valid"], [[6314, 6314], "valid"], [[6315, 6319], "disallowed"], [[6320, 6389], "valid"], [[6390, 6399], "disallowed"], [[6400, 6428], "valid"], [[6429, 6430], "valid"], [[6431, 6431], "disallowed"], [[6432, 6443], "valid"], [[6444, 6447], "disallowed"], [[6448, 6459], "valid"], [[6460, 6463], "disallowed"], [[6464, 6464], "valid", [], "NV8"], [[6465, 6467], "disallowed"], [[6468, 6469], "valid", [], "NV8"], [[6470, 6509], "valid"], [[6510, 6511], "disallowed"], [[6512, 6516], "valid"], [[6517, 6527], "disallowed"], [[6528, 6569], "valid"], [[6570, 6571], "valid"], [[6572, 6575], "disallowed"], [[6576, 6601], "valid"], [[6602, 6607], "disallowed"], [[6608, 6617], "valid"], [[6618, 6618], "valid", [], "XV8"], [[6619, 6621], "disallowed"], [[6622, 6623], "valid", [], "NV8"], [[6624, 6655], "valid", [], "NV8"], [[6656, 6683], "valid"], [[6684, 6685], "disallowed"], [[6686, 6687], "valid", [], "NV8"], [[6688, 6750], "valid"], [[6751, 6751], "disallowed"], [[6752, 6780], "valid"], [[6781, 6782], "disallowed"], [[6783, 6793], "valid"], [[6794, 6799], "disallowed"], [[6800, 6809], "valid"], [[6810, 6815], "disallowed"], [[6816, 6822], "valid", [], "NV8"], [[6823, 6823], "valid"], [[6824, 6829], "valid", [], "NV8"], [[6830, 6831], "disallowed"], [[6832, 6845], "valid"], [[6846, 6846], "valid", [], "NV8"], [[6847, 6911], "disallowed"], [[6912, 6987], "valid"], [[6988, 6991], "disallowed"], [[6992, 7001], "valid"], [[7002, 7018], "valid", [], "NV8"], [[7019, 7027], "valid"], [[7028, 7036], "valid", [], "NV8"], [[7037, 7039], "disallowed"], [[7040, 7082], "valid"], [[7083, 7085], "valid"], [[7086, 7097], "valid"], [[7098, 7103], "valid"], [[7104, 7155], "valid"], [[7156, 7163], "disallowed"], [[7164, 7167], "valid", [], "NV8"], [[7168, 7223], "valid"], [[7224, 7226], "disallowed"], [[7227, 7231], "valid", [], "NV8"], [[7232, 7241], "valid"], [[7242, 7244], "disallowed"], [[7245, 7293], "valid"], [[7294, 7295], "valid", [], "NV8"], [[7296, 7359], "disallowed"], [[7360, 7367], "valid", [], "NV8"], [[7368, 7375], "disallowed"], [[7376, 7378], "valid"], [[7379, 7379], "valid", [], "NV8"], [[7380, 7410], "valid"], [[7411, 7414], "valid"], [[7415, 7415], "disallowed"], [[7416, 7417], "valid"], [[7418, 7423], "disallowed"], [[7424, 7467], "valid"], [[7468, 7468], "mapped", [97]], [[7469, 7469], "mapped", [230]], [[7470, 7470], "mapped", [98]], [[7471, 7471], "valid"], [[7472, 7472], "mapped", [100]], [[7473, 7473], "mapped", [101]], [[7474, 7474], "mapped", [477]], [[7475, 7475], "mapped", [103]], [[7476, 7476], "mapped", [104]], [[7477, 7477], "mapped", [105]], [[7478, 7478], "mapped", [106]], [[7479, 7479], "mapped", [107]], [[7480, 7480], "mapped", [108]], [[7481, 7481], "mapped", [109]], [[7482, 7482], "mapped", [110]], [[7483, 7483], "valid"], [[7484, 7484], "mapped", [111]], [[7485, 7485], "mapped", [547]], [[7486, 7486], "mapped", [112]], [[7487, 7487], "mapped", [114]], [[7488, 7488], "mapped", [116]], [[7489, 7489], "mapped", [117]], [[7490, 7490], "mapped", [119]], [[7491, 7491], "mapped", [97]], [[7492, 7492], "mapped", [592]], [[7493, 7493], "mapped", [593]], [[7494, 7494], "mapped", [7426]], [[7495, 7495], "mapped", [98]], [[7496, 7496], "mapped", [100]], [[7497, 7497], "mapped", [101]], [[7498, 7498], "mapped", [601]], [[7499, 7499], "mapped", [603]], [[7500, 7500], "mapped", [604]], [[7501, 7501], "mapped", [103]], [[7502, 7502], "valid"], [[7503, 7503], "mapped", [107]], [[7504, 7504], "mapped", [109]], [[7505, 7505], "mapped", [331]], [[7506, 7506], "mapped", [111]], [[7507, 7507], "mapped", [596]], [[7508, 7508], "mapped", [7446]], [[7509, 7509], "mapped", [7447]], [[7510, 7510], "mapped", [112]], [[7511, 7511], "mapped", [116]], [[7512, 7512], "mapped", [117]], [[7513, 7513], "mapped", [7453]], [[7514, 7514], "mapped", [623]], [[7515, 7515], "mapped", [118]], [[7516, 7516], "mapped", [7461]], [[7517, 7517], "mapped", [946]], [[7518, 7518], "mapped", [947]], [[7519, 7519], "mapped", [948]], [[7520, 7520], "mapped", [966]], [[7521, 7521], "mapped", [967]], [[7522, 7522], "mapped", [105]], [[7523, 7523], "mapped", [114]], [[7524, 7524], "mapped", [117]], [[7525, 7525], "mapped", [118]], [[7526, 7526], "mapped", [946]], [[7527, 7527], "mapped", [947]], [[7528, 7528], "mapped", [961]], [[7529, 7529], "mapped", [966]], [[7530, 7530], "mapped", [967]], [[7531, 7531], "valid"], [[7532, 7543], "valid"], [[7544, 7544], "mapped", [1085]], [[7545, 7578], "valid"], [[7579, 7579], "mapped", [594]], [[7580, 7580], "mapped", [99]], [[7581, 7581], "mapped", [597]], [[7582, 7582], "mapped", [240]], [[7583, 7583], "mapped", [604]], [[7584, 7584], "mapped", [102]], [[7585, 7585], "mapped", [607]], [[7586, 7586], "mapped", [609]], [[7587, 7587], "mapped", [613]], [[7588, 7588], "mapped", [616]], [[7589, 7589], "mapped", [617]], [[7590, 7590], "mapped", [618]], [[7591, 7591], "mapped", [7547]], [[7592, 7592], "mapped", [669]], [[7593, 7593], "mapped", [621]], [[7594, 7594], "mapped", [7557]], [[7595, 7595], "mapped", [671]], [[7596, 7596], "mapped", [625]], [[7597, 7597], "mapped", [624]], [[7598, 7598], "mapped", [626]], [[7599, 7599], "mapped", [627]], [[7600, 7600], "mapped", [628]], [[7601, 7601], "mapped", [629]], [[7602, 7602], "mapped", [632]], [[7603, 7603], "mapped", [642]], [[7604, 7604], "mapped", [643]], [[7605, 7605], "mapped", [427]], [[7606, 7606], "mapped", [649]], [[7607, 7607], "mapped", [650]], [[7608, 7608], "mapped", [7452]], [[7609, 7609], "mapped", [651]], [[7610, 7610], "mapped", [652]], [[7611, 7611], "mapped", [122]], [[7612, 7612], "mapped", [656]], [[7613, 7613], "mapped", [657]], [[7614, 7614], "mapped", [658]], [[7615, 7615], "mapped", [952]], [[7616, 7619], "valid"], [[7620, 7626], "valid"], [[7627, 7654], "valid"], [[7655, 7669], "valid"], [[7670, 7675], "disallowed"], [[7676, 7676], "valid"], [[7677, 7677], "valid"], [[7678, 7679], "valid"], [[7680, 7680], "mapped", [7681]], [[7681, 7681], "valid"], [[7682, 7682], "mapped", [7683]], [[7683, 7683], "valid"], [[7684, 7684], "mapped", [7685]], [[7685, 7685], "valid"], [[7686, 7686], "mapped", [7687]], [[7687, 7687], "valid"], [[7688, 7688], "mapped", [7689]], [[7689, 7689], "valid"], [[7690, 7690], "mapped", [7691]], [[7691, 7691], "valid"], [[7692, 7692], "mapped", [7693]], [[7693, 7693], "valid"], [[7694, 7694], "mapped", [7695]], [[7695, 7695], "valid"], [[7696, 7696], "mapped", [7697]], [[7697, 7697], "valid"], [[7698, 7698], "mapped", [7699]], [[7699, 7699], "valid"], [[7700, 7700], "mapped", [7701]], [[7701, 7701], "valid"], [[7702, 7702], "mapped", [7703]], [[7703, 7703], "valid"], [[7704, 7704], "mapped", [7705]], [[7705, 7705], "valid"], [[7706, 7706], "mapped", [7707]], [[7707, 7707], "valid"], [[7708, 7708], "mapped", [7709]], [[7709, 7709], "valid"], [[7710, 7710], "mapped", [7711]], [[7711, 7711], "valid"], [[7712, 7712], "mapped", [7713]], [[7713, 7713], "valid"], [[7714, 7714], "mapped", [7715]], [[7715, 7715], "valid"], [[7716, 7716], "mapped", [7717]], [[7717, 7717], "valid"], [[7718, 7718], "mapped", [7719]], [[7719, 7719], "valid"], [[7720, 7720], "mapped", [7721]], [[7721, 7721], "valid"], [[7722, 7722], "mapped", [7723]], [[7723, 7723], "valid"], [[7724, 7724], "mapped", [7725]], [[7725, 7725], "valid"], [[7726, 7726], "mapped", [7727]], [[7727, 7727], "valid"], [[7728, 7728], "mapped", [7729]], [[7729, 7729], "valid"], [[7730, 7730], "mapped", [7731]], [[7731, 7731], "valid"], [[7732, 7732], "mapped", [7733]], [[7733, 7733], "valid"], [[7734, 7734], "mapped", [7735]], [[7735, 7735], "valid"], [[7736, 7736], "mapped", [7737]], [[7737, 7737], "valid"], [[7738, 7738], "mapped", [7739]], [[7739, 7739], "valid"], [[7740, 7740], "mapped", [7741]], [[7741, 7741], "valid"], [[7742, 7742], "mapped", [7743]], [[7743, 7743], "valid"], [[7744, 7744], "mapped", [7745]], [[7745, 7745], "valid"], [[7746, 7746], "mapped", [7747]], [[7747, 7747], "valid"], [[7748, 7748], "mapped", [7749]], [[7749, 7749], "valid"], [[7750, 7750], "mapped", [7751]], [[7751, 7751], "valid"], [[7752, 7752], "mapped", [7753]], [[7753, 7753], "valid"], [[7754, 7754], "mapped", [7755]], [[7755, 7755], "valid"], [[7756, 7756], "mapped", [7757]], [[7757, 7757], "valid"], [[7758, 7758], "mapped", [7759]], [[7759, 7759], "valid"], [[7760, 7760], "mapped", [7761]], [[7761, 7761], "valid"], [[7762, 7762], "mapped", [7763]], [[7763, 7763], "valid"], [[7764, 7764], "mapped", [7765]], [[7765, 7765], "valid"], [[7766, 7766], "mapped", [7767]], [[7767, 7767], "valid"], [[7768, 7768], "mapped", [7769]], [[7769, 7769], "valid"], [[7770, 7770], "mapped", [7771]], [[7771, 7771], "valid"], [[7772, 7772], "mapped", [7773]], [[7773, 7773], "valid"], [[7774, 7774], "mapped", [7775]], [[7775, 7775], "valid"], [[7776, 7776], "mapped", [7777]], [[7777, 7777], "valid"], [[7778, 7778], "mapped", [7779]], [[7779, 7779], "valid"], [[7780, 7780], "mapped", [7781]], [[7781, 7781], "valid"], [[7782, 7782], "mapped", [7783]], [[7783, 7783], "valid"], [[7784, 7784], "mapped", [7785]], [[7785, 7785], "valid"], [[7786, 7786], "mapped", [7787]], [[7787, 7787], "valid"], [[7788, 7788], "mapped", [7789]], [[7789, 7789], "valid"], [[7790, 7790], "mapped", [7791]], [[7791, 7791], "valid"], [[7792, 7792], "mapped", [7793]], [[7793, 7793], "valid"], [[7794, 7794], "mapped", [7795]], [[7795, 7795], "valid"], [[7796, 7796], "mapped", [7797]], [[7797, 7797], "valid"], [[7798, 7798], "mapped", [7799]], [[7799, 7799], "valid"], [[7800, 7800], "mapped", [7801]], [[7801, 7801], "valid"], [[7802, 7802], "mapped", [7803]], [[7803, 7803], "valid"], [[7804, 7804], "mapped", [7805]], [[7805, 7805], "valid"], [[7806, 7806], "mapped", [7807]], [[7807, 7807], "valid"], [[7808, 7808], "mapped", [7809]], [[7809, 7809], "valid"], [[7810, 7810], "mapped", [7811]], [[7811, 7811], "valid"], [[7812, 7812], "mapped", [7813]], [[7813, 7813], "valid"], [[7814, 7814], "mapped", [7815]], [[7815, 7815], "valid"], [[7816, 7816], "mapped", [7817]], [[7817, 7817], "valid"], [[7818, 7818], "mapped", [7819]], [[7819, 7819], "valid"], [[7820, 7820], "mapped", [7821]], [[7821, 7821], "valid"], [[7822, 7822], "mapped", [7823]], [[7823, 7823], "valid"], [[7824, 7824], "mapped", [7825]], [[7825, 7825], "valid"], [[7826, 7826], "mapped", [7827]], [[7827, 7827], "valid"], [[7828, 7828], "mapped", [7829]], [[7829, 7833], "valid"], [[7834, 7834], "mapped", [97, 702]], [[7835, 7835], "mapped", [7777]], [[7836, 7837], "valid"], [[7838, 7838], "mapped", [115, 115]], [[7839, 7839], "valid"], [[7840, 7840], "mapped", [7841]], [[7841, 7841], "valid"], [[7842, 7842], "mapped", [7843]], [[7843, 7843], "valid"], [[7844, 7844], "mapped", [7845]], [[7845, 7845], "valid"], [[7846, 7846], "mapped", [7847]], [[7847, 7847], "valid"], [[7848, 7848], "mapped", [7849]], [[7849, 7849], "valid"], [[7850, 7850], "mapped", [7851]], [[7851, 7851], "valid"], [[7852, 7852], "mapped", [7853]], [[7853, 7853], "valid"], [[7854, 7854], "mapped", [7855]], [[7855, 7855], "valid"], [[7856, 7856], "mapped", [7857]], [[7857, 7857], "valid"], [[7858, 7858], "mapped", [7859]], [[7859, 7859], "valid"], [[7860, 7860], "mapped", [7861]], [[7861, 7861], "valid"], [[7862, 7862], "mapped", [7863]], [[7863, 7863], "valid"], [[7864, 7864], "mapped", [7865]], [[7865, 7865], "valid"], [[7866, 7866], "mapped", [7867]], [[7867, 7867], "valid"], [[7868, 7868], "mapped", [7869]], [[7869, 7869], "valid"], [[7870, 7870], "mapped", [7871]], [[7871, 7871], "valid"], [[7872, 7872], "mapped", [7873]], [[7873, 7873], "valid"], [[7874, 7874], "mapped", [7875]], [[7875, 7875], "valid"], [[7876, 7876], "mapped", [7877]], [[7877, 7877], "valid"], [[7878, 7878], "mapped", [7879]], [[7879, 7879], "valid"], [[7880, 7880], "mapped", [7881]], [[7881, 7881], "valid"], [[7882, 7882], "mapped", [7883]], [[7883, 7883], "valid"], [[7884, 7884], "mapped", [7885]], [[7885, 7885], "valid"], [[7886, 7886], "mapped", [7887]], [[7887, 7887], "valid"], [[7888, 7888], "mapped", [7889]], [[7889, 7889], "valid"], [[7890, 7890], "mapped", [7891]], [[7891, 7891], "valid"], [[7892, 7892], "mapped", [7893]], [[7893, 7893], "valid"], [[7894, 7894], "mapped", [7895]], [[7895, 7895], "valid"], [[7896, 7896], "mapped", [7897]], [[7897, 7897], "valid"], [[7898, 7898], "mapped", [7899]], [[7899, 7899], "valid"], [[7900, 7900], "mapped", [7901]], [[7901, 7901], "valid"], [[7902, 7902], "mapped", [7903]], [[7903, 7903], "valid"], [[7904, 7904], "mapped", [7905]], [[7905, 7905], "valid"], [[7906, 7906], "mapped", [7907]], [[7907, 7907], "valid"], [[7908, 7908], "mapped", [7909]], [[7909, 7909], "valid"], [[7910, 7910], "mapped", [7911]], [[7911, 7911], "valid"], [[7912, 7912], "mapped", [7913]], [[7913, 7913], "valid"], [[7914, 7914], "mapped", [7915]], [[7915, 7915], "valid"], [[7916, 7916], "mapped", [7917]], [[7917, 7917], "valid"], [[7918, 7918], "mapped", [7919]], [[7919, 7919], "valid"], [[7920, 7920], "mapped", [7921]], [[7921, 7921], "valid"], [[7922, 7922], "mapped", [7923]], [[7923, 7923], "valid"], [[7924, 7924], "mapped", [7925]], [[7925, 7925], "valid"], [[7926, 7926], "mapped", [7927]], [[7927, 7927], "valid"], [[7928, 7928], "mapped", [7929]], [[7929, 7929], "valid"], [[7930, 7930], "mapped", [7931]], [[7931, 7931], "valid"], [[7932, 7932], "mapped", [7933]], [[7933, 7933], "valid"], [[7934, 7934], "mapped", [7935]], [[7935, 7935], "valid"], [[7936, 7943], "valid"], [[7944, 7944], "mapped", [7936]], [[7945, 7945], "mapped", [7937]], [[7946, 7946], "mapped", [7938]], [[7947, 7947], "mapped", [7939]], [[7948, 7948], "mapped", [7940]], [[7949, 7949], "mapped", [7941]], [[7950, 7950], "mapped", [7942]], [[7951, 7951], "mapped", [7943]], [[7952, 7957], "valid"], [[7958, 7959], "disallowed"], [[7960, 7960], "mapped", [7952]], [[7961, 7961], "mapped", [7953]], [[7962, 7962], "mapped", [7954]], [[7963, 7963], "mapped", [7955]], [[7964, 7964], "mapped", [7956]], [[7965, 7965], "mapped", [7957]], [[7966, 7967], "disallowed"], [[7968, 7975], "valid"], [[7976, 7976], "mapped", [7968]], [[7977, 7977], "mapped", [7969]], [[7978, 7978], "mapped", [7970]], [[7979, 7979], "mapped", [7971]], [[7980, 7980], "mapped", [7972]], [[7981, 7981], "mapped", [7973]], [[7982, 7982], "mapped", [7974]], [[7983, 7983], "mapped", [7975]], [[7984, 7991], "valid"], [[7992, 7992], "mapped", [7984]], [[7993, 7993], "mapped", [7985]], [[7994, 7994], "mapped", [7986]], [[7995, 7995], "mapped", [7987]], [[7996, 7996], "mapped", [7988]], [[7997, 7997], "mapped", [7989]], [[7998, 7998], "mapped", [7990]], [[7999, 7999], "mapped", [7991]], [[8e3, 8005], "valid"], [[8006, 8007], "disallowed"], [[8008, 8008], "mapped", [8e3]], [[8009, 8009], "mapped", [8001]], [[8010, 8010], "mapped", [8002]], [[8011, 8011], "mapped", [8003]], [[8012, 8012], "mapped", [8004]], [[8013, 8013], "mapped", [8005]], [[8014, 8015], "disallowed"], [[8016, 8023], "valid"], [[8024, 8024], "disallowed"], [[8025, 8025], "mapped", [8017]], [[8026, 8026], "disallowed"], [[8027, 8027], "mapped", [8019]], [[8028, 8028], "disallowed"], [[8029, 8029], "mapped", [8021]], [[8030, 8030], "disallowed"], [[8031, 8031], "mapped", [8023]], [[8032, 8039], "valid"], [[8040, 8040], "mapped", [8032]], [[8041, 8041], "mapped", [8033]], [[8042, 8042], "mapped", [8034]], [[8043, 8043], "mapped", [8035]], [[8044, 8044], "mapped", [8036]], [[8045, 8045], "mapped", [8037]], [[8046, 8046], "mapped", [8038]], [[8047, 8047], "mapped", [8039]], [[8048, 8048], "valid"], [[8049, 8049], "mapped", [940]], [[8050, 8050], "valid"], [[8051, 8051], "mapped", [941]], [[8052, 8052], "valid"], [[8053, 8053], "mapped", [942]], [[8054, 8054], "valid"], [[8055, 8055], "mapped", [943]], [[8056, 8056], "valid"], [[8057, 8057], "mapped", [972]], [[8058, 8058], "valid"], [[8059, 8059], "mapped", [973]], [[8060, 8060], "valid"], [[8061, 8061], "mapped", [974]], [[8062, 8063], "disallowed"], [[8064, 8064], "mapped", [7936, 953]], [[8065, 8065], "mapped", [7937, 953]], [[8066, 8066], "mapped", [7938, 953]], [[8067, 8067], "mapped", [7939, 953]], [[8068, 8068], "mapped", [7940, 953]], [[8069, 8069], "mapped", [7941, 953]], [[8070, 8070], "mapped", [7942, 953]], [[8071, 8071], "mapped", [7943, 953]], [[8072, 8072], "mapped", [7936, 953]], [[8073, 8073], "mapped", [7937, 953]], [[8074, 8074], "mapped", [7938, 953]], [[8075, 8075], "mapped", [7939, 953]], [[8076, 8076], "mapped", [7940, 953]], [[8077, 8077], "mapped", [7941, 953]], [[8078, 8078], "mapped", [7942, 953]], [[8079, 8079], "mapped", [7943, 953]], [[8080, 8080], "mapped", [7968, 953]], [[8081, 8081], "mapped", [7969, 953]], [[8082, 8082], "mapped", [7970, 953]], [[8083, 8083], "mapped", [7971, 953]], [[8084, 8084], "mapped", [7972, 953]], [[8085, 8085], "mapped", [7973, 953]], [[8086, 8086], "mapped", [7974, 953]], [[8087, 8087], "mapped", [7975, 953]], [[8088, 8088], "mapped", [7968, 953]], [[8089, 8089], "mapped", [7969, 953]], [[8090, 8090], "mapped", [7970, 953]], [[8091, 8091], "mapped", [7971, 953]], [[8092, 8092], "mapped", [7972, 953]], [[8093, 8093], "mapped", [7973, 953]], [[8094, 8094], "mapped", [7974, 953]], [[8095, 8095], "mapped", [7975, 953]], [[8096, 8096], "mapped", [8032, 953]], [[8097, 8097], "mapped", [8033, 953]], [[8098, 8098], "mapped", [8034, 953]], [[8099, 8099], "mapped", [8035, 953]], [[8100, 8100], "mapped", [8036, 953]], [[8101, 8101], "mapped", [8037, 953]], [[8102, 8102], "mapped", [8038, 953]], [[8103, 8103], "mapped", [8039, 953]], [[8104, 8104], "mapped", [8032, 953]], [[8105, 8105], "mapped", [8033, 953]], [[8106, 8106], "mapped", [8034, 953]], [[8107, 8107], "mapped", [8035, 953]], [[8108, 8108], "mapped", [8036, 953]], [[8109, 8109], "mapped", [8037, 953]], [[8110, 8110], "mapped", [8038, 953]], [[8111, 8111], "mapped", [8039, 953]], [[8112, 8113], "valid"], [[8114, 8114], "mapped", [8048, 953]], [[8115, 8115], "mapped", [945, 953]], [[8116, 8116], "mapped", [940, 953]], [[8117, 8117], "disallowed"], [[8118, 8118], "valid"], [[8119, 8119], "mapped", [8118, 953]], [[8120, 8120], "mapped", [8112]], [[8121, 8121], "mapped", [8113]], [[8122, 8122], "mapped", [8048]], [[8123, 8123], "mapped", [940]], [[8124, 8124], "mapped", [945, 953]], [[8125, 8125], "disallowed_STD3_mapped", [32, 787]], [[8126, 8126], "mapped", [953]], [[8127, 8127], "disallowed_STD3_mapped", [32, 787]], [[8128, 8128], "disallowed_STD3_mapped", [32, 834]], [[8129, 8129], "disallowed_STD3_mapped", [32, 776, 834]], [[8130, 8130], "mapped", [8052, 953]], [[8131, 8131], "mapped", [951, 953]], [[8132, 8132], "mapped", [942, 953]], [[8133, 8133], "disallowed"], [[8134, 8134], "valid"], [[8135, 8135], "mapped", [8134, 953]], [[8136, 8136], "mapped", [8050]], [[8137, 8137], "mapped", [941]], [[8138, 8138], "mapped", [8052]], [[8139, 8139], "mapped", [942]], [[8140, 8140], "mapped", [951, 953]], [[8141, 8141], "disallowed_STD3_mapped", [32, 787, 768]], [[8142, 8142], "disallowed_STD3_mapped", [32, 787, 769]], [[8143, 8143], "disallowed_STD3_mapped", [32, 787, 834]], [[8144, 8146], "valid"], [[8147, 8147], "mapped", [912]], [[8148, 8149], "disallowed"], [[8150, 8151], "valid"], [[8152, 8152], "mapped", [8144]], [[8153, 8153], "mapped", [8145]], [[8154, 8154], "mapped", [8054]], [[8155, 8155], "mapped", [943]], [[8156, 8156], "disallowed"], [[8157, 8157], "disallowed_STD3_mapped", [32, 788, 768]], [[8158, 8158], "disallowed_STD3_mapped", [32, 788, 769]], [[8159, 8159], "disallowed_STD3_mapped", [32, 788, 834]], [[8160, 8162], "valid"], [[8163, 8163], "mapped", [944]], [[8164, 8167], "valid"], [[8168, 8168], "mapped", [8160]], [[8169, 8169], "mapped", [8161]], [[8170, 8170], "mapped", [8058]], [[8171, 8171], "mapped", [973]], [[8172, 8172], "mapped", [8165]], [[8173, 8173], "disallowed_STD3_mapped", [32, 776, 768]], [[8174, 8174], "disallowed_STD3_mapped", [32, 776, 769]], [[8175, 8175], "disallowed_STD3_mapped", [96]], [[8176, 8177], "disallowed"], [[8178, 8178], "mapped", [8060, 953]], [[8179, 8179], "mapped", [969, 953]], [[8180, 8180], "mapped", [974, 953]], [[8181, 8181], "disallowed"], [[8182, 8182], "valid"], [[8183, 8183], "mapped", [8182, 953]], [[8184, 8184], "mapped", [8056]], [[8185, 8185], "mapped", [972]], [[8186, 8186], "mapped", [8060]], [[8187, 8187], "mapped", [974]], [[8188, 8188], "mapped", [969, 953]], [[8189, 8189], "disallowed_STD3_mapped", [32, 769]], [[8190, 8190], "disallowed_STD3_mapped", [32, 788]], [[8191, 8191], "disallowed"], [[8192, 8202], "disallowed_STD3_mapped", [32]], [[8203, 8203], "ignored"], [[8204, 8205], "deviation", []], [[8206, 8207], "disallowed"], [[8208, 8208], "valid", [], "NV8"], [[8209, 8209], "mapped", [8208]], [[8210, 8214], "valid", [], "NV8"], [[8215, 8215], "disallowed_STD3_mapped", [32, 819]], [[8216, 8227], "valid", [], "NV8"], [[8228, 8230], "disallowed"], [[8231, 8231], "valid", [], "NV8"], [[8232, 8238], "disallowed"], [[8239, 8239], "disallowed_STD3_mapped", [32]], [[8240, 8242], "valid", [], "NV8"], [[8243, 8243], "mapped", [8242, 8242]], [[8244, 8244], "mapped", [8242, 8242, 8242]], [[8245, 8245], "valid", [], "NV8"], [[8246, 8246], "mapped", [8245, 8245]], [[8247, 8247], "mapped", [8245, 8245, 8245]], [[8248, 8251], "valid", [], "NV8"], [[8252, 8252], "disallowed_STD3_mapped", [33, 33]], [[8253, 8253], "valid", [], "NV8"], [[8254, 8254], "disallowed_STD3_mapped", [32, 773]], [[8255, 8262], "valid", [], "NV8"], [[8263, 8263], "disallowed_STD3_mapped", [63, 63]], [[8264, 8264], "disallowed_STD3_mapped", [63, 33]], [[8265, 8265], "disallowed_STD3_mapped", [33, 63]], [[8266, 8269], "valid", [], "NV8"], [[8270, 8274], "valid", [], "NV8"], [[8275, 8276], "valid", [], "NV8"], [[8277, 8278], "valid", [], "NV8"], [[8279, 8279], "mapped", [8242, 8242, 8242, 8242]], [[8280, 8286], "valid", [], "NV8"], [[8287, 8287], "disallowed_STD3_mapped", [32]], [[8288, 8288], "ignored"], [[8289, 8291], "disallowed"], [[8292, 8292], "ignored"], [[8293, 8293], "disallowed"], [[8294, 8297], "disallowed"], [[8298, 8303], "disallowed"], [[8304, 8304], "mapped", [48]], [[8305, 8305], "mapped", [105]], [[8306, 8307], "disallowed"], [[8308, 8308], "mapped", [52]], [[8309, 8309], "mapped", [53]], [[8310, 8310], "mapped", [54]], [[8311, 8311], "mapped", [55]], [[8312, 8312], "mapped", [56]], [[8313, 8313], "mapped", [57]], [[8314, 8314], "disallowed_STD3_mapped", [43]], [[8315, 8315], "mapped", [8722]], [[8316, 8316], "disallowed_STD3_mapped", [61]], [[8317, 8317], "disallowed_STD3_mapped", [40]], [[8318, 8318], "disallowed_STD3_mapped", [41]], [[8319, 8319], "mapped", [110]], [[8320, 8320], "mapped", [48]], [[8321, 8321], "mapped", [49]], [[8322, 8322], "mapped", [50]], [[8323, 8323], "mapped", [51]], [[8324, 8324], "mapped", [52]], [[8325, 8325], "mapped", [53]], [[8326, 8326], "mapped", [54]], [[8327, 8327], "mapped", [55]], [[8328, 8328], "mapped", [56]], [[8329, 8329], "mapped", [57]], [[8330, 8330], "disallowed_STD3_mapped", [43]], [[8331, 8331], "mapped", [8722]], [[8332, 8332], "disallowed_STD3_mapped", [61]], [[8333, 8333], "disallowed_STD3_mapped", [40]], [[8334, 8334], "disallowed_STD3_mapped", [41]], [[8335, 8335], "disallowed"], [[8336, 8336], "mapped", [97]], [[8337, 8337], "mapped", [101]], [[8338, 8338], "mapped", [111]], [[8339, 8339], "mapped", [120]], [[8340, 8340], "mapped", [601]], [[8341, 8341], "mapped", [104]], [[8342, 8342], "mapped", [107]], [[8343, 8343], "mapped", [108]], [[8344, 8344], "mapped", [109]], [[8345, 8345], "mapped", [110]], [[8346, 8346], "mapped", [112]], [[8347, 8347], "mapped", [115]], [[8348, 8348], "mapped", [116]], [[8349, 8351], "disallowed"], [[8352, 8359], "valid", [], "NV8"], [[8360, 8360], "mapped", [114, 115]], [[8361, 8362], "valid", [], "NV8"], [[8363, 8363], "valid", [], "NV8"], [[8364, 8364], "valid", [], "NV8"], [[8365, 8367], "valid", [], "NV8"], [[8368, 8369], "valid", [], "NV8"], [[8370, 8373], "valid", [], "NV8"], [[8374, 8376], "valid", [], "NV8"], [[8377, 8377], "valid", [], "NV8"], [[8378, 8378], "valid", [], "NV8"], [[8379, 8381], "valid", [], "NV8"], [[8382, 8382], "valid", [], "NV8"], [[8383, 8399], "disallowed"], [[8400, 8417], "valid", [], "NV8"], [[8418, 8419], "valid", [], "NV8"], [[8420, 8426], "valid", [], "NV8"], [[8427, 8427], "valid", [], "NV8"], [[8428, 8431], "valid", [], "NV8"], [[8432, 8432], "valid", [], "NV8"], [[8433, 8447], "disallowed"], [[8448, 8448], "disallowed_STD3_mapped", [97, 47, 99]], [[8449, 8449], "disallowed_STD3_mapped", [97, 47, 115]], [[8450, 8450], "mapped", [99]], [[8451, 8451], "mapped", [176, 99]], [[8452, 8452], "valid", [], "NV8"], [[8453, 8453], "disallowed_STD3_mapped", [99, 47, 111]], [[8454, 8454], "disallowed_STD3_mapped", [99, 47, 117]], [[8455, 8455], "mapped", [603]], [[8456, 8456], "valid", [], "NV8"], [[8457, 8457], "mapped", [176, 102]], [[8458, 8458], "mapped", [103]], [[8459, 8462], "mapped", [104]], [[8463, 8463], "mapped", [295]], [[8464, 8465], "mapped", [105]], [[8466, 8467], "mapped", [108]], [[8468, 8468], "valid", [], "NV8"], [[8469, 8469], "mapped", [110]], [[8470, 8470], "mapped", [110, 111]], [[8471, 8472], "valid", [], "NV8"], [[8473, 8473], "mapped", [112]], [[8474, 8474], "mapped", [113]], [[8475, 8477], "mapped", [114]], [[8478, 8479], "valid", [], "NV8"], [[8480, 8480], "mapped", [115, 109]], [[8481, 8481], "mapped", [116, 101, 108]], [[8482, 8482], "mapped", [116, 109]], [[8483, 8483], "valid", [], "NV8"], [[8484, 8484], "mapped", [122]], [[8485, 8485], "valid", [], "NV8"], [[8486, 8486], "mapped", [969]], [[8487, 8487], "valid", [], "NV8"], [[8488, 8488], "mapped", [122]], [[8489, 8489], "valid", [], "NV8"], [[8490, 8490], "mapped", [107]], [[8491, 8491], "mapped", [229]], [[8492, 8492], "mapped", [98]], [[8493, 8493], "mapped", [99]], [[8494, 8494], "valid", [], "NV8"], [[8495, 8496], "mapped", [101]], [[8497, 8497], "mapped", [102]], [[8498, 8498], "disallowed"], [[8499, 8499], "mapped", [109]], [[8500, 8500], "mapped", [111]], [[8501, 8501], "mapped", [1488]], [[8502, 8502], "mapped", [1489]], [[8503, 8503], "mapped", [1490]], [[8504, 8504], "mapped", [1491]], [[8505, 8505], "mapped", [105]], [[8506, 8506], "valid", [], "NV8"], [[8507, 8507], "mapped", [102, 97, 120]], [[8508, 8508], "mapped", [960]], [[8509, 8510], "mapped", [947]], [[8511, 8511], "mapped", [960]], [[8512, 8512], "mapped", [8721]], [[8513, 8516], "valid", [], "NV8"], [[8517, 8518], "mapped", [100]], [[8519, 8519], "mapped", [101]], [[8520, 8520], "mapped", [105]], [[8521, 8521], "mapped", [106]], [[8522, 8523], "valid", [], "NV8"], [[8524, 8524], "valid", [], "NV8"], [[8525, 8525], "valid", [], "NV8"], [[8526, 8526], "valid"], [[8527, 8527], "valid", [], "NV8"], [[8528, 8528], "mapped", [49, 8260, 55]], [[8529, 8529], "mapped", [49, 8260, 57]], [[8530, 8530], "mapped", [49, 8260, 49, 48]], [[8531, 8531], "mapped", [49, 8260, 51]], [[8532, 8532], "mapped", [50, 8260, 51]], [[8533, 8533], "mapped", [49, 8260, 53]], [[8534, 8534], "mapped", [50, 8260, 53]], [[8535, 8535], "mapped", [51, 8260, 53]], [[8536, 8536], "mapped", [52, 8260, 53]], [[8537, 8537], "mapped", [49, 8260, 54]], [[8538, 8538], "mapped", [53, 8260, 54]], [[8539, 8539], "mapped", [49, 8260, 56]], [[8540, 8540], "mapped", [51, 8260, 56]], [[8541, 8541], "mapped", [53, 8260, 56]], [[8542, 8542], "mapped", [55, 8260, 56]], [[8543, 8543], "mapped", [49, 8260]], [[8544, 8544], "mapped", [105]], [[8545, 8545], "mapped", [105, 105]], [[8546, 8546], "mapped", [105, 105, 105]], [[8547, 8547], "mapped", [105, 118]], [[8548, 8548], "mapped", [118]], [[8549, 8549], "mapped", [118, 105]], [[8550, 8550], "mapped", [118, 105, 105]], [[8551, 8551], "mapped", [118, 105, 105, 105]], [[8552, 8552], "mapped", [105, 120]], [[8553, 8553], "mapped", [120]], [[8554, 8554], "mapped", [120, 105]], [[8555, 8555], "mapped", [120, 105, 105]], [[8556, 8556], "mapped", [108]], [[8557, 8557], "mapped", [99]], [[8558, 8558], "mapped", [100]], [[8559, 8559], "mapped", [109]], [[8560, 8560], "mapped", [105]], [[8561, 8561], "mapped", [105, 105]], [[8562, 8562], "mapped", [105, 105, 105]], [[8563, 8563], "mapped", [105, 118]], [[8564, 8564], "mapped", [118]], [[8565, 8565], "mapped", [118, 105]], [[8566, 8566], "mapped", [118, 105, 105]], [[8567, 8567], "mapped", [118, 105, 105, 105]], [[8568, 8568], "mapped", [105, 120]], [[8569, 8569], "mapped", [120]], [[8570, 8570], "mapped", [120, 105]], [[8571, 8571], "mapped", [120, 105, 105]], [[8572, 8572], "mapped", [108]], [[8573, 8573], "mapped", [99]], [[8574, 8574], "mapped", [100]], [[8575, 8575], "mapped", [109]], [[8576, 8578], "valid", [], "NV8"], [[8579, 8579], "disallowed"], [[8580, 8580], "valid"], [[8581, 8584], "valid", [], "NV8"], [[8585, 8585], "mapped", [48, 8260, 51]], [[8586, 8587], "valid", [], "NV8"], [[8588, 8591], "disallowed"], [[8592, 8682], "valid", [], "NV8"], [[8683, 8691], "valid", [], "NV8"], [[8692, 8703], "valid", [], "NV8"], [[8704, 8747], "valid", [], "NV8"], [[8748, 8748], "mapped", [8747, 8747]], [[8749, 8749], "mapped", [8747, 8747, 8747]], [[8750, 8750], "valid", [], "NV8"], [[8751, 8751], "mapped", [8750, 8750]], [[8752, 8752], "mapped", [8750, 8750, 8750]], [[8753, 8799], "valid", [], "NV8"], [[8800, 8800], "disallowed_STD3_valid"], [[8801, 8813], "valid", [], "NV8"], [[8814, 8815], "disallowed_STD3_valid"], [[8816, 8945], "valid", [], "NV8"], [[8946, 8959], "valid", [], "NV8"], [[8960, 8960], "valid", [], "NV8"], [[8961, 8961], "valid", [], "NV8"], [[8962, 9e3], "valid", [], "NV8"], [[9001, 9001], "mapped", [12296]], [[9002, 9002], "mapped", [12297]], [[9003, 9082], "valid", [], "NV8"], [[9083, 9083], "valid", [], "NV8"], [[9084, 9084], "valid", [], "NV8"], [[9085, 9114], "valid", [], "NV8"], [[9115, 9166], "valid", [], "NV8"], [[9167, 9168], "valid", [], "NV8"], [[9169, 9179], "valid", [], "NV8"], [[9180, 9191], "valid", [], "NV8"], [[9192, 9192], "valid", [], "NV8"], [[9193, 9203], "valid", [], "NV8"], [[9204, 9210], "valid", [], "NV8"], [[9211, 9215], "disallowed"], [[9216, 9252], "valid", [], "NV8"], [[9253, 9254], "valid", [], "NV8"], [[9255, 9279], "disallowed"], [[9280, 9290], "valid", [], "NV8"], [[9291, 9311], "disallowed"], [[9312, 9312], "mapped", [49]], [[9313, 9313], "mapped", [50]], [[9314, 9314], "mapped", [51]], [[9315, 9315], "mapped", [52]], [[9316, 9316], "mapped", [53]], [[9317, 9317], "mapped", [54]], [[9318, 9318], "mapped", [55]], [[9319, 9319], "mapped", [56]], [[9320, 9320], "mapped", [57]], [[9321, 9321], "mapped", [49, 48]], [[9322, 9322], "mapped", [49, 49]], [[9323, 9323], "mapped", [49, 50]], [[9324, 9324], "mapped", [49, 51]], [[9325, 9325], "mapped", [49, 52]], [[9326, 9326], "mapped", [49, 53]], [[9327, 9327], "mapped", [49, 54]], [[9328, 9328], "mapped", [49, 55]], [[9329, 9329], "mapped", [49, 56]], [[9330, 9330], "mapped", [49, 57]], [[9331, 9331], "mapped", [50, 48]], [[9332, 9332], "disallowed_STD3_mapped", [40, 49, 41]], [[9333, 9333], "disallowed_STD3_mapped", [40, 50, 41]], [[9334, 9334], "disallowed_STD3_mapped", [40, 51, 41]], [[9335, 9335], "disallowed_STD3_mapped", [40, 52, 41]], [[9336, 9336], "disallowed_STD3_mapped", [40, 53, 41]], [[9337, 9337], "disallowed_STD3_mapped", [40, 54, 41]], [[9338, 9338], "disallowed_STD3_mapped", [40, 55, 41]], [[9339, 9339], "disallowed_STD3_mapped", [40, 56, 41]], [[9340, 9340], "disallowed_STD3_mapped", [40, 57, 41]], [[9341, 9341], "disallowed_STD3_mapped", [40, 49, 48, 41]], [[9342, 9342], "disallowed_STD3_mapped", [40, 49, 49, 41]], [[9343, 9343], "disallowed_STD3_mapped", [40, 49, 50, 41]], [[9344, 9344], "disallowed_STD3_mapped", [40, 49, 51, 41]], [[9345, 9345], "disallowed_STD3_mapped", [40, 49, 52, 41]], [[9346, 9346], "disallowed_STD3_mapped", [40, 49, 53, 41]], [[9347, 9347], "disallowed_STD3_mapped", [40, 49, 54, 41]], [[9348, 9348], "disallowed_STD3_mapped", [40, 49, 55, 41]], [[9349, 9349], "disallowed_STD3_mapped", [40, 49, 56, 41]], [[9350, 9350], "disallowed_STD3_mapped", [40, 49, 57, 41]], [[9351, 9351], "disallowed_STD3_mapped", [40, 50, 48, 41]], [[9352, 9371], "disallowed"], [[9372, 9372], "disallowed_STD3_mapped", [40, 97, 41]], [[9373, 9373], "disallowed_STD3_mapped", [40, 98, 41]], [[9374, 9374], "disallowed_STD3_mapped", [40, 99, 41]], [[9375, 9375], "disallowed_STD3_mapped", [40, 100, 41]], [[9376, 9376], "disallowed_STD3_mapped", [40, 101, 41]], [[9377, 9377], "disallowed_STD3_mapped", [40, 102, 41]], [[9378, 9378], "disallowed_STD3_mapped", [40, 103, 41]], [[9379, 9379], "disallowed_STD3_mapped", [40, 104, 41]], [[9380, 9380], "disallowed_STD3_mapped", [40, 105, 41]], [[9381, 9381], "disallowed_STD3_mapped", [40, 106, 41]], [[9382, 9382], "disallowed_STD3_mapped", [40, 107, 41]], [[9383, 9383], "disallowed_STD3_mapped", [40, 108, 41]], [[9384, 9384], "disallowed_STD3_mapped", [40, 109, 41]], [[9385, 9385], "disallowed_STD3_mapped", [40, 110, 41]], [[9386, 9386], "disallowed_STD3_mapped", [40, 111, 41]], [[9387, 9387], "disallowed_STD3_mapped", [40, 112, 41]], [[9388, 9388], "disallowed_STD3_mapped", [40, 113, 41]], [[9389, 9389], "disallowed_STD3_mapped", [40, 114, 41]], [[9390, 9390], "disallowed_STD3_mapped", [40, 115, 41]], [[9391, 9391], "disallowed_STD3_mapped", [40, 116, 41]], [[9392, 9392], "disallowed_STD3_mapped", [40, 117, 41]], [[9393, 9393], "disallowed_STD3_mapped", [40, 118, 41]], [[9394, 9394], "disallowed_STD3_mapped", [40, 119, 41]], [[9395, 9395], "disallowed_STD3_mapped", [40, 120, 41]], [[9396, 9396], "disallowed_STD3_mapped", [40, 121, 41]], [[9397, 9397], "disallowed_STD3_mapped", [40, 122, 41]], [[9398, 9398], "mapped", [97]], [[9399, 9399], "mapped", [98]], [[9400, 9400], "mapped", [99]], [[9401, 9401], "mapped", [100]], [[9402, 9402], "mapped", [101]], [[9403, 9403], "mapped", [102]], [[9404, 9404], "mapped", [103]], [[9405, 9405], "mapped", [104]], [[9406, 9406], "mapped", [105]], [[9407, 9407], "mapped", [106]], [[9408, 9408], "mapped", [107]], [[9409, 9409], "mapped", [108]], [[9410, 9410], "mapped", [109]], [[9411, 9411], "mapped", [110]], [[9412, 9412], "mapped", [111]], [[9413, 9413], "mapped", [112]], [[9414, 9414], "mapped", [113]], [[9415, 9415], "mapped", [114]], [[9416, 9416], "mapped", [115]], [[9417, 9417], "mapped", [116]], [[9418, 9418], "mapped", [117]], [[9419, 9419], "mapped", [118]], [[9420, 9420], "mapped", [119]], [[9421, 9421], "mapped", [120]], [[9422, 9422], "mapped", [121]], [[9423, 9423], "mapped", [122]], [[9424, 9424], "mapped", [97]], [[9425, 9425], "mapped", [98]], [[9426, 9426], "mapped", [99]], [[9427, 9427], "mapped", [100]], [[9428, 9428], "mapped", [101]], [[9429, 9429], "mapped", [102]], [[9430, 9430], "mapped", [103]], [[9431, 9431], "mapped", [104]], [[9432, 9432], "mapped", [105]], [[9433, 9433], "mapped", [106]], [[9434, 9434], "mapped", [107]], [[9435, 9435], "mapped", [108]], [[9436, 9436], "mapped", [109]], [[9437, 9437], "mapped", [110]], [[9438, 9438], "mapped", [111]], [[9439, 9439], "mapped", [112]], [[9440, 9440], "mapped", [113]], [[9441, 9441], "mapped", [114]], [[9442, 9442], "mapped", [115]], [[9443, 9443], "mapped", [116]], [[9444, 9444], "mapped", [117]], [[9445, 9445], "mapped", [118]], [[9446, 9446], "mapped", [119]], [[9447, 9447], "mapped", [120]], [[9448, 9448], "mapped", [121]], [[9449, 9449], "mapped", [122]], [[9450, 9450], "mapped", [48]], [[9451, 9470], "valid", [], "NV8"], [[9471, 9471], "valid", [], "NV8"], [[9472, 9621], "valid", [], "NV8"], [[9622, 9631], "valid", [], "NV8"], [[9632, 9711], "valid", [], "NV8"], [[9712, 9719], "valid", [], "NV8"], [[9720, 9727], "valid", [], "NV8"], [[9728, 9747], "valid", [], "NV8"], [[9748, 9749], "valid", [], "NV8"], [[9750, 9751], "valid", [], "NV8"], [[9752, 9752], "valid", [], "NV8"], [[9753, 9753], "valid", [], "NV8"], [[9754, 9839], "valid", [], "NV8"], [[9840, 9841], "valid", [], "NV8"], [[9842, 9853], "valid", [], "NV8"], [[9854, 9855], "valid", [], "NV8"], [[9856, 9865], "valid", [], "NV8"], [[9866, 9873], "valid", [], "NV8"], [[9874, 9884], "valid", [], "NV8"], [[9885, 9885], "valid", [], "NV8"], [[9886, 9887], "valid", [], "NV8"], [[9888, 9889], "valid", [], "NV8"], [[9890, 9905], "valid", [], "NV8"], [[9906, 9906], "valid", [], "NV8"], [[9907, 9916], "valid", [], "NV8"], [[9917, 9919], "valid", [], "NV8"], [[9920, 9923], "valid", [], "NV8"], [[9924, 9933], "valid", [], "NV8"], [[9934, 9934], "valid", [], "NV8"], [[9935, 9953], "valid", [], "NV8"], [[9954, 9954], "valid", [], "NV8"], [[9955, 9955], "valid", [], "NV8"], [[9956, 9959], "valid", [], "NV8"], [[9960, 9983], "valid", [], "NV8"], [[9984, 9984], "valid", [], "NV8"], [[9985, 9988], "valid", [], "NV8"], [[9989, 9989], "valid", [], "NV8"], [[9990, 9993], "valid", [], "NV8"], [[9994, 9995], "valid", [], "NV8"], [[9996, 10023], "valid", [], "NV8"], [[10024, 10024], "valid", [], "NV8"], [[10025, 10059], "valid", [], "NV8"], [[10060, 10060], "valid", [], "NV8"], [[10061, 10061], "valid", [], "NV8"], [[10062, 10062], "valid", [], "NV8"], [[10063, 10066], "valid", [], "NV8"], [[10067, 10069], "valid", [], "NV8"], [[10070, 10070], "valid", [], "NV8"], [[10071, 10071], "valid", [], "NV8"], [[10072, 10078], "valid", [], "NV8"], [[10079, 10080], "valid", [], "NV8"], [[10081, 10087], "valid", [], "NV8"], [[10088, 10101], "valid", [], "NV8"], [[10102, 10132], "valid", [], "NV8"], [[10133, 10135], "valid", [], "NV8"], [[10136, 10159], "valid", [], "NV8"], [[10160, 10160], "valid", [], "NV8"], [[10161, 10174], "valid", [], "NV8"], [[10175, 10175], "valid", [], "NV8"], [[10176, 10182], "valid", [], "NV8"], [[10183, 10186], "valid", [], "NV8"], [[10187, 10187], "valid", [], "NV8"], [[10188, 10188], "valid", [], "NV8"], [[10189, 10189], "valid", [], "NV8"], [[10190, 10191], "valid", [], "NV8"], [[10192, 10219], "valid", [], "NV8"], [[10220, 10223], "valid", [], "NV8"], [[10224, 10239], "valid", [], "NV8"], [[10240, 10495], "valid", [], "NV8"], [[10496, 10763], "valid", [], "NV8"], [[10764, 10764], "mapped", [8747, 8747, 8747, 8747]], [[10765, 10867], "valid", [], "NV8"], [[10868, 10868], "disallowed_STD3_mapped", [58, 58, 61]], [[10869, 10869], "disallowed_STD3_mapped", [61, 61]], [[10870, 10870], "disallowed_STD3_mapped", [61, 61, 61]], [[10871, 10971], "valid", [], "NV8"], [[10972, 10972], "mapped", [10973, 824]], [[10973, 11007], "valid", [], "NV8"], [[11008, 11021], "valid", [], "NV8"], [[11022, 11027], "valid", [], "NV8"], [[11028, 11034], "valid", [], "NV8"], [[11035, 11039], "valid", [], "NV8"], [[11040, 11043], "valid", [], "NV8"], [[11044, 11084], "valid", [], "NV8"], [[11085, 11087], "valid", [], "NV8"], [[11088, 11092], "valid", [], "NV8"], [[11093, 11097], "valid", [], "NV8"], [[11098, 11123], "valid", [], "NV8"], [[11124, 11125], "disallowed"], [[11126, 11157], "valid", [], "NV8"], [[11158, 11159], "disallowed"], [[11160, 11193], "valid", [], "NV8"], [[11194, 11196], "disallowed"], [[11197, 11208], "valid", [], "NV8"], [[11209, 11209], "disallowed"], [[11210, 11217], "valid", [], "NV8"], [[11218, 11243], "disallowed"], [[11244, 11247], "valid", [], "NV8"], [[11248, 11263], "disallowed"], [[11264, 11264], "mapped", [11312]], [[11265, 11265], "mapped", [11313]], [[11266, 11266], "mapped", [11314]], [[11267, 11267], "mapped", [11315]], [[11268, 11268], "mapped", [11316]], [[11269, 11269], "mapped", [11317]], [[11270, 11270], "mapped", [11318]], [[11271, 11271], "mapped", [11319]], [[11272, 11272], "mapped", [11320]], [[11273, 11273], "mapped", [11321]], [[11274, 11274], "mapped", [11322]], [[11275, 11275], "mapped", [11323]], [[11276, 11276], "mapped", [11324]], [[11277, 11277], "mapped", [11325]], [[11278, 11278], "mapped", [11326]], [[11279, 11279], "mapped", [11327]], [[11280, 11280], "mapped", [11328]], [[11281, 11281], "mapped", [11329]], [[11282, 11282], "mapped", [11330]], [[11283, 11283], "mapped", [11331]], [[11284, 11284], "mapped", [11332]], [[11285, 11285], "mapped", [11333]], [[11286, 11286], "mapped", [11334]], [[11287, 11287], "mapped", [11335]], [[11288, 11288], "mapped", [11336]], [[11289, 11289], "mapped", [11337]], [[11290, 11290], "mapped", [11338]], [[11291, 11291], "mapped", [11339]], [[11292, 11292], "mapped", [11340]], [[11293, 11293], "mapped", [11341]], [[11294, 11294], "mapped", [11342]], [[11295, 11295], "mapped", [11343]], [[11296, 11296], "mapped", [11344]], [[11297, 11297], "mapped", [11345]], [[11298, 11298], "mapped", [11346]], [[11299, 11299], "mapped", [11347]], [[11300, 11300], "mapped", [11348]], [[11301, 11301], "mapped", [11349]], [[11302, 11302], "mapped", [11350]], [[11303, 11303], "mapped", [11351]], [[11304, 11304], "mapped", [11352]], [[11305, 11305], "mapped", [11353]], [[11306, 11306], "mapped", [11354]], [[11307, 11307], "mapped", [11355]], [[11308, 11308], "mapped", [11356]], [[11309, 11309], "mapped", [11357]], [[11310, 11310], "mapped", [11358]], [[11311, 11311], "disallowed"], [[11312, 11358], "valid"], [[11359, 11359], "disallowed"], [[11360, 11360], "mapped", [11361]], [[11361, 11361], "valid"], [[11362, 11362], "mapped", [619]], [[11363, 11363], "mapped", [7549]], [[11364, 11364], "mapped", [637]], [[11365, 11366], "valid"], [[11367, 11367], "mapped", [11368]], [[11368, 11368], "valid"], [[11369, 11369], "mapped", [11370]], [[11370, 11370], "valid"], [[11371, 11371], "mapped", [11372]], [[11372, 11372], "valid"], [[11373, 11373], "mapped", [593]], [[11374, 11374], "mapped", [625]], [[11375, 11375], "mapped", [592]], [[11376, 11376], "mapped", [594]], [[11377, 11377], "valid"], [[11378, 11378], "mapped", [11379]], [[11379, 11379], "valid"], [[11380, 11380], "valid"], [[11381, 11381], "mapped", [11382]], [[11382, 11383], "valid"], [[11384, 11387], "valid"], [[11388, 11388], "mapped", [106]], [[11389, 11389], "mapped", [118]], [[11390, 11390], "mapped", [575]], [[11391, 11391], "mapped", [576]], [[11392, 11392], "mapped", [11393]], [[11393, 11393], "valid"], [[11394, 11394], "mapped", [11395]], [[11395, 11395], "valid"], [[11396, 11396], "mapped", [11397]], [[11397, 11397], "valid"], [[11398, 11398], "mapped", [11399]], [[11399, 11399], "valid"], [[11400, 11400], "mapped", [11401]], [[11401, 11401], "valid"], [[11402, 11402], "mapped", [11403]], [[11403, 11403], "valid"], [[11404, 11404], "mapped", [11405]], [[11405, 11405], "valid"], [[11406, 11406], "mapped", [11407]], [[11407, 11407], "valid"], [[11408, 11408], "mapped", [11409]], [[11409, 11409], "valid"], [[11410, 11410], "mapped", [11411]], [[11411, 11411], "valid"], [[11412, 11412], "mapped", [11413]], [[11413, 11413], "valid"], [[11414, 11414], "mapped", [11415]], [[11415, 11415], "valid"], [[11416, 11416], "mapped", [11417]], [[11417, 11417], "valid"], [[11418, 11418], "mapped", [11419]], [[11419, 11419], "valid"], [[11420, 11420], "mapped", [11421]], [[11421, 11421], "valid"], [[11422, 11422], "mapped", [11423]], [[11423, 11423], "valid"], [[11424, 11424], "mapped", [11425]], [[11425, 11425], "valid"], [[11426, 11426], "mapped", [11427]], [[11427, 11427], "valid"], [[11428, 11428], "mapped", [11429]], [[11429, 11429], "valid"], [[11430, 11430], "mapped", [11431]], [[11431, 11431], "valid"], [[11432, 11432], "mapped", [11433]], [[11433, 11433], "valid"], [[11434, 11434], "mapped", [11435]], [[11435, 11435], "valid"], [[11436, 11436], "mapped", [11437]], [[11437, 11437], "valid"], [[11438, 11438], "mapped", [11439]], [[11439, 11439], "valid"], [[11440, 11440], "mapped", [11441]], [[11441, 11441], "valid"], [[11442, 11442], "mapped", [11443]], [[11443, 11443], "valid"], [[11444, 11444], "mapped", [11445]], [[11445, 11445], "valid"], [[11446, 11446], "mapped", [11447]], [[11447, 11447], "valid"], [[11448, 11448], "mapped", [11449]], [[11449, 11449], "valid"], [[11450, 11450], "mapped", [11451]], [[11451, 11451], "valid"], [[11452, 11452], "mapped", [11453]], [[11453, 11453], "valid"], [[11454, 11454], "mapped", [11455]], [[11455, 11455], "valid"], [[11456, 11456], "mapped", [11457]], [[11457, 11457], "valid"], [[11458, 11458], "mapped", [11459]], [[11459, 11459], "valid"], [[11460, 11460], "mapped", [11461]], [[11461, 11461], "valid"], [[11462, 11462], "mapped", [11463]], [[11463, 11463], "valid"], [[11464, 11464], "mapped", [11465]], [[11465, 11465], "valid"], [[11466, 11466], "mapped", [11467]], [[11467, 11467], "valid"], [[11468, 11468], "mapped", [11469]], [[11469, 11469], "valid"], [[11470, 11470], "mapped", [11471]], [[11471, 11471], "valid"], [[11472, 11472], "mapped", [11473]], [[11473, 11473], "valid"], [[11474, 11474], "mapped", [11475]], [[11475, 11475], "valid"], [[11476, 11476], "mapped", [11477]], [[11477, 11477], "valid"], [[11478, 11478], "mapped", [11479]], [[11479, 11479], "valid"], [[11480, 11480], "mapped", [11481]], [[11481, 11481], "valid"], [[11482, 11482], "mapped", [11483]], [[11483, 11483], "valid"], [[11484, 11484], "mapped", [11485]], [[11485, 11485], "valid"], [[11486, 11486], "mapped", [11487]], [[11487, 11487], "valid"], [[11488, 11488], "mapped", [11489]], [[11489, 11489], "valid"], [[11490, 11490], "mapped", [11491]], [[11491, 11492], "valid"], [[11493, 11498], "valid", [], "NV8"], [[11499, 11499], "mapped", [11500]], [[11500, 11500], "valid"], [[11501, 11501], "mapped", [11502]], [[11502, 11505], "valid"], [[11506, 11506], "mapped", [11507]], [[11507, 11507], "valid"], [[11508, 11512], "disallowed"], [[11513, 11519], "valid", [], "NV8"], [[11520, 11557], "valid"], [[11558, 11558], "disallowed"], [[11559, 11559], "valid"], [[11560, 11564], "disallowed"], [[11565, 11565], "valid"], [[11566, 11567], "disallowed"], [[11568, 11621], "valid"], [[11622, 11623], "valid"], [[11624, 11630], "disallowed"], [[11631, 11631], "mapped", [11617]], [[11632, 11632], "valid", [], "NV8"], [[11633, 11646], "disallowed"], [[11647, 11647], "valid"], [[11648, 11670], "valid"], [[11671, 11679], "disallowed"], [[11680, 11686], "valid"], [[11687, 11687], "disallowed"], [[11688, 11694], "valid"], [[11695, 11695], "disallowed"], [[11696, 11702], "valid"], [[11703, 11703], "disallowed"], [[11704, 11710], "valid"], [[11711, 11711], "disallowed"], [[11712, 11718], "valid"], [[11719, 11719], "disallowed"], [[11720, 11726], "valid"], [[11727, 11727], "disallowed"], [[11728, 11734], "valid"], [[11735, 11735], "disallowed"], [[11736, 11742], "valid"], [[11743, 11743], "disallowed"], [[11744, 11775], "valid"], [[11776, 11799], "valid", [], "NV8"], [[11800, 11803], "valid", [], "NV8"], [[11804, 11805], "valid", [], "NV8"], [[11806, 11822], "valid", [], "NV8"], [[11823, 11823], "valid"], [[11824, 11824], "valid", [], "NV8"], [[11825, 11825], "valid", [], "NV8"], [[11826, 11835], "valid", [], "NV8"], [[11836, 11842], "valid", [], "NV8"], [[11843, 11903], "disallowed"], [[11904, 11929], "valid", [], "NV8"], [[11930, 11930], "disallowed"], [[11931, 11934], "valid", [], "NV8"], [[11935, 11935], "mapped", [27597]], [[11936, 12018], "valid", [], "NV8"], [[12019, 12019], "mapped", [40863]], [[12020, 12031], "disallowed"], [[12032, 12032], "mapped", [19968]], [[12033, 12033], "mapped", [20008]], [[12034, 12034], "mapped", [20022]], [[12035, 12035], "mapped", [20031]], [[12036, 12036], "mapped", [20057]], [[12037, 12037], "mapped", [20101]], [[12038, 12038], "mapped", [20108]], [[12039, 12039], "mapped", [20128]], [[12040, 12040], "mapped", [20154]], [[12041, 12041], "mapped", [20799]], [[12042, 12042], "mapped", [20837]], [[12043, 12043], "mapped", [20843]], [[12044, 12044], "mapped", [20866]], [[12045, 12045], "mapped", [20886]], [[12046, 12046], "mapped", [20907]], [[12047, 12047], "mapped", [20960]], [[12048, 12048], "mapped", [20981]], [[12049, 12049], "mapped", [20992]], [[12050, 12050], "mapped", [21147]], [[12051, 12051], "mapped", [21241]], [[12052, 12052], "mapped", [21269]], [[12053, 12053], "mapped", [21274]], [[12054, 12054], "mapped", [21304]], [[12055, 12055], "mapped", [21313]], [[12056, 12056], "mapped", [21340]], [[12057, 12057], "mapped", [21353]], [[12058, 12058], "mapped", [21378]], [[12059, 12059], "mapped", [21430]], [[12060, 12060], "mapped", [21448]], [[12061, 12061], "mapped", [21475]], [[12062, 12062], "mapped", [22231]], [[12063, 12063], "mapped", [22303]], [[12064, 12064], "mapped", [22763]], [[12065, 12065], "mapped", [22786]], [[12066, 12066], "mapped", [22794]], [[12067, 12067], "mapped", [22805]], [[12068, 12068], "mapped", [22823]], [[12069, 12069], "mapped", [22899]], [[12070, 12070], "mapped", [23376]], [[12071, 12071], "mapped", [23424]], [[12072, 12072], "mapped", [23544]], [[12073, 12073], "mapped", [23567]], [[12074, 12074], "mapped", [23586]], [[12075, 12075], "mapped", [23608]], [[12076, 12076], "mapped", [23662]], [[12077, 12077], "mapped", [23665]], [[12078, 12078], "mapped", [24027]], [[12079, 12079], "mapped", [24037]], [[12080, 12080], "mapped", [24049]], [[12081, 12081], "mapped", [24062]], [[12082, 12082], "mapped", [24178]], [[12083, 12083], "mapped", [24186]], [[12084, 12084], "mapped", [24191]], [[12085, 12085], "mapped", [24308]], [[12086, 12086], "mapped", [24318]], [[12087, 12087], "mapped", [24331]], [[12088, 12088], "mapped", [24339]], [[12089, 12089], "mapped", [24400]], [[12090, 12090], "mapped", [24417]], [[12091, 12091], "mapped", [24435]], [[12092, 12092], "mapped", [24515]], [[12093, 12093], "mapped", [25096]], [[12094, 12094], "mapped", [25142]], [[12095, 12095], "mapped", [25163]], [[12096, 12096], "mapped", [25903]], [[12097, 12097], "mapped", [25908]], [[12098, 12098], "mapped", [25991]], [[12099, 12099], "mapped", [26007]], [[12100, 12100], "mapped", [26020]], [[12101, 12101], "mapped", [26041]], [[12102, 12102], "mapped", [26080]], [[12103, 12103], "mapped", [26085]], [[12104, 12104], "mapped", [26352]], [[12105, 12105], "mapped", [26376]], [[12106, 12106], "mapped", [26408]], [[12107, 12107], "mapped", [27424]], [[12108, 12108], "mapped", [27490]], [[12109, 12109], "mapped", [27513]], [[12110, 12110], "mapped", [27571]], [[12111, 12111], "mapped", [27595]], [[12112, 12112], "mapped", [27604]], [[12113, 12113], "mapped", [27611]], [[12114, 12114], "mapped", [27663]], [[12115, 12115], "mapped", [27668]], [[12116, 12116], "mapped", [27700]], [[12117, 12117], "mapped", [28779]], [[12118, 12118], "mapped", [29226]], [[12119, 12119], "mapped", [29238]], [[12120, 12120], "mapped", [29243]], [[12121, 12121], "mapped", [29247]], [[12122, 12122], "mapped", [29255]], [[12123, 12123], "mapped", [29273]], [[12124, 12124], "mapped", [29275]], [[12125, 12125], "mapped", [29356]], [[12126, 12126], "mapped", [29572]], [[12127, 12127], "mapped", [29577]], [[12128, 12128], "mapped", [29916]], [[12129, 12129], "mapped", [29926]], [[12130, 12130], "mapped", [29976]], [[12131, 12131], "mapped", [29983]], [[12132, 12132], "mapped", [29992]], [[12133, 12133], "mapped", [3e4]], [[12134, 12134], "mapped", [30091]], [[12135, 12135], "mapped", [30098]], [[12136, 12136], "mapped", [30326]], [[12137, 12137], "mapped", [30333]], [[12138, 12138], "mapped", [30382]], [[12139, 12139], "mapped", [30399]], [[12140, 12140], "mapped", [30446]], [[12141, 12141], "mapped", [30683]], [[12142, 12142], "mapped", [30690]], [[12143, 12143], "mapped", [30707]], [[12144, 12144], "mapped", [31034]], [[12145, 12145], "mapped", [31160]], [[12146, 12146], "mapped", [31166]], [[12147, 12147], "mapped", [31348]], [[12148, 12148], "mapped", [31435]], [[12149, 12149], "mapped", [31481]], [[12150, 12150], "mapped", [31859]], [[12151, 12151], "mapped", [31992]], [[12152, 12152], "mapped", [32566]], [[12153, 12153], "mapped", [32593]], [[12154, 12154], "mapped", [32650]], [[12155, 12155], "mapped", [32701]], [[12156, 12156], "mapped", [32769]], [[12157, 12157], "mapped", [32780]], [[12158, 12158], "mapped", [32786]], [[12159, 12159], "mapped", [32819]], [[12160, 12160], "mapped", [32895]], [[12161, 12161], "mapped", [32905]], [[12162, 12162], "mapped", [33251]], [[12163, 12163], "mapped", [33258]], [[12164, 12164], "mapped", [33267]], [[12165, 12165], "mapped", [33276]], [[12166, 12166], "mapped", [33292]], [[12167, 12167], "mapped", [33307]], [[12168, 12168], "mapped", [33311]], [[12169, 12169], "mapped", [33390]], [[12170, 12170], "mapped", [33394]], [[12171, 12171], "mapped", [33400]], [[12172, 12172], "mapped", [34381]], [[12173, 12173], "mapped", [34411]], [[12174, 12174], "mapped", [34880]], [[12175, 12175], "mapped", [34892]], [[12176, 12176], "mapped", [34915]], [[12177, 12177], "mapped", [35198]], [[12178, 12178], "mapped", [35211]], [[12179, 12179], "mapped", [35282]], [[12180, 12180], "mapped", [35328]], [[12181, 12181], "mapped", [35895]], [[12182, 12182], "mapped", [35910]], [[12183, 12183], "mapped", [35925]], [[12184, 12184], "mapped", [35960]], [[12185, 12185], "mapped", [35997]], [[12186, 12186], "mapped", [36196]], [[12187, 12187], "mapped", [36208]], [[12188, 12188], "mapped", [36275]], [[12189, 12189], "mapped", [36523]], [[12190, 12190], "mapped", [36554]], [[12191, 12191], "mapped", [36763]], [[12192, 12192], "mapped", [36784]], [[12193, 12193], "mapped", [36789]], [[12194, 12194], "mapped", [37009]], [[12195, 12195], "mapped", [37193]], [[12196, 12196], "mapped", [37318]], [[12197, 12197], "mapped", [37324]], [[12198, 12198], "mapped", [37329]], [[12199, 12199], "mapped", [38263]], [[12200, 12200], "mapped", [38272]], [[12201, 12201], "mapped", [38428]], [[12202, 12202], "mapped", [38582]], [[12203, 12203], "mapped", [38585]], [[12204, 12204], "mapped", [38632]], [[12205, 12205], "mapped", [38737]], [[12206, 12206], "mapped", [38750]], [[12207, 12207], "mapped", [38754]], [[12208, 12208], "mapped", [38761]], [[12209, 12209], "mapped", [38859]], [[12210, 12210], "mapped", [38893]], [[12211, 12211], "mapped", [38899]], [[12212, 12212], "mapped", [38913]], [[12213, 12213], "mapped", [39080]], [[12214, 12214], "mapped", [39131]], [[12215, 12215], "mapped", [39135]], [[12216, 12216], "mapped", [39318]], [[12217, 12217], "mapped", [39321]], [[12218, 12218], "mapped", [39340]], [[12219, 12219], "mapped", [39592]], [[12220, 12220], "mapped", [39640]], [[12221, 12221], "mapped", [39647]], [[12222, 12222], "mapped", [39717]], [[12223, 12223], "mapped", [39727]], [[12224, 12224], "mapped", [39730]], [[12225, 12225], "mapped", [39740]], [[12226, 12226], "mapped", [39770]], [[12227, 12227], "mapped", [40165]], [[12228, 12228], "mapped", [40565]], [[12229, 12229], "mapped", [40575]], [[12230, 12230], "mapped", [40613]], [[12231, 12231], "mapped", [40635]], [[12232, 12232], "mapped", [40643]], [[12233, 12233], "mapped", [40653]], [[12234, 12234], "mapped", [40657]], [[12235, 12235], "mapped", [40697]], [[12236, 12236], "mapped", [40701]], [[12237, 12237], "mapped", [40718]], [[12238, 12238], "mapped", [40723]], [[12239, 12239], "mapped", [40736]], [[12240, 12240], "mapped", [40763]], [[12241, 12241], "mapped", [40778]], [[12242, 12242], "mapped", [40786]], [[12243, 12243], "mapped", [40845]], [[12244, 12244], "mapped", [40860]], [[12245, 12245], "mapped", [40864]], [[12246, 12271], "disallowed"], [[12272, 12283], "disallowed"], [[12284, 12287], "disallowed"], [[12288, 12288], "disallowed_STD3_mapped", [32]], [[12289, 12289], "valid", [], "NV8"], [[12290, 12290], "mapped", [46]], [[12291, 12292], "valid", [], "NV8"], [[12293, 12295], "valid"], [[12296, 12329], "valid", [], "NV8"], [[12330, 12333], "valid"], [[12334, 12341], "valid", [], "NV8"], [[12342, 12342], "mapped", [12306]], [[12343, 12343], "valid", [], "NV8"], [[12344, 12344], "mapped", [21313]], [[12345, 12345], "mapped", [21316]], [[12346, 12346], "mapped", [21317]], [[12347, 12347], "valid", [], "NV8"], [[12348, 12348], "valid"], [[12349, 12349], "valid", [], "NV8"], [[12350, 12350], "valid", [], "NV8"], [[12351, 12351], "valid", [], "NV8"], [[12352, 12352], "disallowed"], [[12353, 12436], "valid"], [[12437, 12438], "valid"], [[12439, 12440], "disallowed"], [[12441, 12442], "valid"], [[12443, 12443], "disallowed_STD3_mapped", [32, 12441]], [[12444, 12444], "disallowed_STD3_mapped", [32, 12442]], [[12445, 12446], "valid"], [[12447, 12447], "mapped", [12424, 12426]], [[12448, 12448], "valid", [], "NV8"], [[12449, 12542], "valid"], [[12543, 12543], "mapped", [12467, 12488]], [[12544, 12548], "disallowed"], [[12549, 12588], "valid"], [[12589, 12589], "valid"], [[12590, 12592], "disallowed"], [[12593, 12593], "mapped", [4352]], [[12594, 12594], "mapped", [4353]], [[12595, 12595], "mapped", [4522]], [[12596, 12596], "mapped", [4354]], [[12597, 12597], "mapped", [4524]], [[12598, 12598], "mapped", [4525]], [[12599, 12599], "mapped", [4355]], [[12600, 12600], "mapped", [4356]], [[12601, 12601], "mapped", [4357]], [[12602, 12602], "mapped", [4528]], [[12603, 12603], "mapped", [4529]], [[12604, 12604], "mapped", [4530]], [[12605, 12605], "mapped", [4531]], [[12606, 12606], "mapped", [4532]], [[12607, 12607], "mapped", [4533]], [[12608, 12608], "mapped", [4378]], [[12609, 12609], "mapped", [4358]], [[12610, 12610], "mapped", [4359]], [[12611, 12611], "mapped", [4360]], [[12612, 12612], "mapped", [4385]], [[12613, 12613], "mapped", [4361]], [[12614, 12614], "mapped", [4362]], [[12615, 12615], "mapped", [4363]], [[12616, 12616], "mapped", [4364]], [[12617, 12617], "mapped", [4365]], [[12618, 12618], "mapped", [4366]], [[12619, 12619], "mapped", [4367]], [[12620, 12620], "mapped", [4368]], [[12621, 12621], "mapped", [4369]], [[12622, 12622], "mapped", [4370]], [[12623, 12623], "mapped", [4449]], [[12624, 12624], "mapped", [4450]], [[12625, 12625], "mapped", [4451]], [[12626, 12626], "mapped", [4452]], [[12627, 12627], "mapped", [4453]], [[12628, 12628], "mapped", [4454]], [[12629, 12629], "mapped", [4455]], [[12630, 12630], "mapped", [4456]], [[12631, 12631], "mapped", [4457]], [[12632, 12632], "mapped", [4458]], [[12633, 12633], "mapped", [4459]], [[12634, 12634], "mapped", [4460]], [[12635, 12635], "mapped", [4461]], [[12636, 12636], "mapped", [4462]], [[12637, 12637], "mapped", [4463]], [[12638, 12638], "mapped", [4464]], [[12639, 12639], "mapped", [4465]], [[12640, 12640], "mapped", [4466]], [[12641, 12641], "mapped", [4467]], [[12642, 12642], "mapped", [4468]], [[12643, 12643], "mapped", [4469]], [[12644, 12644], "disallowed"], [[12645, 12645], "mapped", [4372]], [[12646, 12646], "mapped", [4373]], [[12647, 12647], "mapped", [4551]], [[12648, 12648], "mapped", [4552]], [[12649, 12649], "mapped", [4556]], [[12650, 12650], "mapped", [4558]], [[12651, 12651], "mapped", [4563]], [[12652, 12652], "mapped", [4567]], [[12653, 12653], "mapped", [4569]], [[12654, 12654], "mapped", [4380]], [[12655, 12655], "mapped", [4573]], [[12656, 12656], "mapped", [4575]], [[12657, 12657], "mapped", [4381]], [[12658, 12658], "mapped", [4382]], [[12659, 12659], "mapped", [4384]], [[12660, 12660], "mapped", [4386]], [[12661, 12661], "mapped", [4387]], [[12662, 12662], "mapped", [4391]], [[12663, 12663], "mapped", [4393]], [[12664, 12664], "mapped", [4395]], [[12665, 12665], "mapped", [4396]], [[12666, 12666], "mapped", [4397]], [[12667, 12667], "mapped", [4398]], [[12668, 12668], "mapped", [4399]], [[12669, 12669], "mapped", [4402]], [[12670, 12670], "mapped", [4406]], [[12671, 12671], "mapped", [4416]], [[12672, 12672], "mapped", [4423]], [[12673, 12673], "mapped", [4428]], [[12674, 12674], "mapped", [4593]], [[12675, 12675], "mapped", [4594]], [[12676, 12676], "mapped", [4439]], [[12677, 12677], "mapped", [4440]], [[12678, 12678], "mapped", [4441]], [[12679, 12679], "mapped", [4484]], [[12680, 12680], "mapped", [4485]], [[12681, 12681], "mapped", [4488]], [[12682, 12682], "mapped", [4497]], [[12683, 12683], "mapped", [4498]], [[12684, 12684], "mapped", [4500]], [[12685, 12685], "mapped", [4510]], [[12686, 12686], "mapped", [4513]], [[12687, 12687], "disallowed"], [[12688, 12689], "valid", [], "NV8"], [[12690, 12690], "mapped", [19968]], [[12691, 12691], "mapped", [20108]], [[12692, 12692], "mapped", [19977]], [[12693, 12693], "mapped", [22235]], [[12694, 12694], "mapped", [19978]], [[12695, 12695], "mapped", [20013]], [[12696, 12696], "mapped", [19979]], [[12697, 12697], "mapped", [30002]], [[12698, 12698], "mapped", [20057]], [[12699, 12699], "mapped", [19993]], [[12700, 12700], "mapped", [19969]], [[12701, 12701], "mapped", [22825]], [[12702, 12702], "mapped", [22320]], [[12703, 12703], "mapped", [20154]], [[12704, 12727], "valid"], [[12728, 12730], "valid"], [[12731, 12735], "disallowed"], [[12736, 12751], "valid", [], "NV8"], [[12752, 12771], "valid", [], "NV8"], [[12772, 12783], "disallowed"], [[12784, 12799], "valid"], [[12800, 12800], "disallowed_STD3_mapped", [40, 4352, 41]], [[12801, 12801], "disallowed_STD3_mapped", [40, 4354, 41]], [[12802, 12802], "disallowed_STD3_mapped", [40, 4355, 41]], [[12803, 12803], "disallowed_STD3_mapped", [40, 4357, 41]], [[12804, 12804], "disallowed_STD3_mapped", [40, 4358, 41]], [[12805, 12805], "disallowed_STD3_mapped", [40, 4359, 41]], [[12806, 12806], "disallowed_STD3_mapped", [40, 4361, 41]], [[12807, 12807], "disallowed_STD3_mapped", [40, 4363, 41]], [[12808, 12808], "disallowed_STD3_mapped", [40, 4364, 41]], [[12809, 12809], "disallowed_STD3_mapped", [40, 4366, 41]], [[12810, 12810], "disallowed_STD3_mapped", [40, 4367, 41]], [[12811, 12811], "disallowed_STD3_mapped", [40, 4368, 41]], [[12812, 12812], "disallowed_STD3_mapped", [40, 4369, 41]], [[12813, 12813], "disallowed_STD3_mapped", [40, 4370, 41]], [[12814, 12814], "disallowed_STD3_mapped", [40, 44032, 41]], [[12815, 12815], "disallowed_STD3_mapped", [40, 45208, 41]], [[12816, 12816], "disallowed_STD3_mapped", [40, 45796, 41]], [[12817, 12817], "disallowed_STD3_mapped", [40, 46972, 41]], [[12818, 12818], "disallowed_STD3_mapped", [40, 47560, 41]], [[12819, 12819], "disallowed_STD3_mapped", [40, 48148, 41]], [[12820, 12820], "disallowed_STD3_mapped", [40, 49324, 41]], [[12821, 12821], "disallowed_STD3_mapped", [40, 50500, 41]], [[12822, 12822], "disallowed_STD3_mapped", [40, 51088, 41]], [[12823, 12823], "disallowed_STD3_mapped", [40, 52264, 41]], [[12824, 12824], "disallowed_STD3_mapped", [40, 52852, 41]], [[12825, 12825], "disallowed_STD3_mapped", [40, 53440, 41]], [[12826, 12826], "disallowed_STD3_mapped", [40, 54028, 41]], [[12827, 12827], "disallowed_STD3_mapped", [40, 54616, 41]], [[12828, 12828], "disallowed_STD3_mapped", [40, 51452, 41]], [[12829, 12829], "disallowed_STD3_mapped", [40, 50724, 51204, 41]], [[12830, 12830], "disallowed_STD3_mapped", [40, 50724, 54980, 41]], [[12831, 12831], "disallowed"], [[12832, 12832], "disallowed_STD3_mapped", [40, 19968, 41]], [[12833, 12833], "disallowed_STD3_mapped", [40, 20108, 41]], [[12834, 12834], "disallowed_STD3_mapped", [40, 19977, 41]], [[12835, 12835], "disallowed_STD3_mapped", [40, 22235, 41]], [[12836, 12836], "disallowed_STD3_mapped", [40, 20116, 41]], [[12837, 12837], "disallowed_STD3_mapped", [40, 20845, 41]], [[12838, 12838], "disallowed_STD3_mapped", [40, 19971, 41]], [[12839, 12839], "disallowed_STD3_mapped", [40, 20843, 41]], [[12840, 12840], "disallowed_STD3_mapped", [40, 20061, 41]], [[12841, 12841], "disallowed_STD3_mapped", [40, 21313, 41]], [[12842, 12842], "disallowed_STD3_mapped", [40, 26376, 41]], [[12843, 12843], "disallowed_STD3_mapped", [40, 28779, 41]], [[12844, 12844], "disallowed_STD3_mapped", [40, 27700, 41]], [[12845, 12845], "disallowed_STD3_mapped", [40, 26408, 41]], [[12846, 12846], "disallowed_STD3_mapped", [40, 37329, 41]], [[12847, 12847], "disallowed_STD3_mapped", [40, 22303, 41]], [[12848, 12848], "disallowed_STD3_mapped", [40, 26085, 41]], [[12849, 12849], "disallowed_STD3_mapped", [40, 26666, 41]], [[12850, 12850], "disallowed_STD3_mapped", [40, 26377, 41]], [[12851, 12851], "disallowed_STD3_mapped", [40, 31038, 41]], [[12852, 12852], "disallowed_STD3_mapped", [40, 21517, 41]], [[12853, 12853], "disallowed_STD3_mapped", [40, 29305, 41]], [[12854, 12854], "disallowed_STD3_mapped", [40, 36001, 41]], [[12855, 12855], "disallowed_STD3_mapped", [40, 31069, 41]], [[12856, 12856], "disallowed_STD3_mapped", [40, 21172, 41]], [[12857, 12857], "disallowed_STD3_mapped", [40, 20195, 41]], [[12858, 12858], "disallowed_STD3_mapped", [40, 21628, 41]], [[12859, 12859], "disallowed_STD3_mapped", [40, 23398, 41]], [[12860, 12860], "disallowed_STD3_mapped", [40, 30435, 41]], [[12861, 12861], "disallowed_STD3_mapped", [40, 20225, 41]], [[12862, 12862], "disallowed_STD3_mapped", [40, 36039, 41]], [[12863, 12863], "disallowed_STD3_mapped", [40, 21332, 41]], [[12864, 12864], "disallowed_STD3_mapped", [40, 31085, 41]], [[12865, 12865], "disallowed_STD3_mapped", [40, 20241, 41]], [[12866, 12866], "disallowed_STD3_mapped", [40, 33258, 41]], [[12867, 12867], "disallowed_STD3_mapped", [40, 33267, 41]], [[12868, 12868], "mapped", [21839]], [[12869, 12869], "mapped", [24188]], [[12870, 12870], "mapped", [25991]], [[12871, 12871], "mapped", [31631]], [[12872, 12879], "valid", [], "NV8"], [[12880, 12880], "mapped", [112, 116, 101]], [[12881, 12881], "mapped", [50, 49]], [[12882, 12882], "mapped", [50, 50]], [[12883, 12883], "mapped", [50, 51]], [[12884, 12884], "mapped", [50, 52]], [[12885, 12885], "mapped", [50, 53]], [[12886, 12886], "mapped", [50, 54]], [[12887, 12887], "mapped", [50, 55]], [[12888, 12888], "mapped", [50, 56]], [[12889, 12889], "mapped", [50, 57]], [[12890, 12890], "mapped", [51, 48]], [[12891, 12891], "mapped", [51, 49]], [[12892, 12892], "mapped", [51, 50]], [[12893, 12893], "mapped", [51, 51]], [[12894, 12894], "mapped", [51, 52]], [[12895, 12895], "mapped", [51, 53]], [[12896, 12896], "mapped", [4352]], [[12897, 12897], "mapped", [4354]], [[12898, 12898], "mapped", [4355]], [[12899, 12899], "mapped", [4357]], [[12900, 12900], "mapped", [4358]], [[12901, 12901], "mapped", [4359]], [[12902, 12902], "mapped", [4361]], [[12903, 12903], "mapped", [4363]], [[12904, 12904], "mapped", [4364]], [[12905, 12905], "mapped", [4366]], [[12906, 12906], "mapped", [4367]], [[12907, 12907], "mapped", [4368]], [[12908, 12908], "mapped", [4369]], [[12909, 12909], "mapped", [4370]], [[12910, 12910], "mapped", [44032]], [[12911, 12911], "mapped", [45208]], [[12912, 12912], "mapped", [45796]], [[12913, 12913], "mapped", [46972]], [[12914, 12914], "mapped", [47560]], [[12915, 12915], "mapped", [48148]], [[12916, 12916], "mapped", [49324]], [[12917, 12917], "mapped", [50500]], [[12918, 12918], "mapped", [51088]], [[12919, 12919], "mapped", [52264]], [[12920, 12920], "mapped", [52852]], [[12921, 12921], "mapped", [53440]], [[12922, 12922], "mapped", [54028]], [[12923, 12923], "mapped", [54616]], [[12924, 12924], "mapped", [52280, 44256]], [[12925, 12925], "mapped", [51452, 51032]], [[12926, 12926], "mapped", [50864]], [[12927, 12927], "valid", [], "NV8"], [[12928, 12928], "mapped", [19968]], [[12929, 12929], "mapped", [20108]], [[12930, 12930], "mapped", [19977]], [[12931, 12931], "mapped", [22235]], [[12932, 12932], "mapped", [20116]], [[12933, 12933], "mapped", [20845]], [[12934, 12934], "mapped", [19971]], [[12935, 12935], "mapped", [20843]], [[12936, 12936], "mapped", [20061]], [[12937, 12937], "mapped", [21313]], [[12938, 12938], "mapped", [26376]], [[12939, 12939], "mapped", [28779]], [[12940, 12940], "mapped", [27700]], [[12941, 12941], "mapped", [26408]], [[12942, 12942], "mapped", [37329]], [[12943, 12943], "mapped", [22303]], [[12944, 12944], "mapped", [26085]], [[12945, 12945], "mapped", [26666]], [[12946, 12946], "mapped", [26377]], [[12947, 12947], "mapped", [31038]], [[12948, 12948], "mapped", [21517]], [[12949, 12949], "mapped", [29305]], [[12950, 12950], "mapped", [36001]], [[12951, 12951], "mapped", [31069]], [[12952, 12952], "mapped", [21172]], [[12953, 12953], "mapped", [31192]], [[12954, 12954], "mapped", [30007]], [[12955, 12955], "mapped", [22899]], [[12956, 12956], "mapped", [36969]], [[12957, 12957], "mapped", [20778]], [[12958, 12958], "mapped", [21360]], [[12959, 12959], "mapped", [27880]], [[12960, 12960], "mapped", [38917]], [[12961, 12961], "mapped", [20241]], [[12962, 12962], "mapped", [20889]], [[12963, 12963], "mapped", [27491]], [[12964, 12964], "mapped", [19978]], [[12965, 12965], "mapped", [20013]], [[12966, 12966], "mapped", [19979]], [[12967, 12967], "mapped", [24038]], [[12968, 12968], "mapped", [21491]], [[12969, 12969], "mapped", [21307]], [[12970, 12970], "mapped", [23447]], [[12971, 12971], "mapped", [23398]], [[12972, 12972], "mapped", [30435]], [[12973, 12973], "mapped", [20225]], [[12974, 12974], "mapped", [36039]], [[12975, 12975], "mapped", [21332]], [[12976, 12976], "mapped", [22812]], [[12977, 12977], "mapped", [51, 54]], [[12978, 12978], "mapped", [51, 55]], [[12979, 12979], "mapped", [51, 56]], [[12980, 12980], "mapped", [51, 57]], [[12981, 12981], "mapped", [52, 48]], [[12982, 12982], "mapped", [52, 49]], [[12983, 12983], "mapped", [52, 50]], [[12984, 12984], "mapped", [52, 51]], [[12985, 12985], "mapped", [52, 52]], [[12986, 12986], "mapped", [52, 53]], [[12987, 12987], "mapped", [52, 54]], [[12988, 12988], "mapped", [52, 55]], [[12989, 12989], "mapped", [52, 56]], [[12990, 12990], "mapped", [52, 57]], [[12991, 12991], "mapped", [53, 48]], [[12992, 12992], "mapped", [49, 26376]], [[12993, 12993], "mapped", [50, 26376]], [[12994, 12994], "mapped", [51, 26376]], [[12995, 12995], "mapped", [52, 26376]], [[12996, 12996], "mapped", [53, 26376]], [[12997, 12997], "mapped", [54, 26376]], [[12998, 12998], "mapped", [55, 26376]], [[12999, 12999], "mapped", [56, 26376]], [[13e3, 13e3], "mapped", [57, 26376]], [[13001, 13001], "mapped", [49, 48, 26376]], [[13002, 13002], "mapped", [49, 49, 26376]], [[13003, 13003], "mapped", [49, 50, 26376]], [[13004, 13004], "mapped", [104, 103]], [[13005, 13005], "mapped", [101, 114, 103]], [[13006, 13006], "mapped", [101, 118]], [[13007, 13007], "mapped", [108, 116, 100]], [[13008, 13008], "mapped", [12450]], [[13009, 13009], "mapped", [12452]], [[13010, 13010], "mapped", [12454]], [[13011, 13011], "mapped", [12456]], [[13012, 13012], "mapped", [12458]], [[13013, 13013], "mapped", [12459]], [[13014, 13014], "mapped", [12461]], [[13015, 13015], "mapped", [12463]], [[13016, 13016], "mapped", [12465]], [[13017, 13017], "mapped", [12467]], [[13018, 13018], "mapped", [12469]], [[13019, 13019], "mapped", [12471]], [[13020, 13020], "mapped", [12473]], [[13021, 13021], "mapped", [12475]], [[13022, 13022], "mapped", [12477]], [[13023, 13023], "mapped", [12479]], [[13024, 13024], "mapped", [12481]], [[13025, 13025], "mapped", [12484]], [[13026, 13026], "mapped", [12486]], [[13027, 13027], "mapped", [12488]], [[13028, 13028], "mapped", [12490]], [[13029, 13029], "mapped", [12491]], [[13030, 13030], "mapped", [12492]], [[13031, 13031], "mapped", [12493]], [[13032, 13032], "mapped", [12494]], [[13033, 13033], "mapped", [12495]], [[13034, 13034], "mapped", [12498]], [[13035, 13035], "mapped", [12501]], [[13036, 13036], "mapped", [12504]], [[13037, 13037], "mapped", [12507]], [[13038, 13038], "mapped", [12510]], [[13039, 13039], "mapped", [12511]], [[13040, 13040], "mapped", [12512]], [[13041, 13041], "mapped", [12513]], [[13042, 13042], "mapped", [12514]], [[13043, 13043], "mapped", [12516]], [[13044, 13044], "mapped", [12518]], [[13045, 13045], "mapped", [12520]], [[13046, 13046], "mapped", [12521]], [[13047, 13047], "mapped", [12522]], [[13048, 13048], "mapped", [12523]], [[13049, 13049], "mapped", [12524]], [[13050, 13050], "mapped", [12525]], [[13051, 13051], "mapped", [12527]], [[13052, 13052], "mapped", [12528]], [[13053, 13053], "mapped", [12529]], [[13054, 13054], "mapped", [12530]], [[13055, 13055], "disallowed"], [[13056, 13056], "mapped", [12450, 12497, 12540, 12488]], [[13057, 13057], "mapped", [12450, 12523, 12501, 12449]], [[13058, 13058], "mapped", [12450, 12531, 12506, 12450]], [[13059, 13059], "mapped", [12450, 12540, 12523]], [[13060, 13060], "mapped", [12452, 12491, 12531, 12464]], [[13061, 13061], "mapped", [12452, 12531, 12481]], [[13062, 13062], "mapped", [12454, 12457, 12531]], [[13063, 13063], "mapped", [12456, 12473, 12463, 12540, 12489]], [[13064, 13064], "mapped", [12456, 12540, 12459, 12540]], [[13065, 13065], "mapped", [12458, 12531, 12473]], [[13066, 13066], "mapped", [12458, 12540, 12512]], [[13067, 13067], "mapped", [12459, 12452, 12522]], [[13068, 13068], "mapped", [12459, 12521, 12483, 12488]], [[13069, 13069], "mapped", [12459, 12525, 12522, 12540]], [[13070, 13070], "mapped", [12460, 12525, 12531]], [[13071, 13071], "mapped", [12460, 12531, 12510]], [[13072, 13072], "mapped", [12462, 12460]], [[13073, 13073], "mapped", [12462, 12491, 12540]], [[13074, 13074], "mapped", [12461, 12517, 12522, 12540]], [[13075, 13075], "mapped", [12462, 12523, 12480, 12540]], [[13076, 13076], "mapped", [12461, 12525]], [[13077, 13077], "mapped", [12461, 12525, 12464, 12521, 12512]], [[13078, 13078], "mapped", [12461, 12525, 12513, 12540, 12488, 12523]], [[13079, 13079], "mapped", [12461, 12525, 12527, 12483, 12488]], [[13080, 13080], "mapped", [12464, 12521, 12512]], [[13081, 13081], "mapped", [12464, 12521, 12512, 12488, 12531]], [[13082, 13082], "mapped", [12463, 12523, 12476, 12452, 12525]], [[13083, 13083], "mapped", [12463, 12525, 12540, 12493]], [[13084, 13084], "mapped", [12465, 12540, 12473]], [[13085, 13085], "mapped", [12467, 12523, 12490]], [[13086, 13086], "mapped", [12467, 12540, 12509]], [[13087, 13087], "mapped", [12469, 12452, 12463, 12523]], [[13088, 13088], "mapped", [12469, 12531, 12481, 12540, 12512]], [[13089, 13089], "mapped", [12471, 12522, 12531, 12464]], [[13090, 13090], "mapped", [12475, 12531, 12481]], [[13091, 13091], "mapped", [12475, 12531, 12488]], [[13092, 13092], "mapped", [12480, 12540, 12473]], [[13093, 13093], "mapped", [12487, 12471]], [[13094, 13094], "mapped", [12489, 12523]], [[13095, 13095], "mapped", [12488, 12531]], [[13096, 13096], "mapped", [12490, 12494]], [[13097, 13097], "mapped", [12494, 12483, 12488]], [[13098, 13098], "mapped", [12495, 12452, 12484]], [[13099, 13099], "mapped", [12497, 12540, 12475, 12531, 12488]], [[13100, 13100], "mapped", [12497, 12540, 12484]], [[13101, 13101], "mapped", [12496, 12540, 12524, 12523]], [[13102, 13102], "mapped", [12500, 12450, 12473, 12488, 12523]], [[13103, 13103], "mapped", [12500, 12463, 12523]], [[13104, 13104], "mapped", [12500, 12467]], [[13105, 13105], "mapped", [12499, 12523]], [[13106, 13106], "mapped", [12501, 12449, 12521, 12483, 12489]], [[13107, 13107], "mapped", [12501, 12451, 12540, 12488]], [[13108, 13108], "mapped", [12502, 12483, 12471, 12455, 12523]], [[13109, 13109], "mapped", [12501, 12521, 12531]], [[13110, 13110], "mapped", [12504, 12463, 12479, 12540, 12523]], [[13111, 13111], "mapped", [12506, 12477]], [[13112, 13112], "mapped", [12506, 12491, 12498]], [[13113, 13113], "mapped", [12504, 12523, 12484]], [[13114, 13114], "mapped", [12506, 12531, 12473]], [[13115, 13115], "mapped", [12506, 12540, 12472]], [[13116, 13116], "mapped", [12505, 12540, 12479]], [[13117, 13117], "mapped", [12509, 12452, 12531, 12488]], [[13118, 13118], "mapped", [12508, 12523, 12488]], [[13119, 13119], "mapped", [12507, 12531]], [[13120, 13120], "mapped", [12509, 12531, 12489]], [[13121, 13121], "mapped", [12507, 12540, 12523]], [[13122, 13122], "mapped", [12507, 12540, 12531]], [[13123, 13123], "mapped", [12510, 12452, 12463, 12525]], [[13124, 13124], "mapped", [12510, 12452, 12523]], [[13125, 13125], "mapped", [12510, 12483, 12495]], [[13126, 13126], "mapped", [12510, 12523, 12463]], [[13127, 13127], "mapped", [12510, 12531, 12471, 12519, 12531]], [[13128, 13128], "mapped", [12511, 12463, 12525, 12531]], [[13129, 13129], "mapped", [12511, 12522]], [[13130, 13130], "mapped", [12511, 12522, 12496, 12540, 12523]], [[13131, 13131], "mapped", [12513, 12460]], [[13132, 13132], "mapped", [12513, 12460, 12488, 12531]], [[13133, 13133], "mapped", [12513, 12540, 12488, 12523]], [[13134, 13134], "mapped", [12516, 12540, 12489]], [[13135, 13135], "mapped", [12516, 12540, 12523]], [[13136, 13136], "mapped", [12518, 12450, 12531]], [[13137, 13137], "mapped", [12522, 12483, 12488, 12523]], [[13138, 13138], "mapped", [12522, 12521]], [[13139, 13139], "mapped", [12523, 12500, 12540]], [[13140, 13140], "mapped", [12523, 12540, 12502, 12523]], [[13141, 13141], "mapped", [12524, 12512]], [[13142, 13142], "mapped", [12524, 12531, 12488, 12466, 12531]], [[13143, 13143], "mapped", [12527, 12483, 12488]], [[13144, 13144], "mapped", [48, 28857]], [[13145, 13145], "mapped", [49, 28857]], [[13146, 13146], "mapped", [50, 28857]], [[13147, 13147], "mapped", [51, 28857]], [[13148, 13148], "mapped", [52, 28857]], [[13149, 13149], "mapped", [53, 28857]], [[13150, 13150], "mapped", [54, 28857]], [[13151, 13151], "mapped", [55, 28857]], [[13152, 13152], "mapped", [56, 28857]], [[13153, 13153], "mapped", [57, 28857]], [[13154, 13154], "mapped", [49, 48, 28857]], [[13155, 13155], "mapped", [49, 49, 28857]], [[13156, 13156], "mapped", [49, 50, 28857]], [[13157, 13157], "mapped", [49, 51, 28857]], [[13158, 13158], "mapped", [49, 52, 28857]], [[13159, 13159], "mapped", [49, 53, 28857]], [[13160, 13160], "mapped", [49, 54, 28857]], [[13161, 13161], "mapped", [49, 55, 28857]], [[13162, 13162], "mapped", [49, 56, 28857]], [[13163, 13163], "mapped", [49, 57, 28857]], [[13164, 13164], "mapped", [50, 48, 28857]], [[13165, 13165], "mapped", [50, 49, 28857]], [[13166, 13166], "mapped", [50, 50, 28857]], [[13167, 13167], "mapped", [50, 51, 28857]], [[13168, 13168], "mapped", [50, 52, 28857]], [[13169, 13169], "mapped", [104, 112, 97]], [[13170, 13170], "mapped", [100, 97]], [[13171, 13171], "mapped", [97, 117]], [[13172, 13172], "mapped", [98, 97, 114]], [[13173, 13173], "mapped", [111, 118]], [[13174, 13174], "mapped", [112, 99]], [[13175, 13175], "mapped", [100, 109]], [[13176, 13176], "mapped", [100, 109, 50]], [[13177, 13177], "mapped", [100, 109, 51]], [[13178, 13178], "mapped", [105, 117]], [[13179, 13179], "mapped", [24179, 25104]], [[13180, 13180], "mapped", [26157, 21644]], [[13181, 13181], "mapped", [22823, 27491]], [[13182, 13182], "mapped", [26126, 27835]], [[13183, 13183], "mapped", [26666, 24335, 20250, 31038]], [[13184, 13184], "mapped", [112, 97]], [[13185, 13185], "mapped", [110, 97]], [[13186, 13186], "mapped", [956, 97]], [[13187, 13187], "mapped", [109, 97]], [[13188, 13188], "mapped", [107, 97]], [[13189, 13189], "mapped", [107, 98]], [[13190, 13190], "mapped", [109, 98]], [[13191, 13191], "mapped", [103, 98]], [[13192, 13192], "mapped", [99, 97, 108]], [[13193, 13193], "mapped", [107, 99, 97, 108]], [[13194, 13194], "mapped", [112, 102]], [[13195, 13195], "mapped", [110, 102]], [[13196, 13196], "mapped", [956, 102]], [[13197, 13197], "mapped", [956, 103]], [[13198, 13198], "mapped", [109, 103]], [[13199, 13199], "mapped", [107, 103]], [[13200, 13200], "mapped", [104, 122]], [[13201, 13201], "mapped", [107, 104, 122]], [[13202, 13202], "mapped", [109, 104, 122]], [[13203, 13203], "mapped", [103, 104, 122]], [[13204, 13204], "mapped", [116, 104, 122]], [[13205, 13205], "mapped", [956, 108]], [[13206, 13206], "mapped", [109, 108]], [[13207, 13207], "mapped", [100, 108]], [[13208, 13208], "mapped", [107, 108]], [[13209, 13209], "mapped", [102, 109]], [[13210, 13210], "mapped", [110, 109]], [[13211, 13211], "mapped", [956, 109]], [[13212, 13212], "mapped", [109, 109]], [[13213, 13213], "mapped", [99, 109]], [[13214, 13214], "mapped", [107, 109]], [[13215, 13215], "mapped", [109, 109, 50]], [[13216, 13216], "mapped", [99, 109, 50]], [[13217, 13217], "mapped", [109, 50]], [[13218, 13218], "mapped", [107, 109, 50]], [[13219, 13219], "mapped", [109, 109, 51]], [[13220, 13220], "mapped", [99, 109, 51]], [[13221, 13221], "mapped", [109, 51]], [[13222, 13222], "mapped", [107, 109, 51]], [[13223, 13223], "mapped", [109, 8725, 115]], [[13224, 13224], "mapped", [109, 8725, 115, 50]], [[13225, 13225], "mapped", [112, 97]], [[13226, 13226], "mapped", [107, 112, 97]], [[13227, 13227], "mapped", [109, 112, 97]], [[13228, 13228], "mapped", [103, 112, 97]], [[13229, 13229], "mapped", [114, 97, 100]], [[13230, 13230], "mapped", [114, 97, 100, 8725, 115]], [[13231, 13231], "mapped", [114, 97, 100, 8725, 115, 50]], [[13232, 13232], "mapped", [112, 115]], [[13233, 13233], "mapped", [110, 115]], [[13234, 13234], "mapped", [956, 115]], [[13235, 13235], "mapped", [109, 115]], [[13236, 13236], "mapped", [112, 118]], [[13237, 13237], "mapped", [110, 118]], [[13238, 13238], "mapped", [956, 118]], [[13239, 13239], "mapped", [109, 118]], [[13240, 13240], "mapped", [107, 118]], [[13241, 13241], "mapped", [109, 118]], [[13242, 13242], "mapped", [112, 119]], [[13243, 13243], "mapped", [110, 119]], [[13244, 13244], "mapped", [956, 119]], [[13245, 13245], "mapped", [109, 119]], [[13246, 13246], "mapped", [107, 119]], [[13247, 13247], "mapped", [109, 119]], [[13248, 13248], "mapped", [107, 969]], [[13249, 13249], "mapped", [109, 969]], [[13250, 13250], "disallowed"], [[13251, 13251], "mapped", [98, 113]], [[13252, 13252], "mapped", [99, 99]], [[13253, 13253], "mapped", [99, 100]], [[13254, 13254], "mapped", [99, 8725, 107, 103]], [[13255, 13255], "disallowed"], [[13256, 13256], "mapped", [100, 98]], [[13257, 13257], "mapped", [103, 121]], [[13258, 13258], "mapped", [104, 97]], [[13259, 13259], "mapped", [104, 112]], [[13260, 13260], "mapped", [105, 110]], [[13261, 13261], "mapped", [107, 107]], [[13262, 13262], "mapped", [107, 109]], [[13263, 13263], "mapped", [107, 116]], [[13264, 13264], "mapped", [108, 109]], [[13265, 13265], "mapped", [108, 110]], [[13266, 13266], "mapped", [108, 111, 103]], [[13267, 13267], "mapped", [108, 120]], [[13268, 13268], "mapped", [109, 98]], [[13269, 13269], "mapped", [109, 105, 108]], [[13270, 13270], "mapped", [109, 111, 108]], [[13271, 13271], "mapped", [112, 104]], [[13272, 13272], "disallowed"], [[13273, 13273], "mapped", [112, 112, 109]], [[13274, 13274], "mapped", [112, 114]], [[13275, 13275], "mapped", [115, 114]], [[13276, 13276], "mapped", [115, 118]], [[13277, 13277], "mapped", [119, 98]], [[13278, 13278], "mapped", [118, 8725, 109]], [[13279, 13279], "mapped", [97, 8725, 109]], [[13280, 13280], "mapped", [49, 26085]], [[13281, 13281], "mapped", [50, 26085]], [[13282, 13282], "mapped", [51, 26085]], [[13283, 13283], "mapped", [52, 26085]], [[13284, 13284], "mapped", [53, 26085]], [[13285, 13285], "mapped", [54, 26085]], [[13286, 13286], "mapped", [55, 26085]], [[13287, 13287], "mapped", [56, 26085]], [[13288, 13288], "mapped", [57, 26085]], [[13289, 13289], "mapped", [49, 48, 26085]], [[13290, 13290], "mapped", [49, 49, 26085]], [[13291, 13291], "mapped", [49, 50, 26085]], [[13292, 13292], "mapped", [49, 51, 26085]], [[13293, 13293], "mapped", [49, 52, 26085]], [[13294, 13294], "mapped", [49, 53, 26085]], [[13295, 13295], "mapped", [49, 54, 26085]], [[13296, 13296], "mapped", [49, 55, 26085]], [[13297, 13297], "mapped", [49, 56, 26085]], [[13298, 13298], "mapped", [49, 57, 26085]], [[13299, 13299], "mapped", [50, 48, 26085]], [[13300, 13300], "mapped", [50, 49, 26085]], [[13301, 13301], "mapped", [50, 50, 26085]], [[13302, 13302], "mapped", [50, 51, 26085]], [[13303, 13303], "mapped", [50, 52, 26085]], [[13304, 13304], "mapped", [50, 53, 26085]], [[13305, 13305], "mapped", [50, 54, 26085]], [[13306, 13306], "mapped", [50, 55, 26085]], [[13307, 13307], "mapped", [50, 56, 26085]], [[13308, 13308], "mapped", [50, 57, 26085]], [[13309, 13309], "mapped", [51, 48, 26085]], [[13310, 13310], "mapped", [51, 49, 26085]], [[13311, 13311], "mapped", [103, 97, 108]], [[13312, 19893], "valid"], [[19894, 19903], "disallowed"], [[19904, 19967], "valid", [], "NV8"], [[19968, 40869], "valid"], [[40870, 40891], "valid"], [[40892, 40899], "valid"], [[40900, 40907], "valid"], [[40908, 40908], "valid"], [[40909, 40917], "valid"], [[40918, 40959], "disallowed"], [[40960, 42124], "valid"], [[42125, 42127], "disallowed"], [[42128, 42145], "valid", [], "NV8"], [[42146, 42147], "valid", [], "NV8"], [[42148, 42163], "valid", [], "NV8"], [[42164, 42164], "valid", [], "NV8"], [[42165, 42176], "valid", [], "NV8"], [[42177, 42177], "valid", [], "NV8"], [[42178, 42180], "valid", [], "NV8"], [[42181, 42181], "valid", [], "NV8"], [[42182, 42182], "valid", [], "NV8"], [[42183, 42191], "disallowed"], [[42192, 42237], "valid"], [[42238, 42239], "valid", [], "NV8"], [[42240, 42508], "valid"], [[42509, 42511], "valid", [], "NV8"], [[42512, 42539], "valid"], [[42540, 42559], "disallowed"], [[42560, 42560], "mapped", [42561]], [[42561, 42561], "valid"], [[42562, 42562], "mapped", [42563]], [[42563, 42563], "valid"], [[42564, 42564], "mapped", [42565]], [[42565, 42565], "valid"], [[42566, 42566], "mapped", [42567]], [[42567, 42567], "valid"], [[42568, 42568], "mapped", [42569]], [[42569, 42569], "valid"], [[42570, 42570], "mapped", [42571]], [[42571, 42571], "valid"], [[42572, 42572], "mapped", [42573]], [[42573, 42573], "valid"], [[42574, 42574], "mapped", [42575]], [[42575, 42575], "valid"], [[42576, 42576], "mapped", [42577]], [[42577, 42577], "valid"], [[42578, 42578], "mapped", [42579]], [[42579, 42579], "valid"], [[42580, 42580], "mapped", [42581]], [[42581, 42581], "valid"], [[42582, 42582], "mapped", [42583]], [[42583, 42583], "valid"], [[42584, 42584], "mapped", [42585]], [[42585, 42585], "valid"], [[42586, 42586], "mapped", [42587]], [[42587, 42587], "valid"], [[42588, 42588], "mapped", [42589]], [[42589, 42589], "valid"], [[42590, 42590], "mapped", [42591]], [[42591, 42591], "valid"], [[42592, 42592], "mapped", [42593]], [[42593, 42593], "valid"], [[42594, 42594], "mapped", [42595]], [[42595, 42595], "valid"], [[42596, 42596], "mapped", [42597]], [[42597, 42597], "valid"], [[42598, 42598], "mapped", [42599]], [[42599, 42599], "valid"], [[42600, 42600], "mapped", [42601]], [[42601, 42601], "valid"], [[42602, 42602], "mapped", [42603]], [[42603, 42603], "valid"], [[42604, 42604], "mapped", [42605]], [[42605, 42607], "valid"], [[42608, 42611], "valid", [], "NV8"], [[42612, 42619], "valid"], [[42620, 42621], "valid"], [[42622, 42622], "valid", [], "NV8"], [[42623, 42623], "valid"], [[42624, 42624], "mapped", [42625]], [[42625, 42625], "valid"], [[42626, 42626], "mapped", [42627]], [[42627, 42627], "valid"], [[42628, 42628], "mapped", [42629]], [[42629, 42629], "valid"], [[42630, 42630], "mapped", [42631]], [[42631, 42631], "valid"], [[42632, 42632], "mapped", [42633]], [[42633, 42633], "valid"], [[42634, 42634], "mapped", [42635]], [[42635, 42635], "valid"], [[42636, 42636], "mapped", [42637]], [[42637, 42637], "valid"], [[42638, 42638], "mapped", [42639]], [[42639, 42639], "valid"], [[42640, 42640], "mapped", [42641]], [[42641, 42641], "valid"], [[42642, 42642], "mapped", [42643]], [[42643, 42643], "valid"], [[42644, 42644], "mapped", [42645]], [[42645, 42645], "valid"], [[42646, 42646], "mapped", [42647]], [[42647, 42647], "valid"], [[42648, 42648], "mapped", [42649]], [[42649, 42649], "valid"], [[42650, 42650], "mapped", [42651]], [[42651, 42651], "valid"], [[42652, 42652], "mapped", [1098]], [[42653, 42653], "mapped", [1100]], [[42654, 42654], "valid"], [[42655, 42655], "valid"], [[42656, 42725], "valid"], [[42726, 42735], "valid", [], "NV8"], [[42736, 42737], "valid"], [[42738, 42743], "valid", [], "NV8"], [[42744, 42751], "disallowed"], [[42752, 42774], "valid", [], "NV8"], [[42775, 42778], "valid"], [[42779, 42783], "valid"], [[42784, 42785], "valid", [], "NV8"], [[42786, 42786], "mapped", [42787]], [[42787, 42787], "valid"], [[42788, 42788], "mapped", [42789]], [[42789, 42789], "valid"], [[42790, 42790], "mapped", [42791]], [[42791, 42791], "valid"], [[42792, 42792], "mapped", [42793]], [[42793, 42793], "valid"], [[42794, 42794], "mapped", [42795]], [[42795, 42795], "valid"], [[42796, 42796], "mapped", [42797]], [[42797, 42797], "valid"], [[42798, 42798], "mapped", [42799]], [[42799, 42801], "valid"], [[42802, 42802], "mapped", [42803]], [[42803, 42803], "valid"], [[42804, 42804], "mapped", [42805]], [[42805, 42805], "valid"], [[42806, 42806], "mapped", [42807]], [[42807, 42807], "valid"], [[42808, 42808], "mapped", [42809]], [[42809, 42809], "valid"], [[42810, 42810], "mapped", [42811]], [[42811, 42811], "valid"], [[42812, 42812], "mapped", [42813]], [[42813, 42813], "valid"], [[42814, 42814], "mapped", [42815]], [[42815, 42815], "valid"], [[42816, 42816], "mapped", [42817]], [[42817, 42817], "valid"], [[42818, 42818], "mapped", [42819]], [[42819, 42819], "valid"], [[42820, 42820], "mapped", [42821]], [[42821, 42821], "valid"], [[42822, 42822], "mapped", [42823]], [[42823, 42823], "valid"], [[42824, 42824], "mapped", [42825]], [[42825, 42825], "valid"], [[42826, 42826], "mapped", [42827]], [[42827, 42827], "valid"], [[42828, 42828], "mapped", [42829]], [[42829, 42829], "valid"], [[42830, 42830], "mapped", [42831]], [[42831, 42831], "valid"], [[42832, 42832], "mapped", [42833]], [[42833, 42833], "valid"], [[42834, 42834], "mapped", [42835]], [[42835, 42835], "valid"], [[42836, 42836], "mapped", [42837]], [[42837, 42837], "valid"], [[42838, 42838], "mapped", [42839]], [[42839, 42839], "valid"], [[42840, 42840], "mapped", [42841]], [[42841, 42841], "valid"], [[42842, 42842], "mapped", [42843]], [[42843, 42843], "valid"], [[42844, 42844], "mapped", [42845]], [[42845, 42845], "valid"], [[42846, 42846], "mapped", [42847]], [[42847, 42847], "valid"], [[42848, 42848], "mapped", [42849]], [[42849, 42849], "valid"], [[42850, 42850], "mapped", [42851]], [[42851, 42851], "valid"], [[42852, 42852], "mapped", [42853]], [[42853, 42853], "valid"], [[42854, 42854], "mapped", [42855]], [[42855, 42855], "valid"], [[42856, 42856], "mapped", [42857]], [[42857, 42857], "valid"], [[42858, 42858], "mapped", [42859]], [[42859, 42859], "valid"], [[42860, 42860], "mapped", [42861]], [[42861, 42861], "valid"], [[42862, 42862], "mapped", [42863]], [[42863, 42863], "valid"], [[42864, 42864], "mapped", [42863]], [[42865, 42872], "valid"], [[42873, 42873], "mapped", [42874]], [[42874, 42874], "valid"], [[42875, 42875], "mapped", [42876]], [[42876, 42876], "valid"], [[42877, 42877], "mapped", [7545]], [[42878, 42878], "mapped", [42879]], [[42879, 42879], "valid"], [[42880, 42880], "mapped", [42881]], [[42881, 42881], "valid"], [[42882, 42882], "mapped", [42883]], [[42883, 42883], "valid"], [[42884, 42884], "mapped", [42885]], [[42885, 42885], "valid"], [[42886, 42886], "mapped", [42887]], [[42887, 42888], "valid"], [[42889, 42890], "valid", [], "NV8"], [[42891, 42891], "mapped", [42892]], [[42892, 42892], "valid"], [[42893, 42893], "mapped", [613]], [[42894, 42894], "valid"], [[42895, 42895], "valid"], [[42896, 42896], "mapped", [42897]], [[42897, 42897], "valid"], [[42898, 42898], "mapped", [42899]], [[42899, 42899], "valid"], [[42900, 42901], "valid"], [[42902, 42902], "mapped", [42903]], [[42903, 42903], "valid"], [[42904, 42904], "mapped", [42905]], [[42905, 42905], "valid"], [[42906, 42906], "mapped", [42907]], [[42907, 42907], "valid"], [[42908, 42908], "mapped", [42909]], [[42909, 42909], "valid"], [[42910, 42910], "mapped", [42911]], [[42911, 42911], "valid"], [[42912, 42912], "mapped", [42913]], [[42913, 42913], "valid"], [[42914, 42914], "mapped", [42915]], [[42915, 42915], "valid"], [[42916, 42916], "mapped", [42917]], [[42917, 42917], "valid"], [[42918, 42918], "mapped", [42919]], [[42919, 42919], "valid"], [[42920, 42920], "mapped", [42921]], [[42921, 42921], "valid"], [[42922, 42922], "mapped", [614]], [[42923, 42923], "mapped", [604]], [[42924, 42924], "mapped", [609]], [[42925, 42925], "mapped", [620]], [[42926, 42927], "disallowed"], [[42928, 42928], "mapped", [670]], [[42929, 42929], "mapped", [647]], [[42930, 42930], "mapped", [669]], [[42931, 42931], "mapped", [43859]], [[42932, 42932], "mapped", [42933]], [[42933, 42933], "valid"], [[42934, 42934], "mapped", [42935]], [[42935, 42935], "valid"], [[42936, 42998], "disallowed"], [[42999, 42999], "valid"], [[43e3, 43e3], "mapped", [295]], [[43001, 43001], "mapped", [339]], [[43002, 43002], "valid"], [[43003, 43007], "valid"], [[43008, 43047], "valid"], [[43048, 43051], "valid", [], "NV8"], [[43052, 43055], "disallowed"], [[43056, 43065], "valid", [], "NV8"], [[43066, 43071], "disallowed"], [[43072, 43123], "valid"], [[43124, 43127], "valid", [], "NV8"], [[43128, 43135], "disallowed"], [[43136, 43204], "valid"], [[43205, 43213], "disallowed"], [[43214, 43215], "valid", [], "NV8"], [[43216, 43225], "valid"], [[43226, 43231], "disallowed"], [[43232, 43255], "valid"], [[43256, 43258], "valid", [], "NV8"], [[43259, 43259], "valid"], [[43260, 43260], "valid", [], "NV8"], [[43261, 43261], "valid"], [[43262, 43263], "disallowed"], [[43264, 43309], "valid"], [[43310, 43311], "valid", [], "NV8"], [[43312, 43347], "valid"], [[43348, 43358], "disallowed"], [[43359, 43359], "valid", [], "NV8"], [[43360, 43388], "valid", [], "NV8"], [[43389, 43391], "disallowed"], [[43392, 43456], "valid"], [[43457, 43469], "valid", [], "NV8"], [[43470, 43470], "disallowed"], [[43471, 43481], "valid"], [[43482, 43485], "disallowed"], [[43486, 43487], "valid", [], "NV8"], [[43488, 43518], "valid"], [[43519, 43519], "disallowed"], [[43520, 43574], "valid"], [[43575, 43583], "disallowed"], [[43584, 43597], "valid"], [[43598, 43599], "disallowed"], [[43600, 43609], "valid"], [[43610, 43611], "disallowed"], [[43612, 43615], "valid", [], "NV8"], [[43616, 43638], "valid"], [[43639, 43641], "valid", [], "NV8"], [[43642, 43643], "valid"], [[43644, 43647], "valid"], [[43648, 43714], "valid"], [[43715, 43738], "disallowed"], [[43739, 43741], "valid"], [[43742, 43743], "valid", [], "NV8"], [[43744, 43759], "valid"], [[43760, 43761], "valid", [], "NV8"], [[43762, 43766], "valid"], [[43767, 43776], "disallowed"], [[43777, 43782], "valid"], [[43783, 43784], "disallowed"], [[43785, 43790], "valid"], [[43791, 43792], "disallowed"], [[43793, 43798], "valid"], [[43799, 43807], "disallowed"], [[43808, 43814], "valid"], [[43815, 43815], "disallowed"], [[43816, 43822], "valid"], [[43823, 43823], "disallowed"], [[43824, 43866], "valid"], [[43867, 43867], "valid", [], "NV8"], [[43868, 43868], "mapped", [42791]], [[43869, 43869], "mapped", [43831]], [[43870, 43870], "mapped", [619]], [[43871, 43871], "mapped", [43858]], [[43872, 43875], "valid"], [[43876, 43877], "valid"], [[43878, 43887], "disallowed"], [[43888, 43888], "mapped", [5024]], [[43889, 43889], "mapped", [5025]], [[43890, 43890], "mapped", [5026]], [[43891, 43891], "mapped", [5027]], [[43892, 43892], "mapped", [5028]], [[43893, 43893], "mapped", [5029]], [[43894, 43894], "mapped", [5030]], [[43895, 43895], "mapped", [5031]], [[43896, 43896], "mapped", [5032]], [[43897, 43897], "mapped", [5033]], [[43898, 43898], "mapped", [5034]], [[43899, 43899], "mapped", [5035]], [[43900, 43900], "mapped", [5036]], [[43901, 43901], "mapped", [5037]], [[43902, 43902], "mapped", [5038]], [[43903, 43903], "mapped", [5039]], [[43904, 43904], "mapped", [5040]], [[43905, 43905], "mapped", [5041]], [[43906, 43906], "mapped", [5042]], [[43907, 43907], "mapped", [5043]], [[43908, 43908], "mapped", [5044]], [[43909, 43909], "mapped", [5045]], [[43910, 43910], "mapped", [5046]], [[43911, 43911], "mapped", [5047]], [[43912, 43912], "mapped", [5048]], [[43913, 43913], "mapped", [5049]], [[43914, 43914], "mapped", [5050]], [[43915, 43915], "mapped", [5051]], [[43916, 43916], "mapped", [5052]], [[43917, 43917], "mapped", [5053]], [[43918, 43918], "mapped", [5054]], [[43919, 43919], "mapped", [5055]], [[43920, 43920], "mapped", [5056]], [[43921, 43921], "mapped", [5057]], [[43922, 43922], "mapped", [5058]], [[43923, 43923], "mapped", [5059]], [[43924, 43924], "mapped", [5060]], [[43925, 43925], "mapped", [5061]], [[43926, 43926], "mapped", [5062]], [[43927, 43927], "mapped", [5063]], [[43928, 43928], "mapped", [5064]], [[43929, 43929], "mapped", [5065]], [[43930, 43930], "mapped", [5066]], [[43931, 43931], "mapped", [5067]], [[43932, 43932], "mapped", [5068]], [[43933, 43933], "mapped", [5069]], [[43934, 43934], "mapped", [5070]], [[43935, 43935], "mapped", [5071]], [[43936, 43936], "mapped", [5072]], [[43937, 43937], "mapped", [5073]], [[43938, 43938], "mapped", [5074]], [[43939, 43939], "mapped", [5075]], [[43940, 43940], "mapped", [5076]], [[43941, 43941], "mapped", [5077]], [[43942, 43942], "mapped", [5078]], [[43943, 43943], "mapped", [5079]], [[43944, 43944], "mapped", [5080]], [[43945, 43945], "mapped", [5081]], [[43946, 43946], "mapped", [5082]], [[43947, 43947], "mapped", [5083]], [[43948, 43948], "mapped", [5084]], [[43949, 43949], "mapped", [5085]], [[43950, 43950], "mapped", [5086]], [[43951, 43951], "mapped", [5087]], [[43952, 43952], "mapped", [5088]], [[43953, 43953], "mapped", [5089]], [[43954, 43954], "mapped", [5090]], [[43955, 43955], "mapped", [5091]], [[43956, 43956], "mapped", [5092]], [[43957, 43957], "mapped", [5093]], [[43958, 43958], "mapped", [5094]], [[43959, 43959], "mapped", [5095]], [[43960, 43960], "mapped", [5096]], [[43961, 43961], "mapped", [5097]], [[43962, 43962], "mapped", [5098]], [[43963, 43963], "mapped", [5099]], [[43964, 43964], "mapped", [5100]], [[43965, 43965], "mapped", [5101]], [[43966, 43966], "mapped", [5102]], [[43967, 43967], "mapped", [5103]], [[43968, 44010], "valid"], [[44011, 44011], "valid", [], "NV8"], [[44012, 44013], "valid"], [[44014, 44015], "disallowed"], [[44016, 44025], "valid"], [[44026, 44031], "disallowed"], [[44032, 55203], "valid"], [[55204, 55215], "disallowed"], [[55216, 55238], "valid", [], "NV8"], [[55239, 55242], "disallowed"], [[55243, 55291], "valid", [], "NV8"], [[55292, 55295], "disallowed"], [[55296, 57343], "disallowed"], [[57344, 63743], "disallowed"], [[63744, 63744], "mapped", [35912]], [[63745, 63745], "mapped", [26356]], [[63746, 63746], "mapped", [36554]], [[63747, 63747], "mapped", [36040]], [[63748, 63748], "mapped", [28369]], [[63749, 63749], "mapped", [20018]], [[63750, 63750], "mapped", [21477]], [[63751, 63752], "mapped", [40860]], [[63753, 63753], "mapped", [22865]], [[63754, 63754], "mapped", [37329]], [[63755, 63755], "mapped", [21895]], [[63756, 63756], "mapped", [22856]], [[63757, 63757], "mapped", [25078]], [[63758, 63758], "mapped", [30313]], [[63759, 63759], "mapped", [32645]], [[63760, 63760], "mapped", [34367]], [[63761, 63761], "mapped", [34746]], [[63762, 63762], "mapped", [35064]], [[63763, 63763], "mapped", [37007]], [[63764, 63764], "mapped", [27138]], [[63765, 63765], "mapped", [27931]], [[63766, 63766], "mapped", [28889]], [[63767, 63767], "mapped", [29662]], [[63768, 63768], "mapped", [33853]], [[63769, 63769], "mapped", [37226]], [[63770, 63770], "mapped", [39409]], [[63771, 63771], "mapped", [20098]], [[63772, 63772], "mapped", [21365]], [[63773, 63773], "mapped", [27396]], [[63774, 63774], "mapped", [29211]], [[63775, 63775], "mapped", [34349]], [[63776, 63776], "mapped", [40478]], [[63777, 63777], "mapped", [23888]], [[63778, 63778], "mapped", [28651]], [[63779, 63779], "mapped", [34253]], [[63780, 63780], "mapped", [35172]], [[63781, 63781], "mapped", [25289]], [[63782, 63782], "mapped", [33240]], [[63783, 63783], "mapped", [34847]], [[63784, 63784], "mapped", [24266]], [[63785, 63785], "mapped", [26391]], [[63786, 63786], "mapped", [28010]], [[63787, 63787], "mapped", [29436]], [[63788, 63788], "mapped", [37070]], [[63789, 63789], "mapped", [20358]], [[63790, 63790], "mapped", [20919]], [[63791, 63791], "mapped", [21214]], [[63792, 63792], "mapped", [25796]], [[63793, 63793], "mapped", [27347]], [[63794, 63794], "mapped", [29200]], [[63795, 63795], "mapped", [30439]], [[63796, 63796], "mapped", [32769]], [[63797, 63797], "mapped", [34310]], [[63798, 63798], "mapped", [34396]], [[63799, 63799], "mapped", [36335]], [[63800, 63800], "mapped", [38706]], [[63801, 63801], "mapped", [39791]], [[63802, 63802], "mapped", [40442]], [[63803, 63803], "mapped", [30860]], [[63804, 63804], "mapped", [31103]], [[63805, 63805], "mapped", [32160]], [[63806, 63806], "mapped", [33737]], [[63807, 63807], "mapped", [37636]], [[63808, 63808], "mapped", [40575]], [[63809, 63809], "mapped", [35542]], [[63810, 63810], "mapped", [22751]], [[63811, 63811], "mapped", [24324]], [[63812, 63812], "mapped", [31840]], [[63813, 63813], "mapped", [32894]], [[63814, 63814], "mapped", [29282]], [[63815, 63815], "mapped", [30922]], [[63816, 63816], "mapped", [36034]], [[63817, 63817], "mapped", [38647]], [[63818, 63818], "mapped", [22744]], [[63819, 63819], "mapped", [23650]], [[63820, 63820], "mapped", [27155]], [[63821, 63821], "mapped", [28122]], [[63822, 63822], "mapped", [28431]], [[63823, 63823], "mapped", [32047]], [[63824, 63824], "mapped", [32311]], [[63825, 63825], "mapped", [38475]], [[63826, 63826], "mapped", [21202]], [[63827, 63827], "mapped", [32907]], [[63828, 63828], "mapped", [20956]], [[63829, 63829], "mapped", [20940]], [[63830, 63830], "mapped", [31260]], [[63831, 63831], "mapped", [32190]], [[63832, 63832], "mapped", [33777]], [[63833, 63833], "mapped", [38517]], [[63834, 63834], "mapped", [35712]], [[63835, 63835], "mapped", [25295]], [[63836, 63836], "mapped", [27138]], [[63837, 63837], "mapped", [35582]], [[63838, 63838], "mapped", [20025]], [[63839, 63839], "mapped", [23527]], [[63840, 63840], "mapped", [24594]], [[63841, 63841], "mapped", [29575]], [[63842, 63842], "mapped", [30064]], [[63843, 63843], "mapped", [21271]], [[63844, 63844], "mapped", [30971]], [[63845, 63845], "mapped", [20415]], [[63846, 63846], "mapped", [24489]], [[63847, 63847], "mapped", [19981]], [[63848, 63848], "mapped", [27852]], [[63849, 63849], "mapped", [25976]], [[63850, 63850], "mapped", [32034]], [[63851, 63851], "mapped", [21443]], [[63852, 63852], "mapped", [22622]], [[63853, 63853], "mapped", [30465]], [[63854, 63854], "mapped", [33865]], [[63855, 63855], "mapped", [35498]], [[63856, 63856], "mapped", [27578]], [[63857, 63857], "mapped", [36784]], [[63858, 63858], "mapped", [27784]], [[63859, 63859], "mapped", [25342]], [[63860, 63860], "mapped", [33509]], [[63861, 63861], "mapped", [25504]], [[63862, 63862], "mapped", [30053]], [[63863, 63863], "mapped", [20142]], [[63864, 63864], "mapped", [20841]], [[63865, 63865], "mapped", [20937]], [[63866, 63866], "mapped", [26753]], [[63867, 63867], "mapped", [31975]], [[63868, 63868], "mapped", [33391]], [[63869, 63869], "mapped", [35538]], [[63870, 63870], "mapped", [37327]], [[63871, 63871], "mapped", [21237]], [[63872, 63872], "mapped", [21570]], [[63873, 63873], "mapped", [22899]], [[63874, 63874], "mapped", [24300]], [[63875, 63875], "mapped", [26053]], [[63876, 63876], "mapped", [28670]], [[63877, 63877], "mapped", [31018]], [[63878, 63878], "mapped", [38317]], [[63879, 63879], "mapped", [39530]], [[63880, 63880], "mapped", [40599]], [[63881, 63881], "mapped", [40654]], [[63882, 63882], "mapped", [21147]], [[63883, 63883], "mapped", [26310]], [[63884, 63884], "mapped", [27511]], [[63885, 63885], "mapped", [36706]], [[63886, 63886], "mapped", [24180]], [[63887, 63887], "mapped", [24976]], [[63888, 63888], "mapped", [25088]], [[63889, 63889], "mapped", [25754]], [[63890, 63890], "mapped", [28451]], [[63891, 63891], "mapped", [29001]], [[63892, 63892], "mapped", [29833]], [[63893, 63893], "mapped", [31178]], [[63894, 63894], "mapped", [32244]], [[63895, 63895], "mapped", [32879]], [[63896, 63896], "mapped", [36646]], [[63897, 63897], "mapped", [34030]], [[63898, 63898], "mapped", [36899]], [[63899, 63899], "mapped", [37706]], [[63900, 63900], "mapped", [21015]], [[63901, 63901], "mapped", [21155]], [[63902, 63902], "mapped", [21693]], [[63903, 63903], "mapped", [28872]], [[63904, 63904], "mapped", [35010]], [[63905, 63905], "mapped", [35498]], [[63906, 63906], "mapped", [24265]], [[63907, 63907], "mapped", [24565]], [[63908, 63908], "mapped", [25467]], [[63909, 63909], "mapped", [27566]], [[63910, 63910], "mapped", [31806]], [[63911, 63911], "mapped", [29557]], [[63912, 63912], "mapped", [20196]], [[63913, 63913], "mapped", [22265]], [[63914, 63914], "mapped", [23527]], [[63915, 63915], "mapped", [23994]], [[63916, 63916], "mapped", [24604]], [[63917, 63917], "mapped", [29618]], [[63918, 63918], "mapped", [29801]], [[63919, 63919], "mapped", [32666]], [[63920, 63920], "mapped", [32838]], [[63921, 63921], "mapped", [37428]], [[63922, 63922], "mapped", [38646]], [[63923, 63923], "mapped", [38728]], [[63924, 63924], "mapped", [38936]], [[63925, 63925], "mapped", [20363]], [[63926, 63926], "mapped", [31150]], [[63927, 63927], "mapped", [37300]], [[63928, 63928], "mapped", [38584]], [[63929, 63929], "mapped", [24801]], [[63930, 63930], "mapped", [20102]], [[63931, 63931], "mapped", [20698]], [[63932, 63932], "mapped", [23534]], [[63933, 63933], "mapped", [23615]], [[63934, 63934], "mapped", [26009]], [[63935, 63935], "mapped", [27138]], [[63936, 63936], "mapped", [29134]], [[63937, 63937], "mapped", [30274]], [[63938, 63938], "mapped", [34044]], [[63939, 63939], "mapped", [36988]], [[63940, 63940], "mapped", [40845]], [[63941, 63941], "mapped", [26248]], [[63942, 63942], "mapped", [38446]], [[63943, 63943], "mapped", [21129]], [[63944, 63944], "mapped", [26491]], [[63945, 63945], "mapped", [26611]], [[63946, 63946], "mapped", [27969]], [[63947, 63947], "mapped", [28316]], [[63948, 63948], "mapped", [29705]], [[63949, 63949], "mapped", [30041]], [[63950, 63950], "mapped", [30827]], [[63951, 63951], "mapped", [32016]], [[63952, 63952], "mapped", [39006]], [[63953, 63953], "mapped", [20845]], [[63954, 63954], "mapped", [25134]], [[63955, 63955], "mapped", [38520]], [[63956, 63956], "mapped", [20523]], [[63957, 63957], "mapped", [23833]], [[63958, 63958], "mapped", [28138]], [[63959, 63959], "mapped", [36650]], [[63960, 63960], "mapped", [24459]], [[63961, 63961], "mapped", [24900]], [[63962, 63962], "mapped", [26647]], [[63963, 63963], "mapped", [29575]], [[63964, 63964], "mapped", [38534]], [[63965, 63965], "mapped", [21033]], [[63966, 63966], "mapped", [21519]], [[63967, 63967], "mapped", [23653]], [[63968, 63968], "mapped", [26131]], [[63969, 63969], "mapped", [26446]], [[63970, 63970], "mapped", [26792]], [[63971, 63971], "mapped", [27877]], [[63972, 63972], "mapped", [29702]], [[63973, 63973], "mapped", [30178]], [[63974, 63974], "mapped", [32633]], [[63975, 63975], "mapped", [35023]], [[63976, 63976], "mapped", [35041]], [[63977, 63977], "mapped", [37324]], [[63978, 63978], "mapped", [38626]], [[63979, 63979], "mapped", [21311]], [[63980, 63980], "mapped", [28346]], [[63981, 63981], "mapped", [21533]], [[63982, 63982], "mapped", [29136]], [[63983, 63983], "mapped", [29848]], [[63984, 63984], "mapped", [34298]], [[63985, 63985], "mapped", [38563]], [[63986, 63986], "mapped", [40023]], [[63987, 63987], "mapped", [40607]], [[63988, 63988], "mapped", [26519]], [[63989, 63989], "mapped", [28107]], [[63990, 63990], "mapped", [33256]], [[63991, 63991], "mapped", [31435]], [[63992, 63992], "mapped", [31520]], [[63993, 63993], "mapped", [31890]], [[63994, 63994], "mapped", [29376]], [[63995, 63995], "mapped", [28825]], [[63996, 63996], "mapped", [35672]], [[63997, 63997], "mapped", [20160]], [[63998, 63998], "mapped", [33590]], [[63999, 63999], "mapped", [21050]], [[64e3, 64e3], "mapped", [20999]], [[64001, 64001], "mapped", [24230]], [[64002, 64002], "mapped", [25299]], [[64003, 64003], "mapped", [31958]], [[64004, 64004], "mapped", [23429]], [[64005, 64005], "mapped", [27934]], [[64006, 64006], "mapped", [26292]], [[64007, 64007], "mapped", [36667]], [[64008, 64008], "mapped", [34892]], [[64009, 64009], "mapped", [38477]], [[64010, 64010], "mapped", [35211]], [[64011, 64011], "mapped", [24275]], [[64012, 64012], "mapped", [20800]], [[64013, 64013], "mapped", [21952]], [[64014, 64015], "valid"], [[64016, 64016], "mapped", [22618]], [[64017, 64017], "valid"], [[64018, 64018], "mapped", [26228]], [[64019, 64020], "valid"], [[64021, 64021], "mapped", [20958]], [[64022, 64022], "mapped", [29482]], [[64023, 64023], "mapped", [30410]], [[64024, 64024], "mapped", [31036]], [[64025, 64025], "mapped", [31070]], [[64026, 64026], "mapped", [31077]], [[64027, 64027], "mapped", [31119]], [[64028, 64028], "mapped", [38742]], [[64029, 64029], "mapped", [31934]], [[64030, 64030], "mapped", [32701]], [[64031, 64031], "valid"], [[64032, 64032], "mapped", [34322]], [[64033, 64033], "valid"], [[64034, 64034], "mapped", [35576]], [[64035, 64036], "valid"], [[64037, 64037], "mapped", [36920]], [[64038, 64038], "mapped", [37117]], [[64039, 64041], "valid"], [[64042, 64042], "mapped", [39151]], [[64043, 64043], "mapped", [39164]], [[64044, 64044], "mapped", [39208]], [[64045, 64045], "mapped", [40372]], [[64046, 64046], "mapped", [37086]], [[64047, 64047], "mapped", [38583]], [[64048, 64048], "mapped", [20398]], [[64049, 64049], "mapped", [20711]], [[64050, 64050], "mapped", [20813]], [[64051, 64051], "mapped", [21193]], [[64052, 64052], "mapped", [21220]], [[64053, 64053], "mapped", [21329]], [[64054, 64054], "mapped", [21917]], [[64055, 64055], "mapped", [22022]], [[64056, 64056], "mapped", [22120]], [[64057, 64057], "mapped", [22592]], [[64058, 64058], "mapped", [22696]], [[64059, 64059], "mapped", [23652]], [[64060, 64060], "mapped", [23662]], [[64061, 64061], "mapped", [24724]], [[64062, 64062], "mapped", [24936]], [[64063, 64063], "mapped", [24974]], [[64064, 64064], "mapped", [25074]], [[64065, 64065], "mapped", [25935]], [[64066, 64066], "mapped", [26082]], [[64067, 64067], "mapped", [26257]], [[64068, 64068], "mapped", [26757]], [[64069, 64069], "mapped", [28023]], [[64070, 64070], "mapped", [28186]], [[64071, 64071], "mapped", [28450]], [[64072, 64072], "mapped", [29038]], [[64073, 64073], "mapped", [29227]], [[64074, 64074], "mapped", [29730]], [[64075, 64075], "mapped", [30865]], [[64076, 64076], "mapped", [31038]], [[64077, 64077], "mapped", [31049]], [[64078, 64078], "mapped", [31048]], [[64079, 64079], "mapped", [31056]], [[64080, 64080], "mapped", [31062]], [[64081, 64081], "mapped", [31069]], [[64082, 64082], "mapped", [31117]], [[64083, 64083], "mapped", [31118]], [[64084, 64084], "mapped", [31296]], [[64085, 64085], "mapped", [31361]], [[64086, 64086], "mapped", [31680]], [[64087, 64087], "mapped", [32244]], [[64088, 64088], "mapped", [32265]], [[64089, 64089], "mapped", [32321]], [[64090, 64090], "mapped", [32626]], [[64091, 64091], "mapped", [32773]], [[64092, 64092], "mapped", [33261]], [[64093, 64094], "mapped", [33401]], [[64095, 64095], "mapped", [33879]], [[64096, 64096], "mapped", [35088]], [[64097, 64097], "mapped", [35222]], [[64098, 64098], "mapped", [35585]], [[64099, 64099], "mapped", [35641]], [[64100, 64100], "mapped", [36051]], [[64101, 64101], "mapped", [36104]], [[64102, 64102], "mapped", [36790]], [[64103, 64103], "mapped", [36920]], [[64104, 64104], "mapped", [38627]], [[64105, 64105], "mapped", [38911]], [[64106, 64106], "mapped", [38971]], [[64107, 64107], "mapped", [24693]], [[64108, 64108], "mapped", [148206]], [[64109, 64109], "mapped", [33304]], [[64110, 64111], "disallowed"], [[64112, 64112], "mapped", [20006]], [[64113, 64113], "mapped", [20917]], [[64114, 64114], "mapped", [20840]], [[64115, 64115], "mapped", [20352]], [[64116, 64116], "mapped", [20805]], [[64117, 64117], "mapped", [20864]], [[64118, 64118], "mapped", [21191]], [[64119, 64119], "mapped", [21242]], [[64120, 64120], "mapped", [21917]], [[64121, 64121], "mapped", [21845]], [[64122, 64122], "mapped", [21913]], [[64123, 64123], "mapped", [21986]], [[64124, 64124], "mapped", [22618]], [[64125, 64125], "mapped", [22707]], [[64126, 64126], "mapped", [22852]], [[64127, 64127], "mapped", [22868]], [[64128, 64128], "mapped", [23138]], [[64129, 64129], "mapped", [23336]], [[64130, 64130], "mapped", [24274]], [[64131, 64131], "mapped", [24281]], [[64132, 64132], "mapped", [24425]], [[64133, 64133], "mapped", [24493]], [[64134, 64134], "mapped", [24792]], [[64135, 64135], "mapped", [24910]], [[64136, 64136], "mapped", [24840]], [[64137, 64137], "mapped", [24974]], [[64138, 64138], "mapped", [24928]], [[64139, 64139], "mapped", [25074]], [[64140, 64140], "mapped", [25140]], [[64141, 64141], "mapped", [25540]], [[64142, 64142], "mapped", [25628]], [[64143, 64143], "mapped", [25682]], [[64144, 64144], "mapped", [25942]], [[64145, 64145], "mapped", [26228]], [[64146, 64146], "mapped", [26391]], [[64147, 64147], "mapped", [26395]], [[64148, 64148], "mapped", [26454]], [[64149, 64149], "mapped", [27513]], [[64150, 64150], "mapped", [27578]], [[64151, 64151], "mapped", [27969]], [[64152, 64152], "mapped", [28379]], [[64153, 64153], "mapped", [28363]], [[64154, 64154], "mapped", [28450]], [[64155, 64155], "mapped", [28702]], [[64156, 64156], "mapped", [29038]], [[64157, 64157], "mapped", [30631]], [[64158, 64158], "mapped", [29237]], [[64159, 64159], "mapped", [29359]], [[64160, 64160], "mapped", [29482]], [[64161, 64161], "mapped", [29809]], [[64162, 64162], "mapped", [29958]], [[64163, 64163], "mapped", [30011]], [[64164, 64164], "mapped", [30237]], [[64165, 64165], "mapped", [30239]], [[64166, 64166], "mapped", [30410]], [[64167, 64167], "mapped", [30427]], [[64168, 64168], "mapped", [30452]], [[64169, 64169], "mapped", [30538]], [[64170, 64170], "mapped", [30528]], [[64171, 64171], "mapped", [30924]], [[64172, 64172], "mapped", [31409]], [[64173, 64173], "mapped", [31680]], [[64174, 64174], "mapped", [31867]], [[64175, 64175], "mapped", [32091]], [[64176, 64176], "mapped", [32244]], [[64177, 64177], "mapped", [32574]], [[64178, 64178], "mapped", [32773]], [[64179, 64179], "mapped", [33618]], [[64180, 64180], "mapped", [33775]], [[64181, 64181], "mapped", [34681]], [[64182, 64182], "mapped", [35137]], [[64183, 64183], "mapped", [35206]], [[64184, 64184], "mapped", [35222]], [[64185, 64185], "mapped", [35519]], [[64186, 64186], "mapped", [35576]], [[64187, 64187], "mapped", [35531]], [[64188, 64188], "mapped", [35585]], [[64189, 64189], "mapped", [35582]], [[64190, 64190], "mapped", [35565]], [[64191, 64191], "mapped", [35641]], [[64192, 64192], "mapped", [35722]], [[64193, 64193], "mapped", [36104]], [[64194, 64194], "mapped", [36664]], [[64195, 64195], "mapped", [36978]], [[64196, 64196], "mapped", [37273]], [[64197, 64197], "mapped", [37494]], [[64198, 64198], "mapped", [38524]], [[64199, 64199], "mapped", [38627]], [[64200, 64200], "mapped", [38742]], [[64201, 64201], "mapped", [38875]], [[64202, 64202], "mapped", [38911]], [[64203, 64203], "mapped", [38923]], [[64204, 64204], "mapped", [38971]], [[64205, 64205], "mapped", [39698]], [[64206, 64206], "mapped", [40860]], [[64207, 64207], "mapped", [141386]], [[64208, 64208], "mapped", [141380]], [[64209, 64209], "mapped", [144341]], [[64210, 64210], "mapped", [15261]], [[64211, 64211], "mapped", [16408]], [[64212, 64212], "mapped", [16441]], [[64213, 64213], "mapped", [152137]], [[64214, 64214], "mapped", [154832]], [[64215, 64215], "mapped", [163539]], [[64216, 64216], "mapped", [40771]], [[64217, 64217], "mapped", [40846]], [[64218, 64255], "disallowed"], [[64256, 64256], "mapped", [102, 102]], [[64257, 64257], "mapped", [102, 105]], [[64258, 64258], "mapped", [102, 108]], [[64259, 64259], "mapped", [102, 102, 105]], [[64260, 64260], "mapped", [102, 102, 108]], [[64261, 64262], "mapped", [115, 116]], [[64263, 64274], "disallowed"], [[64275, 64275], "mapped", [1396, 1398]], [[64276, 64276], "mapped", [1396, 1381]], [[64277, 64277], "mapped", [1396, 1387]], [[64278, 64278], "mapped", [1406, 1398]], [[64279, 64279], "mapped", [1396, 1389]], [[64280, 64284], "disallowed"], [[64285, 64285], "mapped", [1497, 1460]], [[64286, 64286], "valid"], [[64287, 64287], "mapped", [1522, 1463]], [[64288, 64288], "mapped", [1506]], [[64289, 64289], "mapped", [1488]], [[64290, 64290], "mapped", [1491]], [[64291, 64291], "mapped", [1492]], [[64292, 64292], "mapped", [1499]], [[64293, 64293], "mapped", [1500]], [[64294, 64294], "mapped", [1501]], [[64295, 64295], "mapped", [1512]], [[64296, 64296], "mapped", [1514]], [[64297, 64297], "disallowed_STD3_mapped", [43]], [[64298, 64298], "mapped", [1513, 1473]], [[64299, 64299], "mapped", [1513, 1474]], [[64300, 64300], "mapped", [1513, 1468, 1473]], [[64301, 64301], "mapped", [1513, 1468, 1474]], [[64302, 64302], "mapped", [1488, 1463]], [[64303, 64303], "mapped", [1488, 1464]], [[64304, 64304], "mapped", [1488, 1468]], [[64305, 64305], "mapped", [1489, 1468]], [[64306, 64306], "mapped", [1490, 1468]], [[64307, 64307], "mapped", [1491, 1468]], [[64308, 64308], "mapped", [1492, 1468]], [[64309, 64309], "mapped", [1493, 1468]], [[64310, 64310], "mapped", [1494, 1468]], [[64311, 64311], "disallowed"], [[64312, 64312], "mapped", [1496, 1468]], [[64313, 64313], "mapped", [1497, 1468]], [[64314, 64314], "mapped", [1498, 1468]], [[64315, 64315], "mapped", [1499, 1468]], [[64316, 64316], "mapped", [1500, 1468]], [[64317, 64317], "disallowed"], [[64318, 64318], "mapped", [1502, 1468]], [[64319, 64319], "disallowed"], [[64320, 64320], "mapped", [1504, 1468]], [[64321, 64321], "mapped", [1505, 1468]], [[64322, 64322], "disallowed"], [[64323, 64323], "mapped", [1507, 1468]], [[64324, 64324], "mapped", [1508, 1468]], [[64325, 64325], "disallowed"], [[64326, 64326], "mapped", [1510, 1468]], [[64327, 64327], "mapped", [1511, 1468]], [[64328, 64328], "mapped", [1512, 1468]], [[64329, 64329], "mapped", [1513, 1468]], [[64330, 64330], "mapped", [1514, 1468]], [[64331, 64331], "mapped", [1493, 1465]], [[64332, 64332], "mapped", [1489, 1471]], [[64333, 64333], "mapped", [1499, 1471]], [[64334, 64334], "mapped", [1508, 1471]], [[64335, 64335], "mapped", [1488, 1500]], [[64336, 64337], "mapped", [1649]], [[64338, 64341], "mapped", [1659]], [[64342, 64345], "mapped", [1662]], [[64346, 64349], "mapped", [1664]], [[64350, 64353], "mapped", [1658]], [[64354, 64357], "mapped", [1663]], [[64358, 64361], "mapped", [1657]], [[64362, 64365], "mapped", [1700]], [[64366, 64369], "mapped", [1702]], [[64370, 64373], "mapped", [1668]], [[64374, 64377], "mapped", [1667]], [[64378, 64381], "mapped", [1670]], [[64382, 64385], "mapped", [1671]], [[64386, 64387], "mapped", [1677]], [[64388, 64389], "mapped", [1676]], [[64390, 64391], "mapped", [1678]], [[64392, 64393], "mapped", [1672]], [[64394, 64395], "mapped", [1688]], [[64396, 64397], "mapped", [1681]], [[64398, 64401], "mapped", [1705]], [[64402, 64405], "mapped", [1711]], [[64406, 64409], "mapped", [1715]], [[64410, 64413], "mapped", [1713]], [[64414, 64415], "mapped", [1722]], [[64416, 64419], "mapped", [1723]], [[64420, 64421], "mapped", [1728]], [[64422, 64425], "mapped", [1729]], [[64426, 64429], "mapped", [1726]], [[64430, 64431], "mapped", [1746]], [[64432, 64433], "mapped", [1747]], [[64434, 64449], "valid", [], "NV8"], [[64450, 64466], "disallowed"], [[64467, 64470], "mapped", [1709]], [[64471, 64472], "mapped", [1735]], [[64473, 64474], "mapped", [1734]], [[64475, 64476], "mapped", [1736]], [[64477, 64477], "mapped", [1735, 1652]], [[64478, 64479], "mapped", [1739]], [[64480, 64481], "mapped", [1733]], [[64482, 64483], "mapped", [1737]], [[64484, 64487], "mapped", [1744]], [[64488, 64489], "mapped", [1609]], [[64490, 64491], "mapped", [1574, 1575]], [[64492, 64493], "mapped", [1574, 1749]], [[64494, 64495], "mapped", [1574, 1608]], [[64496, 64497], "mapped", [1574, 1735]], [[64498, 64499], "mapped", [1574, 1734]], [[64500, 64501], "mapped", [1574, 1736]], [[64502, 64504], "mapped", [1574, 1744]], [[64505, 64507], "mapped", [1574, 1609]], [[64508, 64511], "mapped", [1740]], [[64512, 64512], "mapped", [1574, 1580]], [[64513, 64513], "mapped", [1574, 1581]], [[64514, 64514], "mapped", [1574, 1605]], [[64515, 64515], "mapped", [1574, 1609]], [[64516, 64516], "mapped", [1574, 1610]], [[64517, 64517], "mapped", [1576, 1580]], [[64518, 64518], "mapped", [1576, 1581]], [[64519, 64519], "mapped", [1576, 1582]], [[64520, 64520], "mapped", [1576, 1605]], [[64521, 64521], "mapped", [1576, 1609]], [[64522, 64522], "mapped", [1576, 1610]], [[64523, 64523], "mapped", [1578, 1580]], [[64524, 64524], "mapped", [1578, 1581]], [[64525, 64525], "mapped", [1578, 1582]], [[64526, 64526], "mapped", [1578, 1605]], [[64527, 64527], "mapped", [1578, 1609]], [[64528, 64528], "mapped", [1578, 1610]], [[64529, 64529], "mapped", [1579, 1580]], [[64530, 64530], "mapped", [1579, 1605]], [[64531, 64531], "mapped", [1579, 1609]], [[64532, 64532], "mapped", [1579, 1610]], [[64533, 64533], "mapped", [1580, 1581]], [[64534, 64534], "mapped", [1580, 1605]], [[64535, 64535], "mapped", [1581, 1580]], [[64536, 64536], "mapped", [1581, 1605]], [[64537, 64537], "mapped", [1582, 1580]], [[64538, 64538], "mapped", [1582, 1581]], [[64539, 64539], "mapped", [1582, 1605]], [[64540, 64540], "mapped", [1587, 1580]], [[64541, 64541], "mapped", [1587, 1581]], [[64542, 64542], "mapped", [1587, 1582]], [[64543, 64543], "mapped", [1587, 1605]], [[64544, 64544], "mapped", [1589, 1581]], [[64545, 64545], "mapped", [1589, 1605]], [[64546, 64546], "mapped", [1590, 1580]], [[64547, 64547], "mapped", [1590, 1581]], [[64548, 64548], "mapped", [1590, 1582]], [[64549, 64549], "mapped", [1590, 1605]], [[64550, 64550], "mapped", [1591, 1581]], [[64551, 64551], "mapped", [1591, 1605]], [[64552, 64552], "mapped", [1592, 1605]], [[64553, 64553], "mapped", [1593, 1580]], [[64554, 64554], "mapped", [1593, 1605]], [[64555, 64555], "mapped", [1594, 1580]], [[64556, 64556], "mapped", [1594, 1605]], [[64557, 64557], "mapped", [1601, 1580]], [[64558, 64558], "mapped", [1601, 1581]], [[64559, 64559], "mapped", [1601, 1582]], [[64560, 64560], "mapped", [1601, 1605]], [[64561, 64561], "mapped", [1601, 1609]], [[64562, 64562], "mapped", [1601, 1610]], [[64563, 64563], "mapped", [1602, 1581]], [[64564, 64564], "mapped", [1602, 1605]], [[64565, 64565], "mapped", [1602, 1609]], [[64566, 64566], "mapped", [1602, 1610]], [[64567, 64567], "mapped", [1603, 1575]], [[64568, 64568], "mapped", [1603, 1580]], [[64569, 64569], "mapped", [1603, 1581]], [[64570, 64570], "mapped", [1603, 1582]], [[64571, 64571], "mapped", [1603, 1604]], [[64572, 64572], "mapped", [1603, 1605]], [[64573, 64573], "mapped", [1603, 1609]], [[64574, 64574], "mapped", [1603, 1610]], [[64575, 64575], "mapped", [1604, 1580]], [[64576, 64576], "mapped", [1604, 1581]], [[64577, 64577], "mapped", [1604, 1582]], [[64578, 64578], "mapped", [1604, 1605]], [[64579, 64579], "mapped", [1604, 1609]], [[64580, 64580], "mapped", [1604, 1610]], [[64581, 64581], "mapped", [1605, 1580]], [[64582, 64582], "mapped", [1605, 1581]], [[64583, 64583], "mapped", [1605, 1582]], [[64584, 64584], "mapped", [1605, 1605]], [[64585, 64585], "mapped", [1605, 1609]], [[64586, 64586], "mapped", [1605, 1610]], [[64587, 64587], "mapped", [1606, 1580]], [[64588, 64588], "mapped", [1606, 1581]], [[64589, 64589], "mapped", [1606, 1582]], [[64590, 64590], "mapped", [1606, 1605]], [[64591, 64591], "mapped", [1606, 1609]], [[64592, 64592], "mapped", [1606, 1610]], [[64593, 64593], "mapped", [1607, 1580]], [[64594, 64594], "mapped", [1607, 1605]], [[64595, 64595], "mapped", [1607, 1609]], [[64596, 64596], "mapped", [1607, 1610]], [[64597, 64597], "mapped", [1610, 1580]], [[64598, 64598], "mapped", [1610, 1581]], [[64599, 64599], "mapped", [1610, 1582]], [[64600, 64600], "mapped", [1610, 1605]], [[64601, 64601], "mapped", [1610, 1609]], [[64602, 64602], "mapped", [1610, 1610]], [[64603, 64603], "mapped", [1584, 1648]], [[64604, 64604], "mapped", [1585, 1648]], [[64605, 64605], "mapped", [1609, 1648]], [[64606, 64606], "disallowed_STD3_mapped", [32, 1612, 1617]], [[64607, 64607], "disallowed_STD3_mapped", [32, 1613, 1617]], [[64608, 64608], "disallowed_STD3_mapped", [32, 1614, 1617]], [[64609, 64609], "disallowed_STD3_mapped", [32, 1615, 1617]], [[64610, 64610], "disallowed_STD3_mapped", [32, 1616, 1617]], [[64611, 64611], "disallowed_STD3_mapped", [32, 1617, 1648]], [[64612, 64612], "mapped", [1574, 1585]], [[64613, 64613], "mapped", [1574, 1586]], [[64614, 64614], "mapped", [1574, 1605]], [[64615, 64615], "mapped", [1574, 1606]], [[64616, 64616], "mapped", [1574, 1609]], [[64617, 64617], "mapped", [1574, 1610]], [[64618, 64618], "mapped", [1576, 1585]], [[64619, 64619], "mapped", [1576, 1586]], [[64620, 64620], "mapped", [1576, 1605]], [[64621, 64621], "mapped", [1576, 1606]], [[64622, 64622], "mapped", [1576, 1609]], [[64623, 64623], "mapped", [1576, 1610]], [[64624, 64624], "mapped", [1578, 1585]], [[64625, 64625], "mapped", [1578, 1586]], [[64626, 64626], "mapped", [1578, 1605]], [[64627, 64627], "mapped", [1578, 1606]], [[64628, 64628], "mapped", [1578, 1609]], [[64629, 64629], "mapped", [1578, 1610]], [[64630, 64630], "mapped", [1579, 1585]], [[64631, 64631], "mapped", [1579, 1586]], [[64632, 64632], "mapped", [1579, 1605]], [[64633, 64633], "mapped", [1579, 1606]], [[64634, 64634], "mapped", [1579, 1609]], [[64635, 64635], "mapped", [1579, 1610]], [[64636, 64636], "mapped", [1601, 1609]], [[64637, 64637], "mapped", [1601, 1610]], [[64638, 64638], "mapped", [1602, 1609]], [[64639, 64639], "mapped", [1602, 1610]], [[64640, 64640], "mapped", [1603, 1575]], [[64641, 64641], "mapped", [1603, 1604]], [[64642, 64642], "mapped", [1603, 1605]], [[64643, 64643], "mapped", [1603, 1609]], [[64644, 64644], "mapped", [1603, 1610]], [[64645, 64645], "mapped", [1604, 1605]], [[64646, 64646], "mapped", [1604, 1609]], [[64647, 64647], "mapped", [1604, 1610]], [[64648, 64648], "mapped", [1605, 1575]], [[64649, 64649], "mapped", [1605, 1605]], [[64650, 64650], "mapped", [1606, 1585]], [[64651, 64651], "mapped", [1606, 1586]], [[64652, 64652], "mapped", [1606, 1605]], [[64653, 64653], "mapped", [1606, 1606]], [[64654, 64654], "mapped", [1606, 1609]], [[64655, 64655], "mapped", [1606, 1610]], [[64656, 64656], "mapped", [1609, 1648]], [[64657, 64657], "mapped", [1610, 1585]], [[64658, 64658], "mapped", [1610, 1586]], [[64659, 64659], "mapped", [1610, 1605]], [[64660, 64660], "mapped", [1610, 1606]], [[64661, 64661], "mapped", [1610, 1609]], [[64662, 64662], "mapped", [1610, 1610]], [[64663, 64663], "mapped", [1574, 1580]], [[64664, 64664], "mapped", [1574, 1581]], [[64665, 64665], "mapped", [1574, 1582]], [[64666, 64666], "mapped", [1574, 1605]], [[64667, 64667], "mapped", [1574, 1607]], [[64668, 64668], "mapped", [1576, 1580]], [[64669, 64669], "mapped", [1576, 1581]], [[64670, 64670], "mapped", [1576, 1582]], [[64671, 64671], "mapped", [1576, 1605]], [[64672, 64672], "mapped", [1576, 1607]], [[64673, 64673], "mapped", [1578, 1580]], [[64674, 64674], "mapped", [1578, 1581]], [[64675, 64675], "mapped", [1578, 1582]], [[64676, 64676], "mapped", [1578, 1605]], [[64677, 64677], "mapped", [1578, 1607]], [[64678, 64678], "mapped", [1579, 1605]], [[64679, 64679], "mapped", [1580, 1581]], [[64680, 64680], "mapped", [1580, 1605]], [[64681, 64681], "mapped", [1581, 1580]], [[64682, 64682], "mapped", [1581, 1605]], [[64683, 64683], "mapped", [1582, 1580]], [[64684, 64684], "mapped", [1582, 1605]], [[64685, 64685], "mapped", [1587, 1580]], [[64686, 64686], "mapped", [1587, 1581]], [[64687, 64687], "mapped", [1587, 1582]], [[64688, 64688], "mapped", [1587, 1605]], [[64689, 64689], "mapped", [1589, 1581]], [[64690, 64690], "mapped", [1589, 1582]], [[64691, 64691], "mapped", [1589, 1605]], [[64692, 64692], "mapped", [1590, 1580]], [[64693, 64693], "mapped", [1590, 1581]], [[64694, 64694], "mapped", [1590, 1582]], [[64695, 64695], "mapped", [1590, 1605]], [[64696, 64696], "mapped", [1591, 1581]], [[64697, 64697], "mapped", [1592, 1605]], [[64698, 64698], "mapped", [1593, 1580]], [[64699, 64699], "mapped", [1593, 1605]], [[64700, 64700], "mapped", [1594, 1580]], [[64701, 64701], "mapped", [1594, 1605]], [[64702, 64702], "mapped", [1601, 1580]], [[64703, 64703], "mapped", [1601, 1581]], [[64704, 64704], "mapped", [1601, 1582]], [[64705, 64705], "mapped", [1601, 1605]], [[64706, 64706], "mapped", [1602, 1581]], [[64707, 64707], "mapped", [1602, 1605]], [[64708, 64708], "mapped", [1603, 1580]], [[64709, 64709], "mapped", [1603, 1581]], [[64710, 64710], "mapped", [1603, 1582]], [[64711, 64711], "mapped", [1603, 1604]], [[64712, 64712], "mapped", [1603, 1605]], [[64713, 64713], "mapped", [1604, 1580]], [[64714, 64714], "mapped", [1604, 1581]], [[64715, 64715], "mapped", [1604, 1582]], [[64716, 64716], "mapped", [1604, 1605]], [[64717, 64717], "mapped", [1604, 1607]], [[64718, 64718], "mapped", [1605, 1580]], [[64719, 64719], "mapped", [1605, 1581]], [[64720, 64720], "mapped", [1605, 1582]], [[64721, 64721], "mapped", [1605, 1605]], [[64722, 64722], "mapped", [1606, 1580]], [[64723, 64723], "mapped", [1606, 1581]], [[64724, 64724], "mapped", [1606, 1582]], [[64725, 64725], "mapped", [1606, 1605]], [[64726, 64726], "mapped", [1606, 1607]], [[64727, 64727], "mapped", [1607, 1580]], [[64728, 64728], "mapped", [1607, 1605]], [[64729, 64729], "mapped", [1607, 1648]], [[64730, 64730], "mapped", [1610, 1580]], [[64731, 64731], "mapped", [1610, 1581]], [[64732, 64732], "mapped", [1610, 1582]], [[64733, 64733], "mapped", [1610, 1605]], [[64734, 64734], "mapped", [1610, 1607]], [[64735, 64735], "mapped", [1574, 1605]], [[64736, 64736], "mapped", [1574, 1607]], [[64737, 64737], "mapped", [1576, 1605]], [[64738, 64738], "mapped", [1576, 1607]], [[64739, 64739], "mapped", [1578, 1605]], [[64740, 64740], "mapped", [1578, 1607]], [[64741, 64741], "mapped", [1579, 1605]], [[64742, 64742], "mapped", [1579, 1607]], [[64743, 64743], "mapped", [1587, 1605]], [[64744, 64744], "mapped", [1587, 1607]], [[64745, 64745], "mapped", [1588, 1605]], [[64746, 64746], "mapped", [1588, 1607]], [[64747, 64747], "mapped", [1603, 1604]], [[64748, 64748], "mapped", [1603, 1605]], [[64749, 64749], "mapped", [1604, 1605]], [[64750, 64750], "mapped", [1606, 1605]], [[64751, 64751], "mapped", [1606, 1607]], [[64752, 64752], "mapped", [1610, 1605]], [[64753, 64753], "mapped", [1610, 1607]], [[64754, 64754], "mapped", [1600, 1614, 1617]], [[64755, 64755], "mapped", [1600, 1615, 1617]], [[64756, 64756], "mapped", [1600, 1616, 1617]], [[64757, 64757], "mapped", [1591, 1609]], [[64758, 64758], "mapped", [1591, 1610]], [[64759, 64759], "mapped", [1593, 1609]], [[64760, 64760], "mapped", [1593, 1610]], [[64761, 64761], "mapped", [1594, 1609]], [[64762, 64762], "mapped", [1594, 1610]], [[64763, 64763], "mapped", [1587, 1609]], [[64764, 64764], "mapped", [1587, 1610]], [[64765, 64765], "mapped", [1588, 1609]], [[64766, 64766], "mapped", [1588, 1610]], [[64767, 64767], "mapped", [1581, 1609]], [[64768, 64768], "mapped", [1581, 1610]], [[64769, 64769], "mapped", [1580, 1609]], [[64770, 64770], "mapped", [1580, 1610]], [[64771, 64771], "mapped", [1582, 1609]], [[64772, 64772], "mapped", [1582, 1610]], [[64773, 64773], "mapped", [1589, 1609]], [[64774, 64774], "mapped", [1589, 1610]], [[64775, 64775], "mapped", [1590, 1609]], [[64776, 64776], "mapped", [1590, 1610]], [[64777, 64777], "mapped", [1588, 1580]], [[64778, 64778], "mapped", [1588, 1581]], [[64779, 64779], "mapped", [1588, 1582]], [[64780, 64780], "mapped", [1588, 1605]], [[64781, 64781], "mapped", [1588, 1585]], [[64782, 64782], "mapped", [1587, 1585]], [[64783, 64783], "mapped", [1589, 1585]], [[64784, 64784], "mapped", [1590, 1585]], [[64785, 64785], "mapped", [1591, 1609]], [[64786, 64786], "mapped", [1591, 1610]], [[64787, 64787], "mapped", [1593, 1609]], [[64788, 64788], "mapped", [1593, 1610]], [[64789, 64789], "mapped", [1594, 1609]], [[64790, 64790], "mapped", [1594, 1610]], [[64791, 64791], "mapped", [1587, 1609]], [[64792, 64792], "mapped", [1587, 1610]], [[64793, 64793], "mapped", [1588, 1609]], [[64794, 64794], "mapped", [1588, 1610]], [[64795, 64795], "mapped", [1581, 1609]], [[64796, 64796], "mapped", [1581, 1610]], [[64797, 64797], "mapped", [1580, 1609]], [[64798, 64798], "mapped", [1580, 1610]], [[64799, 64799], "mapped", [1582, 1609]], [[64800, 64800], "mapped", [1582, 1610]], [[64801, 64801], "mapped", [1589, 1609]], [[64802, 64802], "mapped", [1589, 1610]], [[64803, 64803], "mapped", [1590, 1609]], [[64804, 64804], "mapped", [1590, 1610]], [[64805, 64805], "mapped", [1588, 1580]], [[64806, 64806], "mapped", [1588, 1581]], [[64807, 64807], "mapped", [1588, 1582]], [[64808, 64808], "mapped", [1588, 1605]], [[64809, 64809], "mapped", [1588, 1585]], [[64810, 64810], "mapped", [1587, 1585]], [[64811, 64811], "mapped", [1589, 1585]], [[64812, 64812], "mapped", [1590, 1585]], [[64813, 64813], "mapped", [1588, 1580]], [[64814, 64814], "mapped", [1588, 1581]], [[64815, 64815], "mapped", [1588, 1582]], [[64816, 64816], "mapped", [1588, 1605]], [[64817, 64817], "mapped", [1587, 1607]], [[64818, 64818], "mapped", [1588, 1607]], [[64819, 64819], "mapped", [1591, 1605]], [[64820, 64820], "mapped", [1587, 1580]], [[64821, 64821], "mapped", [1587, 1581]], [[64822, 64822], "mapped", [1587, 1582]], [[64823, 64823], "mapped", [1588, 1580]], [[64824, 64824], "mapped", [1588, 1581]], [[64825, 64825], "mapped", [1588, 1582]], [[64826, 64826], "mapped", [1591, 1605]], [[64827, 64827], "mapped", [1592, 1605]], [[64828, 64829], "mapped", [1575, 1611]], [[64830, 64831], "valid", [], "NV8"], [[64832, 64847], "disallowed"], [[64848, 64848], "mapped", [1578, 1580, 1605]], [[64849, 64850], "mapped", [1578, 1581, 1580]], [[64851, 64851], "mapped", [1578, 1581, 1605]], [[64852, 64852], "mapped", [1578, 1582, 1605]], [[64853, 64853], "mapped", [1578, 1605, 1580]], [[64854, 64854], "mapped", [1578, 1605, 1581]], [[64855, 64855], "mapped", [1578, 1605, 1582]], [[64856, 64857], "mapped", [1580, 1605, 1581]], [[64858, 64858], "mapped", [1581, 1605, 1610]], [[64859, 64859], "mapped", [1581, 1605, 1609]], [[64860, 64860], "mapped", [1587, 1581, 1580]], [[64861, 64861], "mapped", [1587, 1580, 1581]], [[64862, 64862], "mapped", [1587, 1580, 1609]], [[64863, 64864], "mapped", [1587, 1605, 1581]], [[64865, 64865], "mapped", [1587, 1605, 1580]], [[64866, 64867], "mapped", [1587, 1605, 1605]], [[64868, 64869], "mapped", [1589, 1581, 1581]], [[64870, 64870], "mapped", [1589, 1605, 1605]], [[64871, 64872], "mapped", [1588, 1581, 1605]], [[64873, 64873], "mapped", [1588, 1580, 1610]], [[64874, 64875], "mapped", [1588, 1605, 1582]], [[64876, 64877], "mapped", [1588, 1605, 1605]], [[64878, 64878], "mapped", [1590, 1581, 1609]], [[64879, 64880], "mapped", [1590, 1582, 1605]], [[64881, 64882], "mapped", [1591, 1605, 1581]], [[64883, 64883], "mapped", [1591, 1605, 1605]], [[64884, 64884], "mapped", [1591, 1605, 1610]], [[64885, 64885], "mapped", [1593, 1580, 1605]], [[64886, 64887], "mapped", [1593, 1605, 1605]], [[64888, 64888], "mapped", [1593, 1605, 1609]], [[64889, 64889], "mapped", [1594, 1605, 1605]], [[64890, 64890], "mapped", [1594, 1605, 1610]], [[64891, 64891], "mapped", [1594, 1605, 1609]], [[64892, 64893], "mapped", [1601, 1582, 1605]], [[64894, 64894], "mapped", [1602, 1605, 1581]], [[64895, 64895], "mapped", [1602, 1605, 1605]], [[64896, 64896], "mapped", [1604, 1581, 1605]], [[64897, 64897], "mapped", [1604, 1581, 1610]], [[64898, 64898], "mapped", [1604, 1581, 1609]], [[64899, 64900], "mapped", [1604, 1580, 1580]], [[64901, 64902], "mapped", [1604, 1582, 1605]], [[64903, 64904], "mapped", [1604, 1605, 1581]], [[64905, 64905], "mapped", [1605, 1581, 1580]], [[64906, 64906], "mapped", [1605, 1581, 1605]], [[64907, 64907], "mapped", [1605, 1581, 1610]], [[64908, 64908], "mapped", [1605, 1580, 1581]], [[64909, 64909], "mapped", [1605, 1580, 1605]], [[64910, 64910], "mapped", [1605, 1582, 1580]], [[64911, 64911], "mapped", [1605, 1582, 1605]], [[64912, 64913], "disallowed"], [[64914, 64914], "mapped", [1605, 1580, 1582]], [[64915, 64915], "mapped", [1607, 1605, 1580]], [[64916, 64916], "mapped", [1607, 1605, 1605]], [[64917, 64917], "mapped", [1606, 1581, 1605]], [[64918, 64918], "mapped", [1606, 1581, 1609]], [[64919, 64920], "mapped", [1606, 1580, 1605]], [[64921, 64921], "mapped", [1606, 1580, 1609]], [[64922, 64922], "mapped", [1606, 1605, 1610]], [[64923, 64923], "mapped", [1606, 1605, 1609]], [[64924, 64925], "mapped", [1610, 1605, 1605]], [[64926, 64926], "mapped", [1576, 1582, 1610]], [[64927, 64927], "mapped", [1578, 1580, 1610]], [[64928, 64928], "mapped", [1578, 1580, 1609]], [[64929, 64929], "mapped", [1578, 1582, 1610]], [[64930, 64930], "mapped", [1578, 1582, 1609]], [[64931, 64931], "mapped", [1578, 1605, 1610]], [[64932, 64932], "mapped", [1578, 1605, 1609]], [[64933, 64933], "mapped", [1580, 1605, 1610]], [[64934, 64934], "mapped", [1580, 1581, 1609]], [[64935, 64935], "mapped", [1580, 1605, 1609]], [[64936, 64936], "mapped", [1587, 1582, 1609]], [[64937, 64937], "mapped", [1589, 1581, 1610]], [[64938, 64938], "mapped", [1588, 1581, 1610]], [[64939, 64939], "mapped", [1590, 1581, 1610]], [[64940, 64940], "mapped", [1604, 1580, 1610]], [[64941, 64941], "mapped", [1604, 1605, 1610]], [[64942, 64942], "mapped", [1610, 1581, 1610]], [[64943, 64943], "mapped", [1610, 1580, 1610]], [[64944, 64944], "mapped", [1610, 1605, 1610]], [[64945, 64945], "mapped", [1605, 1605, 1610]], [[64946, 64946], "mapped", [1602, 1605, 1610]], [[64947, 64947], "mapped", [1606, 1581, 1610]], [[64948, 64948], "mapped", [1602, 1605, 1581]], [[64949, 64949], "mapped", [1604, 1581, 1605]], [[64950, 64950], "mapped", [1593, 1605, 1610]], [[64951, 64951], "mapped", [1603, 1605, 1610]], [[64952, 64952], "mapped", [1606, 1580, 1581]], [[64953, 64953], "mapped", [1605, 1582, 1610]], [[64954, 64954], "mapped", [1604, 1580, 1605]], [[64955, 64955], "mapped", [1603, 1605, 1605]], [[64956, 64956], "mapped", [1604, 1580, 1605]], [[64957, 64957], "mapped", [1606, 1580, 1581]], [[64958, 64958], "mapped", [1580, 1581, 1610]], [[64959, 64959], "mapped", [1581, 1580, 1610]], [[64960, 64960], "mapped", [1605, 1580, 1610]], [[64961, 64961], "mapped", [1601, 1605, 1610]], [[64962, 64962], "mapped", [1576, 1581, 1610]], [[64963, 64963], "mapped", [1603, 1605, 1605]], [[64964, 64964], "mapped", [1593, 1580, 1605]], [[64965, 64965], "mapped", [1589, 1605, 1605]], [[64966, 64966], "mapped", [1587, 1582, 1610]], [[64967, 64967], "mapped", [1606, 1580, 1610]], [[64968, 64975], "disallowed"], [[64976, 65007], "disallowed"], [[65008, 65008], "mapped", [1589, 1604, 1746]], [[65009, 65009], "mapped", [1602, 1604, 1746]], [[65010, 65010], "mapped", [1575, 1604, 1604, 1607]], [[65011, 65011], "mapped", [1575, 1603, 1576, 1585]], [[65012, 65012], "mapped", [1605, 1581, 1605, 1583]], [[65013, 65013], "mapped", [1589, 1604, 1593, 1605]], [[65014, 65014], "mapped", [1585, 1587, 1608, 1604]], [[65015, 65015], "mapped", [1593, 1604, 1610, 1607]], [[65016, 65016], "mapped", [1608, 1587, 1604, 1605]], [[65017, 65017], "mapped", [1589, 1604, 1609]], [[65018, 65018], "disallowed_STD3_mapped", [1589, 1604, 1609, 32, 1575, 1604, 1604, 1607, 32, 1593, 1604, 1610, 1607, 32, 1608, 1587, 1604, 1605]], [[65019, 65019], "disallowed_STD3_mapped", [1580, 1604, 32, 1580, 1604, 1575, 1604, 1607]], [[65020, 65020], "mapped", [1585, 1740, 1575, 1604]], [[65021, 65021], "valid", [], "NV8"], [[65022, 65023], "disallowed"], [[65024, 65039], "ignored"], [[65040, 65040], "disallowed_STD3_mapped", [44]], [[65041, 65041], "mapped", [12289]], [[65042, 65042], "disallowed"], [[65043, 65043], "disallowed_STD3_mapped", [58]], [[65044, 65044], "disallowed_STD3_mapped", [59]], [[65045, 65045], "disallowed_STD3_mapped", [33]], [[65046, 65046], "disallowed_STD3_mapped", [63]], [[65047, 65047], "mapped", [12310]], [[65048, 65048], "mapped", [12311]], [[65049, 65049], "disallowed"], [[65050, 65055], "disallowed"], [[65056, 65059], "valid"], [[65060, 65062], "valid"], [[65063, 65069], "valid"], [[65070, 65071], "valid"], [[65072, 65072], "disallowed"], [[65073, 65073], "mapped", [8212]], [[65074, 65074], "mapped", [8211]], [[65075, 65076], "disallowed_STD3_mapped", [95]], [[65077, 65077], "disallowed_STD3_mapped", [40]], [[65078, 65078], "disallowed_STD3_mapped", [41]], [[65079, 65079], "disallowed_STD3_mapped", [123]], [[65080, 65080], "disallowed_STD3_mapped", [125]], [[65081, 65081], "mapped", [12308]], [[65082, 65082], "mapped", [12309]], [[65083, 65083], "mapped", [12304]], [[65084, 65084], "mapped", [12305]], [[65085, 65085], "mapped", [12298]], [[65086, 65086], "mapped", [12299]], [[65087, 65087], "mapped", [12296]], [[65088, 65088], "mapped", [12297]], [[65089, 65089], "mapped", [12300]], [[65090, 65090], "mapped", [12301]], [[65091, 65091], "mapped", [12302]], [[65092, 65092], "mapped", [12303]], [[65093, 65094], "valid", [], "NV8"], [[65095, 65095], "disallowed_STD3_mapped", [91]], [[65096, 65096], "disallowed_STD3_mapped", [93]], [[65097, 65100], "disallowed_STD3_mapped", [32, 773]], [[65101, 65103], "disallowed_STD3_mapped", [95]], [[65104, 65104], "disallowed_STD3_mapped", [44]], [[65105, 65105], "mapped", [12289]], [[65106, 65106], "disallowed"], [[65107, 65107], "disallowed"], [[65108, 65108], "disallowed_STD3_mapped", [59]], [[65109, 65109], "disallowed_STD3_mapped", [58]], [[65110, 65110], "disallowed_STD3_mapped", [63]], [[65111, 65111], "disallowed_STD3_mapped", [33]], [[65112, 65112], "mapped", [8212]], [[65113, 65113], "disallowed_STD3_mapped", [40]], [[65114, 65114], "disallowed_STD3_mapped", [41]], [[65115, 65115], "disallowed_STD3_mapped", [123]], [[65116, 65116], "disallowed_STD3_mapped", [125]], [[65117, 65117], "mapped", [12308]], [[65118, 65118], "mapped", [12309]], [[65119, 65119], "disallowed_STD3_mapped", [35]], [[65120, 65120], "disallowed_STD3_mapped", [38]], [[65121, 65121], "disallowed_STD3_mapped", [42]], [[65122, 65122], "disallowed_STD3_mapped", [43]], [[65123, 65123], "mapped", [45]], [[65124, 65124], "disallowed_STD3_mapped", [60]], [[65125, 65125], "disallowed_STD3_mapped", [62]], [[65126, 65126], "disallowed_STD3_mapped", [61]], [[65127, 65127], "disallowed"], [[65128, 65128], "disallowed_STD3_mapped", [92]], [[65129, 65129], "disallowed_STD3_mapped", [36]], [[65130, 65130], "disallowed_STD3_mapped", [37]], [[65131, 65131], "disallowed_STD3_mapped", [64]], [[65132, 65135], "disallowed"], [[65136, 65136], "disallowed_STD3_mapped", [32, 1611]], [[65137, 65137], "mapped", [1600, 1611]], [[65138, 65138], "disallowed_STD3_mapped", [32, 1612]], [[65139, 65139], "valid"], [[65140, 65140], "disallowed_STD3_mapped", [32, 1613]], [[65141, 65141], "disallowed"], [[65142, 65142], "disallowed_STD3_mapped", [32, 1614]], [[65143, 65143], "mapped", [1600, 1614]], [[65144, 65144], "disallowed_STD3_mapped", [32, 1615]], [[65145, 65145], "mapped", [1600, 1615]], [[65146, 65146], "disallowed_STD3_mapped", [32, 1616]], [[65147, 65147], "mapped", [1600, 1616]], [[65148, 65148], "disallowed_STD3_mapped", [32, 1617]], [[65149, 65149], "mapped", [1600, 1617]], [[65150, 65150], "disallowed_STD3_mapped", [32, 1618]], [[65151, 65151], "mapped", [1600, 1618]], [[65152, 65152], "mapped", [1569]], [[65153, 65154], "mapped", [1570]], [[65155, 65156], "mapped", [1571]], [[65157, 65158], "mapped", [1572]], [[65159, 65160], "mapped", [1573]], [[65161, 65164], "mapped", [1574]], [[65165, 65166], "mapped", [1575]], [[65167, 65170], "mapped", [1576]], [[65171, 65172], "mapped", [1577]], [[65173, 65176], "mapped", [1578]], [[65177, 65180], "mapped", [1579]], [[65181, 65184], "mapped", [1580]], [[65185, 65188], "mapped", [1581]], [[65189, 65192], "mapped", [1582]], [[65193, 65194], "mapped", [1583]], [[65195, 65196], "mapped", [1584]], [[65197, 65198], "mapped", [1585]], [[65199, 65200], "mapped", [1586]], [[65201, 65204], "mapped", [1587]], [[65205, 65208], "mapped", [1588]], [[65209, 65212], "mapped", [1589]], [[65213, 65216], "mapped", [1590]], [[65217, 65220], "mapped", [1591]], [[65221, 65224], "mapped", [1592]], [[65225, 65228], "mapped", [1593]], [[65229, 65232], "mapped", [1594]], [[65233, 65236], "mapped", [1601]], [[65237, 65240], "mapped", [1602]], [[65241, 65244], "mapped", [1603]], [[65245, 65248], "mapped", [1604]], [[65249, 65252], "mapped", [1605]], [[65253, 65256], "mapped", [1606]], [[65257, 65260], "mapped", [1607]], [[65261, 65262], "mapped", [1608]], [[65263, 65264], "mapped", [1609]], [[65265, 65268], "mapped", [1610]], [[65269, 65270], "mapped", [1604, 1570]], [[65271, 65272], "mapped", [1604, 1571]], [[65273, 65274], "mapped", [1604, 1573]], [[65275, 65276], "mapped", [1604, 1575]], [[65277, 65278], "disallowed"], [[65279, 65279], "ignored"], [[65280, 65280], "disallowed"], [[65281, 65281], "disallowed_STD3_mapped", [33]], [[65282, 65282], "disallowed_STD3_mapped", [34]], [[65283, 65283], "disallowed_STD3_mapped", [35]], [[65284, 65284], "disallowed_STD3_mapped", [36]], [[65285, 65285], "disallowed_STD3_mapped", [37]], [[65286, 65286], "disallowed_STD3_mapped", [38]], [[65287, 65287], "disallowed_STD3_mapped", [39]], [[65288, 65288], "disallowed_STD3_mapped", [40]], [[65289, 65289], "disallowed_STD3_mapped", [41]], [[65290, 65290], "disallowed_STD3_mapped", [42]], [[65291, 65291], "disallowed_STD3_mapped", [43]], [[65292, 65292], "disallowed_STD3_mapped", [44]], [[65293, 65293], "mapped", [45]], [[65294, 65294], "mapped", [46]], [[65295, 65295], "disallowed_STD3_mapped", [47]], [[65296, 65296], "mapped", [48]], [[65297, 65297], "mapped", [49]], [[65298, 65298], "mapped", [50]], [[65299, 65299], "mapped", [51]], [[65300, 65300], "mapped", [52]], [[65301, 65301], "mapped", [53]], [[65302, 65302], "mapped", [54]], [[65303, 65303], "mapped", [55]], [[65304, 65304], "mapped", [56]], [[65305, 65305], "mapped", [57]], [[65306, 65306], "disallowed_STD3_mapped", [58]], [[65307, 65307], "disallowed_STD3_mapped", [59]], [[65308, 65308], "disallowed_STD3_mapped", [60]], [[65309, 65309], "disallowed_STD3_mapped", [61]], [[65310, 65310], "disallowed_STD3_mapped", [62]], [[65311, 65311], "disallowed_STD3_mapped", [63]], [[65312, 65312], "disallowed_STD3_mapped", [64]], [[65313, 65313], "mapped", [97]], [[65314, 65314], "mapped", [98]], [[65315, 65315], "mapped", [99]], [[65316, 65316], "mapped", [100]], [[65317, 65317], "mapped", [101]], [[65318, 65318], "mapped", [102]], [[65319, 65319], "mapped", [103]], [[65320, 65320], "mapped", [104]], [[65321, 65321], "mapped", [105]], [[65322, 65322], "mapped", [106]], [[65323, 65323], "mapped", [107]], [[65324, 65324], "mapped", [108]], [[65325, 65325], "mapped", [109]], [[65326, 65326], "mapped", [110]], [[65327, 65327], "mapped", [111]], [[65328, 65328], "mapped", [112]], [[65329, 65329], "mapped", [113]], [[65330, 65330], "mapped", [114]], [[65331, 65331], "mapped", [115]], [[65332, 65332], "mapped", [116]], [[65333, 65333], "mapped", [117]], [[65334, 65334], "mapped", [118]], [[65335, 65335], "mapped", [119]], [[65336, 65336], "mapped", [120]], [[65337, 65337], "mapped", [121]], [[65338, 65338], "mapped", [122]], [[65339, 65339], "disallowed_STD3_mapped", [91]], [[65340, 65340], "disallowed_STD3_mapped", [92]], [[65341, 65341], "disallowed_STD3_mapped", [93]], [[65342, 65342], "disallowed_STD3_mapped", [94]], [[65343, 65343], "disallowed_STD3_mapped", [95]], [[65344, 65344], "disallowed_STD3_mapped", [96]], [[65345, 65345], "mapped", [97]], [[65346, 65346], "mapped", [98]], [[65347, 65347], "mapped", [99]], [[65348, 65348], "mapped", [100]], [[65349, 65349], "mapped", [101]], [[65350, 65350], "mapped", [102]], [[65351, 65351], "mapped", [103]], [[65352, 65352], "mapped", [104]], [[65353, 65353], "mapped", [105]], [[65354, 65354], "mapped", [106]], [[65355, 65355], "mapped", [107]], [[65356, 65356], "mapped", [108]], [[65357, 65357], "mapped", [109]], [[65358, 65358], "mapped", [110]], [[65359, 65359], "mapped", [111]], [[65360, 65360], "mapped", [112]], [[65361, 65361], "mapped", [113]], [[65362, 65362], "mapped", [114]], [[65363, 65363], "mapped", [115]], [[65364, 65364], "mapped", [116]], [[65365, 65365], "mapped", [117]], [[65366, 65366], "mapped", [118]], [[65367, 65367], "mapped", [119]], [[65368, 65368], "mapped", [120]], [[65369, 65369], "mapped", [121]], [[65370, 65370], "mapped", [122]], [[65371, 65371], "disallowed_STD3_mapped", [123]], [[65372, 65372], "disallowed_STD3_mapped", [124]], [[65373, 65373], "disallowed_STD3_mapped", [125]], [[65374, 65374], "disallowed_STD3_mapped", [126]], [[65375, 65375], "mapped", [10629]], [[65376, 65376], "mapped", [10630]], [[65377, 65377], "mapped", [46]], [[65378, 65378], "mapped", [12300]], [[65379, 65379], "mapped", [12301]], [[65380, 65380], "mapped", [12289]], [[65381, 65381], "mapped", [12539]], [[65382, 65382], "mapped", [12530]], [[65383, 65383], "mapped", [12449]], [[65384, 65384], "mapped", [12451]], [[65385, 65385], "mapped", [12453]], [[65386, 65386], "mapped", [12455]], [[65387, 65387], "mapped", [12457]], [[65388, 65388], "mapped", [12515]], [[65389, 65389], "mapped", [12517]], [[65390, 65390], "mapped", [12519]], [[65391, 65391], "mapped", [12483]], [[65392, 65392], "mapped", [12540]], [[65393, 65393], "mapped", [12450]], [[65394, 65394], "mapped", [12452]], [[65395, 65395], "mapped", [12454]], [[65396, 65396], "mapped", [12456]], [[65397, 65397], "mapped", [12458]], [[65398, 65398], "mapped", [12459]], [[65399, 65399], "mapped", [12461]], [[65400, 65400], "mapped", [12463]], [[65401, 65401], "mapped", [12465]], [[65402, 65402], "mapped", [12467]], [[65403, 65403], "mapped", [12469]], [[65404, 65404], "mapped", [12471]], [[65405, 65405], "mapped", [12473]], [[65406, 65406], "mapped", [12475]], [[65407, 65407], "mapped", [12477]], [[65408, 65408], "mapped", [12479]], [[65409, 65409], "mapped", [12481]], [[65410, 65410], "mapped", [12484]], [[65411, 65411], "mapped", [12486]], [[65412, 65412], "mapped", [12488]], [[65413, 65413], "mapped", [12490]], [[65414, 65414], "mapped", [12491]], [[65415, 65415], "mapped", [12492]], [[65416, 65416], "mapped", [12493]], [[65417, 65417], "mapped", [12494]], [[65418, 65418], "mapped", [12495]], [[65419, 65419], "mapped", [12498]], [[65420, 65420], "mapped", [12501]], [[65421, 65421], "mapped", [12504]], [[65422, 65422], "mapped", [12507]], [[65423, 65423], "mapped", [12510]], [[65424, 65424], "mapped", [12511]], [[65425, 65425], "mapped", [12512]], [[65426, 65426], "mapped", [12513]], [[65427, 65427], "mapped", [12514]], [[65428, 65428], "mapped", [12516]], [[65429, 65429], "mapped", [12518]], [[65430, 65430], "mapped", [12520]], [[65431, 65431], "mapped", [12521]], [[65432, 65432], "mapped", [12522]], [[65433, 65433], "mapped", [12523]], [[65434, 65434], "mapped", [12524]], [[65435, 65435], "mapped", [12525]], [[65436, 65436], "mapped", [12527]], [[65437, 65437], "mapped", [12531]], [[65438, 65438], "mapped", [12441]], [[65439, 65439], "mapped", [12442]], [[65440, 65440], "disallowed"], [[65441, 65441], "mapped", [4352]], [[65442, 65442], "mapped", [4353]], [[65443, 65443], "mapped", [4522]], [[65444, 65444], "mapped", [4354]], [[65445, 65445], "mapped", [4524]], [[65446, 65446], "mapped", [4525]], [[65447, 65447], "mapped", [4355]], [[65448, 65448], "mapped", [4356]], [[65449, 65449], "mapped", [4357]], [[65450, 65450], "mapped", [4528]], [[65451, 65451], "mapped", [4529]], [[65452, 65452], "mapped", [4530]], [[65453, 65453], "mapped", [4531]], [[65454, 65454], "mapped", [4532]], [[65455, 65455], "mapped", [4533]], [[65456, 65456], "mapped", [4378]], [[65457, 65457], "mapped", [4358]], [[65458, 65458], "mapped", [4359]], [[65459, 65459], "mapped", [4360]], [[65460, 65460], "mapped", [4385]], [[65461, 65461], "mapped", [4361]], [[65462, 65462], "mapped", [4362]], [[65463, 65463], "mapped", [4363]], [[65464, 65464], "mapped", [4364]], [[65465, 65465], "mapped", [4365]], [[65466, 65466], "mapped", [4366]], [[65467, 65467], "mapped", [4367]], [[65468, 65468], "mapped", [4368]], [[65469, 65469], "mapped", [4369]], [[65470, 65470], "mapped", [4370]], [[65471, 65473], "disallowed"], [[65474, 65474], "mapped", [4449]], [[65475, 65475], "mapped", [4450]], [[65476, 65476], "mapped", [4451]], [[65477, 65477], "mapped", [4452]], [[65478, 65478], "mapped", [4453]], [[65479, 65479], "mapped", [4454]], [[65480, 65481], "disallowed"], [[65482, 65482], "mapped", [4455]], [[65483, 65483], "mapped", [4456]], [[65484, 65484], "mapped", [4457]], [[65485, 65485], "mapped", [4458]], [[65486, 65486], "mapped", [4459]], [[65487, 65487], "mapped", [4460]], [[65488, 65489], "disallowed"], [[65490, 65490], "mapped", [4461]], [[65491, 65491], "mapped", [4462]], [[65492, 65492], "mapped", [4463]], [[65493, 65493], "mapped", [4464]], [[65494, 65494], "mapped", [4465]], [[65495, 65495], "mapped", [4466]], [[65496, 65497], "disallowed"], [[65498, 65498], "mapped", [4467]], [[65499, 65499], "mapped", [4468]], [[65500, 65500], "mapped", [4469]], [[65501, 65503], "disallowed"], [[65504, 65504], "mapped", [162]], [[65505, 65505], "mapped", [163]], [[65506, 65506], "mapped", [172]], [[65507, 65507], "disallowed_STD3_mapped", [32, 772]], [[65508, 65508], "mapped", [166]], [[65509, 65509], "mapped", [165]], [[65510, 65510], "mapped", [8361]], [[65511, 65511], "disallowed"], [[65512, 65512], "mapped", [9474]], [[65513, 65513], "mapped", [8592]], [[65514, 65514], "mapped", [8593]], [[65515, 65515], "mapped", [8594]], [[65516, 65516], "mapped", [8595]], [[65517, 65517], "mapped", [9632]], [[65518, 65518], "mapped", [9675]], [[65519, 65528], "disallowed"], [[65529, 65531], "disallowed"], [[65532, 65532], "disallowed"], [[65533, 65533], "disallowed"], [[65534, 65535], "disallowed"], [[65536, 65547], "valid"], [[65548, 65548], "disallowed"], [[65549, 65574], "valid"], [[65575, 65575], "disallowed"], [[65576, 65594], "valid"], [[65595, 65595], "disallowed"], [[65596, 65597], "valid"], [[65598, 65598], "disallowed"], [[65599, 65613], "valid"], [[65614, 65615], "disallowed"], [[65616, 65629], "valid"], [[65630, 65663], "disallowed"], [[65664, 65786], "valid"], [[65787, 65791], "disallowed"], [[65792, 65794], "valid", [], "NV8"], [[65795, 65798], "disallowed"], [[65799, 65843], "valid", [], "NV8"], [[65844, 65846], "disallowed"], [[65847, 65855], "valid", [], "NV8"], [[65856, 65930], "valid", [], "NV8"], [[65931, 65932], "valid", [], "NV8"], [[65933, 65935], "disallowed"], [[65936, 65947], "valid", [], "NV8"], [[65948, 65951], "disallowed"], [[65952, 65952], "valid", [], "NV8"], [[65953, 65999], "disallowed"], [[66e3, 66044], "valid", [], "NV8"], [[66045, 66045], "valid"], [[66046, 66175], "disallowed"], [[66176, 66204], "valid"], [[66205, 66207], "disallowed"], [[66208, 66256], "valid"], [[66257, 66271], "disallowed"], [[66272, 66272], "valid"], [[66273, 66299], "valid", [], "NV8"], [[66300, 66303], "disallowed"], [[66304, 66334], "valid"], [[66335, 66335], "valid"], [[66336, 66339], "valid", [], "NV8"], [[66340, 66351], "disallowed"], [[66352, 66368], "valid"], [[66369, 66369], "valid", [], "NV8"], [[66370, 66377], "valid"], [[66378, 66378], "valid", [], "NV8"], [[66379, 66383], "disallowed"], [[66384, 66426], "valid"], [[66427, 66431], "disallowed"], [[66432, 66461], "valid"], [[66462, 66462], "disallowed"], [[66463, 66463], "valid", [], "NV8"], [[66464, 66499], "valid"], [[66500, 66503], "disallowed"], [[66504, 66511], "valid"], [[66512, 66517], "valid", [], "NV8"], [[66518, 66559], "disallowed"], [[66560, 66560], "mapped", [66600]], [[66561, 66561], "mapped", [66601]], [[66562, 66562], "mapped", [66602]], [[66563, 66563], "mapped", [66603]], [[66564, 66564], "mapped", [66604]], [[66565, 66565], "mapped", [66605]], [[66566, 66566], "mapped", [66606]], [[66567, 66567], "mapped", [66607]], [[66568, 66568], "mapped", [66608]], [[66569, 66569], "mapped", [66609]], [[66570, 66570], "mapped", [66610]], [[66571, 66571], "mapped", [66611]], [[66572, 66572], "mapped", [66612]], [[66573, 66573], "mapped", [66613]], [[66574, 66574], "mapped", [66614]], [[66575, 66575], "mapped", [66615]], [[66576, 66576], "mapped", [66616]], [[66577, 66577], "mapped", [66617]], [[66578, 66578], "mapped", [66618]], [[66579, 66579], "mapped", [66619]], [[66580, 66580], "mapped", [66620]], [[66581, 66581], "mapped", [66621]], [[66582, 66582], "mapped", [66622]], [[66583, 66583], "mapped", [66623]], [[66584, 66584], "mapped", [66624]], [[66585, 66585], "mapped", [66625]], [[66586, 66586], "mapped", [66626]], [[66587, 66587], "mapped", [66627]], [[66588, 66588], "mapped", [66628]], [[66589, 66589], "mapped", [66629]], [[66590, 66590], "mapped", [66630]], [[66591, 66591], "mapped", [66631]], [[66592, 66592], "mapped", [66632]], [[66593, 66593], "mapped", [66633]], [[66594, 66594], "mapped", [66634]], [[66595, 66595], "mapped", [66635]], [[66596, 66596], "mapped", [66636]], [[66597, 66597], "mapped", [66637]], [[66598, 66598], "mapped", [66638]], [[66599, 66599], "mapped", [66639]], [[66600, 66637], "valid"], [[66638, 66717], "valid"], [[66718, 66719], "disallowed"], [[66720, 66729], "valid"], [[66730, 66815], "disallowed"], [[66816, 66855], "valid"], [[66856, 66863], "disallowed"], [[66864, 66915], "valid"], [[66916, 66926], "disallowed"], [[66927, 66927], "valid", [], "NV8"], [[66928, 67071], "disallowed"], [[67072, 67382], "valid"], [[67383, 67391], "disallowed"], [[67392, 67413], "valid"], [[67414, 67423], "disallowed"], [[67424, 67431], "valid"], [[67432, 67583], "disallowed"], [[67584, 67589], "valid"], [[67590, 67591], "disallowed"], [[67592, 67592], "valid"], [[67593, 67593], "disallowed"], [[67594, 67637], "valid"], [[67638, 67638], "disallowed"], [[67639, 67640], "valid"], [[67641, 67643], "disallowed"], [[67644, 67644], "valid"], [[67645, 67646], "disallowed"], [[67647, 67647], "valid"], [[67648, 67669], "valid"], [[67670, 67670], "disallowed"], [[67671, 67679], "valid", [], "NV8"], [[67680, 67702], "valid"], [[67703, 67711], "valid", [], "NV8"], [[67712, 67742], "valid"], [[67743, 67750], "disallowed"], [[67751, 67759], "valid", [], "NV8"], [[67760, 67807], "disallowed"], [[67808, 67826], "valid"], [[67827, 67827], "disallowed"], [[67828, 67829], "valid"], [[67830, 67834], "disallowed"], [[67835, 67839], "valid", [], "NV8"], [[67840, 67861], "valid"], [[67862, 67865], "valid", [], "NV8"], [[67866, 67867], "valid", [], "NV8"], [[67868, 67870], "disallowed"], [[67871, 67871], "valid", [], "NV8"], [[67872, 67897], "valid"], [[67898, 67902], "disallowed"], [[67903, 67903], "valid", [], "NV8"], [[67904, 67967], "disallowed"], [[67968, 68023], "valid"], [[68024, 68027], "disallowed"], [[68028, 68029], "valid", [], "NV8"], [[68030, 68031], "valid"], [[68032, 68047], "valid", [], "NV8"], [[68048, 68049], "disallowed"], [[68050, 68095], "valid", [], "NV8"], [[68096, 68099], "valid"], [[68100, 68100], "disallowed"], [[68101, 68102], "valid"], [[68103, 68107], "disallowed"], [[68108, 68115], "valid"], [[68116, 68116], "disallowed"], [[68117, 68119], "valid"], [[68120, 68120], "disallowed"], [[68121, 68147], "valid"], [[68148, 68151], "disallowed"], [[68152, 68154], "valid"], [[68155, 68158], "disallowed"], [[68159, 68159], "valid"], [[68160, 68167], "valid", [], "NV8"], [[68168, 68175], "disallowed"], [[68176, 68184], "valid", [], "NV8"], [[68185, 68191], "disallowed"], [[68192, 68220], "valid"], [[68221, 68223], "valid", [], "NV8"], [[68224, 68252], "valid"], [[68253, 68255], "valid", [], "NV8"], [[68256, 68287], "disallowed"], [[68288, 68295], "valid"], [[68296, 68296], "valid", [], "NV8"], [[68297, 68326], "valid"], [[68327, 68330], "disallowed"], [[68331, 68342], "valid", [], "NV8"], [[68343, 68351], "disallowed"], [[68352, 68405], "valid"], [[68406, 68408], "disallowed"], [[68409, 68415], "valid", [], "NV8"], [[68416, 68437], "valid"], [[68438, 68439], "disallowed"], [[68440, 68447], "valid", [], "NV8"], [[68448, 68466], "valid"], [[68467, 68471], "disallowed"], [[68472, 68479], "valid", [], "NV8"], [[68480, 68497], "valid"], [[68498, 68504], "disallowed"], [[68505, 68508], "valid", [], "NV8"], [[68509, 68520], "disallowed"], [[68521, 68527], "valid", [], "NV8"], [[68528, 68607], "disallowed"], [[68608, 68680], "valid"], [[68681, 68735], "disallowed"], [[68736, 68736], "mapped", [68800]], [[68737, 68737], "mapped", [68801]], [[68738, 68738], "mapped", [68802]], [[68739, 68739], "mapped", [68803]], [[68740, 68740], "mapped", [68804]], [[68741, 68741], "mapped", [68805]], [[68742, 68742], "mapped", [68806]], [[68743, 68743], "mapped", [68807]], [[68744, 68744], "mapped", [68808]], [[68745, 68745], "mapped", [68809]], [[68746, 68746], "mapped", [68810]], [[68747, 68747], "mapped", [68811]], [[68748, 68748], "mapped", [68812]], [[68749, 68749], "mapped", [68813]], [[68750, 68750], "mapped", [68814]], [[68751, 68751], "mapped", [68815]], [[68752, 68752], "mapped", [68816]], [[68753, 68753], "mapped", [68817]], [[68754, 68754], "mapped", [68818]], [[68755, 68755], "mapped", [68819]], [[68756, 68756], "mapped", [68820]], [[68757, 68757], "mapped", [68821]], [[68758, 68758], "mapped", [68822]], [[68759, 68759], "mapped", [68823]], [[68760, 68760], "mapped", [68824]], [[68761, 68761], "mapped", [68825]], [[68762, 68762], "mapped", [68826]], [[68763, 68763], "mapped", [68827]], [[68764, 68764], "mapped", [68828]], [[68765, 68765], "mapped", [68829]], [[68766, 68766], "mapped", [68830]], [[68767, 68767], "mapped", [68831]], [[68768, 68768], "mapped", [68832]], [[68769, 68769], "mapped", [68833]], [[68770, 68770], "mapped", [68834]], [[68771, 68771], "mapped", [68835]], [[68772, 68772], "mapped", [68836]], [[68773, 68773], "mapped", [68837]], [[68774, 68774], "mapped", [68838]], [[68775, 68775], "mapped", [68839]], [[68776, 68776], "mapped", [68840]], [[68777, 68777], "mapped", [68841]], [[68778, 68778], "mapped", [68842]], [[68779, 68779], "mapped", [68843]], [[68780, 68780], "mapped", [68844]], [[68781, 68781], "mapped", [68845]], [[68782, 68782], "mapped", [68846]], [[68783, 68783], "mapped", [68847]], [[68784, 68784], "mapped", [68848]], [[68785, 68785], "mapped", [68849]], [[68786, 68786], "mapped", [68850]], [[68787, 68799], "disallowed"], [[68800, 68850], "valid"], [[68851, 68857], "disallowed"], [[68858, 68863], "valid", [], "NV8"], [[68864, 69215], "disallowed"], [[69216, 69246], "valid", [], "NV8"], [[69247, 69631], "disallowed"], [[69632, 69702], "valid"], [[69703, 69709], "valid", [], "NV8"], [[69710, 69713], "disallowed"], [[69714, 69733], "valid", [], "NV8"], [[69734, 69743], "valid"], [[69744, 69758], "disallowed"], [[69759, 69759], "valid"], [[69760, 69818], "valid"], [[69819, 69820], "valid", [], "NV8"], [[69821, 69821], "disallowed"], [[69822, 69825], "valid", [], "NV8"], [[69826, 69839], "disallowed"], [[69840, 69864], "valid"], [[69865, 69871], "disallowed"], [[69872, 69881], "valid"], [[69882, 69887], "disallowed"], [[69888, 69940], "valid"], [[69941, 69941], "disallowed"], [[69942, 69951], "valid"], [[69952, 69955], "valid", [], "NV8"], [[69956, 69967], "disallowed"], [[69968, 70003], "valid"], [[70004, 70005], "valid", [], "NV8"], [[70006, 70006], "valid"], [[70007, 70015], "disallowed"], [[70016, 70084], "valid"], [[70085, 70088], "valid", [], "NV8"], [[70089, 70089], "valid", [], "NV8"], [[70090, 70092], "valid"], [[70093, 70093], "valid", [], "NV8"], [[70094, 70095], "disallowed"], [[70096, 70105], "valid"], [[70106, 70106], "valid"], [[70107, 70107], "valid", [], "NV8"], [[70108, 70108], "valid"], [[70109, 70111], "valid", [], "NV8"], [[70112, 70112], "disallowed"], [[70113, 70132], "valid", [], "NV8"], [[70133, 70143], "disallowed"], [[70144, 70161], "valid"], [[70162, 70162], "disallowed"], [[70163, 70199], "valid"], [[70200, 70205], "valid", [], "NV8"], [[70206, 70271], "disallowed"], [[70272, 70278], "valid"], [[70279, 70279], "disallowed"], [[70280, 70280], "valid"], [[70281, 70281], "disallowed"], [[70282, 70285], "valid"], [[70286, 70286], "disallowed"], [[70287, 70301], "valid"], [[70302, 70302], "disallowed"], [[70303, 70312], "valid"], [[70313, 70313], "valid", [], "NV8"], [[70314, 70319], "disallowed"], [[70320, 70378], "valid"], [[70379, 70383], "disallowed"], [[70384, 70393], "valid"], [[70394, 70399], "disallowed"], [[70400, 70400], "valid"], [[70401, 70403], "valid"], [[70404, 70404], "disallowed"], [[70405, 70412], "valid"], [[70413, 70414], "disallowed"], [[70415, 70416], "valid"], [[70417, 70418], "disallowed"], [[70419, 70440], "valid"], [[70441, 70441], "disallowed"], [[70442, 70448], "valid"], [[70449, 70449], "disallowed"], [[70450, 70451], "valid"], [[70452, 70452], "disallowed"], [[70453, 70457], "valid"], [[70458, 70459], "disallowed"], [[70460, 70468], "valid"], [[70469, 70470], "disallowed"], [[70471, 70472], "valid"], [[70473, 70474], "disallowed"], [[70475, 70477], "valid"], [[70478, 70479], "disallowed"], [[70480, 70480], "valid"], [[70481, 70486], "disallowed"], [[70487, 70487], "valid"], [[70488, 70492], "disallowed"], [[70493, 70499], "valid"], [[70500, 70501], "disallowed"], [[70502, 70508], "valid"], [[70509, 70511], "disallowed"], [[70512, 70516], "valid"], [[70517, 70783], "disallowed"], [[70784, 70853], "valid"], [[70854, 70854], "valid", [], "NV8"], [[70855, 70855], "valid"], [[70856, 70863], "disallowed"], [[70864, 70873], "valid"], [[70874, 71039], "disallowed"], [[71040, 71093], "valid"], [[71094, 71095], "disallowed"], [[71096, 71104], "valid"], [[71105, 71113], "valid", [], "NV8"], [[71114, 71127], "valid", [], "NV8"], [[71128, 71133], "valid"], [[71134, 71167], "disallowed"], [[71168, 71232], "valid"], [[71233, 71235], "valid", [], "NV8"], [[71236, 71236], "valid"], [[71237, 71247], "disallowed"], [[71248, 71257], "valid"], [[71258, 71295], "disallowed"], [[71296, 71351], "valid"], [[71352, 71359], "disallowed"], [[71360, 71369], "valid"], [[71370, 71423], "disallowed"], [[71424, 71449], "valid"], [[71450, 71452], "disallowed"], [[71453, 71467], "valid"], [[71468, 71471], "disallowed"], [[71472, 71481], "valid"], [[71482, 71487], "valid", [], "NV8"], [[71488, 71839], "disallowed"], [[71840, 71840], "mapped", [71872]], [[71841, 71841], "mapped", [71873]], [[71842, 71842], "mapped", [71874]], [[71843, 71843], "mapped", [71875]], [[71844, 71844], "mapped", [71876]], [[71845, 71845], "mapped", [71877]], [[71846, 71846], "mapped", [71878]], [[71847, 71847], "mapped", [71879]], [[71848, 71848], "mapped", [71880]], [[71849, 71849], "mapped", [71881]], [[71850, 71850], "mapped", [71882]], [[71851, 71851], "mapped", [71883]], [[71852, 71852], "mapped", [71884]], [[71853, 71853], "mapped", [71885]], [[71854, 71854], "mapped", [71886]], [[71855, 71855], "mapped", [71887]], [[71856, 71856], "mapped", [71888]], [[71857, 71857], "mapped", [71889]], [[71858, 71858], "mapped", [71890]], [[71859, 71859], "mapped", [71891]], [[71860, 71860], "mapped", [71892]], [[71861, 71861], "mapped", [71893]], [[71862, 71862], "mapped", [71894]], [[71863, 71863], "mapped", [71895]], [[71864, 71864], "mapped", [71896]], [[71865, 71865], "mapped", [71897]], [[71866, 71866], "mapped", [71898]], [[71867, 71867], "mapped", [71899]], [[71868, 71868], "mapped", [71900]], [[71869, 71869], "mapped", [71901]], [[71870, 71870], "mapped", [71902]], [[71871, 71871], "mapped", [71903]], [[71872, 71913], "valid"], [[71914, 71922], "valid", [], "NV8"], [[71923, 71934], "disallowed"], [[71935, 71935], "valid"], [[71936, 72383], "disallowed"], [[72384, 72440], "valid"], [[72441, 73727], "disallowed"], [[73728, 74606], "valid"], [[74607, 74648], "valid"], [[74649, 74649], "valid"], [[74650, 74751], "disallowed"], [[74752, 74850], "valid", [], "NV8"], [[74851, 74862], "valid", [], "NV8"], [[74863, 74863], "disallowed"], [[74864, 74867], "valid", [], "NV8"], [[74868, 74868], "valid", [], "NV8"], [[74869, 74879], "disallowed"], [[74880, 75075], "valid"], [[75076, 77823], "disallowed"], [[77824, 78894], "valid"], [[78895, 82943], "disallowed"], [[82944, 83526], "valid"], [[83527, 92159], "disallowed"], [[92160, 92728], "valid"], [[92729, 92735], "disallowed"], [[92736, 92766], "valid"], [[92767, 92767], "disallowed"], [[92768, 92777], "valid"], [[92778, 92781], "disallowed"], [[92782, 92783], "valid", [], "NV8"], [[92784, 92879], "disallowed"], [[92880, 92909], "valid"], [[92910, 92911], "disallowed"], [[92912, 92916], "valid"], [[92917, 92917], "valid", [], "NV8"], [[92918, 92927], "disallowed"], [[92928, 92982], "valid"], [[92983, 92991], "valid", [], "NV8"], [[92992, 92995], "valid"], [[92996, 92997], "valid", [], "NV8"], [[92998, 93007], "disallowed"], [[93008, 93017], "valid"], [[93018, 93018], "disallowed"], [[93019, 93025], "valid", [], "NV8"], [[93026, 93026], "disallowed"], [[93027, 93047], "valid"], [[93048, 93052], "disallowed"], [[93053, 93071], "valid"], [[93072, 93951], "disallowed"], [[93952, 94020], "valid"], [[94021, 94031], "disallowed"], [[94032, 94078], "valid"], [[94079, 94094], "disallowed"], [[94095, 94111], "valid"], [[94112, 110591], "disallowed"], [[110592, 110593], "valid"], [[110594, 113663], "disallowed"], [[113664, 113770], "valid"], [[113771, 113775], "disallowed"], [[113776, 113788], "valid"], [[113789, 113791], "disallowed"], [[113792, 113800], "valid"], [[113801, 113807], "disallowed"], [[113808, 113817], "valid"], [[113818, 113819], "disallowed"], [[113820, 113820], "valid", [], "NV8"], [[113821, 113822], "valid"], [[113823, 113823], "valid", [], "NV8"], [[113824, 113827], "ignored"], [[113828, 118783], "disallowed"], [[118784, 119029], "valid", [], "NV8"], [[119030, 119039], "disallowed"], [[119040, 119078], "valid", [], "NV8"], [[119079, 119080], "disallowed"], [[119081, 119081], "valid", [], "NV8"], [[119082, 119133], "valid", [], "NV8"], [[119134, 119134], "mapped", [119127, 119141]], [[119135, 119135], "mapped", [119128, 119141]], [[119136, 119136], "mapped", [119128, 119141, 119150]], [[119137, 119137], "mapped", [119128, 119141, 119151]], [[119138, 119138], "mapped", [119128, 119141, 119152]], [[119139, 119139], "mapped", [119128, 119141, 119153]], [[119140, 119140], "mapped", [119128, 119141, 119154]], [[119141, 119154], "valid", [], "NV8"], [[119155, 119162], "disallowed"], [[119163, 119226], "valid", [], "NV8"], [[119227, 119227], "mapped", [119225, 119141]], [[119228, 119228], "mapped", [119226, 119141]], [[119229, 119229], "mapped", [119225, 119141, 119150]], [[119230, 119230], "mapped", [119226, 119141, 119150]], [[119231, 119231], "mapped", [119225, 119141, 119151]], [[119232, 119232], "mapped", [119226, 119141, 119151]], [[119233, 119261], "valid", [], "NV8"], [[119262, 119272], "valid", [], "NV8"], [[119273, 119295], "disallowed"], [[119296, 119365], "valid", [], "NV8"], [[119366, 119551], "disallowed"], [[119552, 119638], "valid", [], "NV8"], [[119639, 119647], "disallowed"], [[119648, 119665], "valid", [], "NV8"], [[119666, 119807], "disallowed"], [[119808, 119808], "mapped", [97]], [[119809, 119809], "mapped", [98]], [[119810, 119810], "mapped", [99]], [[119811, 119811], "mapped", [100]], [[119812, 119812], "mapped", [101]], [[119813, 119813], "mapped", [102]], [[119814, 119814], "mapped", [103]], [[119815, 119815], "mapped", [104]], [[119816, 119816], "mapped", [105]], [[119817, 119817], "mapped", [106]], [[119818, 119818], "mapped", [107]], [[119819, 119819], "mapped", [108]], [[119820, 119820], "mapped", [109]], [[119821, 119821], "mapped", [110]], [[119822, 119822], "mapped", [111]], [[119823, 119823], "mapped", [112]], [[119824, 119824], "mapped", [113]], [[119825, 119825], "mapped", [114]], [[119826, 119826], "mapped", [115]], [[119827, 119827], "mapped", [116]], [[119828, 119828], "mapped", [117]], [[119829, 119829], "mapped", [118]], [[119830, 119830], "mapped", [119]], [[119831, 119831], "mapped", [120]], [[119832, 119832], "mapped", [121]], [[119833, 119833], "mapped", [122]], [[119834, 119834], "mapped", [97]], [[119835, 119835], "mapped", [98]], [[119836, 119836], "mapped", [99]], [[119837, 119837], "mapped", [100]], [[119838, 119838], "mapped", [101]], [[119839, 119839], "mapped", [102]], [[119840, 119840], "mapped", [103]], [[119841, 119841], "mapped", [104]], [[119842, 119842], "mapped", [105]], [[119843, 119843], "mapped", [106]], [[119844, 119844], "mapped", [107]], [[119845, 119845], "mapped", [108]], [[119846, 119846], "mapped", [109]], [[119847, 119847], "mapped", [110]], [[119848, 119848], "mapped", [111]], [[119849, 119849], "mapped", [112]], [[119850, 119850], "mapped", [113]], [[119851, 119851], "mapped", [114]], [[119852, 119852], "mapped", [115]], [[119853, 119853], "mapped", [116]], [[119854, 119854], "mapped", [117]], [[119855, 119855], "mapped", [118]], [[119856, 119856], "mapped", [119]], [[119857, 119857], "mapped", [120]], [[119858, 119858], "mapped", [121]], [[119859, 119859], "mapped", [122]], [[119860, 119860], "mapped", [97]], [[119861, 119861], "mapped", [98]], [[119862, 119862], "mapped", [99]], [[119863, 119863], "mapped", [100]], [[119864, 119864], "mapped", [101]], [[119865, 119865], "mapped", [102]], [[119866, 119866], "mapped", [103]], [[119867, 119867], "mapped", [104]], [[119868, 119868], "mapped", [105]], [[119869, 119869], "mapped", [106]], [[119870, 119870], "mapped", [107]], [[119871, 119871], "mapped", [108]], [[119872, 119872], "mapped", [109]], [[119873, 119873], "mapped", [110]], [[119874, 119874], "mapped", [111]], [[119875, 119875], "mapped", [112]], [[119876, 119876], "mapped", [113]], [[119877, 119877], "mapped", [114]], [[119878, 119878], "mapped", [115]], [[119879, 119879], "mapped", [116]], [[119880, 119880], "mapped", [117]], [[119881, 119881], "mapped", [118]], [[119882, 119882], "mapped", [119]], [[119883, 119883], "mapped", [120]], [[119884, 119884], "mapped", [121]], [[119885, 119885], "mapped", [122]], [[119886, 119886], "mapped", [97]], [[119887, 119887], "mapped", [98]], [[119888, 119888], "mapped", [99]], [[119889, 119889], "mapped", [100]], [[119890, 119890], "mapped", [101]], [[119891, 119891], "mapped", [102]], [[119892, 119892], "mapped", [103]], [[119893, 119893], "disallowed"], [[119894, 119894], "mapped", [105]], [[119895, 119895], "mapped", [106]], [[119896, 119896], "mapped", [107]], [[119897, 119897], "mapped", [108]], [[119898, 119898], "mapped", [109]], [[119899, 119899], "mapped", [110]], [[119900, 119900], "mapped", [111]], [[119901, 119901], "mapped", [112]], [[119902, 119902], "mapped", [113]], [[119903, 119903], "mapped", [114]], [[119904, 119904], "mapped", [115]], [[119905, 119905], "mapped", [116]], [[119906, 119906], "mapped", [117]], [[119907, 119907], "mapped", [118]], [[119908, 119908], "mapped", [119]], [[119909, 119909], "mapped", [120]], [[119910, 119910], "mapped", [121]], [[119911, 119911], "mapped", [122]], [[119912, 119912], "mapped", [97]], [[119913, 119913], "mapped", [98]], [[119914, 119914], "mapped", [99]], [[119915, 119915], "mapped", [100]], [[119916, 119916], "mapped", [101]], [[119917, 119917], "mapped", [102]], [[119918, 119918], "mapped", [103]], [[119919, 119919], "mapped", [104]], [[119920, 119920], "mapped", [105]], [[119921, 119921], "mapped", [106]], [[119922, 119922], "mapped", [107]], [[119923, 119923], "mapped", [108]], [[119924, 119924], "mapped", [109]], [[119925, 119925], "mapped", [110]], [[119926, 119926], "mapped", [111]], [[119927, 119927], "mapped", [112]], [[119928, 119928], "mapped", [113]], [[119929, 119929], "mapped", [114]], [[119930, 119930], "mapped", [115]], [[119931, 119931], "mapped", [116]], [[119932, 119932], "mapped", [117]], [[119933, 119933], "mapped", [118]], [[119934, 119934], "mapped", [119]], [[119935, 119935], "mapped", [120]], [[119936, 119936], "mapped", [121]], [[119937, 119937], "mapped", [122]], [[119938, 119938], "mapped", [97]], [[119939, 119939], "mapped", [98]], [[119940, 119940], "mapped", [99]], [[119941, 119941], "mapped", [100]], [[119942, 119942], "mapped", [101]], [[119943, 119943], "mapped", [102]], [[119944, 119944], "mapped", [103]], [[119945, 119945], "mapped", [104]], [[119946, 119946], "mapped", [105]], [[119947, 119947], "mapped", [106]], [[119948, 119948], "mapped", [107]], [[119949, 119949], "mapped", [108]], [[119950, 119950], "mapped", [109]], [[119951, 119951], "mapped", [110]], [[119952, 119952], "mapped", [111]], [[119953, 119953], "mapped", [112]], [[119954, 119954], "mapped", [113]], [[119955, 119955], "mapped", [114]], [[119956, 119956], "mapped", [115]], [[119957, 119957], "mapped", [116]], [[119958, 119958], "mapped", [117]], [[119959, 119959], "mapped", [118]], [[119960, 119960], "mapped", [119]], [[119961, 119961], "mapped", [120]], [[119962, 119962], "mapped", [121]], [[119963, 119963], "mapped", [122]], [[119964, 119964], "mapped", [97]], [[119965, 119965], "disallowed"], [[119966, 119966], "mapped", [99]], [[119967, 119967], "mapped", [100]], [[119968, 119969], "disallowed"], [[119970, 119970], "mapped", [103]], [[119971, 119972], "disallowed"], [[119973, 119973], "mapped", [106]], [[119974, 119974], "mapped", [107]], [[119975, 119976], "disallowed"], [[119977, 119977], "mapped", [110]], [[119978, 119978], "mapped", [111]], [[119979, 119979], "mapped", [112]], [[119980, 119980], "mapped", [113]], [[119981, 119981], "disallowed"], [[119982, 119982], "mapped", [115]], [[119983, 119983], "mapped", [116]], [[119984, 119984], "mapped", [117]], [[119985, 119985], "mapped", [118]], [[119986, 119986], "mapped", [119]], [[119987, 119987], "mapped", [120]], [[119988, 119988], "mapped", [121]], [[119989, 119989], "mapped", [122]], [[119990, 119990], "mapped", [97]], [[119991, 119991], "mapped", [98]], [[119992, 119992], "mapped", [99]], [[119993, 119993], "mapped", [100]], [[119994, 119994], "disallowed"], [[119995, 119995], "mapped", [102]], [[119996, 119996], "disallowed"], [[119997, 119997], "mapped", [104]], [[119998, 119998], "mapped", [105]], [[119999, 119999], "mapped", [106]], [[12e4, 12e4], "mapped", [107]], [[120001, 120001], "mapped", [108]], [[120002, 120002], "mapped", [109]], [[120003, 120003], "mapped", [110]], [[120004, 120004], "disallowed"], [[120005, 120005], "mapped", [112]], [[120006, 120006], "mapped", [113]], [[120007, 120007], "mapped", [114]], [[120008, 120008], "mapped", [115]], [[120009, 120009], "mapped", [116]], [[120010, 120010], "mapped", [117]], [[120011, 120011], "mapped", [118]], [[120012, 120012], "mapped", [119]], [[120013, 120013], "mapped", [120]], [[120014, 120014], "mapped", [121]], [[120015, 120015], "mapped", [122]], [[120016, 120016], "mapped", [97]], [[120017, 120017], "mapped", [98]], [[120018, 120018], "mapped", [99]], [[120019, 120019], "mapped", [100]], [[120020, 120020], "mapped", [101]], [[120021, 120021], "mapped", [102]], [[120022, 120022], "mapped", [103]], [[120023, 120023], "mapped", [104]], [[120024, 120024], "mapped", [105]], [[120025, 120025], "mapped", [106]], [[120026, 120026], "mapped", [107]], [[120027, 120027], "mapped", [108]], [[120028, 120028], "mapped", [109]], [[120029, 120029], "mapped", [110]], [[120030, 120030], "mapped", [111]], [[120031, 120031], "mapped", [112]], [[120032, 120032], "mapped", [113]], [[120033, 120033], "mapped", [114]], [[120034, 120034], "mapped", [115]], [[120035, 120035], "mapped", [116]], [[120036, 120036], "mapped", [117]], [[120037, 120037], "mapped", [118]], [[120038, 120038], "mapped", [119]], [[120039, 120039], "mapped", [120]], [[120040, 120040], "mapped", [121]], [[120041, 120041], "mapped", [122]], [[120042, 120042], "mapped", [97]], [[120043, 120043], "mapped", [98]], [[120044, 120044], "mapped", [99]], [[120045, 120045], "mapped", [100]], [[120046, 120046], "mapped", [101]], [[120047, 120047], "mapped", [102]], [[120048, 120048], "mapped", [103]], [[120049, 120049], "mapped", [104]], [[120050, 120050], "mapped", [105]], [[120051, 120051], "mapped", [106]], [[120052, 120052], "mapped", [107]], [[120053, 120053], "mapped", [108]], [[120054, 120054], "mapped", [109]], [[120055, 120055], "mapped", [110]], [[120056, 120056], "mapped", [111]], [[120057, 120057], "mapped", [112]], [[120058, 120058], "mapped", [113]], [[120059, 120059], "mapped", [114]], [[120060, 120060], "mapped", [115]], [[120061, 120061], "mapped", [116]], [[120062, 120062], "mapped", [117]], [[120063, 120063], "mapped", [118]], [[120064, 120064], "mapped", [119]], [[120065, 120065], "mapped", [120]], [[120066, 120066], "mapped", [121]], [[120067, 120067], "mapped", [122]], [[120068, 120068], "mapped", [97]], [[120069, 120069], "mapped", [98]], [[120070, 120070], "disallowed"], [[120071, 120071], "mapped", [100]], [[120072, 120072], "mapped", [101]], [[120073, 120073], "mapped", [102]], [[120074, 120074], "mapped", [103]], [[120075, 120076], "disallowed"], [[120077, 120077], "mapped", [106]], [[120078, 120078], "mapped", [107]], [[120079, 120079], "mapped", [108]], [[120080, 120080], "mapped", [109]], [[120081, 120081], "mapped", [110]], [[120082, 120082], "mapped", [111]], [[120083, 120083], "mapped", [112]], [[120084, 120084], "mapped", [113]], [[120085, 120085], "disallowed"], [[120086, 120086], "mapped", [115]], [[120087, 120087], "mapped", [116]], [[120088, 120088], "mapped", [117]], [[120089, 120089], "mapped", [118]], [[120090, 120090], "mapped", [119]], [[120091, 120091], "mapped", [120]], [[120092, 120092], "mapped", [121]], [[120093, 120093], "disallowed"], [[120094, 120094], "mapped", [97]], [[120095, 120095], "mapped", [98]], [[120096, 120096], "mapped", [99]], [[120097, 120097], "mapped", [100]], [[120098, 120098], "mapped", [101]], [[120099, 120099], "mapped", [102]], [[120100, 120100], "mapped", [103]], [[120101, 120101], "mapped", [104]], [[120102, 120102], "mapped", [105]], [[120103, 120103], "mapped", [106]], [[120104, 120104], "mapped", [107]], [[120105, 120105], "mapped", [108]], [[120106, 120106], "mapped", [109]], [[120107, 120107], "mapped", [110]], [[120108, 120108], "mapped", [111]], [[120109, 120109], "mapped", [112]], [[120110, 120110], "mapped", [113]], [[120111, 120111], "mapped", [114]], [[120112, 120112], "mapped", [115]], [[120113, 120113], "mapped", [116]], [[120114, 120114], "mapped", [117]], [[120115, 120115], "mapped", [118]], [[120116, 120116], "mapped", [119]], [[120117, 120117], "mapped", [120]], [[120118, 120118], "mapped", [121]], [[120119, 120119], "mapped", [122]], [[120120, 120120], "mapped", [97]], [[120121, 120121], "mapped", [98]], [[120122, 120122], "disallowed"], [[120123, 120123], "mapped", [100]], [[120124, 120124], "mapped", [101]], [[120125, 120125], "mapped", [102]], [[120126, 120126], "mapped", [103]], [[120127, 120127], "disallowed"], [[120128, 120128], "mapped", [105]], [[120129, 120129], "mapped", [106]], [[120130, 120130], "mapped", [107]], [[120131, 120131], "mapped", [108]], [[120132, 120132], "mapped", [109]], [[120133, 120133], "disallowed"], [[120134, 120134], "mapped", [111]], [[120135, 120137], "disallowed"], [[120138, 120138], "mapped", [115]], [[120139, 120139], "mapped", [116]], [[120140, 120140], "mapped", [117]], [[120141, 120141], "mapped", [118]], [[120142, 120142], "mapped", [119]], [[120143, 120143], "mapped", [120]], [[120144, 120144], "mapped", [121]], [[120145, 120145], "disallowed"], [[120146, 120146], "mapped", [97]], [[120147, 120147], "mapped", [98]], [[120148, 120148], "mapped", [99]], [[120149, 120149], "mapped", [100]], [[120150, 120150], "mapped", [101]], [[120151, 120151], "mapped", [102]], [[120152, 120152], "mapped", [103]], [[120153, 120153], "mapped", [104]], [[120154, 120154], "mapped", [105]], [[120155, 120155], "mapped", [106]], [[120156, 120156], "mapped", [107]], [[120157, 120157], "mapped", [108]], [[120158, 120158], "mapped", [109]], [[120159, 120159], "mapped", [110]], [[120160, 120160], "mapped", [111]], [[120161, 120161], "mapped", [112]], [[120162, 120162], "mapped", [113]], [[120163, 120163], "mapped", [114]], [[120164, 120164], "mapped", [115]], [[120165, 120165], "mapped", [116]], [[120166, 120166], "mapped", [117]], [[120167, 120167], "mapped", [118]], [[120168, 120168], "mapped", [119]], [[120169, 120169], "mapped", [120]], [[120170, 120170], "mapped", [121]], [[120171, 120171], "mapped", [122]], [[120172, 120172], "mapped", [97]], [[120173, 120173], "mapped", [98]], [[120174, 120174], "mapped", [99]], [[120175, 120175], "mapped", [100]], [[120176, 120176], "mapped", [101]], [[120177, 120177], "mapped", [102]], [[120178, 120178], "mapped", [103]], [[120179, 120179], "mapped", [104]], [[120180, 120180], "mapped", [105]], [[120181, 120181], "mapped", [106]], [[120182, 120182], "mapped", [107]], [[120183, 120183], "mapped", [108]], [[120184, 120184], "mapped", [109]], [[120185, 120185], "mapped", [110]], [[120186, 120186], "mapped", [111]], [[120187, 120187], "mapped", [112]], [[120188, 120188], "mapped", [113]], [[120189, 120189], "mapped", [114]], [[120190, 120190], "mapped", [115]], [[120191, 120191], "mapped", [116]], [[120192, 120192], "mapped", [117]], [[120193, 120193], "mapped", [118]], [[120194, 120194], "mapped", [119]], [[120195, 120195], "mapped", [120]], [[120196, 120196], "mapped", [121]], [[120197, 120197], "mapped", [122]], [[120198, 120198], "mapped", [97]], [[120199, 120199], "mapped", [98]], [[120200, 120200], "mapped", [99]], [[120201, 120201], "mapped", [100]], [[120202, 120202], "mapped", [101]], [[120203, 120203], "mapped", [102]], [[120204, 120204], "mapped", [103]], [[120205, 120205], "mapped", [104]], [[120206, 120206], "mapped", [105]], [[120207, 120207], "mapped", [106]], [[120208, 120208], "mapped", [107]], [[120209, 120209], "mapped", [108]], [[120210, 120210], "mapped", [109]], [[120211, 120211], "mapped", [110]], [[120212, 120212], "mapped", [111]], [[120213, 120213], "mapped", [112]], [[120214, 120214], "mapped", [113]], [[120215, 120215], "mapped", [114]], [[120216, 120216], "mapped", [115]], [[120217, 120217], "mapped", [116]], [[120218, 120218], "mapped", [117]], [[120219, 120219], "mapped", [118]], [[120220, 120220], "mapped", [119]], [[120221, 120221], "mapped", [120]], [[120222, 120222], "mapped", [121]], [[120223, 120223], "mapped", [122]], [[120224, 120224], "mapped", [97]], [[120225, 120225], "mapped", [98]], [[120226, 120226], "mapped", [99]], [[120227, 120227], "mapped", [100]], [[120228, 120228], "mapped", [101]], [[120229, 120229], "mapped", [102]], [[120230, 120230], "mapped", [103]], [[120231, 120231], "mapped", [104]], [[120232, 120232], "mapped", [105]], [[120233, 120233], "mapped", [106]], [[120234, 120234], "mapped", [107]], [[120235, 120235], "mapped", [108]], [[120236, 120236], "mapped", [109]], [[120237, 120237], "mapped", [110]], [[120238, 120238], "mapped", [111]], [[120239, 120239], "mapped", [112]], [[120240, 120240], "mapped", [113]], [[120241, 120241], "mapped", [114]], [[120242, 120242], "mapped", [115]], [[120243, 120243], "mapped", [116]], [[120244, 120244], "mapped", [117]], [[120245, 120245], "mapped", [118]], [[120246, 120246], "mapped", [119]], [[120247, 120247], "mapped", [120]], [[120248, 120248], "mapped", [121]], [[120249, 120249], "mapped", [122]], [[120250, 120250], "mapped", [97]], [[120251, 120251], "mapped", [98]], [[120252, 120252], "mapped", [99]], [[120253, 120253], "mapped", [100]], [[120254, 120254], "mapped", [101]], [[120255, 120255], "mapped", [102]], [[120256, 120256], "mapped", [103]], [[120257, 120257], "mapped", [104]], [[120258, 120258], "mapped", [105]], [[120259, 120259], "mapped", [106]], [[120260, 120260], "mapped", [107]], [[120261, 120261], "mapped", [108]], [[120262, 120262], "mapped", [109]], [[120263, 120263], "mapped", [110]], [[120264, 120264], "mapped", [111]], [[120265, 120265], "mapped", [112]], [[120266, 120266], "mapped", [113]], [[120267, 120267], "mapped", [114]], [[120268, 120268], "mapped", [115]], [[120269, 120269], "mapped", [116]], [[120270, 120270], "mapped", [117]], [[120271, 120271], "mapped", [118]], [[120272, 120272], "mapped", [119]], [[120273, 120273], "mapped", [120]], [[120274, 120274], "mapped", [121]], [[120275, 120275], "mapped", [122]], [[120276, 120276], "mapped", [97]], [[120277, 120277], "mapped", [98]], [[120278, 120278], "mapped", [99]], [[120279, 120279], "mapped", [100]], [[120280, 120280], "mapped", [101]], [[120281, 120281], "mapped", [102]], [[120282, 120282], "mapped", [103]], [[120283, 120283], "mapped", [104]], [[120284, 120284], "mapped", [105]], [[120285, 120285], "mapped", [106]], [[120286, 120286], "mapped", [107]], [[120287, 120287], "mapped", [108]], [[120288, 120288], "mapped", [109]], [[120289, 120289], "mapped", [110]], [[120290, 120290], "mapped", [111]], [[120291, 120291], "mapped", [112]], [[120292, 120292], "mapped", [113]], [[120293, 120293], "mapped", [114]], [[120294, 120294], "mapped", [115]], [[120295, 120295], "mapped", [116]], [[120296, 120296], "mapped", [117]], [[120297, 120297], "mapped", [118]], [[120298, 120298], "mapped", [119]], [[120299, 120299], "mapped", [120]], [[120300, 120300], "mapped", [121]], [[120301, 120301], "mapped", [122]], [[120302, 120302], "mapped", [97]], [[120303, 120303], "mapped", [98]], [[120304, 120304], "mapped", [99]], [[120305, 120305], "mapped", [100]], [[120306, 120306], "mapped", [101]], [[120307, 120307], "mapped", [102]], [[120308, 120308], "mapped", [103]], [[120309, 120309], "mapped", [104]], [[120310, 120310], "mapped", [105]], [[120311, 120311], "mapped", [106]], [[120312, 120312], "mapped", [107]], [[120313, 120313], "mapped", [108]], [[120314, 120314], "mapped", [109]], [[120315, 120315], "mapped", [110]], [[120316, 120316], "mapped", [111]], [[120317, 120317], "mapped", [112]], [[120318, 120318], "mapped", [113]], [[120319, 120319], "mapped", [114]], [[120320, 120320], "mapped", [115]], [[120321, 120321], "mapped", [116]], [[120322, 120322], "mapped", [117]], [[120323, 120323], "mapped", [118]], [[120324, 120324], "mapped", [119]], [[120325, 120325], "mapped", [120]], [[120326, 120326], "mapped", [121]], [[120327, 120327], "mapped", [122]], [[120328, 120328], "mapped", [97]], [[120329, 120329], "mapped", [98]], [[120330, 120330], "mapped", [99]], [[120331, 120331], "mapped", [100]], [[120332, 120332], "mapped", [101]], [[120333, 120333], "mapped", [102]], [[120334, 120334], "mapped", [103]], [[120335, 120335], "mapped", [104]], [[120336, 120336], "mapped", [105]], [[120337, 120337], "mapped", [106]], [[120338, 120338], "mapped", [107]], [[120339, 120339], "mapped", [108]], [[120340, 120340], "mapped", [109]], [[120341, 120341], "mapped", [110]], [[120342, 120342], "mapped", [111]], [[120343, 120343], "mapped", [112]], [[120344, 120344], "mapped", [113]], [[120345, 120345], "mapped", [114]], [[120346, 120346], "mapped", [115]], [[120347, 120347], "mapped", [116]], [[120348, 120348], "mapped", [117]], [[120349, 120349], "mapped", [118]], [[120350, 120350], "mapped", [119]], [[120351, 120351], "mapped", [120]], [[120352, 120352], "mapped", [121]], [[120353, 120353], "mapped", [122]], [[120354, 120354], "mapped", [97]], [[120355, 120355], "mapped", [98]], [[120356, 120356], "mapped", [99]], [[120357, 120357], "mapped", [100]], [[120358, 120358], "mapped", [101]], [[120359, 120359], "mapped", [102]], [[120360, 120360], "mapped", [103]], [[120361, 120361], "mapped", [104]], [[120362, 120362], "mapped", [105]], [[120363, 120363], "mapped", [106]], [[120364, 120364], "mapped", [107]], [[120365, 120365], "mapped", [108]], [[120366, 120366], "mapped", [109]], [[120367, 120367], "mapped", [110]], [[120368, 120368], "mapped", [111]], [[120369, 120369], "mapped", [112]], [[120370, 120370], "mapped", [113]], [[120371, 120371], "mapped", [114]], [[120372, 120372], "mapped", [115]], [[120373, 120373], "mapped", [116]], [[120374, 120374], "mapped", [117]], [[120375, 120375], "mapped", [118]], [[120376, 120376], "mapped", [119]], [[120377, 120377], "mapped", [120]], [[120378, 120378], "mapped", [121]], [[120379, 120379], "mapped", [122]], [[120380, 120380], "mapped", [97]], [[120381, 120381], "mapped", [98]], [[120382, 120382], "mapped", [99]], [[120383, 120383], "mapped", [100]], [[120384, 120384], "mapped", [101]], [[120385, 120385], "mapped", [102]], [[120386, 120386], "mapped", [103]], [[120387, 120387], "mapped", [104]], [[120388, 120388], "mapped", [105]], [[120389, 120389], "mapped", [106]], [[120390, 120390], "mapped", [107]], [[120391, 120391], "mapped", [108]], [[120392, 120392], "mapped", [109]], [[120393, 120393], "mapped", [110]], [[120394, 120394], "mapped", [111]], [[120395, 120395], "mapped", [112]], [[120396, 120396], "mapped", [113]], [[120397, 120397], "mapped", [114]], [[120398, 120398], "mapped", [115]], [[120399, 120399], "mapped", [116]], [[120400, 120400], "mapped", [117]], [[120401, 120401], "mapped", [118]], [[120402, 120402], "mapped", [119]], [[120403, 120403], "mapped", [120]], [[120404, 120404], "mapped", [121]], [[120405, 120405], "mapped", [122]], [[120406, 120406], "mapped", [97]], [[120407, 120407], "mapped", [98]], [[120408, 120408], "mapped", [99]], [[120409, 120409], "mapped", [100]], [[120410, 120410], "mapped", [101]], [[120411, 120411], "mapped", [102]], [[120412, 120412], "mapped", [103]], [[120413, 120413], "mapped", [104]], [[120414, 120414], "mapped", [105]], [[120415, 120415], "mapped", [106]], [[120416, 120416], "mapped", [107]], [[120417, 120417], "mapped", [108]], [[120418, 120418], "mapped", [109]], [[120419, 120419], "mapped", [110]], [[120420, 120420], "mapped", [111]], [[120421, 120421], "mapped", [112]], [[120422, 120422], "mapped", [113]], [[120423, 120423], "mapped", [114]], [[120424, 120424], "mapped", [115]], [[120425, 120425], "mapped", [116]], [[120426, 120426], "mapped", [117]], [[120427, 120427], "mapped", [118]], [[120428, 120428], "mapped", [119]], [[120429, 120429], "mapped", [120]], [[120430, 120430], "mapped", [121]], [[120431, 120431], "mapped", [122]], [[120432, 120432], "mapped", [97]], [[120433, 120433], "mapped", [98]], [[120434, 120434], "mapped", [99]], [[120435, 120435], "mapped", [100]], [[120436, 120436], "mapped", [101]], [[120437, 120437], "mapped", [102]], [[120438, 120438], "mapped", [103]], [[120439, 120439], "mapped", [104]], [[120440, 120440], "mapped", [105]], [[120441, 120441], "mapped", [106]], [[120442, 120442], "mapped", [107]], [[120443, 120443], "mapped", [108]], [[120444, 120444], "mapped", [109]], [[120445, 120445], "mapped", [110]], [[120446, 120446], "mapped", [111]], [[120447, 120447], "mapped", [112]], [[120448, 120448], "mapped", [113]], [[120449, 120449], "mapped", [114]], [[120450, 120450], "mapped", [115]], [[120451, 120451], "mapped", [116]], [[120452, 120452], "mapped", [117]], [[120453, 120453], "mapped", [118]], [[120454, 120454], "mapped", [119]], [[120455, 120455], "mapped", [120]], [[120456, 120456], "mapped", [121]], [[120457, 120457], "mapped", [122]], [[120458, 120458], "mapped", [97]], [[120459, 120459], "mapped", [98]], [[120460, 120460], "mapped", [99]], [[120461, 120461], "mapped", [100]], [[120462, 120462], "mapped", [101]], [[120463, 120463], "mapped", [102]], [[120464, 120464], "mapped", [103]], [[120465, 120465], "mapped", [104]], [[120466, 120466], "mapped", [105]], [[120467, 120467], "mapped", [106]], [[120468, 120468], "mapped", [107]], [[120469, 120469], "mapped", [108]], [[120470, 120470], "mapped", [109]], [[120471, 120471], "mapped", [110]], [[120472, 120472], "mapped", [111]], [[120473, 120473], "mapped", [112]], [[120474, 120474], "mapped", [113]], [[120475, 120475], "mapped", [114]], [[120476, 120476], "mapped", [115]], [[120477, 120477], "mapped", [116]], [[120478, 120478], "mapped", [117]], [[120479, 120479], "mapped", [118]], [[120480, 120480], "mapped", [119]], [[120481, 120481], "mapped", [120]], [[120482, 120482], "mapped", [121]], [[120483, 120483], "mapped", [122]], [[120484, 120484], "mapped", [305]], [[120485, 120485], "mapped", [567]], [[120486, 120487], "disallowed"], [[120488, 120488], "mapped", [945]], [[120489, 120489], "mapped", [946]], [[120490, 120490], "mapped", [947]], [[120491, 120491], "mapped", [948]], [[120492, 120492], "mapped", [949]], [[120493, 120493], "mapped", [950]], [[120494, 120494], "mapped", [951]], [[120495, 120495], "mapped", [952]], [[120496, 120496], "mapped", [953]], [[120497, 120497], "mapped", [954]], [[120498, 120498], "mapped", [955]], [[120499, 120499], "mapped", [956]], [[120500, 120500], "mapped", [957]], [[120501, 120501], "mapped", [958]], [[120502, 120502], "mapped", [959]], [[120503, 120503], "mapped", [960]], [[120504, 120504], "mapped", [961]], [[120505, 120505], "mapped", [952]], [[120506, 120506], "mapped", [963]], [[120507, 120507], "mapped", [964]], [[120508, 120508], "mapped", [965]], [[120509, 120509], "mapped", [966]], [[120510, 120510], "mapped", [967]], [[120511, 120511], "mapped", [968]], [[120512, 120512], "mapped", [969]], [[120513, 120513], "mapped", [8711]], [[120514, 120514], "mapped", [945]], [[120515, 120515], "mapped", [946]], [[120516, 120516], "mapped", [947]], [[120517, 120517], "mapped", [948]], [[120518, 120518], "mapped", [949]], [[120519, 120519], "mapped", [950]], [[120520, 120520], "mapped", [951]], [[120521, 120521], "mapped", [952]], [[120522, 120522], "mapped", [953]], [[120523, 120523], "mapped", [954]], [[120524, 120524], "mapped", [955]], [[120525, 120525], "mapped", [956]], [[120526, 120526], "mapped", [957]], [[120527, 120527], "mapped", [958]], [[120528, 120528], "mapped", [959]], [[120529, 120529], "mapped", [960]], [[120530, 120530], "mapped", [961]], [[120531, 120532], "mapped", [963]], [[120533, 120533], "mapped", [964]], [[120534, 120534], "mapped", [965]], [[120535, 120535], "mapped", [966]], [[120536, 120536], "mapped", [967]], [[120537, 120537], "mapped", [968]], [[120538, 120538], "mapped", [969]], [[120539, 120539], "mapped", [8706]], [[120540, 120540], "mapped", [949]], [[120541, 120541], "mapped", [952]], [[120542, 120542], "mapped", [954]], [[120543, 120543], "mapped", [966]], [[120544, 120544], "mapped", [961]], [[120545, 120545], "mapped", [960]], [[120546, 120546], "mapped", [945]], [[120547, 120547], "mapped", [946]], [[120548, 120548], "mapped", [947]], [[120549, 120549], "mapped", [948]], [[120550, 120550], "mapped", [949]], [[120551, 120551], "mapped", [950]], [[120552, 120552], "mapped", [951]], [[120553, 120553], "mapped", [952]], [[120554, 120554], "mapped", [953]], [[120555, 120555], "mapped", [954]], [[120556, 120556], "mapped", [955]], [[120557, 120557], "mapped", [956]], [[120558, 120558], "mapped", [957]], [[120559, 120559], "mapped", [958]], [[120560, 120560], "mapped", [959]], [[120561, 120561], "mapped", [960]], [[120562, 120562], "mapped", [961]], [[120563, 120563], "mapped", [952]], [[120564, 120564], "mapped", [963]], [[120565, 120565], "mapped", [964]], [[120566, 120566], "mapped", [965]], [[120567, 120567], "mapped", [966]], [[120568, 120568], "mapped", [967]], [[120569, 120569], "mapped", [968]], [[120570, 120570], "mapped", [969]], [[120571, 120571], "mapped", [8711]], [[120572, 120572], "mapped", [945]], [[120573, 120573], "mapped", [946]], [[120574, 120574], "mapped", [947]], [[120575, 120575], "mapped", [948]], [[120576, 120576], "mapped", [949]], [[120577, 120577], "mapped", [950]], [[120578, 120578], "mapped", [951]], [[120579, 120579], "mapped", [952]], [[120580, 120580], "mapped", [953]], [[120581, 120581], "mapped", [954]], [[120582, 120582], "mapped", [955]], [[120583, 120583], "mapped", [956]], [[120584, 120584], "mapped", [957]], [[120585, 120585], "mapped", [958]], [[120586, 120586], "mapped", [959]], [[120587, 120587], "mapped", [960]], [[120588, 120588], "mapped", [961]], [[120589, 120590], "mapped", [963]], [[120591, 120591], "mapped", [964]], [[120592, 120592], "mapped", [965]], [[120593, 120593], "mapped", [966]], [[120594, 120594], "mapped", [967]], [[120595, 120595], "mapped", [968]], [[120596, 120596], "mapped", [969]], [[120597, 120597], "mapped", [8706]], [[120598, 120598], "mapped", [949]], [[120599, 120599], "mapped", [952]], [[120600, 120600], "mapped", [954]], [[120601, 120601], "mapped", [966]], [[120602, 120602], "mapped", [961]], [[120603, 120603], "mapped", [960]], [[120604, 120604], "mapped", [945]], [[120605, 120605], "mapped", [946]], [[120606, 120606], "mapped", [947]], [[120607, 120607], "mapped", [948]], [[120608, 120608], "mapped", [949]], [[120609, 120609], "mapped", [950]], [[120610, 120610], "mapped", [951]], [[120611, 120611], "mapped", [952]], [[120612, 120612], "mapped", [953]], [[120613, 120613], "mapped", [954]], [[120614, 120614], "mapped", [955]], [[120615, 120615], "mapped", [956]], [[120616, 120616], "mapped", [957]], [[120617, 120617], "mapped", [958]], [[120618, 120618], "mapped", [959]], [[120619, 120619], "mapped", [960]], [[120620, 120620], "mapped", [961]], [[120621, 120621], "mapped", [952]], [[120622, 120622], "mapped", [963]], [[120623, 120623], "mapped", [964]], [[120624, 120624], "mapped", [965]], [[120625, 120625], "mapped", [966]], [[120626, 120626], "mapped", [967]], [[120627, 120627], "mapped", [968]], [[120628, 120628], "mapped", [969]], [[120629, 120629], "mapped", [8711]], [[120630, 120630], "mapped", [945]], [[120631, 120631], "mapped", [946]], [[120632, 120632], "mapped", [947]], [[120633, 120633], "mapped", [948]], [[120634, 120634], "mapped", [949]], [[120635, 120635], "mapped", [950]], [[120636, 120636], "mapped", [951]], [[120637, 120637], "mapped", [952]], [[120638, 120638], "mapped", [953]], [[120639, 120639], "mapped", [954]], [[120640, 120640], "mapped", [955]], [[120641, 120641], "mapped", [956]], [[120642, 120642], "mapped", [957]], [[120643, 120643], "mapped", [958]], [[120644, 120644], "mapped", [959]], [[120645, 120645], "mapped", [960]], [[120646, 120646], "mapped", [961]], [[120647, 120648], "mapped", [963]], [[120649, 120649], "mapped", [964]], [[120650, 120650], "mapped", [965]], [[120651, 120651], "mapped", [966]], [[120652, 120652], "mapped", [967]], [[120653, 120653], "mapped", [968]], [[120654, 120654], "mapped", [969]], [[120655, 120655], "mapped", [8706]], [[120656, 120656], "mapped", [949]], [[120657, 120657], "mapped", [952]], [[120658, 120658], "mapped", [954]], [[120659, 120659], "mapped", [966]], [[120660, 120660], "mapped", [961]], [[120661, 120661], "mapped", [960]], [[120662, 120662], "mapped", [945]], [[120663, 120663], "mapped", [946]], [[120664, 120664], "mapped", [947]], [[120665, 120665], "mapped", [948]], [[120666, 120666], "mapped", [949]], [[120667, 120667], "mapped", [950]], [[120668, 120668], "mapped", [951]], [[120669, 120669], "mapped", [952]], [[120670, 120670], "mapped", [953]], [[120671, 120671], "mapped", [954]], [[120672, 120672], "mapped", [955]], [[120673, 120673], "mapped", [956]], [[120674, 120674], "mapped", [957]], [[120675, 120675], "mapped", [958]], [[120676, 120676], "mapped", [959]], [[120677, 120677], "mapped", [960]], [[120678, 120678], "mapped", [961]], [[120679, 120679], "mapped", [952]], [[120680, 120680], "mapped", [963]], [[120681, 120681], "mapped", [964]], [[120682, 120682], "mapped", [965]], [[120683, 120683], "mapped", [966]], [[120684, 120684], "mapped", [967]], [[120685, 120685], "mapped", [968]], [[120686, 120686], "mapped", [969]], [[120687, 120687], "mapped", [8711]], [[120688, 120688], "mapped", [945]], [[120689, 120689], "mapped", [946]], [[120690, 120690], "mapped", [947]], [[120691, 120691], "mapped", [948]], [[120692, 120692], "mapped", [949]], [[120693, 120693], "mapped", [950]], [[120694, 120694], "mapped", [951]], [[120695, 120695], "mapped", [952]], [[120696, 120696], "mapped", [953]], [[120697, 120697], "mapped", [954]], [[120698, 120698], "mapped", [955]], [[120699, 120699], "mapped", [956]], [[120700, 120700], "mapped", [957]], [[120701, 120701], "mapped", [958]], [[120702, 120702], "mapped", [959]], [[120703, 120703], "mapped", [960]], [[120704, 120704], "mapped", [961]], [[120705, 120706], "mapped", [963]], [[120707, 120707], "mapped", [964]], [[120708, 120708], "mapped", [965]], [[120709, 120709], "mapped", [966]], [[120710, 120710], "mapped", [967]], [[120711, 120711], "mapped", [968]], [[120712, 120712], "mapped", [969]], [[120713, 120713], "mapped", [8706]], [[120714, 120714], "mapped", [949]], [[120715, 120715], "mapped", [952]], [[120716, 120716], "mapped", [954]], [[120717, 120717], "mapped", [966]], [[120718, 120718], "mapped", [961]], [[120719, 120719], "mapped", [960]], [[120720, 120720], "mapped", [945]], [[120721, 120721], "mapped", [946]], [[120722, 120722], "mapped", [947]], [[120723, 120723], "mapped", [948]], [[120724, 120724], "mapped", [949]], [[120725, 120725], "mapped", [950]], [[120726, 120726], "mapped", [951]], [[120727, 120727], "mapped", [952]], [[120728, 120728], "mapped", [953]], [[120729, 120729], "mapped", [954]], [[120730, 120730], "mapped", [955]], [[120731, 120731], "mapped", [956]], [[120732, 120732], "mapped", [957]], [[120733, 120733], "mapped", [958]], [[120734, 120734], "mapped", [959]], [[120735, 120735], "mapped", [960]], [[120736, 120736], "mapped", [961]], [[120737, 120737], "mapped", [952]], [[120738, 120738], "mapped", [963]], [[120739, 120739], "mapped", [964]], [[120740, 120740], "mapped", [965]], [[120741, 120741], "mapped", [966]], [[120742, 120742], "mapped", [967]], [[120743, 120743], "mapped", [968]], [[120744, 120744], "mapped", [969]], [[120745, 120745], "mapped", [8711]], [[120746, 120746], "mapped", [945]], [[120747, 120747], "mapped", [946]], [[120748, 120748], "mapped", [947]], [[120749, 120749], "mapped", [948]], [[120750, 120750], "mapped", [949]], [[120751, 120751], "mapped", [950]], [[120752, 120752], "mapped", [951]], [[120753, 120753], "mapped", [952]], [[120754, 120754], "mapped", [953]], [[120755, 120755], "mapped", [954]], [[120756, 120756], "mapped", [955]], [[120757, 120757], "mapped", [956]], [[120758, 120758], "mapped", [957]], [[120759, 120759], "mapped", [958]], [[120760, 120760], "mapped", [959]], [[120761, 120761], "mapped", [960]], [[120762, 120762], "mapped", [961]], [[120763, 120764], "mapped", [963]], [[120765, 120765], "mapped", [964]], [[120766, 120766], "mapped", [965]], [[120767, 120767], "mapped", [966]], [[120768, 120768], "mapped", [967]], [[120769, 120769], "mapped", [968]], [[120770, 120770], "mapped", [969]], [[120771, 120771], "mapped", [8706]], [[120772, 120772], "mapped", [949]], [[120773, 120773], "mapped", [952]], [[120774, 120774], "mapped", [954]], [[120775, 120775], "mapped", [966]], [[120776, 120776], "mapped", [961]], [[120777, 120777], "mapped", [960]], [[120778, 120779], "mapped", [989]], [[120780, 120781], "disallowed"], [[120782, 120782], "mapped", [48]], [[120783, 120783], "mapped", [49]], [[120784, 120784], "mapped", [50]], [[120785, 120785], "mapped", [51]], [[120786, 120786], "mapped", [52]], [[120787, 120787], "mapped", [53]], [[120788, 120788], "mapped", [54]], [[120789, 120789], "mapped", [55]], [[120790, 120790], "mapped", [56]], [[120791, 120791], "mapped", [57]], [[120792, 120792], "mapped", [48]], [[120793, 120793], "mapped", [49]], [[120794, 120794], "mapped", [50]], [[120795, 120795], "mapped", [51]], [[120796, 120796], "mapped", [52]], [[120797, 120797], "mapped", [53]], [[120798, 120798], "mapped", [54]], [[120799, 120799], "mapped", [55]], [[120800, 120800], "mapped", [56]], [[120801, 120801], "mapped", [57]], [[120802, 120802], "mapped", [48]], [[120803, 120803], "mapped", [49]], [[120804, 120804], "mapped", [50]], [[120805, 120805], "mapped", [51]], [[120806, 120806], "mapped", [52]], [[120807, 120807], "mapped", [53]], [[120808, 120808], "mapped", [54]], [[120809, 120809], "mapped", [55]], [[120810, 120810], "mapped", [56]], [[120811, 120811], "mapped", [57]], [[120812, 120812], "mapped", [48]], [[120813, 120813], "mapped", [49]], [[120814, 120814], "mapped", [50]], [[120815, 120815], "mapped", [51]], [[120816, 120816], "mapped", [52]], [[120817, 120817], "mapped", [53]], [[120818, 120818], "mapped", [54]], [[120819, 120819], "mapped", [55]], [[120820, 120820], "mapped", [56]], [[120821, 120821], "mapped", [57]], [[120822, 120822], "mapped", [48]], [[120823, 120823], "mapped", [49]], [[120824, 120824], "mapped", [50]], [[120825, 120825], "mapped", [51]], [[120826, 120826], "mapped", [52]], [[120827, 120827], "mapped", [53]], [[120828, 120828], "mapped", [54]], [[120829, 120829], "mapped", [55]], [[120830, 120830], "mapped", [56]], [[120831, 120831], "mapped", [57]], [[120832, 121343], "valid", [], "NV8"], [[121344, 121398], "valid"], [[121399, 121402], "valid", [], "NV8"], [[121403, 121452], "valid"], [[121453, 121460], "valid", [], "NV8"], [[121461, 121461], "valid"], [[121462, 121475], "valid", [], "NV8"], [[121476, 121476], "valid"], [[121477, 121483], "valid", [], "NV8"], [[121484, 121498], "disallowed"], [[121499, 121503], "valid"], [[121504, 121504], "disallowed"], [[121505, 121519], "valid"], [[121520, 124927], "disallowed"], [[124928, 125124], "valid"], [[125125, 125126], "disallowed"], [[125127, 125135], "valid", [], "NV8"], [[125136, 125142], "valid"], [[125143, 126463], "disallowed"], [[126464, 126464], "mapped", [1575]], [[126465, 126465], "mapped", [1576]], [[126466, 126466], "mapped", [1580]], [[126467, 126467], "mapped", [1583]], [[126468, 126468], "disallowed"], [[126469, 126469], "mapped", [1608]], [[126470, 126470], "mapped", [1586]], [[126471, 126471], "mapped", [1581]], [[126472, 126472], "mapped", [1591]], [[126473, 126473], "mapped", [1610]], [[126474, 126474], "mapped", [1603]], [[126475, 126475], "mapped", [1604]], [[126476, 126476], "mapped", [1605]], [[126477, 126477], "mapped", [1606]], [[126478, 126478], "mapped", [1587]], [[126479, 126479], "mapped", [1593]], [[126480, 126480], "mapped", [1601]], [[126481, 126481], "mapped", [1589]], [[126482, 126482], "mapped", [1602]], [[126483, 126483], "mapped", [1585]], [[126484, 126484], "mapped", [1588]], [[126485, 126485], "mapped", [1578]], [[126486, 126486], "mapped", [1579]], [[126487, 126487], "mapped", [1582]], [[126488, 126488], "mapped", [1584]], [[126489, 126489], "mapped", [1590]], [[126490, 126490], "mapped", [1592]], [[126491, 126491], "mapped", [1594]], [[126492, 126492], "mapped", [1646]], [[126493, 126493], "mapped", [1722]], [[126494, 126494], "mapped", [1697]], [[126495, 126495], "mapped", [1647]], [[126496, 126496], "disallowed"], [[126497, 126497], "mapped", [1576]], [[126498, 126498], "mapped", [1580]], [[126499, 126499], "disallowed"], [[126500, 126500], "mapped", [1607]], [[126501, 126502], "disallowed"], [[126503, 126503], "mapped", [1581]], [[126504, 126504], "disallowed"], [[126505, 126505], "mapped", [1610]], [[126506, 126506], "mapped", [1603]], [[126507, 126507], "mapped", [1604]], [[126508, 126508], "mapped", [1605]], [[126509, 126509], "mapped", [1606]], [[126510, 126510], "mapped", [1587]], [[126511, 126511], "mapped", [1593]], [[126512, 126512], "mapped", [1601]], [[126513, 126513], "mapped", [1589]], [[126514, 126514], "mapped", [1602]], [[126515, 126515], "disallowed"], [[126516, 126516], "mapped", [1588]], [[126517, 126517], "mapped", [1578]], [[126518, 126518], "mapped", [1579]], [[126519, 126519], "mapped", [1582]], [[126520, 126520], "disallowed"], [[126521, 126521], "mapped", [1590]], [[126522, 126522], "disallowed"], [[126523, 126523], "mapped", [1594]], [[126524, 126529], "disallowed"], [[126530, 126530], "mapped", [1580]], [[126531, 126534], "disallowed"], [[126535, 126535], "mapped", [1581]], [[126536, 126536], "disallowed"], [[126537, 126537], "mapped", [1610]], [[126538, 126538], "disallowed"], [[126539, 126539], "mapped", [1604]], [[126540, 126540], "disallowed"], [[126541, 126541], "mapped", [1606]], [[126542, 126542], "mapped", [1587]], [[126543, 126543], "mapped", [1593]], [[126544, 126544], "disallowed"], [[126545, 126545], "mapped", [1589]], [[126546, 126546], "mapped", [1602]], [[126547, 126547], "disallowed"], [[126548, 126548], "mapped", [1588]], [[126549, 126550], "disallowed"], [[126551, 126551], "mapped", [1582]], [[126552, 126552], "disallowed"], [[126553, 126553], "mapped", [1590]], [[126554, 126554], "disallowed"], [[126555, 126555], "mapped", [1594]], [[126556, 126556], "disallowed"], [[126557, 126557], "mapped", [1722]], [[126558, 126558], "disallowed"], [[126559, 126559], "mapped", [1647]], [[126560, 126560], "disallowed"], [[126561, 126561], "mapped", [1576]], [[126562, 126562], "mapped", [1580]], [[126563, 126563], "disallowed"], [[126564, 126564], "mapped", [1607]], [[126565, 126566], "disallowed"], [[126567, 126567], "mapped", [1581]], [[126568, 126568], "mapped", [1591]], [[126569, 126569], "mapped", [1610]], [[126570, 126570], "mapped", [1603]], [[126571, 126571], "disallowed"], [[126572, 126572], "mapped", [1605]], [[126573, 126573], "mapped", [1606]], [[126574, 126574], "mapped", [1587]], [[126575, 126575], "mapped", [1593]], [[126576, 126576], "mapped", [1601]], [[126577, 126577], "mapped", [1589]], [[126578, 126578], "mapped", [1602]], [[126579, 126579], "disallowed"], [[126580, 126580], "mapped", [1588]], [[126581, 126581], "mapped", [1578]], [[126582, 126582], "mapped", [1579]], [[126583, 126583], "mapped", [1582]], [[126584, 126584], "disallowed"], [[126585, 126585], "mapped", [1590]], [[126586, 126586], "mapped", [1592]], [[126587, 126587], "mapped", [1594]], [[126588, 126588], "mapped", [1646]], [[126589, 126589], "disallowed"], [[126590, 126590], "mapped", [1697]], [[126591, 126591], "disallowed"], [[126592, 126592], "mapped", [1575]], [[126593, 126593], "mapped", [1576]], [[126594, 126594], "mapped", [1580]], [[126595, 126595], "mapped", [1583]], [[126596, 126596], "mapped", [1607]], [[126597, 126597], "mapped", [1608]], [[126598, 126598], "mapped", [1586]], [[126599, 126599], "mapped", [1581]], [[126600, 126600], "mapped", [1591]], [[126601, 126601], "mapped", [1610]], [[126602, 126602], "disallowed"], [[126603, 126603], "mapped", [1604]], [[126604, 126604], "mapped", [1605]], [[126605, 126605], "mapped", [1606]], [[126606, 126606], "mapped", [1587]], [[126607, 126607], "mapped", [1593]], [[126608, 126608], "mapped", [1601]], [[126609, 126609], "mapped", [1589]], [[126610, 126610], "mapped", [1602]], [[126611, 126611], "mapped", [1585]], [[126612, 126612], "mapped", [1588]], [[126613, 126613], "mapped", [1578]], [[126614, 126614], "mapped", [1579]], [[126615, 126615], "mapped", [1582]], [[126616, 126616], "mapped", [1584]], [[126617, 126617], "mapped", [1590]], [[126618, 126618], "mapped", [1592]], [[126619, 126619], "mapped", [1594]], [[126620, 126624], "disallowed"], [[126625, 126625], "mapped", [1576]], [[126626, 126626], "mapped", [1580]], [[126627, 126627], "mapped", [1583]], [[126628, 126628], "disallowed"], [[126629, 126629], "mapped", [1608]], [[126630, 126630], "mapped", [1586]], [[126631, 126631], "mapped", [1581]], [[126632, 126632], "mapped", [1591]], [[126633, 126633], "mapped", [1610]], [[126634, 126634], "disallowed"], [[126635, 126635], "mapped", [1604]], [[126636, 126636], "mapped", [1605]], [[126637, 126637], "mapped", [1606]], [[126638, 126638], "mapped", [1587]], [[126639, 126639], "mapped", [1593]], [[126640, 126640], "mapped", [1601]], [[126641, 126641], "mapped", [1589]], [[126642, 126642], "mapped", [1602]], [[126643, 126643], "mapped", [1585]], [[126644, 126644], "mapped", [1588]], [[126645, 126645], "mapped", [1578]], [[126646, 126646], "mapped", [1579]], [[126647, 126647], "mapped", [1582]], [[126648, 126648], "mapped", [1584]], [[126649, 126649], "mapped", [1590]], [[126650, 126650], "mapped", [1592]], [[126651, 126651], "mapped", [1594]], [[126652, 126703], "disallowed"], [[126704, 126705], "valid", [], "NV8"], [[126706, 126975], "disallowed"], [[126976, 127019], "valid", [], "NV8"], [[127020, 127023], "disallowed"], [[127024, 127123], "valid", [], "NV8"], [[127124, 127135], "disallowed"], [[127136, 127150], "valid", [], "NV8"], [[127151, 127152], "disallowed"], [[127153, 127166], "valid", [], "NV8"], [[127167, 127167], "valid", [], "NV8"], [[127168, 127168], "disallowed"], [[127169, 127183], "valid", [], "NV8"], [[127184, 127184], "disallowed"], [[127185, 127199], "valid", [], "NV8"], [[127200, 127221], "valid", [], "NV8"], [[127222, 127231], "disallowed"], [[127232, 127232], "disallowed"], [[127233, 127233], "disallowed_STD3_mapped", [48, 44]], [[127234, 127234], "disallowed_STD3_mapped", [49, 44]], [[127235, 127235], "disallowed_STD3_mapped", [50, 44]], [[127236, 127236], "disallowed_STD3_mapped", [51, 44]], [[127237, 127237], "disallowed_STD3_mapped", [52, 44]], [[127238, 127238], "disallowed_STD3_mapped", [53, 44]], [[127239, 127239], "disallowed_STD3_mapped", [54, 44]], [[127240, 127240], "disallowed_STD3_mapped", [55, 44]], [[127241, 127241], "disallowed_STD3_mapped", [56, 44]], [[127242, 127242], "disallowed_STD3_mapped", [57, 44]], [[127243, 127244], "valid", [], "NV8"], [[127245, 127247], "disallowed"], [[127248, 127248], "disallowed_STD3_mapped", [40, 97, 41]], [[127249, 127249], "disallowed_STD3_mapped", [40, 98, 41]], [[127250, 127250], "disallowed_STD3_mapped", [40, 99, 41]], [[127251, 127251], "disallowed_STD3_mapped", [40, 100, 41]], [[127252, 127252], "disallowed_STD3_mapped", [40, 101, 41]], [[127253, 127253], "disallowed_STD3_mapped", [40, 102, 41]], [[127254, 127254], "disallowed_STD3_mapped", [40, 103, 41]], [[127255, 127255], "disallowed_STD3_mapped", [40, 104, 41]], [[127256, 127256], "disallowed_STD3_mapped", [40, 105, 41]], [[127257, 127257], "disallowed_STD3_mapped", [40, 106, 41]], [[127258, 127258], "disallowed_STD3_mapped", [40, 107, 41]], [[127259, 127259], "disallowed_STD3_mapped", [40, 108, 41]], [[127260, 127260], "disallowed_STD3_mapped", [40, 109, 41]], [[127261, 127261], "disallowed_STD3_mapped", [40, 110, 41]], [[127262, 127262], "disallowed_STD3_mapped", [40, 111, 41]], [[127263, 127263], "disallowed_STD3_mapped", [40, 112, 41]], [[127264, 127264], "disallowed_STD3_mapped", [40, 113, 41]], [[127265, 127265], "disallowed_STD3_mapped", [40, 114, 41]], [[127266, 127266], "disallowed_STD3_mapped", [40, 115, 41]], [[127267, 127267], "disallowed_STD3_mapped", [40, 116, 41]], [[127268, 127268], "disallowed_STD3_mapped", [40, 117, 41]], [[127269, 127269], "disallowed_STD3_mapped", [40, 118, 41]], [[127270, 127270], "disallowed_STD3_mapped", [40, 119, 41]], [[127271, 127271], "disallowed_STD3_mapped", [40, 120, 41]], [[127272, 127272], "disallowed_STD3_mapped", [40, 121, 41]], [[127273, 127273], "disallowed_STD3_mapped", [40, 122, 41]], [[127274, 127274], "mapped", [12308, 115, 12309]], [[127275, 127275], "mapped", [99]], [[127276, 127276], "mapped", [114]], [[127277, 127277], "mapped", [99, 100]], [[127278, 127278], "mapped", [119, 122]], [[127279, 127279], "disallowed"], [[127280, 127280], "mapped", [97]], [[127281, 127281], "mapped", [98]], [[127282, 127282], "mapped", [99]], [[127283, 127283], "mapped", [100]], [[127284, 127284], "mapped", [101]], [[127285, 127285], "mapped", [102]], [[127286, 127286], "mapped", [103]], [[127287, 127287], "mapped", [104]], [[127288, 127288], "mapped", [105]], [[127289, 127289], "mapped", [106]], [[127290, 127290], "mapped", [107]], [[127291, 127291], "mapped", [108]], [[127292, 127292], "mapped", [109]], [[127293, 127293], "mapped", [110]], [[127294, 127294], "mapped", [111]], [[127295, 127295], "mapped", [112]], [[127296, 127296], "mapped", [113]], [[127297, 127297], "mapped", [114]], [[127298, 127298], "mapped", [115]], [[127299, 127299], "mapped", [116]], [[127300, 127300], "mapped", [117]], [[127301, 127301], "mapped", [118]], [[127302, 127302], "mapped", [119]], [[127303, 127303], "mapped", [120]], [[127304, 127304], "mapped", [121]], [[127305, 127305], "mapped", [122]], [[127306, 127306], "mapped", [104, 118]], [[127307, 127307], "mapped", [109, 118]], [[127308, 127308], "mapped", [115, 100]], [[127309, 127309], "mapped", [115, 115]], [[127310, 127310], "mapped", [112, 112, 118]], [[127311, 127311], "mapped", [119, 99]], [[127312, 127318], "valid", [], "NV8"], [[127319, 127319], "valid", [], "NV8"], [[127320, 127326], "valid", [], "NV8"], [[127327, 127327], "valid", [], "NV8"], [[127328, 127337], "valid", [], "NV8"], [[127338, 127338], "mapped", [109, 99]], [[127339, 127339], "mapped", [109, 100]], [[127340, 127343], "disallowed"], [[127344, 127352], "valid", [], "NV8"], [[127353, 127353], "valid", [], "NV8"], [[127354, 127354], "valid", [], "NV8"], [[127355, 127356], "valid", [], "NV8"], [[127357, 127358], "valid", [], "NV8"], [[127359, 127359], "valid", [], "NV8"], [[127360, 127369], "valid", [], "NV8"], [[127370, 127373], "valid", [], "NV8"], [[127374, 127375], "valid", [], "NV8"], [[127376, 127376], "mapped", [100, 106]], [[127377, 127386], "valid", [], "NV8"], [[127387, 127461], "disallowed"], [[127462, 127487], "valid", [], "NV8"], [[127488, 127488], "mapped", [12411, 12363]], [[127489, 127489], "mapped", [12467, 12467]], [[127490, 127490], "mapped", [12469]], [[127491, 127503], "disallowed"], [[127504, 127504], "mapped", [25163]], [[127505, 127505], "mapped", [23383]], [[127506, 127506], "mapped", [21452]], [[127507, 127507], "mapped", [12487]], [[127508, 127508], "mapped", [20108]], [[127509, 127509], "mapped", [22810]], [[127510, 127510], "mapped", [35299]], [[127511, 127511], "mapped", [22825]], [[127512, 127512], "mapped", [20132]], [[127513, 127513], "mapped", [26144]], [[127514, 127514], "mapped", [28961]], [[127515, 127515], "mapped", [26009]], [[127516, 127516], "mapped", [21069]], [[127517, 127517], "mapped", [24460]], [[127518, 127518], "mapped", [20877]], [[127519, 127519], "mapped", [26032]], [[127520, 127520], "mapped", [21021]], [[127521, 127521], "mapped", [32066]], [[127522, 127522], "mapped", [29983]], [[127523, 127523], "mapped", [36009]], [[127524, 127524], "mapped", [22768]], [[127525, 127525], "mapped", [21561]], [[127526, 127526], "mapped", [28436]], [[127527, 127527], "mapped", [25237]], [[127528, 127528], "mapped", [25429]], [[127529, 127529], "mapped", [19968]], [[127530, 127530], "mapped", [19977]], [[127531, 127531], "mapped", [36938]], [[127532, 127532], "mapped", [24038]], [[127533, 127533], "mapped", [20013]], [[127534, 127534], "mapped", [21491]], [[127535, 127535], "mapped", [25351]], [[127536, 127536], "mapped", [36208]], [[127537, 127537], "mapped", [25171]], [[127538, 127538], "mapped", [31105]], [[127539, 127539], "mapped", [31354]], [[127540, 127540], "mapped", [21512]], [[127541, 127541], "mapped", [28288]], [[127542, 127542], "mapped", [26377]], [[127543, 127543], "mapped", [26376]], [[127544, 127544], "mapped", [30003]], [[127545, 127545], "mapped", [21106]], [[127546, 127546], "mapped", [21942]], [[127547, 127551], "disallowed"], [[127552, 127552], "mapped", [12308, 26412, 12309]], [[127553, 127553], "mapped", [12308, 19977, 12309]], [[127554, 127554], "mapped", [12308, 20108, 12309]], [[127555, 127555], "mapped", [12308, 23433, 12309]], [[127556, 127556], "mapped", [12308, 28857, 12309]], [[127557, 127557], "mapped", [12308, 25171, 12309]], [[127558, 127558], "mapped", [12308, 30423, 12309]], [[127559, 127559], "mapped", [12308, 21213, 12309]], [[127560, 127560], "mapped", [12308, 25943, 12309]], [[127561, 127567], "disallowed"], [[127568, 127568], "mapped", [24471]], [[127569, 127569], "mapped", [21487]], [[127570, 127743], "disallowed"], [[127744, 127776], "valid", [], "NV8"], [[127777, 127788], "valid", [], "NV8"], [[127789, 127791], "valid", [], "NV8"], [[127792, 127797], "valid", [], "NV8"], [[127798, 127798], "valid", [], "NV8"], [[127799, 127868], "valid", [], "NV8"], [[127869, 127869], "valid", [], "NV8"], [[127870, 127871], "valid", [], "NV8"], [[127872, 127891], "valid", [], "NV8"], [[127892, 127903], "valid", [], "NV8"], [[127904, 127940], "valid", [], "NV8"], [[127941, 127941], "valid", [], "NV8"], [[127942, 127946], "valid", [], "NV8"], [[127947, 127950], "valid", [], "NV8"], [[127951, 127955], "valid", [], "NV8"], [[127956, 127967], "valid", [], "NV8"], [[127968, 127984], "valid", [], "NV8"], [[127985, 127991], "valid", [], "NV8"], [[127992, 127999], "valid", [], "NV8"], [[128e3, 128062], "valid", [], "NV8"], [[128063, 128063], "valid", [], "NV8"], [[128064, 128064], "valid", [], "NV8"], [[128065, 128065], "valid", [], "NV8"], [[128066, 128247], "valid", [], "NV8"], [[128248, 128248], "valid", [], "NV8"], [[128249, 128252], "valid", [], "NV8"], [[128253, 128254], "valid", [], "NV8"], [[128255, 128255], "valid", [], "NV8"], [[128256, 128317], "valid", [], "NV8"], [[128318, 128319], "valid", [], "NV8"], [[128320, 128323], "valid", [], "NV8"], [[128324, 128330], "valid", [], "NV8"], [[128331, 128335], "valid", [], "NV8"], [[128336, 128359], "valid", [], "NV8"], [[128360, 128377], "valid", [], "NV8"], [[128378, 128378], "disallowed"], [[128379, 128419], "valid", [], "NV8"], [[128420, 128420], "disallowed"], [[128421, 128506], "valid", [], "NV8"], [[128507, 128511], "valid", [], "NV8"], [[128512, 128512], "valid", [], "NV8"], [[128513, 128528], "valid", [], "NV8"], [[128529, 128529], "valid", [], "NV8"], [[128530, 128532], "valid", [], "NV8"], [[128533, 128533], "valid", [], "NV8"], [[128534, 128534], "valid", [], "NV8"], [[128535, 128535], "valid", [], "NV8"], [[128536, 128536], "valid", [], "NV8"], [[128537, 128537], "valid", [], "NV8"], [[128538, 128538], "valid", [], "NV8"], [[128539, 128539], "valid", [], "NV8"], [[128540, 128542], "valid", [], "NV8"], [[128543, 128543], "valid", [], "NV8"], [[128544, 128549], "valid", [], "NV8"], [[128550, 128551], "valid", [], "NV8"], [[128552, 128555], "valid", [], "NV8"], [[128556, 128556], "valid", [], "NV8"], [[128557, 128557], "valid", [], "NV8"], [[128558, 128559], "valid", [], "NV8"], [[128560, 128563], "valid", [], "NV8"], [[128564, 128564], "valid", [], "NV8"], [[128565, 128576], "valid", [], "NV8"], [[128577, 128578], "valid", [], "NV8"], [[128579, 128580], "valid", [], "NV8"], [[128581, 128591], "valid", [], "NV8"], [[128592, 128639], "valid", [], "NV8"], [[128640, 128709], "valid", [], "NV8"], [[128710, 128719], "valid", [], "NV8"], [[128720, 128720], "valid", [], "NV8"], [[128721, 128735], "disallowed"], [[128736, 128748], "valid", [], "NV8"], [[128749, 128751], "disallowed"], [[128752, 128755], "valid", [], "NV8"], [[128756, 128767], "disallowed"], [[128768, 128883], "valid", [], "NV8"], [[128884, 128895], "disallowed"], [[128896, 128980], "valid", [], "NV8"], [[128981, 129023], "disallowed"], [[129024, 129035], "valid", [], "NV8"], [[129036, 129039], "disallowed"], [[129040, 129095], "valid", [], "NV8"], [[129096, 129103], "disallowed"], [[129104, 129113], "valid", [], "NV8"], [[129114, 129119], "disallowed"], [[129120, 129159], "valid", [], "NV8"], [[129160, 129167], "disallowed"], [[129168, 129197], "valid", [], "NV8"], [[129198, 129295], "disallowed"], [[129296, 129304], "valid", [], "NV8"], [[129305, 129407], "disallowed"], [[129408, 129412], "valid", [], "NV8"], [[129413, 129471], "disallowed"], [[129472, 129472], "valid", [], "NV8"], [[129473, 131069], "disallowed"], [[131070, 131071], "disallowed"], [[131072, 173782], "valid"], [[173783, 173823], "disallowed"], [[173824, 177972], "valid"], [[177973, 177983], "disallowed"], [[177984, 178205], "valid"], [[178206, 178207], "disallowed"], [[178208, 183969], "valid"], [[183970, 194559], "disallowed"], [[194560, 194560], "mapped", [20029]], [[194561, 194561], "mapped", [20024]], [[194562, 194562], "mapped", [20033]], [[194563, 194563], "mapped", [131362]], [[194564, 194564], "mapped", [20320]], [[194565, 194565], "mapped", [20398]], [[194566, 194566], "mapped", [20411]], [[194567, 194567], "mapped", [20482]], [[194568, 194568], "mapped", [20602]], [[194569, 194569], "mapped", [20633]], [[194570, 194570], "mapped", [20711]], [[194571, 194571], "mapped", [20687]], [[194572, 194572], "mapped", [13470]], [[194573, 194573], "mapped", [132666]], [[194574, 194574], "mapped", [20813]], [[194575, 194575], "mapped", [20820]], [[194576, 194576], "mapped", [20836]], [[194577, 194577], "mapped", [20855]], [[194578, 194578], "mapped", [132380]], [[194579, 194579], "mapped", [13497]], [[194580, 194580], "mapped", [20839]], [[194581, 194581], "mapped", [20877]], [[194582, 194582], "mapped", [132427]], [[194583, 194583], "mapped", [20887]], [[194584, 194584], "mapped", [20900]], [[194585, 194585], "mapped", [20172]], [[194586, 194586], "mapped", [20908]], [[194587, 194587], "mapped", [20917]], [[194588, 194588], "mapped", [168415]], [[194589, 194589], "mapped", [20981]], [[194590, 194590], "mapped", [20995]], [[194591, 194591], "mapped", [13535]], [[194592, 194592], "mapped", [21051]], [[194593, 194593], "mapped", [21062]], [[194594, 194594], "mapped", [21106]], [[194595, 194595], "mapped", [21111]], [[194596, 194596], "mapped", [13589]], [[194597, 194597], "mapped", [21191]], [[194598, 194598], "mapped", [21193]], [[194599, 194599], "mapped", [21220]], [[194600, 194600], "mapped", [21242]], [[194601, 194601], "mapped", [21253]], [[194602, 194602], "mapped", [21254]], [[194603, 194603], "mapped", [21271]], [[194604, 194604], "mapped", [21321]], [[194605, 194605], "mapped", [21329]], [[194606, 194606], "mapped", [21338]], [[194607, 194607], "mapped", [21363]], [[194608, 194608], "mapped", [21373]], [[194609, 194611], "mapped", [21375]], [[194612, 194612], "mapped", [133676]], [[194613, 194613], "mapped", [28784]], [[194614, 194614], "mapped", [21450]], [[194615, 194615], "mapped", [21471]], [[194616, 194616], "mapped", [133987]], [[194617, 194617], "mapped", [21483]], [[194618, 194618], "mapped", [21489]], [[194619, 194619], "mapped", [21510]], [[194620, 194620], "mapped", [21662]], [[194621, 194621], "mapped", [21560]], [[194622, 194622], "mapped", [21576]], [[194623, 194623], "mapped", [21608]], [[194624, 194624], "mapped", [21666]], [[194625, 194625], "mapped", [21750]], [[194626, 194626], "mapped", [21776]], [[194627, 194627], "mapped", [21843]], [[194628, 194628], "mapped", [21859]], [[194629, 194630], "mapped", [21892]], [[194631, 194631], "mapped", [21913]], [[194632, 194632], "mapped", [21931]], [[194633, 194633], "mapped", [21939]], [[194634, 194634], "mapped", [21954]], [[194635, 194635], "mapped", [22294]], [[194636, 194636], "mapped", [22022]], [[194637, 194637], "mapped", [22295]], [[194638, 194638], "mapped", [22097]], [[194639, 194639], "mapped", [22132]], [[194640, 194640], "mapped", [20999]], [[194641, 194641], "mapped", [22766]], [[194642, 194642], "mapped", [22478]], [[194643, 194643], "mapped", [22516]], [[194644, 194644], "mapped", [22541]], [[194645, 194645], "mapped", [22411]], [[194646, 194646], "mapped", [22578]], [[194647, 194647], "mapped", [22577]], [[194648, 194648], "mapped", [22700]], [[194649, 194649], "mapped", [136420]], [[194650, 194650], "mapped", [22770]], [[194651, 194651], "mapped", [22775]], [[194652, 194652], "mapped", [22790]], [[194653, 194653], "mapped", [22810]], [[194654, 194654], "mapped", [22818]], [[194655, 194655], "mapped", [22882]], [[194656, 194656], "mapped", [136872]], [[194657, 194657], "mapped", [136938]], [[194658, 194658], "mapped", [23020]], [[194659, 194659], "mapped", [23067]], [[194660, 194660], "mapped", [23079]], [[194661, 194661], "mapped", [23e3]], [[194662, 194662], "mapped", [23142]], [[194663, 194663], "mapped", [14062]], [[194664, 194664], "disallowed"], [[194665, 194665], "mapped", [23304]], [[194666, 194667], "mapped", [23358]], [[194668, 194668], "mapped", [137672]], [[194669, 194669], "mapped", [23491]], [[194670, 194670], "mapped", [23512]], [[194671, 194671], "mapped", [23527]], [[194672, 194672], "mapped", [23539]], [[194673, 194673], "mapped", [138008]], [[194674, 194674], "mapped", [23551]], [[194675, 194675], "mapped", [23558]], [[194676, 194676], "disallowed"], [[194677, 194677], "mapped", [23586]], [[194678, 194678], "mapped", [14209]], [[194679, 194679], "mapped", [23648]], [[194680, 194680], "mapped", [23662]], [[194681, 194681], "mapped", [23744]], [[194682, 194682], "mapped", [23693]], [[194683, 194683], "mapped", [138724]], [[194684, 194684], "mapped", [23875]], [[194685, 194685], "mapped", [138726]], [[194686, 194686], "mapped", [23918]], [[194687, 194687], "mapped", [23915]], [[194688, 194688], "mapped", [23932]], [[194689, 194689], "mapped", [24033]], [[194690, 194690], "mapped", [24034]], [[194691, 194691], "mapped", [14383]], [[194692, 194692], "mapped", [24061]], [[194693, 194693], "mapped", [24104]], [[194694, 194694], "mapped", [24125]], [[194695, 194695], "mapped", [24169]], [[194696, 194696], "mapped", [14434]], [[194697, 194697], "mapped", [139651]], [[194698, 194698], "mapped", [14460]], [[194699, 194699], "mapped", [24240]], [[194700, 194700], "mapped", [24243]], [[194701, 194701], "mapped", [24246]], [[194702, 194702], "mapped", [24266]], [[194703, 194703], "mapped", [172946]], [[194704, 194704], "mapped", [24318]], [[194705, 194706], "mapped", [140081]], [[194707, 194707], "mapped", [33281]], [[194708, 194709], "mapped", [24354]], [[194710, 194710], "mapped", [14535]], [[194711, 194711], "mapped", [144056]], [[194712, 194712], "mapped", [156122]], [[194713, 194713], "mapped", [24418]], [[194714, 194714], "mapped", [24427]], [[194715, 194715], "mapped", [14563]], [[194716, 194716], "mapped", [24474]], [[194717, 194717], "mapped", [24525]], [[194718, 194718], "mapped", [24535]], [[194719, 194719], "mapped", [24569]], [[194720, 194720], "mapped", [24705]], [[194721, 194721], "mapped", [14650]], [[194722, 194722], "mapped", [14620]], [[194723, 194723], "mapped", [24724]], [[194724, 194724], "mapped", [141012]], [[194725, 194725], "mapped", [24775]], [[194726, 194726], "mapped", [24904]], [[194727, 194727], "mapped", [24908]], [[194728, 194728], "mapped", [24910]], [[194729, 194729], "mapped", [24908]], [[194730, 194730], "mapped", [24954]], [[194731, 194731], "mapped", [24974]], [[194732, 194732], "mapped", [25010]], [[194733, 194733], "mapped", [24996]], [[194734, 194734], "mapped", [25007]], [[194735, 194735], "mapped", [25054]], [[194736, 194736], "mapped", [25074]], [[194737, 194737], "mapped", [25078]], [[194738, 194738], "mapped", [25104]], [[194739, 194739], "mapped", [25115]], [[194740, 194740], "mapped", [25181]], [[194741, 194741], "mapped", [25265]], [[194742, 194742], "mapped", [25300]], [[194743, 194743], "mapped", [25424]], [[194744, 194744], "mapped", [142092]], [[194745, 194745], "mapped", [25405]], [[194746, 194746], "mapped", [25340]], [[194747, 194747], "mapped", [25448]], [[194748, 194748], "mapped", [25475]], [[194749, 194749], "mapped", [25572]], [[194750, 194750], "mapped", [142321]], [[194751, 194751], "mapped", [25634]], [[194752, 194752], "mapped", [25541]], [[194753, 194753], "mapped", [25513]], [[194754, 194754], "mapped", [14894]], [[194755, 194755], "mapped", [25705]], [[194756, 194756], "mapped", [25726]], [[194757, 194757], "mapped", [25757]], [[194758, 194758], "mapped", [25719]], [[194759, 194759], "mapped", [14956]], [[194760, 194760], "mapped", [25935]], [[194761, 194761], "mapped", [25964]], [[194762, 194762], "mapped", [143370]], [[194763, 194763], "mapped", [26083]], [[194764, 194764], "mapped", [26360]], [[194765, 194765], "mapped", [26185]], [[194766, 194766], "mapped", [15129]], [[194767, 194767], "mapped", [26257]], [[194768, 194768], "mapped", [15112]], [[194769, 194769], "mapped", [15076]], [[194770, 194770], "mapped", [20882]], [[194771, 194771], "mapped", [20885]], [[194772, 194772], "mapped", [26368]], [[194773, 194773], "mapped", [26268]], [[194774, 194774], "mapped", [32941]], [[194775, 194775], "mapped", [17369]], [[194776, 194776], "mapped", [26391]], [[194777, 194777], "mapped", [26395]], [[194778, 194778], "mapped", [26401]], [[194779, 194779], "mapped", [26462]], [[194780, 194780], "mapped", [26451]], [[194781, 194781], "mapped", [144323]], [[194782, 194782], "mapped", [15177]], [[194783, 194783], "mapped", [26618]], [[194784, 194784], "mapped", [26501]], [[194785, 194785], "mapped", [26706]], [[194786, 194786], "mapped", [26757]], [[194787, 194787], "mapped", [144493]], [[194788, 194788], "mapped", [26766]], [[194789, 194789], "mapped", [26655]], [[194790, 194790], "mapped", [26900]], [[194791, 194791], "mapped", [15261]], [[194792, 194792], "mapped", [26946]], [[194793, 194793], "mapped", [27043]], [[194794, 194794], "mapped", [27114]], [[194795, 194795], "mapped", [27304]], [[194796, 194796], "mapped", [145059]], [[194797, 194797], "mapped", [27355]], [[194798, 194798], "mapped", [15384]], [[194799, 194799], "mapped", [27425]], [[194800, 194800], "mapped", [145575]], [[194801, 194801], "mapped", [27476]], [[194802, 194802], "mapped", [15438]], [[194803, 194803], "mapped", [27506]], [[194804, 194804], "mapped", [27551]], [[194805, 194805], "mapped", [27578]], [[194806, 194806], "mapped", [27579]], [[194807, 194807], "mapped", [146061]], [[194808, 194808], "mapped", [138507]], [[194809, 194809], "mapped", [146170]], [[194810, 194810], "mapped", [27726]], [[194811, 194811], "mapped", [146620]], [[194812, 194812], "mapped", [27839]], [[194813, 194813], "mapped", [27853]], [[194814, 194814], "mapped", [27751]], [[194815, 194815], "mapped", [27926]], [[194816, 194816], "mapped", [27966]], [[194817, 194817], "mapped", [28023]], [[194818, 194818], "mapped", [27969]], [[194819, 194819], "mapped", [28009]], [[194820, 194820], "mapped", [28024]], [[194821, 194821], "mapped", [28037]], [[194822, 194822], "mapped", [146718]], [[194823, 194823], "mapped", [27956]], [[194824, 194824], "mapped", [28207]], [[194825, 194825], "mapped", [28270]], [[194826, 194826], "mapped", [15667]], [[194827, 194827], "mapped", [28363]], [[194828, 194828], "mapped", [28359]], [[194829, 194829], "mapped", [147153]], [[194830, 194830], "mapped", [28153]], [[194831, 194831], "mapped", [28526]], [[194832, 194832], "mapped", [147294]], [[194833, 194833], "mapped", [147342]], [[194834, 194834], "mapped", [28614]], [[194835, 194835], "mapped", [28729]], [[194836, 194836], "mapped", [28702]], [[194837, 194837], "mapped", [28699]], [[194838, 194838], "mapped", [15766]], [[194839, 194839], "mapped", [28746]], [[194840, 194840], "mapped", [28797]], [[194841, 194841], "mapped", [28791]], [[194842, 194842], "mapped", [28845]], [[194843, 194843], "mapped", [132389]], [[194844, 194844], "mapped", [28997]], [[194845, 194845], "mapped", [148067]], [[194846, 194846], "mapped", [29084]], [[194847, 194847], "disallowed"], [[194848, 194848], "mapped", [29224]], [[194849, 194849], "mapped", [29237]], [[194850, 194850], "mapped", [29264]], [[194851, 194851], "mapped", [149e3]], [[194852, 194852], "mapped", [29312]], [[194853, 194853], "mapped", [29333]], [[194854, 194854], "mapped", [149301]], [[194855, 194855], "mapped", [149524]], [[194856, 194856], "mapped", [29562]], [[194857, 194857], "mapped", [29579]], [[194858, 194858], "mapped", [16044]], [[194859, 194859], "mapped", [29605]], [[194860, 194861], "mapped", [16056]], [[194862, 194862], "mapped", [29767]], [[194863, 194863], "mapped", [29788]], [[194864, 194864], "mapped", [29809]], [[194865, 194865], "mapped", [29829]], [[194866, 194866], "mapped", [29898]], [[194867, 194867], "mapped", [16155]], [[194868, 194868], "mapped", [29988]], [[194869, 194869], "mapped", [150582]], [[194870, 194870], "mapped", [30014]], [[194871, 194871], "mapped", [150674]], [[194872, 194872], "mapped", [30064]], [[194873, 194873], "mapped", [139679]], [[194874, 194874], "mapped", [30224]], [[194875, 194875], "mapped", [151457]], [[194876, 194876], "mapped", [151480]], [[194877, 194877], "mapped", [151620]], [[194878, 194878], "mapped", [16380]], [[194879, 194879], "mapped", [16392]], [[194880, 194880], "mapped", [30452]], [[194881, 194881], "mapped", [151795]], [[194882, 194882], "mapped", [151794]], [[194883, 194883], "mapped", [151833]], [[194884, 194884], "mapped", [151859]], [[194885, 194885], "mapped", [30494]], [[194886, 194887], "mapped", [30495]], [[194888, 194888], "mapped", [30538]], [[194889, 194889], "mapped", [16441]], [[194890, 194890], "mapped", [30603]], [[194891, 194891], "mapped", [16454]], [[194892, 194892], "mapped", [16534]], [[194893, 194893], "mapped", [152605]], [[194894, 194894], "mapped", [30798]], [[194895, 194895], "mapped", [30860]], [[194896, 194896], "mapped", [30924]], [[194897, 194897], "mapped", [16611]], [[194898, 194898], "mapped", [153126]], [[194899, 194899], "mapped", [31062]], [[194900, 194900], "mapped", [153242]], [[194901, 194901], "mapped", [153285]], [[194902, 194902], "mapped", [31119]], [[194903, 194903], "mapped", [31211]], [[194904, 194904], "mapped", [16687]], [[194905, 194905], "mapped", [31296]], [[194906, 194906], "mapped", [31306]], [[194907, 194907], "mapped", [31311]], [[194908, 194908], "mapped", [153980]], [[194909, 194910], "mapped", [154279]], [[194911, 194911], "disallowed"], [[194912, 194912], "mapped", [16898]], [[194913, 194913], "mapped", [154539]], [[194914, 194914], "mapped", [31686]], [[194915, 194915], "mapped", [31689]], [[194916, 194916], "mapped", [16935]], [[194917, 194917], "mapped", [154752]], [[194918, 194918], "mapped", [31954]], [[194919, 194919], "mapped", [17056]], [[194920, 194920], "mapped", [31976]], [[194921, 194921], "mapped", [31971]], [[194922, 194922], "mapped", [32e3]], [[194923, 194923], "mapped", [155526]], [[194924, 194924], "mapped", [32099]], [[194925, 194925], "mapped", [17153]], [[194926, 194926], "mapped", [32199]], [[194927, 194927], "mapped", [32258]], [[194928, 194928], "mapped", [32325]], [[194929, 194929], "mapped", [17204]], [[194930, 194930], "mapped", [156200]], [[194931, 194931], "mapped", [156231]], [[194932, 194932], "mapped", [17241]], [[194933, 194933], "mapped", [156377]], [[194934, 194934], "mapped", [32634]], [[194935, 194935], "mapped", [156478]], [[194936, 194936], "mapped", [32661]], [[194937, 194937], "mapped", [32762]], [[194938, 194938], "mapped", [32773]], [[194939, 194939], "mapped", [156890]], [[194940, 194940], "mapped", [156963]], [[194941, 194941], "mapped", [32864]], [[194942, 194942], "mapped", [157096]], [[194943, 194943], "mapped", [32880]], [[194944, 194944], "mapped", [144223]], [[194945, 194945], "mapped", [17365]], [[194946, 194946], "mapped", [32946]], [[194947, 194947], "mapped", [33027]], [[194948, 194948], "mapped", [17419]], [[194949, 194949], "mapped", [33086]], [[194950, 194950], "mapped", [23221]], [[194951, 194951], "mapped", [157607]], [[194952, 194952], "mapped", [157621]], [[194953, 194953], "mapped", [144275]], [[194954, 194954], "mapped", [144284]], [[194955, 194955], "mapped", [33281]], [[194956, 194956], "mapped", [33284]], [[194957, 194957], "mapped", [36766]], [[194958, 194958], "mapped", [17515]], [[194959, 194959], "mapped", [33425]], [[194960, 194960], "mapped", [33419]], [[194961, 194961], "mapped", [33437]], [[194962, 194962], "mapped", [21171]], [[194963, 194963], "mapped", [33457]], [[194964, 194964], "mapped", [33459]], [[194965, 194965], "mapped", [33469]], [[194966, 194966], "mapped", [33510]], [[194967, 194967], "mapped", [158524]], [[194968, 194968], "mapped", [33509]], [[194969, 194969], "mapped", [33565]], [[194970, 194970], "mapped", [33635]], [[194971, 194971], "mapped", [33709]], [[194972, 194972], "mapped", [33571]], [[194973, 194973], "mapped", [33725]], [[194974, 194974], "mapped", [33767]], [[194975, 194975], "mapped", [33879]], [[194976, 194976], "mapped", [33619]], [[194977, 194977], "mapped", [33738]], [[194978, 194978], "mapped", [33740]], [[194979, 194979], "mapped", [33756]], [[194980, 194980], "mapped", [158774]], [[194981, 194981], "mapped", [159083]], [[194982, 194982], "mapped", [158933]], [[194983, 194983], "mapped", [17707]], [[194984, 194984], "mapped", [34033]], [[194985, 194985], "mapped", [34035]], [[194986, 194986], "mapped", [34070]], [[194987, 194987], "mapped", [160714]], [[194988, 194988], "mapped", [34148]], [[194989, 194989], "mapped", [159532]], [[194990, 194990], "mapped", [17757]], [[194991, 194991], "mapped", [17761]], [[194992, 194992], "mapped", [159665]], [[194993, 194993], "mapped", [159954]], [[194994, 194994], "mapped", [17771]], [[194995, 194995], "mapped", [34384]], [[194996, 194996], "mapped", [34396]], [[194997, 194997], "mapped", [34407]], [[194998, 194998], "mapped", [34409]], [[194999, 194999], "mapped", [34473]], [[195e3, 195e3], "mapped", [34440]], [[195001, 195001], "mapped", [34574]], [[195002, 195002], "mapped", [34530]], [[195003, 195003], "mapped", [34681]], [[195004, 195004], "mapped", [34600]], [[195005, 195005], "mapped", [34667]], [[195006, 195006], "mapped", [34694]], [[195007, 195007], "disallowed"], [[195008, 195008], "mapped", [34785]], [[195009, 195009], "mapped", [34817]], [[195010, 195010], "mapped", [17913]], [[195011, 195011], "mapped", [34912]], [[195012, 195012], "mapped", [34915]], [[195013, 195013], "mapped", [161383]], [[195014, 195014], "mapped", [35031]], [[195015, 195015], "mapped", [35038]], [[195016, 195016], "mapped", [17973]], [[195017, 195017], "mapped", [35066]], [[195018, 195018], "mapped", [13499]], [[195019, 195019], "mapped", [161966]], [[195020, 195020], "mapped", [162150]], [[195021, 195021], "mapped", [18110]], [[195022, 195022], "mapped", [18119]], [[195023, 195023], "mapped", [35488]], [[195024, 195024], "mapped", [35565]], [[195025, 195025], "mapped", [35722]], [[195026, 195026], "mapped", [35925]], [[195027, 195027], "mapped", [162984]], [[195028, 195028], "mapped", [36011]], [[195029, 195029], "mapped", [36033]], [[195030, 195030], "mapped", [36123]], [[195031, 195031], "mapped", [36215]], [[195032, 195032], "mapped", [163631]], [[195033, 195033], "mapped", [133124]], [[195034, 195034], "mapped", [36299]], [[195035, 195035], "mapped", [36284]], [[195036, 195036], "mapped", [36336]], [[195037, 195037], "mapped", [133342]], [[195038, 195038], "mapped", [36564]], [[195039, 195039], "mapped", [36664]], [[195040, 195040], "mapped", [165330]], [[195041, 195041], "mapped", [165357]], [[195042, 195042], "mapped", [37012]], [[195043, 195043], "mapped", [37105]], [[195044, 195044], "mapped", [37137]], [[195045, 195045], "mapped", [165678]], [[195046, 195046], "mapped", [37147]], [[195047, 195047], "mapped", [37432]], [[195048, 195048], "mapped", [37591]], [[195049, 195049], "mapped", [37592]], [[195050, 195050], "mapped", [37500]], [[195051, 195051], "mapped", [37881]], [[195052, 195052], "mapped", [37909]], [[195053, 195053], "mapped", [166906]], [[195054, 195054], "mapped", [38283]], [[195055, 195055], "mapped", [18837]], [[195056, 195056], "mapped", [38327]], [[195057, 195057], "mapped", [167287]], [[195058, 195058], "mapped", [18918]], [[195059, 195059], "mapped", [38595]], [[195060, 195060], "mapped", [23986]], [[195061, 195061], "mapped", [38691]], [[195062, 195062], "mapped", [168261]], [[195063, 195063], "mapped", [168474]], [[195064, 195064], "mapped", [19054]], [[195065, 195065], "mapped", [19062]], [[195066, 195066], "mapped", [38880]], [[195067, 195067], "mapped", [168970]], [[195068, 195068], "mapped", [19122]], [[195069, 195069], "mapped", [169110]], [[195070, 195071], "mapped", [38923]], [[195072, 195072], "mapped", [38953]], [[195073, 195073], "mapped", [169398]], [[195074, 195074], "mapped", [39138]], [[195075, 195075], "mapped", [19251]], [[195076, 195076], "mapped", [39209]], [[195077, 195077], "mapped", [39335]], [[195078, 195078], "mapped", [39362]], [[195079, 195079], "mapped", [39422]], [[195080, 195080], "mapped", [19406]], [[195081, 195081], "mapped", [170800]], [[195082, 195082], "mapped", [39698]], [[195083, 195083], "mapped", [4e4]], [[195084, 195084], "mapped", [40189]], [[195085, 195085], "mapped", [19662]], [[195086, 195086], "mapped", [19693]], [[195087, 195087], "mapped", [40295]], [[195088, 195088], "mapped", [172238]], [[195089, 195089], "mapped", [19704]], [[195090, 195090], "mapped", [172293]], [[195091, 195091], "mapped", [172558]], [[195092, 195092], "mapped", [172689]], [[195093, 195093], "mapped", [40635]], [[195094, 195094], "mapped", [19798]], [[195095, 195095], "mapped", [40697]], [[195096, 195096], "mapped", [40702]], [[195097, 195097], "mapped", [40709]], [[195098, 195098], "mapped", [40719]], [[195099, 195099], "mapped", [40726]], [[195100, 195100], "mapped", [40763]], [[195101, 195101], "mapped", [173568]], [[195102, 196605], "disallowed"], [[196606, 196607], "disallowed"], [[196608, 262141], "disallowed"], [[262142, 262143], "disallowed"], [[262144, 327677], "disallowed"], [[327678, 327679], "disallowed"], [[327680, 393213], "disallowed"], [[393214, 393215], "disallowed"], [[393216, 458749], "disallowed"], [[458750, 458751], "disallowed"], [[458752, 524285], "disallowed"], [[524286, 524287], "disallowed"], [[524288, 589821], "disallowed"], [[589822, 589823], "disallowed"], [[589824, 655357], "disallowed"], [[655358, 655359], "disallowed"], [[655360, 720893], "disallowed"], [[720894, 720895], "disallowed"], [[720896, 786429], "disallowed"], [[786430, 786431], "disallowed"], [[786432, 851965], "disallowed"], [[851966, 851967], "disallowed"], [[851968, 917501], "disallowed"], [[917502, 917503], "disallowed"], [[917504, 917504], "disallowed"], [[917505, 917505], "disallowed"], [[917506, 917535], "disallowed"], [[917536, 917631], "disallowed"], [[917632, 917759], "disallowed"], [[917760, 917999], "ignored"], [[918e3, 983037], "disallowed"], [[983038, 983039], "disallowed"], [[983040, 1048573], "disallowed"], [[1048574, 1048575], "disallowed"], [[1048576, 1114109], "disallowed"], [[1114110, 1114111], "disallowed"]];
+    module2.exports = [[[0, 44], 4], [[45, 46], 2], [47, 4], [[48, 57], 2], [[58, 64], 4], [65, 1, "a"], [66, 1, "b"], [67, 1, "c"], [68, 1, "d"], [69, 1, "e"], [70, 1, "f"], [71, 1, "g"], [72, 1, "h"], [73, 1, "i"], [74, 1, "j"], [75, 1, "k"], [76, 1, "l"], [77, 1, "m"], [78, 1, "n"], [79, 1, "o"], [80, 1, "p"], [81, 1, "q"], [82, 1, "r"], [83, 1, "s"], [84, 1, "t"], [85, 1, "u"], [86, 1, "v"], [87, 1, "w"], [88, 1, "x"], [89, 1, "y"], [90, 1, "z"], [[91, 96], 4], [[97, 122], 2], [[123, 127], 4], [[128, 159], 3], [160, 5, " "], [[161, 167], 2], [168, 5, " \u0308"], [169, 2], [170, 1, "a"], [[171, 172], 2], [173, 7], [174, 2], [175, 5, " \u0304"], [[176, 177], 2], [178, 1, "2"], [179, 1, "3"], [180, 5, " \u0301"], [181, 1, "\u03BC"], [182, 2], [183, 2], [184, 5, " \u0327"], [185, 1, "1"], [186, 1, "o"], [187, 2], [188, 1, "1\u20444"], [189, 1, "1\u20442"], [190, 1, "3\u20444"], [191, 2], [192, 1, "\xE0"], [193, 1, "\xE1"], [194, 1, "\xE2"], [195, 1, "\xE3"], [196, 1, "\xE4"], [197, 1, "\xE5"], [198, 1, "\xE6"], [199, 1, "\xE7"], [200, 1, "\xE8"], [201, 1, "\xE9"], [202, 1, "\xEA"], [203, 1, "\xEB"], [204, 1, "\xEC"], [205, 1, "\xED"], [206, 1, "\xEE"], [207, 1, "\xEF"], [208, 1, "\xF0"], [209, 1, "\xF1"], [210, 1, "\xF2"], [211, 1, "\xF3"], [212, 1, "\xF4"], [213, 1, "\xF5"], [214, 1, "\xF6"], [215, 2], [216, 1, "\xF8"], [217, 1, "\xF9"], [218, 1, "\xFA"], [219, 1, "\xFB"], [220, 1, "\xFC"], [221, 1, "\xFD"], [222, 1, "\xFE"], [223, 6, "ss"], [[224, 246], 2], [247, 2], [[248, 255], 2], [256, 1, "\u0101"], [257, 2], [258, 1, "\u0103"], [259, 2], [260, 1, "\u0105"], [261, 2], [262, 1, "\u0107"], [263, 2], [264, 1, "\u0109"], [265, 2], [266, 1, "\u010B"], [267, 2], [268, 1, "\u010D"], [269, 2], [270, 1, "\u010F"], [271, 2], [272, 1, "\u0111"], [273, 2], [274, 1, "\u0113"], [275, 2], [276, 1, "\u0115"], [277, 2], [278, 1, "\u0117"], [279, 2], [280, 1, "\u0119"], [281, 2], [282, 1, "\u011B"], [283, 2], [284, 1, "\u011D"], [285, 2], [286, 1, "\u011F"], [287, 2], [288, 1, "\u0121"], [289, 2], [290, 1, "\u0123"], [291, 2], [292, 1, "\u0125"], [293, 2], [294, 1, "\u0127"], [295, 2], [296, 1, "\u0129"], [297, 2], [298, 1, "\u012B"], [299, 2], [300, 1, "\u012D"], [301, 2], [302, 1, "\u012F"], [303, 2], [304, 1, "i\u0307"], [305, 2], [[306, 307], 1, "ij"], [308, 1, "\u0135"], [309, 2], [310, 1, "\u0137"], [[311, 312], 2], [313, 1, "\u013A"], [314, 2], [315, 1, "\u013C"], [316, 2], [317, 1, "\u013E"], [318, 2], [[319, 320], 1, "l\xB7"], [321, 1, "\u0142"], [322, 2], [323, 1, "\u0144"], [324, 2], [325, 1, "\u0146"], [326, 2], [327, 1, "\u0148"], [328, 2], [329, 1, "\u02BCn"], [330, 1, "\u014B"], [331, 2], [332, 1, "\u014D"], [333, 2], [334, 1, "\u014F"], [335, 2], [336, 1, "\u0151"], [337, 2], [338, 1, "\u0153"], [339, 2], [340, 1, "\u0155"], [341, 2], [342, 1, "\u0157"], [343, 2], [344, 1, "\u0159"], [345, 2], [346, 1, "\u015B"], [347, 2], [348, 1, "\u015D"], [349, 2], [350, 1, "\u015F"], [351, 2], [352, 1, "\u0161"], [353, 2], [354, 1, "\u0163"], [355, 2], [356, 1, "\u0165"], [357, 2], [358, 1, "\u0167"], [359, 2], [360, 1, "\u0169"], [361, 2], [362, 1, "\u016B"], [363, 2], [364, 1, "\u016D"], [365, 2], [366, 1, "\u016F"], [367, 2], [368, 1, "\u0171"], [369, 2], [370, 1, "\u0173"], [371, 2], [372, 1, "\u0175"], [373, 2], [374, 1, "\u0177"], [375, 2], [376, 1, "\xFF"], [377, 1, "\u017A"], [378, 2], [379, 1, "\u017C"], [380, 2], [381, 1, "\u017E"], [382, 2], [383, 1, "s"], [384, 2], [385, 1, "\u0253"], [386, 1, "\u0183"], [387, 2], [388, 1, "\u0185"], [389, 2], [390, 1, "\u0254"], [391, 1, "\u0188"], [392, 2], [393, 1, "\u0256"], [394, 1, "\u0257"], [395, 1, "\u018C"], [[396, 397], 2], [398, 1, "\u01DD"], [399, 1, "\u0259"], [400, 1, "\u025B"], [401, 1, "\u0192"], [402, 2], [403, 1, "\u0260"], [404, 1, "\u0263"], [405, 2], [406, 1, "\u0269"], [407, 1, "\u0268"], [408, 1, "\u0199"], [[409, 411], 2], [412, 1, "\u026F"], [413, 1, "\u0272"], [414, 2], [415, 1, "\u0275"], [416, 1, "\u01A1"], [417, 2], [418, 1, "\u01A3"], [419, 2], [420, 1, "\u01A5"], [421, 2], [422, 1, "\u0280"], [423, 1, "\u01A8"], [424, 2], [425, 1, "\u0283"], [[426, 427], 2], [428, 1, "\u01AD"], [429, 2], [430, 1, "\u0288"], [431, 1, "\u01B0"], [432, 2], [433, 1, "\u028A"], [434, 1, "\u028B"], [435, 1, "\u01B4"], [436, 2], [437, 1, "\u01B6"], [438, 2], [439, 1, "\u0292"], [440, 1, "\u01B9"], [[441, 443], 2], [444, 1, "\u01BD"], [[445, 451], 2], [[452, 454], 1, "d\u017E"], [[455, 457], 1, "lj"], [[458, 460], 1, "nj"], [461, 1, "\u01CE"], [462, 2], [463, 1, "\u01D0"], [464, 2], [465, 1, "\u01D2"], [466, 2], [467, 1, "\u01D4"], [468, 2], [469, 1, "\u01D6"], [470, 2], [471, 1, "\u01D8"], [472, 2], [473, 1, "\u01DA"], [474, 2], [475, 1, "\u01DC"], [[476, 477], 2], [478, 1, "\u01DF"], [479, 2], [480, 1, "\u01E1"], [481, 2], [482, 1, "\u01E3"], [483, 2], [484, 1, "\u01E5"], [485, 2], [486, 1, "\u01E7"], [487, 2], [488, 1, "\u01E9"], [489, 2], [490, 1, "\u01EB"], [491, 2], [492, 1, "\u01ED"], [493, 2], [494, 1, "\u01EF"], [[495, 496], 2], [[497, 499], 1, "dz"], [500, 1, "\u01F5"], [501, 2], [502, 1, "\u0195"], [503, 1, "\u01BF"], [504, 1, "\u01F9"], [505, 2], [506, 1, "\u01FB"], [507, 2], [508, 1, "\u01FD"], [509, 2], [510, 1, "\u01FF"], [511, 2], [512, 1, "\u0201"], [513, 2], [514, 1, "\u0203"], [515, 2], [516, 1, "\u0205"], [517, 2], [518, 1, "\u0207"], [519, 2], [520, 1, "\u0209"], [521, 2], [522, 1, "\u020B"], [523, 2], [524, 1, "\u020D"], [525, 2], [526, 1, "\u020F"], [527, 2], [528, 1, "\u0211"], [529, 2], [530, 1, "\u0213"], [531, 2], [532, 1, "\u0215"], [533, 2], [534, 1, "\u0217"], [535, 2], [536, 1, "\u0219"], [537, 2], [538, 1, "\u021B"], [539, 2], [540, 1, "\u021D"], [541, 2], [542, 1, "\u021F"], [543, 2], [544, 1, "\u019E"], [545, 2], [546, 1, "\u0223"], [547, 2], [548, 1, "\u0225"], [549, 2], [550, 1, "\u0227"], [551, 2], [552, 1, "\u0229"], [553, 2], [554, 1, "\u022B"], [555, 2], [556, 1, "\u022D"], [557, 2], [558, 1, "\u022F"], [559, 2], [560, 1, "\u0231"], [561, 2], [562, 1, "\u0233"], [563, 2], [[564, 566], 2], [[567, 569], 2], [570, 1, "\u2C65"], [571, 1, "\u023C"], [572, 2], [573, 1, "\u019A"], [574, 1, "\u2C66"], [[575, 576], 2], [577, 1, "\u0242"], [578, 2], [579, 1, "\u0180"], [580, 1, "\u0289"], [581, 1, "\u028C"], [582, 1, "\u0247"], [583, 2], [584, 1, "\u0249"], [585, 2], [586, 1, "\u024B"], [587, 2], [588, 1, "\u024D"], [589, 2], [590, 1, "\u024F"], [591, 2], [[592, 680], 2], [[681, 685], 2], [[686, 687], 2], [688, 1, "h"], [689, 1, "\u0266"], [690, 1, "j"], [691, 1, "r"], [692, 1, "\u0279"], [693, 1, "\u027B"], [694, 1, "\u0281"], [695, 1, "w"], [696, 1, "y"], [[697, 705], 2], [[706, 709], 2], [[710, 721], 2], [[722, 727], 2], [728, 5, " \u0306"], [729, 5, " \u0307"], [730, 5, " \u030A"], [731, 5, " \u0328"], [732, 5, " \u0303"], [733, 5, " \u030B"], [734, 2], [735, 2], [736, 1, "\u0263"], [737, 1, "l"], [738, 1, "s"], [739, 1, "x"], [740, 1, "\u0295"], [[741, 745], 2], [[746, 747], 2], [748, 2], [749, 2], [750, 2], [[751, 767], 2], [[768, 831], 2], [832, 1, "\u0300"], [833, 1, "\u0301"], [834, 2], [835, 1, "\u0313"], [836, 1, "\u0308\u0301"], [837, 1, "\u03B9"], [[838, 846], 2], [847, 7], [[848, 855], 2], [[856, 860], 2], [[861, 863], 2], [[864, 865], 2], [866, 2], [[867, 879], 2], [880, 1, "\u0371"], [881, 2], [882, 1, "\u0373"], [883, 2], [884, 1, "\u02B9"], [885, 2], [886, 1, "\u0377"], [887, 2], [[888, 889], 3], [890, 5, " \u03B9"], [[891, 893], 2], [894, 5, ";"], [895, 1, "\u03F3"], [[896, 899], 3], [900, 5, " \u0301"], [901, 5, " \u0308\u0301"], [902, 1, "\u03AC"], [903, 1, "\xB7"], [904, 1, "\u03AD"], [905, 1, "\u03AE"], [906, 1, "\u03AF"], [907, 3], [908, 1, "\u03CC"], [909, 3], [910, 1, "\u03CD"], [911, 1, "\u03CE"], [912, 2], [913, 1, "\u03B1"], [914, 1, "\u03B2"], [915, 1, "\u03B3"], [916, 1, "\u03B4"], [917, 1, "\u03B5"], [918, 1, "\u03B6"], [919, 1, "\u03B7"], [920, 1, "\u03B8"], [921, 1, "\u03B9"], [922, 1, "\u03BA"], [923, 1, "\u03BB"], [924, 1, "\u03BC"], [925, 1, "\u03BD"], [926, 1, "\u03BE"], [927, 1, "\u03BF"], [928, 1, "\u03C0"], [929, 1, "\u03C1"], [930, 3], [931, 1, "\u03C3"], [932, 1, "\u03C4"], [933, 1, "\u03C5"], [934, 1, "\u03C6"], [935, 1, "\u03C7"], [936, 1, "\u03C8"], [937, 1, "\u03C9"], [938, 1, "\u03CA"], [939, 1, "\u03CB"], [[940, 961], 2], [962, 6, "\u03C3"], [[963, 974], 2], [975, 1, "\u03D7"], [976, 1, "\u03B2"], [977, 1, "\u03B8"], [978, 1, "\u03C5"], [979, 1, "\u03CD"], [980, 1, "\u03CB"], [981, 1, "\u03C6"], [982, 1, "\u03C0"], [983, 2], [984, 1, "\u03D9"], [985, 2], [986, 1, "\u03DB"], [987, 2], [988, 1, "\u03DD"], [989, 2], [990, 1, "\u03DF"], [991, 2], [992, 1, "\u03E1"], [993, 2], [994, 1, "\u03E3"], [995, 2], [996, 1, "\u03E5"], [997, 2], [998, 1, "\u03E7"], [999, 2], [1e3, 1, "\u03E9"], [1001, 2], [1002, 1, "\u03EB"], [1003, 2], [1004, 1, "\u03ED"], [1005, 2], [1006, 1, "\u03EF"], [1007, 2], [1008, 1, "\u03BA"], [1009, 1, "\u03C1"], [1010, 1, "\u03C3"], [1011, 2], [1012, 1, "\u03B8"], [1013, 1, "\u03B5"], [1014, 2], [1015, 1, "\u03F8"], [1016, 2], [1017, 1, "\u03C3"], [1018, 1, "\u03FB"], [1019, 2], [1020, 2], [1021, 1, "\u037B"], [1022, 1, "\u037C"], [1023, 1, "\u037D"], [1024, 1, "\u0450"], [1025, 1, "\u0451"], [1026, 1, "\u0452"], [1027, 1, "\u0453"], [1028, 1, "\u0454"], [1029, 1, "\u0455"], [1030, 1, "\u0456"], [1031, 1, "\u0457"], [1032, 1, "\u0458"], [1033, 1, "\u0459"], [1034, 1, "\u045A"], [1035, 1, "\u045B"], [1036, 1, "\u045C"], [1037, 1, "\u045D"], [1038, 1, "\u045E"], [1039, 1, "\u045F"], [1040, 1, "\u0430"], [1041, 1, "\u0431"], [1042, 1, "\u0432"], [1043, 1, "\u0433"], [1044, 1, "\u0434"], [1045, 1, "\u0435"], [1046, 1, "\u0436"], [1047, 1, "\u0437"], [1048, 1, "\u0438"], [1049, 1, "\u0439"], [1050, 1, "\u043A"], [1051, 1, "\u043B"], [1052, 1, "\u043C"], [1053, 1, "\u043D"], [1054, 1, "\u043E"], [1055, 1, "\u043F"], [1056, 1, "\u0440"], [1057, 1, "\u0441"], [1058, 1, "\u0442"], [1059, 1, "\u0443"], [1060, 1, "\u0444"], [1061, 1, "\u0445"], [1062, 1, "\u0446"], [1063, 1, "\u0447"], [1064, 1, "\u0448"], [1065, 1, "\u0449"], [1066, 1, "\u044A"], [1067, 1, "\u044B"], [1068, 1, "\u044C"], [1069, 1, "\u044D"], [1070, 1, "\u044E"], [1071, 1, "\u044F"], [[1072, 1103], 2], [1104, 2], [[1105, 1116], 2], [1117, 2], [[1118, 1119], 2], [1120, 1, "\u0461"], [1121, 2], [1122, 1, "\u0463"], [1123, 2], [1124, 1, "\u0465"], [1125, 2], [1126, 1, "\u0467"], [1127, 2], [1128, 1, "\u0469"], [1129, 2], [1130, 1, "\u046B"], [1131, 2], [1132, 1, "\u046D"], [1133, 2], [1134, 1, "\u046F"], [1135, 2], [1136, 1, "\u0471"], [1137, 2], [1138, 1, "\u0473"], [1139, 2], [1140, 1, "\u0475"], [1141, 2], [1142, 1, "\u0477"], [1143, 2], [1144, 1, "\u0479"], [1145, 2], [1146, 1, "\u047B"], [1147, 2], [1148, 1, "\u047D"], [1149, 2], [1150, 1, "\u047F"], [1151, 2], [1152, 1, "\u0481"], [1153, 2], [1154, 2], [[1155, 1158], 2], [1159, 2], [[1160, 1161], 2], [1162, 1, "\u048B"], [1163, 2], [1164, 1, "\u048D"], [1165, 2], [1166, 1, "\u048F"], [1167, 2], [1168, 1, "\u0491"], [1169, 2], [1170, 1, "\u0493"], [1171, 2], [1172, 1, "\u0495"], [1173, 2], [1174, 1, "\u0497"], [1175, 2], [1176, 1, "\u0499"], [1177, 2], [1178, 1, "\u049B"], [1179, 2], [1180, 1, "\u049D"], [1181, 2], [1182, 1, "\u049F"], [1183, 2], [1184, 1, "\u04A1"], [1185, 2], [1186, 1, "\u04A3"], [1187, 2], [1188, 1, "\u04A5"], [1189, 2], [1190, 1, "\u04A7"], [1191, 2], [1192, 1, "\u04A9"], [1193, 2], [1194, 1, "\u04AB"], [1195, 2], [1196, 1, "\u04AD"], [1197, 2], [1198, 1, "\u04AF"], [1199, 2], [1200, 1, "\u04B1"], [1201, 2], [1202, 1, "\u04B3"], [1203, 2], [1204, 1, "\u04B5"], [1205, 2], [1206, 1, "\u04B7"], [1207, 2], [1208, 1, "\u04B9"], [1209, 2], [1210, 1, "\u04BB"], [1211, 2], [1212, 1, "\u04BD"], [1213, 2], [1214, 1, "\u04BF"], [1215, 2], [1216, 3], [1217, 1, "\u04C2"], [1218, 2], [1219, 1, "\u04C4"], [1220, 2], [1221, 1, "\u04C6"], [1222, 2], [1223, 1, "\u04C8"], [1224, 2], [1225, 1, "\u04CA"], [1226, 2], [1227, 1, "\u04CC"], [1228, 2], [1229, 1, "\u04CE"], [1230, 2], [1231, 2], [1232, 1, "\u04D1"], [1233, 2], [1234, 1, "\u04D3"], [1235, 2], [1236, 1, "\u04D5"], [1237, 2], [1238, 1, "\u04D7"], [1239, 2], [1240, 1, "\u04D9"], [1241, 2], [1242, 1, "\u04DB"], [1243, 2], [1244, 1, "\u04DD"], [1245, 2], [1246, 1, "\u04DF"], [1247, 2], [1248, 1, "\u04E1"], [1249, 2], [1250, 1, "\u04E3"], [1251, 2], [1252, 1, "\u04E5"], [1253, 2], [1254, 1, "\u04E7"], [1255, 2], [1256, 1, "\u04E9"], [1257, 2], [1258, 1, "\u04EB"], [1259, 2], [1260, 1, "\u04ED"], [1261, 2], [1262, 1, "\u04EF"], [1263, 2], [1264, 1, "\u04F1"], [1265, 2], [1266, 1, "\u04F3"], [1267, 2], [1268, 1, "\u04F5"], [1269, 2], [1270, 1, "\u04F7"], [1271, 2], [1272, 1, "\u04F9"], [1273, 2], [1274, 1, "\u04FB"], [1275, 2], [1276, 1, "\u04FD"], [1277, 2], [1278, 1, "\u04FF"], [1279, 2], [1280, 1, "\u0501"], [1281, 2], [1282, 1, "\u0503"], [1283, 2], [1284, 1, "\u0505"], [1285, 2], [1286, 1, "\u0507"], [1287, 2], [1288, 1, "\u0509"], [1289, 2], [1290, 1, "\u050B"], [1291, 2], [1292, 1, "\u050D"], [1293, 2], [1294, 1, "\u050F"], [1295, 2], [1296, 1, "\u0511"], [1297, 2], [1298, 1, "\u0513"], [1299, 2], [1300, 1, "\u0515"], [1301, 2], [1302, 1, "\u0517"], [1303, 2], [1304, 1, "\u0519"], [1305, 2], [1306, 1, "\u051B"], [1307, 2], [1308, 1, "\u051D"], [1309, 2], [1310, 1, "\u051F"], [1311, 2], [1312, 1, "\u0521"], [1313, 2], [1314, 1, "\u0523"], [1315, 2], [1316, 1, "\u0525"], [1317, 2], [1318, 1, "\u0527"], [1319, 2], [1320, 1, "\u0529"], [1321, 2], [1322, 1, "\u052B"], [1323, 2], [1324, 1, "\u052D"], [1325, 2], [1326, 1, "\u052F"], [1327, 2], [1328, 3], [1329, 1, "\u0561"], [1330, 1, "\u0562"], [1331, 1, "\u0563"], [1332, 1, "\u0564"], [1333, 1, "\u0565"], [1334, 1, "\u0566"], [1335, 1, "\u0567"], [1336, 1, "\u0568"], [1337, 1, "\u0569"], [1338, 1, "\u056A"], [1339, 1, "\u056B"], [1340, 1, "\u056C"], [1341, 1, "\u056D"], [1342, 1, "\u056E"], [1343, 1, "\u056F"], [1344, 1, "\u0570"], [1345, 1, "\u0571"], [1346, 1, "\u0572"], [1347, 1, "\u0573"], [1348, 1, "\u0574"], [1349, 1, "\u0575"], [1350, 1, "\u0576"], [1351, 1, "\u0577"], [1352, 1, "\u0578"], [1353, 1, "\u0579"], [1354, 1, "\u057A"], [1355, 1, "\u057B"], [1356, 1, "\u057C"], [1357, 1, "\u057D"], [1358, 1, "\u057E"], [1359, 1, "\u057F"], [1360, 1, "\u0580"], [1361, 1, "\u0581"], [1362, 1, "\u0582"], [1363, 1, "\u0583"], [1364, 1, "\u0584"], [1365, 1, "\u0585"], [1366, 1, "\u0586"], [[1367, 1368], 3], [1369, 2], [[1370, 1375], 2], [1376, 2], [[1377, 1414], 2], [1415, 1, "\u0565\u0582"], [1416, 2], [1417, 2], [1418, 2], [[1419, 1420], 3], [[1421, 1422], 2], [1423, 2], [1424, 3], [[1425, 1441], 2], [1442, 2], [[1443, 1455], 2], [[1456, 1465], 2], [1466, 2], [[1467, 1469], 2], [1470, 2], [1471, 2], [1472, 2], [[1473, 1474], 2], [1475, 2], [1476, 2], [1477, 2], [1478, 2], [1479, 2], [[1480, 1487], 3], [[1488, 1514], 2], [[1515, 1518], 3], [1519, 2], [[1520, 1524], 2], [[1525, 1535], 3], [[1536, 1539], 3], [1540, 3], [1541, 3], [[1542, 1546], 2], [1547, 2], [1548, 2], [[1549, 1551], 2], [[1552, 1557], 2], [[1558, 1562], 2], [1563, 2], [1564, 3], [1565, 2], [1566, 2], [1567, 2], [1568, 2], [[1569, 1594], 2], [[1595, 1599], 2], [1600, 2], [[1601, 1618], 2], [[1619, 1621], 2], [[1622, 1624], 2], [[1625, 1630], 2], [1631, 2], [[1632, 1641], 2], [[1642, 1645], 2], [[1646, 1647], 2], [[1648, 1652], 2], [1653, 1, "\u0627\u0674"], [1654, 1, "\u0648\u0674"], [1655, 1, "\u06C7\u0674"], [1656, 1, "\u064A\u0674"], [[1657, 1719], 2], [[1720, 1721], 2], [[1722, 1726], 2], [1727, 2], [[1728, 1742], 2], [1743, 2], [[1744, 1747], 2], [1748, 2], [[1749, 1756], 2], [1757, 3], [1758, 2], [[1759, 1768], 2], [1769, 2], [[1770, 1773], 2], [[1774, 1775], 2], [[1776, 1785], 2], [[1786, 1790], 2], [1791, 2], [[1792, 1805], 2], [1806, 3], [1807, 3], [[1808, 1836], 2], [[1837, 1839], 2], [[1840, 1866], 2], [[1867, 1868], 3], [[1869, 1871], 2], [[1872, 1901], 2], [[1902, 1919], 2], [[1920, 1968], 2], [1969, 2], [[1970, 1983], 3], [[1984, 2037], 2], [[2038, 2042], 2], [[2043, 2044], 3], [2045, 2], [[2046, 2047], 2], [[2048, 2093], 2], [[2094, 2095], 3], [[2096, 2110], 2], [2111, 3], [[2112, 2139], 2], [[2140, 2141], 3], [2142, 2], [2143, 3], [[2144, 2154], 2], [[2155, 2159], 3], [[2160, 2183], 2], [2184, 2], [[2185, 2190], 2], [2191, 3], [[2192, 2193], 3], [[2194, 2199], 3], [[2200, 2207], 2], [2208, 2], [2209, 2], [[2210, 2220], 2], [[2221, 2226], 2], [[2227, 2228], 2], [2229, 2], [[2230, 2237], 2], [[2238, 2247], 2], [[2248, 2258], 2], [2259, 2], [[2260, 2273], 2], [2274, 3], [2275, 2], [[2276, 2302], 2], [2303, 2], [2304, 2], [[2305, 2307], 2], [2308, 2], [[2309, 2361], 2], [[2362, 2363], 2], [[2364, 2381], 2], [2382, 2], [2383, 2], [[2384, 2388], 2], [2389, 2], [[2390, 2391], 2], [2392, 1, "\u0915\u093C"], [2393, 1, "\u0916\u093C"], [2394, 1, "\u0917\u093C"], [2395, 1, "\u091C\u093C"], [2396, 1, "\u0921\u093C"], [2397, 1, "\u0922\u093C"], [2398, 1, "\u092B\u093C"], [2399, 1, "\u092F\u093C"], [[2400, 2403], 2], [[2404, 2405], 2], [[2406, 2415], 2], [2416, 2], [[2417, 2418], 2], [[2419, 2423], 2], [2424, 2], [[2425, 2426], 2], [[2427, 2428], 2], [2429, 2], [[2430, 2431], 2], [2432, 2], [[2433, 2435], 2], [2436, 3], [[2437, 2444], 2], [[2445, 2446], 3], [[2447, 2448], 2], [[2449, 2450], 3], [[2451, 2472], 2], [2473, 3], [[2474, 2480], 2], [2481, 3], [2482, 2], [[2483, 2485], 3], [[2486, 2489], 2], [[2490, 2491], 3], [2492, 2], [2493, 2], [[2494, 2500], 2], [[2501, 2502], 3], [[2503, 2504], 2], [[2505, 2506], 3], [[2507, 2509], 2], [2510, 2], [[2511, 2518], 3], [2519, 2], [[2520, 2523], 3], [2524, 1, "\u09A1\u09BC"], [2525, 1, "\u09A2\u09BC"], [2526, 3], [2527, 1, "\u09AF\u09BC"], [[2528, 2531], 2], [[2532, 2533], 3], [[2534, 2545], 2], [[2546, 2554], 2], [2555, 2], [2556, 2], [2557, 2], [2558, 2], [[2559, 2560], 3], [2561, 2], [2562, 2], [2563, 2], [2564, 3], [[2565, 2570], 2], [[2571, 2574], 3], [[2575, 2576], 2], [[2577, 2578], 3], [[2579, 2600], 2], [2601, 3], [[2602, 2608], 2], [2609, 3], [2610, 2], [2611, 1, "\u0A32\u0A3C"], [2612, 3], [2613, 2], [2614, 1, "\u0A38\u0A3C"], [2615, 3], [[2616, 2617], 2], [[2618, 2619], 3], [2620, 2], [2621, 3], [[2622, 2626], 2], [[2627, 2630], 3], [[2631, 2632], 2], [[2633, 2634], 3], [[2635, 2637], 2], [[2638, 2640], 3], [2641, 2], [[2642, 2648], 3], [2649, 1, "\u0A16\u0A3C"], [2650, 1, "\u0A17\u0A3C"], [2651, 1, "\u0A1C\u0A3C"], [2652, 2], [2653, 3], [2654, 1, "\u0A2B\u0A3C"], [[2655, 2661], 3], [[2662, 2676], 2], [2677, 2], [2678, 2], [[2679, 2688], 3], [[2689, 2691], 2], [2692, 3], [[2693, 2699], 2], [2700, 2], [2701, 2], [2702, 3], [[2703, 2705], 2], [2706, 3], [[2707, 2728], 2], [2729, 3], [[2730, 2736], 2], [2737, 3], [[2738, 2739], 2], [2740, 3], [[2741, 2745], 2], [[2746, 2747], 3], [[2748, 2757], 2], [2758, 3], [[2759, 2761], 2], [2762, 3], [[2763, 2765], 2], [[2766, 2767], 3], [2768, 2], [[2769, 2783], 3], [2784, 2], [[2785, 2787], 2], [[2788, 2789], 3], [[2790, 2799], 2], [2800, 2], [2801, 2], [[2802, 2808], 3], [2809, 2], [[2810, 2815], 2], [2816, 3], [[2817, 2819], 2], [2820, 3], [[2821, 2828], 2], [[2829, 2830], 3], [[2831, 2832], 2], [[2833, 2834], 3], [[2835, 2856], 2], [2857, 3], [[2858, 2864], 2], [2865, 3], [[2866, 2867], 2], [2868, 3], [2869, 2], [[2870, 2873], 2], [[2874, 2875], 3], [[2876, 2883], 2], [2884, 2], [[2885, 2886], 3], [[2887, 2888], 2], [[2889, 2890], 3], [[2891, 2893], 2], [[2894, 2900], 3], [2901, 2], [[2902, 2903], 2], [[2904, 2907], 3], [2908, 1, "\u0B21\u0B3C"], [2909, 1, "\u0B22\u0B3C"], [2910, 3], [[2911, 2913], 2], [[2914, 2915], 2], [[2916, 2917], 3], [[2918, 2927], 2], [2928, 2], [2929, 2], [[2930, 2935], 2], [[2936, 2945], 3], [[2946, 2947], 2], [2948, 3], [[2949, 2954], 2], [[2955, 2957], 3], [[2958, 2960], 2], [2961, 3], [[2962, 2965], 2], [[2966, 2968], 3], [[2969, 2970], 2], [2971, 3], [2972, 2], [2973, 3], [[2974, 2975], 2], [[2976, 2978], 3], [[2979, 2980], 2], [[2981, 2983], 3], [[2984, 2986], 2], [[2987, 2989], 3], [[2990, 2997], 2], [2998, 2], [[2999, 3001], 2], [[3002, 3005], 3], [[3006, 3010], 2], [[3011, 3013], 3], [[3014, 3016], 2], [3017, 3], [[3018, 3021], 2], [[3022, 3023], 3], [3024, 2], [[3025, 3030], 3], [3031, 2], [[3032, 3045], 3], [3046, 2], [[3047, 3055], 2], [[3056, 3058], 2], [[3059, 3066], 2], [[3067, 3071], 3], [3072, 2], [[3073, 3075], 2], [3076, 2], [[3077, 3084], 2], [3085, 3], [[3086, 3088], 2], [3089, 3], [[3090, 3112], 2], [3113, 3], [[3114, 3123], 2], [3124, 2], [[3125, 3129], 2], [[3130, 3131], 3], [3132, 2], [3133, 2], [[3134, 3140], 2], [3141, 3], [[3142, 3144], 2], [3145, 3], [[3146, 3149], 2], [[3150, 3156], 3], [[3157, 3158], 2], [3159, 3], [[3160, 3161], 2], [3162, 2], [[3163, 3164], 3], [3165, 2], [[3166, 3167], 3], [[3168, 3169], 2], [[3170, 3171], 2], [[3172, 3173], 3], [[3174, 3183], 2], [[3184, 3190], 3], [3191, 2], [[3192, 3199], 2], [3200, 2], [3201, 2], [[3202, 3203], 2], [3204, 2], [[3205, 3212], 2], [3213, 3], [[3214, 3216], 2], [3217, 3], [[3218, 3240], 2], [3241, 3], [[3242, 3251], 2], [3252, 3], [[3253, 3257], 2], [[3258, 3259], 3], [[3260, 3261], 2], [[3262, 3268], 2], [3269, 3], [[3270, 3272], 2], [3273, 3], [[3274, 3277], 2], [[3278, 3284], 3], [[3285, 3286], 2], [[3287, 3292], 3], [3293, 2], [3294, 2], [3295, 3], [[3296, 3297], 2], [[3298, 3299], 2], [[3300, 3301], 3], [[3302, 3311], 2], [3312, 3], [[3313, 3314], 2], [3315, 2], [[3316, 3327], 3], [3328, 2], [3329, 2], [[3330, 3331], 2], [3332, 2], [[3333, 3340], 2], [3341, 3], [[3342, 3344], 2], [3345, 3], [[3346, 3368], 2], [3369, 2], [[3370, 3385], 2], [3386, 2], [[3387, 3388], 2], [3389, 2], [[3390, 3395], 2], [3396, 2], [3397, 3], [[3398, 3400], 2], [3401, 3], [[3402, 3405], 2], [3406, 2], [3407, 2], [[3408, 3411], 3], [[3412, 3414], 2], [3415, 2], [[3416, 3422], 2], [3423, 2], [[3424, 3425], 2], [[3426, 3427], 2], [[3428, 3429], 3], [[3430, 3439], 2], [[3440, 3445], 2], [[3446, 3448], 2], [3449, 2], [[3450, 3455], 2], [3456, 3], [3457, 2], [[3458, 3459], 2], [3460, 3], [[3461, 3478], 2], [[3479, 3481], 3], [[3482, 3505], 2], [3506, 3], [[3507, 3515], 2], [3516, 3], [3517, 2], [[3518, 3519], 3], [[3520, 3526], 2], [[3527, 3529], 3], [3530, 2], [[3531, 3534], 3], [[3535, 3540], 2], [3541, 3], [3542, 2], [3543, 3], [[3544, 3551], 2], [[3552, 3557], 3], [[3558, 3567], 2], [[3568, 3569], 3], [[3570, 3571], 2], [3572, 2], [[3573, 3584], 3], [[3585, 3634], 2], [3635, 1, "\u0E4D\u0E32"], [[3636, 3642], 2], [[3643, 3646], 3], [3647, 2], [[3648, 3662], 2], [3663, 2], [[3664, 3673], 2], [[3674, 3675], 2], [[3676, 3712], 3], [[3713, 3714], 2], [3715, 3], [3716, 2], [3717, 3], [3718, 2], [[3719, 3720], 2], [3721, 2], [3722, 2], [3723, 3], [3724, 2], [3725, 2], [[3726, 3731], 2], [[3732, 3735], 2], [3736, 2], [[3737, 3743], 2], [3744, 2], [[3745, 3747], 2], [3748, 3], [3749, 2], [3750, 3], [3751, 2], [[3752, 3753], 2], [[3754, 3755], 2], [3756, 2], [[3757, 3762], 2], [3763, 1, "\u0ECD\u0EB2"], [[3764, 3769], 2], [3770, 2], [[3771, 3773], 2], [[3774, 3775], 3], [[3776, 3780], 2], [3781, 3], [3782, 2], [3783, 3], [[3784, 3789], 2], [3790, 2], [3791, 3], [[3792, 3801], 2], [[3802, 3803], 3], [3804, 1, "\u0EAB\u0E99"], [3805, 1, "\u0EAB\u0EA1"], [[3806, 3807], 2], [[3808, 3839], 3], [3840, 2], [[3841, 3850], 2], [3851, 2], [3852, 1, "\u0F0B"], [[3853, 3863], 2], [[3864, 3865], 2], [[3866, 3871], 2], [[3872, 3881], 2], [[3882, 3892], 2], [3893, 2], [3894, 2], [3895, 2], [3896, 2], [3897, 2], [[3898, 3901], 2], [[3902, 3906], 2], [3907, 1, "\u0F42\u0FB7"], [[3908, 3911], 2], [3912, 3], [[3913, 3916], 2], [3917, 1, "\u0F4C\u0FB7"], [[3918, 3921], 2], [3922, 1, "\u0F51\u0FB7"], [[3923, 3926], 2], [3927, 1, "\u0F56\u0FB7"], [[3928, 3931], 2], [3932, 1, "\u0F5B\u0FB7"], [[3933, 3944], 2], [3945, 1, "\u0F40\u0FB5"], [3946, 2], [[3947, 3948], 2], [[3949, 3952], 3], [[3953, 3954], 2], [3955, 1, "\u0F71\u0F72"], [3956, 2], [3957, 1, "\u0F71\u0F74"], [3958, 1, "\u0FB2\u0F80"], [3959, 1, "\u0FB2\u0F71\u0F80"], [3960, 1, "\u0FB3\u0F80"], [3961, 1, "\u0FB3\u0F71\u0F80"], [[3962, 3968], 2], [3969, 1, "\u0F71\u0F80"], [[3970, 3972], 2], [3973, 2], [[3974, 3979], 2], [[3980, 3983], 2], [[3984, 3986], 2], [3987, 1, "\u0F92\u0FB7"], [[3988, 3989], 2], [3990, 2], [3991, 2], [3992, 3], [[3993, 3996], 2], [3997, 1, "\u0F9C\u0FB7"], [[3998, 4001], 2], [4002, 1, "\u0FA1\u0FB7"], [[4003, 4006], 2], [4007, 1, "\u0FA6\u0FB7"], [[4008, 4011], 2], [4012, 1, "\u0FAB\u0FB7"], [4013, 2], [[4014, 4016], 2], [[4017, 4023], 2], [4024, 2], [4025, 1, "\u0F90\u0FB5"], [[4026, 4028], 2], [4029, 3], [[4030, 4037], 2], [4038, 2], [[4039, 4044], 2], [4045, 3], [4046, 2], [4047, 2], [[4048, 4049], 2], [[4050, 4052], 2], [[4053, 4056], 2], [[4057, 4058], 2], [[4059, 4095], 3], [[4096, 4129], 2], [4130, 2], [[4131, 4135], 2], [4136, 2], [[4137, 4138], 2], [4139, 2], [[4140, 4146], 2], [[4147, 4149], 2], [[4150, 4153], 2], [[4154, 4159], 2], [[4160, 4169], 2], [[4170, 4175], 2], [[4176, 4185], 2], [[4186, 4249], 2], [[4250, 4253], 2], [[4254, 4255], 2], [[4256, 4293], 3], [4294, 3], [4295, 1, "\u2D27"], [[4296, 4300], 3], [4301, 1, "\u2D2D"], [[4302, 4303], 3], [[4304, 4342], 2], [[4343, 4344], 2], [[4345, 4346], 2], [4347, 2], [4348, 1, "\u10DC"], [[4349, 4351], 2], [[4352, 4441], 2], [[4442, 4446], 2], [[4447, 4448], 3], [[4449, 4514], 2], [[4515, 4519], 2], [[4520, 4601], 2], [[4602, 4607], 2], [[4608, 4614], 2], [4615, 2], [[4616, 4678], 2], [4679, 2], [4680, 2], [4681, 3], [[4682, 4685], 2], [[4686, 4687], 3], [[4688, 4694], 2], [4695, 3], [4696, 2], [4697, 3], [[4698, 4701], 2], [[4702, 4703], 3], [[4704, 4742], 2], [4743, 2], [4744, 2], [4745, 3], [[4746, 4749], 2], [[4750, 4751], 3], [[4752, 4782], 2], [4783, 2], [4784, 2], [4785, 3], [[4786, 4789], 2], [[4790, 4791], 3], [[4792, 4798], 2], [4799, 3], [4800, 2], [4801, 3], [[4802, 4805], 2], [[4806, 4807], 3], [[4808, 4814], 2], [4815, 2], [[4816, 4822], 2], [4823, 3], [[4824, 4846], 2], [4847, 2], [[4848, 4878], 2], [4879, 2], [4880, 2], [4881, 3], [[4882, 4885], 2], [[4886, 4887], 3], [[4888, 4894], 2], [4895, 2], [[4896, 4934], 2], [4935, 2], [[4936, 4954], 2], [[4955, 4956], 3], [[4957, 4958], 2], [4959, 2], [4960, 2], [[4961, 4988], 2], [[4989, 4991], 3], [[4992, 5007], 2], [[5008, 5017], 2], [[5018, 5023], 3], [[5024, 5108], 2], [5109, 2], [[5110, 5111], 3], [5112, 1, "\u13F0"], [5113, 1, "\u13F1"], [5114, 1, "\u13F2"], [5115, 1, "\u13F3"], [5116, 1, "\u13F4"], [5117, 1, "\u13F5"], [[5118, 5119], 3], [5120, 2], [[5121, 5740], 2], [[5741, 5742], 2], [[5743, 5750], 2], [[5751, 5759], 2], [5760, 3], [[5761, 5786], 2], [[5787, 5788], 2], [[5789, 5791], 3], [[5792, 5866], 2], [[5867, 5872], 2], [[5873, 5880], 2], [[5881, 5887], 3], [[5888, 5900], 2], [5901, 2], [[5902, 5908], 2], [5909, 2], [[5910, 5918], 3], [5919, 2], [[5920, 5940], 2], [[5941, 5942], 2], [[5943, 5951], 3], [[5952, 5971], 2], [[5972, 5983], 3], [[5984, 5996], 2], [5997, 3], [[5998, 6e3], 2], [6001, 3], [[6002, 6003], 2], [[6004, 6015], 3], [[6016, 6067], 2], [[6068, 6069], 3], [[6070, 6099], 2], [[6100, 6102], 2], [6103, 2], [[6104, 6107], 2], [6108, 2], [6109, 2], [[6110, 6111], 3], [[6112, 6121], 2], [[6122, 6127], 3], [[6128, 6137], 2], [[6138, 6143], 3], [[6144, 6149], 2], [6150, 3], [[6151, 6154], 2], [[6155, 6157], 7], [6158, 3], [6159, 7], [[6160, 6169], 2], [[6170, 6175], 3], [[6176, 6263], 2], [6264, 2], [[6265, 6271], 3], [[6272, 6313], 2], [6314, 2], [[6315, 6319], 3], [[6320, 6389], 2], [[6390, 6399], 3], [[6400, 6428], 2], [[6429, 6430], 2], [6431, 3], [[6432, 6443], 2], [[6444, 6447], 3], [[6448, 6459], 2], [[6460, 6463], 3], [6464, 2], [[6465, 6467], 3], [[6468, 6469], 2], [[6470, 6509], 2], [[6510, 6511], 3], [[6512, 6516], 2], [[6517, 6527], 3], [[6528, 6569], 2], [[6570, 6571], 2], [[6572, 6575], 3], [[6576, 6601], 2], [[6602, 6607], 3], [[6608, 6617], 2], [6618, 2], [[6619, 6621], 3], [[6622, 6623], 2], [[6624, 6655], 2], [[6656, 6683], 2], [[6684, 6685], 3], [[6686, 6687], 2], [[6688, 6750], 2], [6751, 3], [[6752, 6780], 2], [[6781, 6782], 3], [[6783, 6793], 2], [[6794, 6799], 3], [[6800, 6809], 2], [[6810, 6815], 3], [[6816, 6822], 2], [6823, 2], [[6824, 6829], 2], [[6830, 6831], 3], [[6832, 6845], 2], [6846, 2], [[6847, 6848], 2], [[6849, 6862], 2], [[6863, 6911], 3], [[6912, 6987], 2], [6988, 2], [[6989, 6991], 3], [[6992, 7001], 2], [[7002, 7018], 2], [[7019, 7027], 2], [[7028, 7036], 2], [[7037, 7038], 2], [7039, 3], [[7040, 7082], 2], [[7083, 7085], 2], [[7086, 7097], 2], [[7098, 7103], 2], [[7104, 7155], 2], [[7156, 7163], 3], [[7164, 7167], 2], [[7168, 7223], 2], [[7224, 7226], 3], [[7227, 7231], 2], [[7232, 7241], 2], [[7242, 7244], 3], [[7245, 7293], 2], [[7294, 7295], 2], [7296, 1, "\u0432"], [7297, 1, "\u0434"], [7298, 1, "\u043E"], [7299, 1, "\u0441"], [[7300, 7301], 1, "\u0442"], [7302, 1, "\u044A"], [7303, 1, "\u0463"], [7304, 1, "\uA64B"], [[7305, 7311], 3], [7312, 1, "\u10D0"], [7313, 1, "\u10D1"], [7314, 1, "\u10D2"], [7315, 1, "\u10D3"], [7316, 1, "\u10D4"], [7317, 1, "\u10D5"], [7318, 1, "\u10D6"], [7319, 1, "\u10D7"], [7320, 1, "\u10D8"], [7321, 1, "\u10D9"], [7322, 1, "\u10DA"], [7323, 1, "\u10DB"], [7324, 1, "\u10DC"], [7325, 1, "\u10DD"], [7326, 1, "\u10DE"], [7327, 1, "\u10DF"], [7328, 1, "\u10E0"], [7329, 1, "\u10E1"], [7330, 1, "\u10E2"], [7331, 1, "\u10E3"], [7332, 1, "\u10E4"], [7333, 1, "\u10E5"], [7334, 1, "\u10E6"], [7335, 1, "\u10E7"], [7336, 1, "\u10E8"], [7337, 1, "\u10E9"], [7338, 1, "\u10EA"], [7339, 1, "\u10EB"], [7340, 1, "\u10EC"], [7341, 1, "\u10ED"], [7342, 1, "\u10EE"], [7343, 1, "\u10EF"], [7344, 1, "\u10F0"], [7345, 1, "\u10F1"], [7346, 1, "\u10F2"], [7347, 1, "\u10F3"], [7348, 1, "\u10F4"], [7349, 1, "\u10F5"], [7350, 1, "\u10F6"], [7351, 1, "\u10F7"], [7352, 1, "\u10F8"], [7353, 1, "\u10F9"], [7354, 1, "\u10FA"], [[7355, 7356], 3], [7357, 1, "\u10FD"], [7358, 1, "\u10FE"], [7359, 1, "\u10FF"], [[7360, 7367], 2], [[7368, 7375], 3], [[7376, 7378], 2], [7379, 2], [[7380, 7410], 2], [[7411, 7414], 2], [7415, 2], [[7416, 7417], 2], [7418, 2], [[7419, 7423], 3], [[7424, 7467], 2], [7468, 1, "a"], [7469, 1, "\xE6"], [7470, 1, "b"], [7471, 2], [7472, 1, "d"], [7473, 1, "e"], [7474, 1, "\u01DD"], [7475, 1, "g"], [7476, 1, "h"], [7477, 1, "i"], [7478, 1, "j"], [7479, 1, "k"], [7480, 1, "l"], [7481, 1, "m"], [7482, 1, "n"], [7483, 2], [7484, 1, "o"], [7485, 1, "\u0223"], [7486, 1, "p"], [7487, 1, "r"], [7488, 1, "t"], [7489, 1, "u"], [7490, 1, "w"], [7491, 1, "a"], [7492, 1, "\u0250"], [7493, 1, "\u0251"], [7494, 1, "\u1D02"], [7495, 1, "b"], [7496, 1, "d"], [7497, 1, "e"], [7498, 1, "\u0259"], [7499, 1, "\u025B"], [7500, 1, "\u025C"], [7501, 1, "g"], [7502, 2], [7503, 1, "k"], [7504, 1, "m"], [7505, 1, "\u014B"], [7506, 1, "o"], [7507, 1, "\u0254"], [7508, 1, "\u1D16"], [7509, 1, "\u1D17"], [7510, 1, "p"], [7511, 1, "t"], [7512, 1, "u"], [7513, 1, "\u1D1D"], [7514, 1, "\u026F"], [7515, 1, "v"], [7516, 1, "\u1D25"], [7517, 1, "\u03B2"], [7518, 1, "\u03B3"], [7519, 1, "\u03B4"], [7520, 1, "\u03C6"], [7521, 1, "\u03C7"], [7522, 1, "i"], [7523, 1, "r"], [7524, 1, "u"], [7525, 1, "v"], [7526, 1, "\u03B2"], [7527, 1, "\u03B3"], [7528, 1, "\u03C1"], [7529, 1, "\u03C6"], [7530, 1, "\u03C7"], [7531, 2], [[7532, 7543], 2], [7544, 1, "\u043D"], [[7545, 7578], 2], [7579, 1, "\u0252"], [7580, 1, "c"], [7581, 1, "\u0255"], [7582, 1, "\xF0"], [7583, 1, "\u025C"], [7584, 1, "f"], [7585, 1, "\u025F"], [7586, 1, "\u0261"], [7587, 1, "\u0265"], [7588, 1, "\u0268"], [7589, 1, "\u0269"], [7590, 1, "\u026A"], [7591, 1, "\u1D7B"], [7592, 1, "\u029D"], [7593, 1, "\u026D"], [7594, 1, "\u1D85"], [7595, 1, "\u029F"], [7596, 1, "\u0271"], [7597, 1, "\u0270"], [7598, 1, "\u0272"], [7599, 1, "\u0273"], [7600, 1, "\u0274"], [7601, 1, "\u0275"], [7602, 1, "\u0278"], [7603, 1, "\u0282"], [7604, 1, "\u0283"], [7605, 1, "\u01AB"], [7606, 1, "\u0289"], [7607, 1, "\u028A"], [7608, 1, "\u1D1C"], [7609, 1, "\u028B"], [7610, 1, "\u028C"], [7611, 1, "z"], [7612, 1, "\u0290"], [7613, 1, "\u0291"], [7614, 1, "\u0292"], [7615, 1, "\u03B8"], [[7616, 7619], 2], [[7620, 7626], 2], [[7627, 7654], 2], [[7655, 7669], 2], [[7670, 7673], 2], [7674, 2], [7675, 2], [7676, 2], [7677, 2], [[7678, 7679], 2], [7680, 1, "\u1E01"], [7681, 2], [7682, 1, "\u1E03"], [7683, 2], [7684, 1, "\u1E05"], [7685, 2], [7686, 1, "\u1E07"], [7687, 2], [7688, 1, "\u1E09"], [7689, 2], [7690, 1, "\u1E0B"], [7691, 2], [7692, 1, "\u1E0D"], [7693, 2], [7694, 1, "\u1E0F"], [7695, 2], [7696, 1, "\u1E11"], [7697, 2], [7698, 1, "\u1E13"], [7699, 2], [7700, 1, "\u1E15"], [7701, 2], [7702, 1, "\u1E17"], [7703, 2], [7704, 1, "\u1E19"], [7705, 2], [7706, 1, "\u1E1B"], [7707, 2], [7708, 1, "\u1E1D"], [7709, 2], [7710, 1, "\u1E1F"], [7711, 2], [7712, 1, "\u1E21"], [7713, 2], [7714, 1, "\u1E23"], [7715, 2], [7716, 1, "\u1E25"], [7717, 2], [7718, 1, "\u1E27"], [7719, 2], [7720, 1, "\u1E29"], [7721, 2], [7722, 1, "\u1E2B"], [7723, 2], [7724, 1, "\u1E2D"], [7725, 2], [7726, 1, "\u1E2F"], [7727, 2], [7728, 1, "\u1E31"], [7729, 2], [7730, 1, "\u1E33"], [7731, 2], [7732, 1, "\u1E35"], [7733, 2], [7734, 1, "\u1E37"], [7735, 2], [7736, 1, "\u1E39"], [7737, 2], [7738, 1, "\u1E3B"], [7739, 2], [7740, 1, "\u1E3D"], [7741, 2], [7742, 1, "\u1E3F"], [7743, 2], [7744, 1, "\u1E41"], [7745, 2], [7746, 1, "\u1E43"], [7747, 2], [7748, 1, "\u1E45"], [7749, 2], [7750, 1, "\u1E47"], [7751, 2], [7752, 1, "\u1E49"], [7753, 2], [7754, 1, "\u1E4B"], [7755, 2], [7756, 1, "\u1E4D"], [7757, 2], [7758, 1, "\u1E4F"], [7759, 2], [7760, 1, "\u1E51"], [7761, 2], [7762, 1, "\u1E53"], [7763, 2], [7764, 1, "\u1E55"], [7765, 2], [7766, 1, "\u1E57"], [7767, 2], [7768, 1, "\u1E59"], [7769, 2], [7770, 1, "\u1E5B"], [7771, 2], [7772, 1, "\u1E5D"], [7773, 2], [7774, 1, "\u1E5F"], [7775, 2], [7776, 1, "\u1E61"], [7777, 2], [7778, 1, "\u1E63"], [7779, 2], [7780, 1, "\u1E65"], [7781, 2], [7782, 1, "\u1E67"], [7783, 2], [7784, 1, "\u1E69"], [7785, 2], [7786, 1, "\u1E6B"], [7787, 2], [7788, 1, "\u1E6D"], [7789, 2], [7790, 1, "\u1E6F"], [7791, 2], [7792, 1, "\u1E71"], [7793, 2], [7794, 1, "\u1E73"], [7795, 2], [7796, 1, "\u1E75"], [7797, 2], [7798, 1, "\u1E77"], [7799, 2], [7800, 1, "\u1E79"], [7801, 2], [7802, 1, "\u1E7B"], [7803, 2], [7804, 1, "\u1E7D"], [7805, 2], [7806, 1, "\u1E7F"], [7807, 2], [7808, 1, "\u1E81"], [7809, 2], [7810, 1, "\u1E83"], [7811, 2], [7812, 1, "\u1E85"], [7813, 2], [7814, 1, "\u1E87"], [7815, 2], [7816, 1, "\u1E89"], [7817, 2], [7818, 1, "\u1E8B"], [7819, 2], [7820, 1, "\u1E8D"], [7821, 2], [7822, 1, "\u1E8F"], [7823, 2], [7824, 1, "\u1E91"], [7825, 2], [7826, 1, "\u1E93"], [7827, 2], [7828, 1, "\u1E95"], [[7829, 7833], 2], [7834, 1, "a\u02BE"], [7835, 1, "\u1E61"], [[7836, 7837], 2], [7838, 1, "ss"], [7839, 2], [7840, 1, "\u1EA1"], [7841, 2], [7842, 1, "\u1EA3"], [7843, 2], [7844, 1, "\u1EA5"], [7845, 2], [7846, 1, "\u1EA7"], [7847, 2], [7848, 1, "\u1EA9"], [7849, 2], [7850, 1, "\u1EAB"], [7851, 2], [7852, 1, "\u1EAD"], [7853, 2], [7854, 1, "\u1EAF"], [7855, 2], [7856, 1, "\u1EB1"], [7857, 2], [7858, 1, "\u1EB3"], [7859, 2], [7860, 1, "\u1EB5"], [7861, 2], [7862, 1, "\u1EB7"], [7863, 2], [7864, 1, "\u1EB9"], [7865, 2], [7866, 1, "\u1EBB"], [7867, 2], [7868, 1, "\u1EBD"], [7869, 2], [7870, 1, "\u1EBF"], [7871, 2], [7872, 1, "\u1EC1"], [7873, 2], [7874, 1, "\u1EC3"], [7875, 2], [7876, 1, "\u1EC5"], [7877, 2], [7878, 1, "\u1EC7"], [7879, 2], [7880, 1, "\u1EC9"], [7881, 2], [7882, 1, "\u1ECB"], [7883, 2], [7884, 1, "\u1ECD"], [7885, 2], [7886, 1, "\u1ECF"], [7887, 2], [7888, 1, "\u1ED1"], [7889, 2], [7890, 1, "\u1ED3"], [7891, 2], [7892, 1, "\u1ED5"], [7893, 2], [7894, 1, "\u1ED7"], [7895, 2], [7896, 1, "\u1ED9"], [7897, 2], [7898, 1, "\u1EDB"], [7899, 2], [7900, 1, "\u1EDD"], [7901, 2], [7902, 1, "\u1EDF"], [7903, 2], [7904, 1, "\u1EE1"], [7905, 2], [7906, 1, "\u1EE3"], [7907, 2], [7908, 1, "\u1EE5"], [7909, 2], [7910, 1, "\u1EE7"], [7911, 2], [7912, 1, "\u1EE9"], [7913, 2], [7914, 1, "\u1EEB"], [7915, 2], [7916, 1, "\u1EED"], [7917, 2], [7918, 1, "\u1EEF"], [7919, 2], [7920, 1, "\u1EF1"], [7921, 2], [7922, 1, "\u1EF3"], [7923, 2], [7924, 1, "\u1EF5"], [7925, 2], [7926, 1, "\u1EF7"], [7927, 2], [7928, 1, "\u1EF9"], [7929, 2], [7930, 1, "\u1EFB"], [7931, 2], [7932, 1, "\u1EFD"], [7933, 2], [7934, 1, "\u1EFF"], [7935, 2], [[7936, 7943], 2], [7944, 1, "\u1F00"], [7945, 1, "\u1F01"], [7946, 1, "\u1F02"], [7947, 1, "\u1F03"], [7948, 1, "\u1F04"], [7949, 1, "\u1F05"], [7950, 1, "\u1F06"], [7951, 1, "\u1F07"], [[7952, 7957], 2], [[7958, 7959], 3], [7960, 1, "\u1F10"], [7961, 1, "\u1F11"], [7962, 1, "\u1F12"], [7963, 1, "\u1F13"], [7964, 1, "\u1F14"], [7965, 1, "\u1F15"], [[7966, 7967], 3], [[7968, 7975], 2], [7976, 1, "\u1F20"], [7977, 1, "\u1F21"], [7978, 1, "\u1F22"], [7979, 1, "\u1F23"], [7980, 1, "\u1F24"], [7981, 1, "\u1F25"], [7982, 1, "\u1F26"], [7983, 1, "\u1F27"], [[7984, 7991], 2], [7992, 1, "\u1F30"], [7993, 1, "\u1F31"], [7994, 1, "\u1F32"], [7995, 1, "\u1F33"], [7996, 1, "\u1F34"], [7997, 1, "\u1F35"], [7998, 1, "\u1F36"], [7999, 1, "\u1F37"], [[8e3, 8005], 2], [[8006, 8007], 3], [8008, 1, "\u1F40"], [8009, 1, "\u1F41"], [8010, 1, "\u1F42"], [8011, 1, "\u1F43"], [8012, 1, "\u1F44"], [8013, 1, "\u1F45"], [[8014, 8015], 3], [[8016, 8023], 2], [8024, 3], [8025, 1, "\u1F51"], [8026, 3], [8027, 1, "\u1F53"], [8028, 3], [8029, 1, "\u1F55"], [8030, 3], [8031, 1, "\u1F57"], [[8032, 8039], 2], [8040, 1, "\u1F60"], [8041, 1, "\u1F61"], [8042, 1, "\u1F62"], [8043, 1, "\u1F63"], [8044, 1, "\u1F64"], [8045, 1, "\u1F65"], [8046, 1, "\u1F66"], [8047, 1, "\u1F67"], [8048, 2], [8049, 1, "\u03AC"], [8050, 2], [8051, 1, "\u03AD"], [8052, 2], [8053, 1, "\u03AE"], [8054, 2], [8055, 1, "\u03AF"], [8056, 2], [8057, 1, "\u03CC"], [8058, 2], [8059, 1, "\u03CD"], [8060, 2], [8061, 1, "\u03CE"], [[8062, 8063], 3], [8064, 1, "\u1F00\u03B9"], [8065, 1, "\u1F01\u03B9"], [8066, 1, "\u1F02\u03B9"], [8067, 1, "\u1F03\u03B9"], [8068, 1, "\u1F04\u03B9"], [8069, 1, "\u1F05\u03B9"], [8070, 1, "\u1F06\u03B9"], [8071, 1, "\u1F07\u03B9"], [8072, 1, "\u1F00\u03B9"], [8073, 1, "\u1F01\u03B9"], [8074, 1, "\u1F02\u03B9"], [8075, 1, "\u1F03\u03B9"], [8076, 1, "\u1F04\u03B9"], [8077, 1, "\u1F05\u03B9"], [8078, 1, "\u1F06\u03B9"], [8079, 1, "\u1F07\u03B9"], [8080, 1, "\u1F20\u03B9"], [8081, 1, "\u1F21\u03B9"], [8082, 1, "\u1F22\u03B9"], [8083, 1, "\u1F23\u03B9"], [8084, 1, "\u1F24\u03B9"], [8085, 1, "\u1F25\u03B9"], [8086, 1, "\u1F26\u03B9"], [8087, 1, "\u1F27\u03B9"], [8088, 1, "\u1F20\u03B9"], [8089, 1, "\u1F21\u03B9"], [8090, 1, "\u1F22\u03B9"], [8091, 1, "\u1F23\u03B9"], [8092, 1, "\u1F24\u03B9"], [8093, 1, "\u1F25\u03B9"], [8094, 1, "\u1F26\u03B9"], [8095, 1, "\u1F27\u03B9"], [8096, 1, "\u1F60\u03B9"], [8097, 1, "\u1F61\u03B9"], [8098, 1, "\u1F62\u03B9"], [8099, 1, "\u1F63\u03B9"], [8100, 1, "\u1F64\u03B9"], [8101, 1, "\u1F65\u03B9"], [8102, 1, "\u1F66\u03B9"], [8103, 1, "\u1F67\u03B9"], [8104, 1, "\u1F60\u03B9"], [8105, 1, "\u1F61\u03B9"], [8106, 1, "\u1F62\u03B9"], [8107, 1, "\u1F63\u03B9"], [8108, 1, "\u1F64\u03B9"], [8109, 1, "\u1F65\u03B9"], [8110, 1, "\u1F66\u03B9"], [8111, 1, "\u1F67\u03B9"], [[8112, 8113], 2], [8114, 1, "\u1F70\u03B9"], [8115, 1, "\u03B1\u03B9"], [8116, 1, "\u03AC\u03B9"], [8117, 3], [8118, 2], [8119, 1, "\u1FB6\u03B9"], [8120, 1, "\u1FB0"], [8121, 1, "\u1FB1"], [8122, 1, "\u1F70"], [8123, 1, "\u03AC"], [8124, 1, "\u03B1\u03B9"], [8125, 5, " \u0313"], [8126, 1, "\u03B9"], [8127, 5, " \u0313"], [8128, 5, " \u0342"], [8129, 5, " \u0308\u0342"], [8130, 1, "\u1F74\u03B9"], [8131, 1, "\u03B7\u03B9"], [8132, 1, "\u03AE\u03B9"], [8133, 3], [8134, 2], [8135, 1, "\u1FC6\u03B9"], [8136, 1, "\u1F72"], [8137, 1, "\u03AD"], [8138, 1, "\u1F74"], [8139, 1, "\u03AE"], [8140, 1, "\u03B7\u03B9"], [8141, 5, " \u0313\u0300"], [8142, 5, " \u0313\u0301"], [8143, 5, " \u0313\u0342"], [[8144, 8146], 2], [8147, 1, "\u0390"], [[8148, 8149], 3], [[8150, 8151], 2], [8152, 1, "\u1FD0"], [8153, 1, "\u1FD1"], [8154, 1, "\u1F76"], [8155, 1, "\u03AF"], [8156, 3], [8157, 5, " \u0314\u0300"], [8158, 5, " \u0314\u0301"], [8159, 5, " \u0314\u0342"], [[8160, 8162], 2], [8163, 1, "\u03B0"], [[8164, 8167], 2], [8168, 1, "\u1FE0"], [8169, 1, "\u1FE1"], [8170, 1, "\u1F7A"], [8171, 1, "\u03CD"], [8172, 1, "\u1FE5"], [8173, 5, " \u0308\u0300"], [8174, 5, " \u0308\u0301"], [8175, 5, "`"], [[8176, 8177], 3], [8178, 1, "\u1F7C\u03B9"], [8179, 1, "\u03C9\u03B9"], [8180, 1, "\u03CE\u03B9"], [8181, 3], [8182, 2], [8183, 1, "\u1FF6\u03B9"], [8184, 1, "\u1F78"], [8185, 1, "\u03CC"], [8186, 1, "\u1F7C"], [8187, 1, "\u03CE"], [8188, 1, "\u03C9\u03B9"], [8189, 5, " \u0301"], [8190, 5, " \u0314"], [8191, 3], [[8192, 8202], 5, " "], [8203, 7], [[8204, 8205], 6, ""], [[8206, 8207], 3], [8208, 2], [8209, 1, "\u2010"], [[8210, 8214], 2], [8215, 5, " \u0333"], [[8216, 8227], 2], [[8228, 8230], 3], [8231, 2], [[8232, 8238], 3], [8239, 5, " "], [[8240, 8242], 2], [8243, 1, "\u2032\u2032"], [8244, 1, "\u2032\u2032\u2032"], [8245, 2], [8246, 1, "\u2035\u2035"], [8247, 1, "\u2035\u2035\u2035"], [[8248, 8251], 2], [8252, 5, "!!"], [8253, 2], [8254, 5, " \u0305"], [[8255, 8262], 2], [8263, 5, "??"], [8264, 5, "?!"], [8265, 5, "!?"], [[8266, 8269], 2], [[8270, 8274], 2], [[8275, 8276], 2], [[8277, 8278], 2], [8279, 1, "\u2032\u2032\u2032\u2032"], [[8280, 8286], 2], [8287, 5, " "], [8288, 7], [[8289, 8291], 3], [8292, 7], [8293, 3], [[8294, 8297], 3], [[8298, 8303], 3], [8304, 1, "0"], [8305, 1, "i"], [[8306, 8307], 3], [8308, 1, "4"], [8309, 1, "5"], [8310, 1, "6"], [8311, 1, "7"], [8312, 1, "8"], [8313, 1, "9"], [8314, 5, "+"], [8315, 1, "\u2212"], [8316, 5, "="], [8317, 5, "("], [8318, 5, ")"], [8319, 1, "n"], [8320, 1, "0"], [8321, 1, "1"], [8322, 1, "2"], [8323, 1, "3"], [8324, 1, "4"], [8325, 1, "5"], [8326, 1, "6"], [8327, 1, "7"], [8328, 1, "8"], [8329, 1, "9"], [8330, 5, "+"], [8331, 1, "\u2212"], [8332, 5, "="], [8333, 5, "("], [8334, 5, ")"], [8335, 3], [8336, 1, "a"], [8337, 1, "e"], [8338, 1, "o"], [8339, 1, "x"], [8340, 1, "\u0259"], [8341, 1, "h"], [8342, 1, "k"], [8343, 1, "l"], [8344, 1, "m"], [8345, 1, "n"], [8346, 1, "p"], [8347, 1, "s"], [8348, 1, "t"], [[8349, 8351], 3], [[8352, 8359], 2], [8360, 1, "rs"], [[8361, 8362], 2], [8363, 2], [8364, 2], [[8365, 8367], 2], [[8368, 8369], 2], [[8370, 8373], 2], [[8374, 8376], 2], [8377, 2], [8378, 2], [[8379, 8381], 2], [8382, 2], [8383, 2], [8384, 2], [[8385, 8399], 3], [[8400, 8417], 2], [[8418, 8419], 2], [[8420, 8426], 2], [8427, 2], [[8428, 8431], 2], [8432, 2], [[8433, 8447], 3], [8448, 5, "a/c"], [8449, 5, "a/s"], [8450, 1, "c"], [8451, 1, "\xB0c"], [8452, 2], [8453, 5, "c/o"], [8454, 5, "c/u"], [8455, 1, "\u025B"], [8456, 2], [8457, 1, "\xB0f"], [8458, 1, "g"], [[8459, 8462], 1, "h"], [8463, 1, "\u0127"], [[8464, 8465], 1, "i"], [[8466, 8467], 1, "l"], [8468, 2], [8469, 1, "n"], [8470, 1, "no"], [[8471, 8472], 2], [8473, 1, "p"], [8474, 1, "q"], [[8475, 8477], 1, "r"], [[8478, 8479], 2], [8480, 1, "sm"], [8481, 1, "tel"], [8482, 1, "tm"], [8483, 2], [8484, 1, "z"], [8485, 2], [8486, 1, "\u03C9"], [8487, 2], [8488, 1, "z"], [8489, 2], [8490, 1, "k"], [8491, 1, "\xE5"], [8492, 1, "b"], [8493, 1, "c"], [8494, 2], [[8495, 8496], 1, "e"], [8497, 1, "f"], [8498, 3], [8499, 1, "m"], [8500, 1, "o"], [8501, 1, "\u05D0"], [8502, 1, "\u05D1"], [8503, 1, "\u05D2"], [8504, 1, "\u05D3"], [8505, 1, "i"], [8506, 2], [8507, 1, "fax"], [8508, 1, "\u03C0"], [[8509, 8510], 1, "\u03B3"], [8511, 1, "\u03C0"], [8512, 1, "\u2211"], [[8513, 8516], 2], [[8517, 8518], 1, "d"], [8519, 1, "e"], [8520, 1, "i"], [8521, 1, "j"], [[8522, 8523], 2], [8524, 2], [8525, 2], [8526, 2], [8527, 2], [8528, 1, "1\u20447"], [8529, 1, "1\u20449"], [8530, 1, "1\u204410"], [8531, 1, "1\u20443"], [8532, 1, "2\u20443"], [8533, 1, "1\u20445"], [8534, 1, "2\u20445"], [8535, 1, "3\u20445"], [8536, 1, "4\u20445"], [8537, 1, "1\u20446"], [8538, 1, "5\u20446"], [8539, 1, "1\u20448"], [8540, 1, "3\u20448"], [8541, 1, "5\u20448"], [8542, 1, "7\u20448"], [8543, 1, "1\u2044"], [8544, 1, "i"], [8545, 1, "ii"], [8546, 1, "iii"], [8547, 1, "iv"], [8548, 1, "v"], [8549, 1, "vi"], [8550, 1, "vii"], [8551, 1, "viii"], [8552, 1, "ix"], [8553, 1, "x"], [8554, 1, "xi"], [8555, 1, "xii"], [8556, 1, "l"], [8557, 1, "c"], [8558, 1, "d"], [8559, 1, "m"], [8560, 1, "i"], [8561, 1, "ii"], [8562, 1, "iii"], [8563, 1, "iv"], [8564, 1, "v"], [8565, 1, "vi"], [8566, 1, "vii"], [8567, 1, "viii"], [8568, 1, "ix"], [8569, 1, "x"], [8570, 1, "xi"], [8571, 1, "xii"], [8572, 1, "l"], [8573, 1, "c"], [8574, 1, "d"], [8575, 1, "m"], [[8576, 8578], 2], [8579, 3], [8580, 2], [[8581, 8584], 2], [8585, 1, "0\u20443"], [[8586, 8587], 2], [[8588, 8591], 3], [[8592, 8682], 2], [[8683, 8691], 2], [[8692, 8703], 2], [[8704, 8747], 2], [8748, 1, "\u222B\u222B"], [8749, 1, "\u222B\u222B\u222B"], [8750, 2], [8751, 1, "\u222E\u222E"], [8752, 1, "\u222E\u222E\u222E"], [[8753, 8799], 2], [8800, 4], [[8801, 8813], 2], [[8814, 8815], 4], [[8816, 8945], 2], [[8946, 8959], 2], [8960, 2], [8961, 2], [[8962, 9e3], 2], [9001, 1, "\u3008"], [9002, 1, "\u3009"], [[9003, 9082], 2], [9083, 2], [9084, 2], [[9085, 9114], 2], [[9115, 9166], 2], [[9167, 9168], 2], [[9169, 9179], 2], [[9180, 9191], 2], [9192, 2], [[9193, 9203], 2], [[9204, 9210], 2], [[9211, 9214], 2], [9215, 2], [[9216, 9252], 2], [[9253, 9254], 2], [[9255, 9279], 3], [[9280, 9290], 2], [[9291, 9311], 3], [9312, 1, "1"], [9313, 1, "2"], [9314, 1, "3"], [9315, 1, "4"], [9316, 1, "5"], [9317, 1, "6"], [9318, 1, "7"], [9319, 1, "8"], [9320, 1, "9"], [9321, 1, "10"], [9322, 1, "11"], [9323, 1, "12"], [9324, 1, "13"], [9325, 1, "14"], [9326, 1, "15"], [9327, 1, "16"], [9328, 1, "17"], [9329, 1, "18"], [9330, 1, "19"], [9331, 1, "20"], [9332, 5, "(1)"], [9333, 5, "(2)"], [9334, 5, "(3)"], [9335, 5, "(4)"], [9336, 5, "(5)"], [9337, 5, "(6)"], [9338, 5, "(7)"], [9339, 5, "(8)"], [9340, 5, "(9)"], [9341, 5, "(10)"], [9342, 5, "(11)"], [9343, 5, "(12)"], [9344, 5, "(13)"], [9345, 5, "(14)"], [9346, 5, "(15)"], [9347, 5, "(16)"], [9348, 5, "(17)"], [9349, 5, "(18)"], [9350, 5, "(19)"], [9351, 5, "(20)"], [[9352, 9371], 3], [9372, 5, "(a)"], [9373, 5, "(b)"], [9374, 5, "(c)"], [9375, 5, "(d)"], [9376, 5, "(e)"], [9377, 5, "(f)"], [9378, 5, "(g)"], [9379, 5, "(h)"], [9380, 5, "(i)"], [9381, 5, "(j)"], [9382, 5, "(k)"], [9383, 5, "(l)"], [9384, 5, "(m)"], [9385, 5, "(n)"], [9386, 5, "(o)"], [9387, 5, "(p)"], [9388, 5, "(q)"], [9389, 5, "(r)"], [9390, 5, "(s)"], [9391, 5, "(t)"], [9392, 5, "(u)"], [9393, 5, "(v)"], [9394, 5, "(w)"], [9395, 5, "(x)"], [9396, 5, "(y)"], [9397, 5, "(z)"], [9398, 1, "a"], [9399, 1, "b"], [9400, 1, "c"], [9401, 1, "d"], [9402, 1, "e"], [9403, 1, "f"], [9404, 1, "g"], [9405, 1, "h"], [9406, 1, "i"], [9407, 1, "j"], [9408, 1, "k"], [9409, 1, "l"], [9410, 1, "m"], [9411, 1, "n"], [9412, 1, "o"], [9413, 1, "p"], [9414, 1, "q"], [9415, 1, "r"], [9416, 1, "s"], [9417, 1, "t"], [9418, 1, "u"], [9419, 1, "v"], [9420, 1, "w"], [9421, 1, "x"], [9422, 1, "y"], [9423, 1, "z"], [9424, 1, "a"], [9425, 1, "b"], [9426, 1, "c"], [9427, 1, "d"], [9428, 1, "e"], [9429, 1, "f"], [9430, 1, "g"], [9431, 1, "h"], [9432, 1, "i"], [9433, 1, "j"], [9434, 1, "k"], [9435, 1, "l"], [9436, 1, "m"], [9437, 1, "n"], [9438, 1, "o"], [9439, 1, "p"], [9440, 1, "q"], [9441, 1, "r"], [9442, 1, "s"], [9443, 1, "t"], [9444, 1, "u"], [9445, 1, "v"], [9446, 1, "w"], [9447, 1, "x"], [9448, 1, "y"], [9449, 1, "z"], [9450, 1, "0"], [[9451, 9470], 2], [9471, 2], [[9472, 9621], 2], [[9622, 9631], 2], [[9632, 9711], 2], [[9712, 9719], 2], [[9720, 9727], 2], [[9728, 9747], 2], [[9748, 9749], 2], [[9750, 9751], 2], [9752, 2], [9753, 2], [[9754, 9839], 2], [[9840, 9841], 2], [[9842, 9853], 2], [[9854, 9855], 2], [[9856, 9865], 2], [[9866, 9873], 2], [[9874, 9884], 2], [9885, 2], [[9886, 9887], 2], [[9888, 9889], 2], [[9890, 9905], 2], [9906, 2], [[9907, 9916], 2], [[9917, 9919], 2], [[9920, 9923], 2], [[9924, 9933], 2], [9934, 2], [[9935, 9953], 2], [9954, 2], [9955, 2], [[9956, 9959], 2], [[9960, 9983], 2], [9984, 2], [[9985, 9988], 2], [9989, 2], [[9990, 9993], 2], [[9994, 9995], 2], [[9996, 10023], 2], [10024, 2], [[10025, 10059], 2], [10060, 2], [10061, 2], [10062, 2], [[10063, 10066], 2], [[10067, 10069], 2], [10070, 2], [10071, 2], [[10072, 10078], 2], [[10079, 10080], 2], [[10081, 10087], 2], [[10088, 10101], 2], [[10102, 10132], 2], [[10133, 10135], 2], [[10136, 10159], 2], [10160, 2], [[10161, 10174], 2], [10175, 2], [[10176, 10182], 2], [[10183, 10186], 2], [10187, 2], [10188, 2], [10189, 2], [[10190, 10191], 2], [[10192, 10219], 2], [[10220, 10223], 2], [[10224, 10239], 2], [[10240, 10495], 2], [[10496, 10763], 2], [10764, 1, "\u222B\u222B\u222B\u222B"], [[10765, 10867], 2], [10868, 5, "::="], [10869, 5, "=="], [10870, 5, "==="], [[10871, 10971], 2], [10972, 1, "\u2ADD\u0338"], [[10973, 11007], 2], [[11008, 11021], 2], [[11022, 11027], 2], [[11028, 11034], 2], [[11035, 11039], 2], [[11040, 11043], 2], [[11044, 11084], 2], [[11085, 11087], 2], [[11088, 11092], 2], [[11093, 11097], 2], [[11098, 11123], 2], [[11124, 11125], 3], [[11126, 11157], 2], [11158, 3], [11159, 2], [[11160, 11193], 2], [[11194, 11196], 2], [[11197, 11208], 2], [11209, 2], [[11210, 11217], 2], [11218, 2], [[11219, 11243], 2], [[11244, 11247], 2], [[11248, 11262], 2], [11263, 2], [11264, 1, "\u2C30"], [11265, 1, "\u2C31"], [11266, 1, "\u2C32"], [11267, 1, "\u2C33"], [11268, 1, "\u2C34"], [11269, 1, "\u2C35"], [11270, 1, "\u2C36"], [11271, 1, "\u2C37"], [11272, 1, "\u2C38"], [11273, 1, "\u2C39"], [11274, 1, "\u2C3A"], [11275, 1, "\u2C3B"], [11276, 1, "\u2C3C"], [11277, 1, "\u2C3D"], [11278, 1, "\u2C3E"], [11279, 1, "\u2C3F"], [11280, 1, "\u2C40"], [11281, 1, "\u2C41"], [11282, 1, "\u2C42"], [11283, 1, "\u2C43"], [11284, 1, "\u2C44"], [11285, 1, "\u2C45"], [11286, 1, "\u2C46"], [11287, 1, "\u2C47"], [11288, 1, "\u2C48"], [11289, 1, "\u2C49"], [11290, 1, "\u2C4A"], [11291, 1, "\u2C4B"], [11292, 1, "\u2C4C"], [11293, 1, "\u2C4D"], [11294, 1, "\u2C4E"], [11295, 1, "\u2C4F"], [11296, 1, "\u2C50"], [11297, 1, "\u2C51"], [11298, 1, "\u2C52"], [11299, 1, "\u2C53"], [11300, 1, "\u2C54"], [11301, 1, "\u2C55"], [11302, 1, "\u2C56"], [11303, 1, "\u2C57"], [11304, 1, "\u2C58"], [11305, 1, "\u2C59"], [11306, 1, "\u2C5A"], [11307, 1, "\u2C5B"], [11308, 1, "\u2C5C"], [11309, 1, "\u2C5D"], [11310, 1, "\u2C5E"], [11311, 1, "\u2C5F"], [[11312, 11358], 2], [11359, 2], [11360, 1, "\u2C61"], [11361, 2], [11362, 1, "\u026B"], [11363, 1, "\u1D7D"], [11364, 1, "\u027D"], [[11365, 11366], 2], [11367, 1, "\u2C68"], [11368, 2], [11369, 1, "\u2C6A"], [11370, 2], [11371, 1, "\u2C6C"], [11372, 2], [11373, 1, "\u0251"], [11374, 1, "\u0271"], [11375, 1, "\u0250"], [11376, 1, "\u0252"], [11377, 2], [11378, 1, "\u2C73"], [11379, 2], [11380, 2], [11381, 1, "\u2C76"], [[11382, 11383], 2], [[11384, 11387], 2], [11388, 1, "j"], [11389, 1, "v"], [11390, 1, "\u023F"], [11391, 1, "\u0240"], [11392, 1, "\u2C81"], [11393, 2], [11394, 1, "\u2C83"], [11395, 2], [11396, 1, "\u2C85"], [11397, 2], [11398, 1, "\u2C87"], [11399, 2], [11400, 1, "\u2C89"], [11401, 2], [11402, 1, "\u2C8B"], [11403, 2], [11404, 1, "\u2C8D"], [11405, 2], [11406, 1, "\u2C8F"], [11407, 2], [11408, 1, "\u2C91"], [11409, 2], [11410, 1, "\u2C93"], [11411, 2], [11412, 1, "\u2C95"], [11413, 2], [11414, 1, "\u2C97"], [11415, 2], [11416, 1, "\u2C99"], [11417, 2], [11418, 1, "\u2C9B"], [11419, 2], [11420, 1, "\u2C9D"], [11421, 2], [11422, 1, "\u2C9F"], [11423, 2], [11424, 1, "\u2CA1"], [11425, 2], [11426, 1, "\u2CA3"], [11427, 2], [11428, 1, "\u2CA5"], [11429, 2], [11430, 1, "\u2CA7"], [11431, 2], [11432, 1, "\u2CA9"], [11433, 2], [11434, 1, "\u2CAB"], [11435, 2], [11436, 1, "\u2CAD"], [11437, 2], [11438, 1, "\u2CAF"], [11439, 2], [11440, 1, "\u2CB1"], [11441, 2], [11442, 1, "\u2CB3"], [11443, 2], [11444, 1, "\u2CB5"], [11445, 2], [11446, 1, "\u2CB7"], [11447, 2], [11448, 1, "\u2CB9"], [11449, 2], [11450, 1, "\u2CBB"], [11451, 2], [11452, 1, "\u2CBD"], [11453, 2], [11454, 1, "\u2CBF"], [11455, 2], [11456, 1, "\u2CC1"], [11457, 2], [11458, 1, "\u2CC3"], [11459, 2], [11460, 1, "\u2CC5"], [11461, 2], [11462, 1, "\u2CC7"], [11463, 2], [11464, 1, "\u2CC9"], [11465, 2], [11466, 1, "\u2CCB"], [11467, 2], [11468, 1, "\u2CCD"], [11469, 2], [11470, 1, "\u2CCF"], [11471, 2], [11472, 1, "\u2CD1"], [11473, 2], [11474, 1, "\u2CD3"], [11475, 2], [11476, 1, "\u2CD5"], [11477, 2], [11478, 1, "\u2CD7"], [11479, 2], [11480, 1, "\u2CD9"], [11481, 2], [11482, 1, "\u2CDB"], [11483, 2], [11484, 1, "\u2CDD"], [11485, 2], [11486, 1, "\u2CDF"], [11487, 2], [11488, 1, "\u2CE1"], [11489, 2], [11490, 1, "\u2CE3"], [[11491, 11492], 2], [[11493, 11498], 2], [11499, 1, "\u2CEC"], [11500, 2], [11501, 1, "\u2CEE"], [[11502, 11505], 2], [11506, 1, "\u2CF3"], [11507, 2], [[11508, 11512], 3], [[11513, 11519], 2], [[11520, 11557], 2], [11558, 3], [11559, 2], [[11560, 11564], 3], [11565, 2], [[11566, 11567], 3], [[11568, 11621], 2], [[11622, 11623], 2], [[11624, 11630], 3], [11631, 1, "\u2D61"], [11632, 2], [[11633, 11646], 3], [11647, 2], [[11648, 11670], 2], [[11671, 11679], 3], [[11680, 11686], 2], [11687, 3], [[11688, 11694], 2], [11695, 3], [[11696, 11702], 2], [11703, 3], [[11704, 11710], 2], [11711, 3], [[11712, 11718], 2], [11719, 3], [[11720, 11726], 2], [11727, 3], [[11728, 11734], 2], [11735, 3], [[11736, 11742], 2], [11743, 3], [[11744, 11775], 2], [[11776, 11799], 2], [[11800, 11803], 2], [[11804, 11805], 2], [[11806, 11822], 2], [11823, 2], [11824, 2], [11825, 2], [[11826, 11835], 2], [[11836, 11842], 2], [[11843, 11844], 2], [[11845, 11849], 2], [[11850, 11854], 2], [11855, 2], [[11856, 11858], 2], [[11859, 11869], 2], [[11870, 11903], 3], [[11904, 11929], 2], [11930, 3], [[11931, 11934], 2], [11935, 1, "\u6BCD"], [[11936, 12018], 2], [12019, 1, "\u9F9F"], [[12020, 12031], 3], [12032, 1, "\u4E00"], [12033, 1, "\u4E28"], [12034, 1, "\u4E36"], [12035, 1, "\u4E3F"], [12036, 1, "\u4E59"], [12037, 1, "\u4E85"], [12038, 1, "\u4E8C"], [12039, 1, "\u4EA0"], [12040, 1, "\u4EBA"], [12041, 1, "\u513F"], [12042, 1, "\u5165"], [12043, 1, "\u516B"], [12044, 1, "\u5182"], [12045, 1, "\u5196"], [12046, 1, "\u51AB"], [12047, 1, "\u51E0"], [12048, 1, "\u51F5"], [12049, 1, "\u5200"], [12050, 1, "\u529B"], [12051, 1, "\u52F9"], [12052, 1, "\u5315"], [12053, 1, "\u531A"], [12054, 1, "\u5338"], [12055, 1, "\u5341"], [12056, 1, "\u535C"], [12057, 1, "\u5369"], [12058, 1, "\u5382"], [12059, 1, "\u53B6"], [12060, 1, "\u53C8"], [12061, 1, "\u53E3"], [12062, 1, "\u56D7"], [12063, 1, "\u571F"], [12064, 1, "\u58EB"], [12065, 1, "\u5902"], [12066, 1, "\u590A"], [12067, 1, "\u5915"], [12068, 1, "\u5927"], [12069, 1, "\u5973"], [12070, 1, "\u5B50"], [12071, 1, "\u5B80"], [12072, 1, "\u5BF8"], [12073, 1, "\u5C0F"], [12074, 1, "\u5C22"], [12075, 1, "\u5C38"], [12076, 1, "\u5C6E"], [12077, 1, "\u5C71"], [12078, 1, "\u5DDB"], [12079, 1, "\u5DE5"], [12080, 1, "\u5DF1"], [12081, 1, "\u5DFE"], [12082, 1, "\u5E72"], [12083, 1, "\u5E7A"], [12084, 1, "\u5E7F"], [12085, 1, "\u5EF4"], [12086, 1, "\u5EFE"], [12087, 1, "\u5F0B"], [12088, 1, "\u5F13"], [12089, 1, "\u5F50"], [12090, 1, "\u5F61"], [12091, 1, "\u5F73"], [12092, 1, "\u5FC3"], [12093, 1, "\u6208"], [12094, 1, "\u6236"], [12095, 1, "\u624B"], [12096, 1, "\u652F"], [12097, 1, "\u6534"], [12098, 1, "\u6587"], [12099, 1, "\u6597"], [12100, 1, "\u65A4"], [12101, 1, "\u65B9"], [12102, 1, "\u65E0"], [12103, 1, "\u65E5"], [12104, 1, "\u66F0"], [12105, 1, "\u6708"], [12106, 1, "\u6728"], [12107, 1, "\u6B20"], [12108, 1, "\u6B62"], [12109, 1, "\u6B79"], [12110, 1, "\u6BB3"], [12111, 1, "\u6BCB"], [12112, 1, "\u6BD4"], [12113, 1, "\u6BDB"], [12114, 1, "\u6C0F"], [12115, 1, "\u6C14"], [12116, 1, "\u6C34"], [12117, 1, "\u706B"], [12118, 1, "\u722A"], [12119, 1, "\u7236"], [12120, 1, "\u723B"], [12121, 1, "\u723F"], [12122, 1, "\u7247"], [12123, 1, "\u7259"], [12124, 1, "\u725B"], [12125, 1, "\u72AC"], [12126, 1, "\u7384"], [12127, 1, "\u7389"], [12128, 1, "\u74DC"], [12129, 1, "\u74E6"], [12130, 1, "\u7518"], [12131, 1, "\u751F"], [12132, 1, "\u7528"], [12133, 1, "\u7530"], [12134, 1, "\u758B"], [12135, 1, "\u7592"], [12136, 1, "\u7676"], [12137, 1, "\u767D"], [12138, 1, "\u76AE"], [12139, 1, "\u76BF"], [12140, 1, "\u76EE"], [12141, 1, "\u77DB"], [12142, 1, "\u77E2"], [12143, 1, "\u77F3"], [12144, 1, "\u793A"], [12145, 1, "\u79B8"], [12146, 1, "\u79BE"], [12147, 1, "\u7A74"], [12148, 1, "\u7ACB"], [12149, 1, "\u7AF9"], [12150, 1, "\u7C73"], [12151, 1, "\u7CF8"], [12152, 1, "\u7F36"], [12153, 1, "\u7F51"], [12154, 1, "\u7F8A"], [12155, 1, "\u7FBD"], [12156, 1, "\u8001"], [12157, 1, "\u800C"], [12158, 1, "\u8012"], [12159, 1, "\u8033"], [12160, 1, "\u807F"], [12161, 1, "\u8089"], [12162, 1, "\u81E3"], [12163, 1, "\u81EA"], [12164, 1, "\u81F3"], [12165, 1, "\u81FC"], [12166, 1, "\u820C"], [12167, 1, "\u821B"], [12168, 1, "\u821F"], [12169, 1, "\u826E"], [12170, 1, "\u8272"], [12171, 1, "\u8278"], [12172, 1, "\u864D"], [12173, 1, "\u866B"], [12174, 1, "\u8840"], [12175, 1, "\u884C"], [12176, 1, "\u8863"], [12177, 1, "\u897E"], [12178, 1, "\u898B"], [12179, 1, "\u89D2"], [12180, 1, "\u8A00"], [12181, 1, "\u8C37"], [12182, 1, "\u8C46"], [12183, 1, "\u8C55"], [12184, 1, "\u8C78"], [12185, 1, "\u8C9D"], [12186, 1, "\u8D64"], [12187, 1, "\u8D70"], [12188, 1, "\u8DB3"], [12189, 1, "\u8EAB"], [12190, 1, "\u8ECA"], [12191, 1, "\u8F9B"], [12192, 1, "\u8FB0"], [12193, 1, "\u8FB5"], [12194, 1, "\u9091"], [12195, 1, "\u9149"], [12196, 1, "\u91C6"], [12197, 1, "\u91CC"], [12198, 1, "\u91D1"], [12199, 1, "\u9577"], [12200, 1, "\u9580"], [12201, 1, "\u961C"], [12202, 1, "\u96B6"], [12203, 1, "\u96B9"], [12204, 1, "\u96E8"], [12205, 1, "\u9751"], [12206, 1, "\u975E"], [12207, 1, "\u9762"], [12208, 1, "\u9769"], [12209, 1, "\u97CB"], [12210, 1, "\u97ED"], [12211, 1, "\u97F3"], [12212, 1, "\u9801"], [12213, 1, "\u98A8"], [12214, 1, "\u98DB"], [12215, 1, "\u98DF"], [12216, 1, "\u9996"], [12217, 1, "\u9999"], [12218, 1, "\u99AC"], [12219, 1, "\u9AA8"], [12220, 1, "\u9AD8"], [12221, 1, "\u9ADF"], [12222, 1, "\u9B25"], [12223, 1, "\u9B2F"], [12224, 1, "\u9B32"], [12225, 1, "\u9B3C"], [12226, 1, "\u9B5A"], [12227, 1, "\u9CE5"], [12228, 1, "\u9E75"], [12229, 1, "\u9E7F"], [12230, 1, "\u9EA5"], [12231, 1, "\u9EBB"], [12232, 1, "\u9EC3"], [12233, 1, "\u9ECD"], [12234, 1, "\u9ED1"], [12235, 1, "\u9EF9"], [12236, 1, "\u9EFD"], [12237, 1, "\u9F0E"], [12238, 1, "\u9F13"], [12239, 1, "\u9F20"], [12240, 1, "\u9F3B"], [12241, 1, "\u9F4A"], [12242, 1, "\u9F52"], [12243, 1, "\u9F8D"], [12244, 1, "\u9F9C"], [12245, 1, "\u9FA0"], [[12246, 12271], 3], [[12272, 12283], 3], [[12284, 12287], 3], [12288, 5, " "], [12289, 2], [12290, 1, "."], [[12291, 12292], 2], [[12293, 12295], 2], [[12296, 12329], 2], [[12330, 12333], 2], [[12334, 12341], 2], [12342, 1, "\u3012"], [12343, 2], [12344, 1, "\u5341"], [12345, 1, "\u5344"], [12346, 1, "\u5345"], [12347, 2], [12348, 2], [12349, 2], [12350, 2], [12351, 2], [12352, 3], [[12353, 12436], 2], [[12437, 12438], 2], [[12439, 12440], 3], [[12441, 12442], 2], [12443, 5, " \u3099"], [12444, 5, " \u309A"], [[12445, 12446], 2], [12447, 1, "\u3088\u308A"], [12448, 2], [[12449, 12542], 2], [12543, 1, "\u30B3\u30C8"], [[12544, 12548], 3], [[12549, 12588], 2], [12589, 2], [12590, 2], [12591, 2], [12592, 3], [12593, 1, "\u1100"], [12594, 1, "\u1101"], [12595, 1, "\u11AA"], [12596, 1, "\u1102"], [12597, 1, "\u11AC"], [12598, 1, "\u11AD"], [12599, 1, "\u1103"], [12600, 1, "\u1104"], [12601, 1, "\u1105"], [12602, 1, "\u11B0"], [12603, 1, "\u11B1"], [12604, 1, "\u11B2"], [12605, 1, "\u11B3"], [12606, 1, "\u11B4"], [12607, 1, "\u11B5"], [12608, 1, "\u111A"], [12609, 1, "\u1106"], [12610, 1, "\u1107"], [12611, 1, "\u1108"], [12612, 1, "\u1121"], [12613, 1, "\u1109"], [12614, 1, "\u110A"], [12615, 1, "\u110B"], [12616, 1, "\u110C"], [12617, 1, "\u110D"], [12618, 1, "\u110E"], [12619, 1, "\u110F"], [12620, 1, "\u1110"], [12621, 1, "\u1111"], [12622, 1, "\u1112"], [12623, 1, "\u1161"], [12624, 1, "\u1162"], [12625, 1, "\u1163"], [12626, 1, "\u1164"], [12627, 1, "\u1165"], [12628, 1, "\u1166"], [12629, 1, "\u1167"], [12630, 1, "\u1168"], [12631, 1, "\u1169"], [12632, 1, "\u116A"], [12633, 1, "\u116B"], [12634, 1, "\u116C"], [12635, 1, "\u116D"], [12636, 1, "\u116E"], [12637, 1, "\u116F"], [12638, 1, "\u1170"], [12639, 1, "\u1171"], [12640, 1, "\u1172"], [12641, 1, "\u1173"], [12642, 1, "\u1174"], [12643, 1, "\u1175"], [12644, 3], [12645, 1, "\u1114"], [12646, 1, "\u1115"], [12647, 1, "\u11C7"], [12648, 1, "\u11C8"], [12649, 1, "\u11CC"], [12650, 1, "\u11CE"], [12651, 1, "\u11D3"], [12652, 1, "\u11D7"], [12653, 1, "\u11D9"], [12654, 1, "\u111C"], [12655, 1, "\u11DD"], [12656, 1, "\u11DF"], [12657, 1, "\u111D"], [12658, 1, "\u111E"], [12659, 1, "\u1120"], [12660, 1, "\u1122"], [12661, 1, "\u1123"], [12662, 1, "\u1127"], [12663, 1, "\u1129"], [12664, 1, "\u112B"], [12665, 1, "\u112C"], [12666, 1, "\u112D"], [12667, 1, "\u112E"], [12668, 1, "\u112F"], [12669, 1, "\u1132"], [12670, 1, "\u1136"], [12671, 1, "\u1140"], [12672, 1, "\u1147"], [12673, 1, "\u114C"], [12674, 1, "\u11F1"], [12675, 1, "\u11F2"], [12676, 1, "\u1157"], [12677, 1, "\u1158"], [12678, 1, "\u1159"], [12679, 1, "\u1184"], [12680, 1, "\u1185"], [12681, 1, "\u1188"], [12682, 1, "\u1191"], [12683, 1, "\u1192"], [12684, 1, "\u1194"], [12685, 1, "\u119E"], [12686, 1, "\u11A1"], [12687, 3], [[12688, 12689], 2], [12690, 1, "\u4E00"], [12691, 1, "\u4E8C"], [12692, 1, "\u4E09"], [12693, 1, "\u56DB"], [12694, 1, "\u4E0A"], [12695, 1, "\u4E2D"], [12696, 1, "\u4E0B"], [12697, 1, "\u7532"], [12698, 1, "\u4E59"], [12699, 1, "\u4E19"], [12700, 1, "\u4E01"], [12701, 1, "\u5929"], [12702, 1, "\u5730"], [12703, 1, "\u4EBA"], [[12704, 12727], 2], [[12728, 12730], 2], [[12731, 12735], 2], [[12736, 12751], 2], [[12752, 12771], 2], [[12772, 12783], 3], [[12784, 12799], 2], [12800, 5, "(\u1100)"], [12801, 5, "(\u1102)"], [12802, 5, "(\u1103)"], [12803, 5, "(\u1105)"], [12804, 5, "(\u1106)"], [12805, 5, "(\u1107)"], [12806, 5, "(\u1109)"], [12807, 5, "(\u110B)"], [12808, 5, "(\u110C)"], [12809, 5, "(\u110E)"], [12810, 5, "(\u110F)"], [12811, 5, "(\u1110)"], [12812, 5, "(\u1111)"], [12813, 5, "(\u1112)"], [12814, 5, "(\uAC00)"], [12815, 5, "(\uB098)"], [12816, 5, "(\uB2E4)"], [12817, 5, "(\uB77C)"], [12818, 5, "(\uB9C8)"], [12819, 5, "(\uBC14)"], [12820, 5, "(\uC0AC)"], [12821, 5, "(\uC544)"], [12822, 5, "(\uC790)"], [12823, 5, "(\uCC28)"], [12824, 5, "(\uCE74)"], [12825, 5, "(\uD0C0)"], [12826, 5, "(\uD30C)"], [12827, 5, "(\uD558)"], [12828, 5, "(\uC8FC)"], [12829, 5, "(\uC624\uC804)"], [12830, 5, "(\uC624\uD6C4)"], [12831, 3], [12832, 5, "(\u4E00)"], [12833, 5, "(\u4E8C)"], [12834, 5, "(\u4E09)"], [12835, 5, "(\u56DB)"], [12836, 5, "(\u4E94)"], [12837, 5, "(\u516D)"], [12838, 5, "(\u4E03)"], [12839, 5, "(\u516B)"], [12840, 5, "(\u4E5D)"], [12841, 5, "(\u5341)"], [12842, 5, "(\u6708)"], [12843, 5, "(\u706B)"], [12844, 5, "(\u6C34)"], [12845, 5, "(\u6728)"], [12846, 5, "(\u91D1)"], [12847, 5, "(\u571F)"], [12848, 5, "(\u65E5)"], [12849, 5, "(\u682A)"], [12850, 5, "(\u6709)"], [12851, 5, "(\u793E)"], [12852, 5, "(\u540D)"], [12853, 5, "(\u7279)"], [12854, 5, "(\u8CA1)"], [12855, 5, "(\u795D)"], [12856, 5, "(\u52B4)"], [12857, 5, "(\u4EE3)"], [12858, 5, "(\u547C)"], [12859, 5, "(\u5B66)"], [12860, 5, "(\u76E3)"], [12861, 5, "(\u4F01)"], [12862, 5, "(\u8CC7)"], [12863, 5, "(\u5354)"], [12864, 5, "(\u796D)"], [12865, 5, "(\u4F11)"], [12866, 5, "(\u81EA)"], [12867, 5, "(\u81F3)"], [12868, 1, "\u554F"], [12869, 1, "\u5E7C"], [12870, 1, "\u6587"], [12871, 1, "\u7B8F"], [[12872, 12879], 2], [12880, 1, "pte"], [12881, 1, "21"], [12882, 1, "22"], [12883, 1, "23"], [12884, 1, "24"], [12885, 1, "25"], [12886, 1, "26"], [12887, 1, "27"], [12888, 1, "28"], [12889, 1, "29"], [12890, 1, "30"], [12891, 1, "31"], [12892, 1, "32"], [12893, 1, "33"], [12894, 1, "34"], [12895, 1, "35"], [12896, 1, "\u1100"], [12897, 1, "\u1102"], [12898, 1, "\u1103"], [12899, 1, "\u1105"], [12900, 1, "\u1106"], [12901, 1, "\u1107"], [12902, 1, "\u1109"], [12903, 1, "\u110B"], [12904, 1, "\u110C"], [12905, 1, "\u110E"], [12906, 1, "\u110F"], [12907, 1, "\u1110"], [12908, 1, "\u1111"], [12909, 1, "\u1112"], [12910, 1, "\uAC00"], [12911, 1, "\uB098"], [12912, 1, "\uB2E4"], [12913, 1, "\uB77C"], [12914, 1, "\uB9C8"], [12915, 1, "\uBC14"], [12916, 1, "\uC0AC"], [12917, 1, "\uC544"], [12918, 1, "\uC790"], [12919, 1, "\uCC28"], [12920, 1, "\uCE74"], [12921, 1, "\uD0C0"], [12922, 1, "\uD30C"], [12923, 1, "\uD558"], [12924, 1, "\uCC38\uACE0"], [12925, 1, "\uC8FC\uC758"], [12926, 1, "\uC6B0"], [12927, 2], [12928, 1, "\u4E00"], [12929, 1, "\u4E8C"], [12930, 1, "\u4E09"], [12931, 1, "\u56DB"], [12932, 1, "\u4E94"], [12933, 1, "\u516D"], [12934, 1, "\u4E03"], [12935, 1, "\u516B"], [12936, 1, "\u4E5D"], [12937, 1, "\u5341"], [12938, 1, "\u6708"], [12939, 1, "\u706B"], [12940, 1, "\u6C34"], [12941, 1, "\u6728"], [12942, 1, "\u91D1"], [12943, 1, "\u571F"], [12944, 1, "\u65E5"], [12945, 1, "\u682A"], [12946, 1, "\u6709"], [12947, 1, "\u793E"], [12948, 1, "\u540D"], [12949, 1, "\u7279"], [12950, 1, "\u8CA1"], [12951, 1, "\u795D"], [12952, 1, "\u52B4"], [12953, 1, "\u79D8"], [12954, 1, "\u7537"], [12955, 1, "\u5973"], [12956, 1, "\u9069"], [12957, 1, "\u512A"], [12958, 1, "\u5370"], [12959, 1, "\u6CE8"], [12960, 1, "\u9805"], [12961, 1, "\u4F11"], [12962, 1, "\u5199"], [12963, 1, "\u6B63"], [12964, 1, "\u4E0A"], [12965, 1, "\u4E2D"], [12966, 1, "\u4E0B"], [12967, 1, "\u5DE6"], [12968, 1, "\u53F3"], [12969, 1, "\u533B"], [12970, 1, "\u5B97"], [12971, 1, "\u5B66"], [12972, 1, "\u76E3"], [12973, 1, "\u4F01"], [12974, 1, "\u8CC7"], [12975, 1, "\u5354"], [12976, 1, "\u591C"], [12977, 1, "36"], [12978, 1, "37"], [12979, 1, "38"], [12980, 1, "39"], [12981, 1, "40"], [12982, 1, "41"], [12983, 1, "42"], [12984, 1, "43"], [12985, 1, "44"], [12986, 1, "45"], [12987, 1, "46"], [12988, 1, "47"], [12989, 1, "48"], [12990, 1, "49"], [12991, 1, "50"], [12992, 1, "1\u6708"], [12993, 1, "2\u6708"], [12994, 1, "3\u6708"], [12995, 1, "4\u6708"], [12996, 1, "5\u6708"], [12997, 1, "6\u6708"], [12998, 1, "7\u6708"], [12999, 1, "8\u6708"], [13e3, 1, "9\u6708"], [13001, 1, "10\u6708"], [13002, 1, "11\u6708"], [13003, 1, "12\u6708"], [13004, 1, "hg"], [13005, 1, "erg"], [13006, 1, "ev"], [13007, 1, "ltd"], [13008, 1, "\u30A2"], [13009, 1, "\u30A4"], [13010, 1, "\u30A6"], [13011, 1, "\u30A8"], [13012, 1, "\u30AA"], [13013, 1, "\u30AB"], [13014, 1, "\u30AD"], [13015, 1, "\u30AF"], [13016, 1, "\u30B1"], [13017, 1, "\u30B3"], [13018, 1, "\u30B5"], [13019, 1, "\u30B7"], [13020, 1, "\u30B9"], [13021, 1, "\u30BB"], [13022, 1, "\u30BD"], [13023, 1, "\u30BF"], [13024, 1, "\u30C1"], [13025, 1, "\u30C4"], [13026, 1, "\u30C6"], [13027, 1, "\u30C8"], [13028, 1, "\u30CA"], [13029, 1, "\u30CB"], [13030, 1, "\u30CC"], [13031, 1, "\u30CD"], [13032, 1, "\u30CE"], [13033, 1, "\u30CF"], [13034, 1, "\u30D2"], [13035, 1, "\u30D5"], [13036, 1, "\u30D8"], [13037, 1, "\u30DB"], [13038, 1, "\u30DE"], [13039, 1, "\u30DF"], [13040, 1, "\u30E0"], [13041, 1, "\u30E1"], [13042, 1, "\u30E2"], [13043, 1, "\u30E4"], [13044, 1, "\u30E6"], [13045, 1, "\u30E8"], [13046, 1, "\u30E9"], [13047, 1, "\u30EA"], [13048, 1, "\u30EB"], [13049, 1, "\u30EC"], [13050, 1, "\u30ED"], [13051, 1, "\u30EF"], [13052, 1, "\u30F0"], [13053, 1, "\u30F1"], [13054, 1, "\u30F2"], [13055, 1, "\u4EE4\u548C"], [13056, 1, "\u30A2\u30D1\u30FC\u30C8"], [13057, 1, "\u30A2\u30EB\u30D5\u30A1"], [13058, 1, "\u30A2\u30F3\u30DA\u30A2"], [13059, 1, "\u30A2\u30FC\u30EB"], [13060, 1, "\u30A4\u30CB\u30F3\u30B0"], [13061, 1, "\u30A4\u30F3\u30C1"], [13062, 1, "\u30A6\u30A9\u30F3"], [13063, 1, "\u30A8\u30B9\u30AF\u30FC\u30C9"], [13064, 1, "\u30A8\u30FC\u30AB\u30FC"], [13065, 1, "\u30AA\u30F3\u30B9"], [13066, 1, "\u30AA\u30FC\u30E0"], [13067, 1, "\u30AB\u30A4\u30EA"], [13068, 1, "\u30AB\u30E9\u30C3\u30C8"], [13069, 1, "\u30AB\u30ED\u30EA\u30FC"], [13070, 1, "\u30AC\u30ED\u30F3"], [13071, 1, "\u30AC\u30F3\u30DE"], [13072, 1, "\u30AE\u30AC"], [13073, 1, "\u30AE\u30CB\u30FC"], [13074, 1, "\u30AD\u30E5\u30EA\u30FC"], [13075, 1, "\u30AE\u30EB\u30C0\u30FC"], [13076, 1, "\u30AD\u30ED"], [13077, 1, "\u30AD\u30ED\u30B0\u30E9\u30E0"], [13078, 1, "\u30AD\u30ED\u30E1\u30FC\u30C8\u30EB"], [13079, 1, "\u30AD\u30ED\u30EF\u30C3\u30C8"], [13080, 1, "\u30B0\u30E9\u30E0"], [13081, 1, "\u30B0\u30E9\u30E0\u30C8\u30F3"], [13082, 1, "\u30AF\u30EB\u30BC\u30A4\u30ED"], [13083, 1, "\u30AF\u30ED\u30FC\u30CD"], [13084, 1, "\u30B1\u30FC\u30B9"], [13085, 1, "\u30B3\u30EB\u30CA"], [13086, 1, "\u30B3\u30FC\u30DD"], [13087, 1, "\u30B5\u30A4\u30AF\u30EB"], [13088, 1, "\u30B5\u30F3\u30C1\u30FC\u30E0"], [13089, 1, "\u30B7\u30EA\u30F3\u30B0"], [13090, 1, "\u30BB\u30F3\u30C1"], [13091, 1, "\u30BB\u30F3\u30C8"], [13092, 1, "\u30C0\u30FC\u30B9"], [13093, 1, "\u30C7\u30B7"], [13094, 1, "\u30C9\u30EB"], [13095, 1, "\u30C8\u30F3"], [13096, 1, "\u30CA\u30CE"], [13097, 1, "\u30CE\u30C3\u30C8"], [13098, 1, "\u30CF\u30A4\u30C4"], [13099, 1, "\u30D1\u30FC\u30BB\u30F3\u30C8"], [13100, 1, "\u30D1\u30FC\u30C4"], [13101, 1, "\u30D0\u30FC\u30EC\u30EB"], [13102, 1, "\u30D4\u30A2\u30B9\u30C8\u30EB"], [13103, 1, "\u30D4\u30AF\u30EB"], [13104, 1, "\u30D4\u30B3"], [13105, 1, "\u30D3\u30EB"], [13106, 1, "\u30D5\u30A1\u30E9\u30C3\u30C9"], [13107, 1, "\u30D5\u30A3\u30FC\u30C8"], [13108, 1, "\u30D6\u30C3\u30B7\u30A7\u30EB"], [13109, 1, "\u30D5\u30E9\u30F3"], [13110, 1, "\u30D8\u30AF\u30BF\u30FC\u30EB"], [13111, 1, "\u30DA\u30BD"], [13112, 1, "\u30DA\u30CB\u30D2"], [13113, 1, "\u30D8\u30EB\u30C4"], [13114, 1, "\u30DA\u30F3\u30B9"], [13115, 1, "\u30DA\u30FC\u30B8"], [13116, 1, "\u30D9\u30FC\u30BF"], [13117, 1, "\u30DD\u30A4\u30F3\u30C8"], [13118, 1, "\u30DC\u30EB\u30C8"], [13119, 1, "\u30DB\u30F3"], [13120, 1, "\u30DD\u30F3\u30C9"], [13121, 1, "\u30DB\u30FC\u30EB"], [13122, 1, "\u30DB\u30FC\u30F3"], [13123, 1, "\u30DE\u30A4\u30AF\u30ED"], [13124, 1, "\u30DE\u30A4\u30EB"], [13125, 1, "\u30DE\u30C3\u30CF"], [13126, 1, "\u30DE\u30EB\u30AF"], [13127, 1, "\u30DE\u30F3\u30B7\u30E7\u30F3"], [13128, 1, "\u30DF\u30AF\u30ED\u30F3"], [13129, 1, "\u30DF\u30EA"], [13130, 1, "\u30DF\u30EA\u30D0\u30FC\u30EB"], [13131, 1, "\u30E1\u30AC"], [13132, 1, "\u30E1\u30AC\u30C8\u30F3"], [13133, 1, "\u30E1\u30FC\u30C8\u30EB"], [13134, 1, "\u30E4\u30FC\u30C9"], [13135, 1, "\u30E4\u30FC\u30EB"], [13136, 1, "\u30E6\u30A2\u30F3"], [13137, 1, "\u30EA\u30C3\u30C8\u30EB"], [13138, 1, "\u30EA\u30E9"], [13139, 1, "\u30EB\u30D4\u30FC"], [13140, 1, "\u30EB\u30FC\u30D6\u30EB"], [13141, 1, "\u30EC\u30E0"], [13142, 1, "\u30EC\u30F3\u30C8\u30B2\u30F3"], [13143, 1, "\u30EF\u30C3\u30C8"], [13144, 1, "0\u70B9"], [13145, 1, "1\u70B9"], [13146, 1, "2\u70B9"], [13147, 1, "3\u70B9"], [13148, 1, "4\u70B9"], [13149, 1, "5\u70B9"], [13150, 1, "6\u70B9"], [13151, 1, "7\u70B9"], [13152, 1, "8\u70B9"], [13153, 1, "9\u70B9"], [13154, 1, "10\u70B9"], [13155, 1, "11\u70B9"], [13156, 1, "12\u70B9"], [13157, 1, "13\u70B9"], [13158, 1, "14\u70B9"], [13159, 1, "15\u70B9"], [13160, 1, "16\u70B9"], [13161, 1, "17\u70B9"], [13162, 1, "18\u70B9"], [13163, 1, "19\u70B9"], [13164, 1, "20\u70B9"], [13165, 1, "21\u70B9"], [13166, 1, "22\u70B9"], [13167, 1, "23\u70B9"], [13168, 1, "24\u70B9"], [13169, 1, "hpa"], [13170, 1, "da"], [13171, 1, "au"], [13172, 1, "bar"], [13173, 1, "ov"], [13174, 1, "pc"], [13175, 1, "dm"], [13176, 1, "dm2"], [13177, 1, "dm3"], [13178, 1, "iu"], [13179, 1, "\u5E73\u6210"], [13180, 1, "\u662D\u548C"], [13181, 1, "\u5927\u6B63"], [13182, 1, "\u660E\u6CBB"], [13183, 1, "\u682A\u5F0F\u4F1A\u793E"], [13184, 1, "pa"], [13185, 1, "na"], [13186, 1, "\u03BCa"], [13187, 1, "ma"], [13188, 1, "ka"], [13189, 1, "kb"], [13190, 1, "mb"], [13191, 1, "gb"], [13192, 1, "cal"], [13193, 1, "kcal"], [13194, 1, "pf"], [13195, 1, "nf"], [13196, 1, "\u03BCf"], [13197, 1, "\u03BCg"], [13198, 1, "mg"], [13199, 1, "kg"], [13200, 1, "hz"], [13201, 1, "khz"], [13202, 1, "mhz"], [13203, 1, "ghz"], [13204, 1, "thz"], [13205, 1, "\u03BCl"], [13206, 1, "ml"], [13207, 1, "dl"], [13208, 1, "kl"], [13209, 1, "fm"], [13210, 1, "nm"], [13211, 1, "\u03BCm"], [13212, 1, "mm"], [13213, 1, "cm"], [13214, 1, "km"], [13215, 1, "mm2"], [13216, 1, "cm2"], [13217, 1, "m2"], [13218, 1, "km2"], [13219, 1, "mm3"], [13220, 1, "cm3"], [13221, 1, "m3"], [13222, 1, "km3"], [13223, 1, "m\u2215s"], [13224, 1, "m\u2215s2"], [13225, 1, "pa"], [13226, 1, "kpa"], [13227, 1, "mpa"], [13228, 1, "gpa"], [13229, 1, "rad"], [13230, 1, "rad\u2215s"], [13231, 1, "rad\u2215s2"], [13232, 1, "ps"], [13233, 1, "ns"], [13234, 1, "\u03BCs"], [13235, 1, "ms"], [13236, 1, "pv"], [13237, 1, "nv"], [13238, 1, "\u03BCv"], [13239, 1, "mv"], [13240, 1, "kv"], [13241, 1, "mv"], [13242, 1, "pw"], [13243, 1, "nw"], [13244, 1, "\u03BCw"], [13245, 1, "mw"], [13246, 1, "kw"], [13247, 1, "mw"], [13248, 1, "k\u03C9"], [13249, 1, "m\u03C9"], [13250, 3], [13251, 1, "bq"], [13252, 1, "cc"], [13253, 1, "cd"], [13254, 1, "c\u2215kg"], [13255, 3], [13256, 1, "db"], [13257, 1, "gy"], [13258, 1, "ha"], [13259, 1, "hp"], [13260, 1, "in"], [13261, 1, "kk"], [13262, 1, "km"], [13263, 1, "kt"], [13264, 1, "lm"], [13265, 1, "ln"], [13266, 1, "log"], [13267, 1, "lx"], [13268, 1, "mb"], [13269, 1, "mil"], [13270, 1, "mol"], [13271, 1, "ph"], [13272, 3], [13273, 1, "ppm"], [13274, 1, "pr"], [13275, 1, "sr"], [13276, 1, "sv"], [13277, 1, "wb"], [13278, 1, "v\u2215m"], [13279, 1, "a\u2215m"], [13280, 1, "1\u65E5"], [13281, 1, "2\u65E5"], [13282, 1, "3\u65E5"], [13283, 1, "4\u65E5"], [13284, 1, "5\u65E5"], [13285, 1, "6\u65E5"], [13286, 1, "7\u65E5"], [13287, 1, "8\u65E5"], [13288, 1, "9\u65E5"], [13289, 1, "10\u65E5"], [13290, 1, "11\u65E5"], [13291, 1, "12\u65E5"], [13292, 1, "13\u65E5"], [13293, 1, "14\u65E5"], [13294, 1, "15\u65E5"], [13295, 1, "16\u65E5"], [13296, 1, "17\u65E5"], [13297, 1, "18\u65E5"], [13298, 1, "19\u65E5"], [13299, 1, "20\u65E5"], [13300, 1, "21\u65E5"], [13301, 1, "22\u65E5"], [13302, 1, "23\u65E5"], [13303, 1, "24\u65E5"], [13304, 1, "25\u65E5"], [13305, 1, "26\u65E5"], [13306, 1, "27\u65E5"], [13307, 1, "28\u65E5"], [13308, 1, "29\u65E5"], [13309, 1, "30\u65E5"], [13310, 1, "31\u65E5"], [13311, 1, "gal"], [[13312, 19893], 2], [[19894, 19903], 2], [[19904, 19967], 2], [[19968, 40869], 2], [[40870, 40891], 2], [[40892, 40899], 2], [[40900, 40907], 2], [40908, 2], [[40909, 40917], 2], [[40918, 40938], 2], [[40939, 40943], 2], [[40944, 40956], 2], [[40957, 40959], 2], [[40960, 42124], 2], [[42125, 42127], 3], [[42128, 42145], 2], [[42146, 42147], 2], [[42148, 42163], 2], [42164, 2], [[42165, 42176], 2], [42177, 2], [[42178, 42180], 2], [42181, 2], [42182, 2], [[42183, 42191], 3], [[42192, 42237], 2], [[42238, 42239], 2], [[42240, 42508], 2], [[42509, 42511], 2], [[42512, 42539], 2], [[42540, 42559], 3], [42560, 1, "\uA641"], [42561, 2], [42562, 1, "\uA643"], [42563, 2], [42564, 1, "\uA645"], [42565, 2], [42566, 1, "\uA647"], [42567, 2], [42568, 1, "\uA649"], [42569, 2], [42570, 1, "\uA64B"], [42571, 2], [42572, 1, "\uA64D"], [42573, 2], [42574, 1, "\uA64F"], [42575, 2], [42576, 1, "\uA651"], [42577, 2], [42578, 1, "\uA653"], [42579, 2], [42580, 1, "\uA655"], [42581, 2], [42582, 1, "\uA657"], [42583, 2], [42584, 1, "\uA659"], [42585, 2], [42586, 1, "\uA65B"], [42587, 2], [42588, 1, "\uA65D"], [42589, 2], [42590, 1, "\uA65F"], [42591, 2], [42592, 1, "\uA661"], [42593, 2], [42594, 1, "\uA663"], [42595, 2], [42596, 1, "\uA665"], [42597, 2], [42598, 1, "\uA667"], [42599, 2], [42600, 1, "\uA669"], [42601, 2], [42602, 1, "\uA66B"], [42603, 2], [42604, 1, "\uA66D"], [[42605, 42607], 2], [[42608, 42611], 2], [[42612, 42619], 2], [[42620, 42621], 2], [42622, 2], [42623, 2], [42624, 1, "\uA681"], [42625, 2], [42626, 1, "\uA683"], [42627, 2], [42628, 1, "\uA685"], [42629, 2], [42630, 1, "\uA687"], [42631, 2], [42632, 1, "\uA689"], [42633, 2], [42634, 1, "\uA68B"], [42635, 2], [42636, 1, "\uA68D"], [42637, 2], [42638, 1, "\uA68F"], [42639, 2], [42640, 1, "\uA691"], [42641, 2], [42642, 1, "\uA693"], [42643, 2], [42644, 1, "\uA695"], [42645, 2], [42646, 1, "\uA697"], [42647, 2], [42648, 1, "\uA699"], [42649, 2], [42650, 1, "\uA69B"], [42651, 2], [42652, 1, "\u044A"], [42653, 1, "\u044C"], [42654, 2], [42655, 2], [[42656, 42725], 2], [[42726, 42735], 2], [[42736, 42737], 2], [[42738, 42743], 2], [[42744, 42751], 3], [[42752, 42774], 2], [[42775, 42778], 2], [[42779, 42783], 2], [[42784, 42785], 2], [42786, 1, "\uA723"], [42787, 2], [42788, 1, "\uA725"], [42789, 2], [42790, 1, "\uA727"], [42791, 2], [42792, 1, "\uA729"], [42793, 2], [42794, 1, "\uA72B"], [42795, 2], [42796, 1, "\uA72D"], [42797, 2], [42798, 1, "\uA72F"], [[42799, 42801], 2], [42802, 1, "\uA733"], [42803, 2], [42804, 1, "\uA735"], [42805, 2], [42806, 1, "\uA737"], [42807, 2], [42808, 1, "\uA739"], [42809, 2], [42810, 1, "\uA73B"], [42811, 2], [42812, 1, "\uA73D"], [42813, 2], [42814, 1, "\uA73F"], [42815, 2], [42816, 1, "\uA741"], [42817, 2], [42818, 1, "\uA743"], [42819, 2], [42820, 1, "\uA745"], [42821, 2], [42822, 1, "\uA747"], [42823, 2], [42824, 1, "\uA749"], [42825, 2], [42826, 1, "\uA74B"], [42827, 2], [42828, 1, "\uA74D"], [42829, 2], [42830, 1, "\uA74F"], [42831, 2], [42832, 1, "\uA751"], [42833, 2], [42834, 1, "\uA753"], [42835, 2], [42836, 1, "\uA755"], [42837, 2], [42838, 1, "\uA757"], [42839, 2], [42840, 1, "\uA759"], [42841, 2], [42842, 1, "\uA75B"], [42843, 2], [42844, 1, "\uA75D"], [42845, 2], [42846, 1, "\uA75F"], [42847, 2], [42848, 1, "\uA761"], [42849, 2], [42850, 1, "\uA763"], [42851, 2], [42852, 1, "\uA765"], [42853, 2], [42854, 1, "\uA767"], [42855, 2], [42856, 1, "\uA769"], [42857, 2], [42858, 1, "\uA76B"], [42859, 2], [42860, 1, "\uA76D"], [42861, 2], [42862, 1, "\uA76F"], [42863, 2], [42864, 1, "\uA76F"], [[42865, 42872], 2], [42873, 1, "\uA77A"], [42874, 2], [42875, 1, "\uA77C"], [42876, 2], [42877, 1, "\u1D79"], [42878, 1, "\uA77F"], [42879, 2], [42880, 1, "\uA781"], [42881, 2], [42882, 1, "\uA783"], [42883, 2], [42884, 1, "\uA785"], [42885, 2], [42886, 1, "\uA787"], [[42887, 42888], 2], [[42889, 42890], 2], [42891, 1, "\uA78C"], [42892, 2], [42893, 1, "\u0265"], [42894, 2], [42895, 2], [42896, 1, "\uA791"], [42897, 2], [42898, 1, "\uA793"], [42899, 2], [[42900, 42901], 2], [42902, 1, "\uA797"], [42903, 2], [42904, 1, "\uA799"], [42905, 2], [42906, 1, "\uA79B"], [42907, 2], [42908, 1, "\uA79D"], [42909, 2], [42910, 1, "\uA79F"], [42911, 2], [42912, 1, "\uA7A1"], [42913, 2], [42914, 1, "\uA7A3"], [42915, 2], [42916, 1, "\uA7A5"], [42917, 2], [42918, 1, "\uA7A7"], [42919, 2], [42920, 1, "\uA7A9"], [42921, 2], [42922, 1, "\u0266"], [42923, 1, "\u025C"], [42924, 1, "\u0261"], [42925, 1, "\u026C"], [42926, 1, "\u026A"], [42927, 2], [42928, 1, "\u029E"], [42929, 1, "\u0287"], [42930, 1, "\u029D"], [42931, 1, "\uAB53"], [42932, 1, "\uA7B5"], [42933, 2], [42934, 1, "\uA7B7"], [42935, 2], [42936, 1, "\uA7B9"], [42937, 2], [42938, 1, "\uA7BB"], [42939, 2], [42940, 1, "\uA7BD"], [42941, 2], [42942, 1, "\uA7BF"], [42943, 2], [42944, 1, "\uA7C1"], [42945, 2], [42946, 1, "\uA7C3"], [42947, 2], [42948, 1, "\uA794"], [42949, 1, "\u0282"], [42950, 1, "\u1D8E"], [42951, 1, "\uA7C8"], [42952, 2], [42953, 1, "\uA7CA"], [42954, 2], [[42955, 42959], 3], [42960, 1, "\uA7D1"], [42961, 2], [42962, 3], [42963, 2], [42964, 3], [42965, 2], [42966, 1, "\uA7D7"], [42967, 2], [42968, 1, "\uA7D9"], [42969, 2], [[42970, 42993], 3], [42994, 1, "c"], [42995, 1, "f"], [42996, 1, "q"], [42997, 1, "\uA7F6"], [42998, 2], [42999, 2], [43e3, 1, "\u0127"], [43001, 1, "\u0153"], [43002, 2], [[43003, 43007], 2], [[43008, 43047], 2], [[43048, 43051], 2], [43052, 2], [[43053, 43055], 3], [[43056, 43065], 2], [[43066, 43071], 3], [[43072, 43123], 2], [[43124, 43127], 2], [[43128, 43135], 3], [[43136, 43204], 2], [43205, 2], [[43206, 43213], 3], [[43214, 43215], 2], [[43216, 43225], 2], [[43226, 43231], 3], [[43232, 43255], 2], [[43256, 43258], 2], [43259, 2], [43260, 2], [43261, 2], [[43262, 43263], 2], [[43264, 43309], 2], [[43310, 43311], 2], [[43312, 43347], 2], [[43348, 43358], 3], [43359, 2], [[43360, 43388], 2], [[43389, 43391], 3], [[43392, 43456], 2], [[43457, 43469], 2], [43470, 3], [[43471, 43481], 2], [[43482, 43485], 3], [[43486, 43487], 2], [[43488, 43518], 2], [43519, 3], [[43520, 43574], 2], [[43575, 43583], 3], [[43584, 43597], 2], [[43598, 43599], 3], [[43600, 43609], 2], [[43610, 43611], 3], [[43612, 43615], 2], [[43616, 43638], 2], [[43639, 43641], 2], [[43642, 43643], 2], [[43644, 43647], 2], [[43648, 43714], 2], [[43715, 43738], 3], [[43739, 43741], 2], [[43742, 43743], 2], [[43744, 43759], 2], [[43760, 43761], 2], [[43762, 43766], 2], [[43767, 43776], 3], [[43777, 43782], 2], [[43783, 43784], 3], [[43785, 43790], 2], [[43791, 43792], 3], [[43793, 43798], 2], [[43799, 43807], 3], [[43808, 43814], 2], [43815, 3], [[43816, 43822], 2], [43823, 3], [[43824, 43866], 2], [43867, 2], [43868, 1, "\uA727"], [43869, 1, "\uAB37"], [43870, 1, "\u026B"], [43871, 1, "\uAB52"], [[43872, 43875], 2], [[43876, 43877], 2], [[43878, 43879], 2], [43880, 2], [43881, 1, "\u028D"], [[43882, 43883], 2], [[43884, 43887], 3], [43888, 1, "\u13A0"], [43889, 1, "\u13A1"], [43890, 1, "\u13A2"], [43891, 1, "\u13A3"], [43892, 1, "\u13A4"], [43893, 1, "\u13A5"], [43894, 1, "\u13A6"], [43895, 1, "\u13A7"], [43896, 1, "\u13A8"], [43897, 1, "\u13A9"], [43898, 1, "\u13AA"], [43899, 1, "\u13AB"], [43900, 1, "\u13AC"], [43901, 1, "\u13AD"], [43902, 1, "\u13AE"], [43903, 1, "\u13AF"], [43904, 1, "\u13B0"], [43905, 1, "\u13B1"], [43906, 1, "\u13B2"], [43907, 1, "\u13B3"], [43908, 1, "\u13B4"], [43909, 1, "\u13B5"], [43910, 1, "\u13B6"], [43911, 1, "\u13B7"], [43912, 1, "\u13B8"], [43913, 1, "\u13B9"], [43914, 1, "\u13BA"], [43915, 1, "\u13BB"], [43916, 1, "\u13BC"], [43917, 1, "\u13BD"], [43918, 1, "\u13BE"], [43919, 1, "\u13BF"], [43920, 1, "\u13C0"], [43921, 1, "\u13C1"], [43922, 1, "\u13C2"], [43923, 1, "\u13C3"], [43924, 1, "\u13C4"], [43925, 1, "\u13C5"], [43926, 1, "\u13C6"], [43927, 1, "\u13C7"], [43928, 1, "\u13C8"], [43929, 1, "\u13C9"], [43930, 1, "\u13CA"], [43931, 1, "\u13CB"], [43932, 1, "\u13CC"], [43933, 1, "\u13CD"], [43934, 1, "\u13CE"], [43935, 1, "\u13CF"], [43936, 1, "\u13D0"], [43937, 1, "\u13D1"], [43938, 1, "\u13D2"], [43939, 1, "\u13D3"], [43940, 1, "\u13D4"], [43941, 1, "\u13D5"], [43942, 1, "\u13D6"], [43943, 1, "\u13D7"], [43944, 1, "\u13D8"], [43945, 1, "\u13D9"], [43946, 1, "\u13DA"], [43947, 1, "\u13DB"], [43948, 1, "\u13DC"], [43949, 1, "\u13DD"], [43950, 1, "\u13DE"], [43951, 1, "\u13DF"], [43952, 1, "\u13E0"], [43953, 1, "\u13E1"], [43954, 1, "\u13E2"], [43955, 1, "\u13E3"], [43956, 1, "\u13E4"], [43957, 1, "\u13E5"], [43958, 1, "\u13E6"], [43959, 1, "\u13E7"], [43960, 1, "\u13E8"], [43961, 1, "\u13E9"], [43962, 1, "\u13EA"], [43963, 1, "\u13EB"], [43964, 1, "\u13EC"], [43965, 1, "\u13ED"], [43966, 1, "\u13EE"], [43967, 1, "\u13EF"], [[43968, 44010], 2], [44011, 2], [[44012, 44013], 2], [[44014, 44015], 3], [[44016, 44025], 2], [[44026, 44031], 3], [[44032, 55203], 2], [[55204, 55215], 3], [[55216, 55238], 2], [[55239, 55242], 3], [[55243, 55291], 2], [[55292, 55295], 3], [[55296, 57343], 3], [[57344, 63743], 3], [63744, 1, "\u8C48"], [63745, 1, "\u66F4"], [63746, 1, "\u8ECA"], [63747, 1, "\u8CC8"], [63748, 1, "\u6ED1"], [63749, 1, "\u4E32"], [63750, 1, "\u53E5"], [[63751, 63752], 1, "\u9F9C"], [63753, 1, "\u5951"], [63754, 1, "\u91D1"], [63755, 1, "\u5587"], [63756, 1, "\u5948"], [63757, 1, "\u61F6"], [63758, 1, "\u7669"], [63759, 1, "\u7F85"], [63760, 1, "\u863F"], [63761, 1, "\u87BA"], [63762, 1, "\u88F8"], [63763, 1, "\u908F"], [63764, 1, "\u6A02"], [63765, 1, "\u6D1B"], [63766, 1, "\u70D9"], [63767, 1, "\u73DE"], [63768, 1, "\u843D"], [63769, 1, "\u916A"], [63770, 1, "\u99F1"], [63771, 1, "\u4E82"], [63772, 1, "\u5375"], [63773, 1, "\u6B04"], [63774, 1, "\u721B"], [63775, 1, "\u862D"], [63776, 1, "\u9E1E"], [63777, 1, "\u5D50"], [63778, 1, "\u6FEB"], [63779, 1, "\u85CD"], [63780, 1, "\u8964"], [63781, 1, "\u62C9"], [63782, 1, "\u81D8"], [63783, 1, "\u881F"], [63784, 1, "\u5ECA"], [63785, 1, "\u6717"], [63786, 1, "\u6D6A"], [63787, 1, "\u72FC"], [63788, 1, "\u90CE"], [63789, 1, "\u4F86"], [63790, 1, "\u51B7"], [63791, 1, "\u52DE"], [63792, 1, "\u64C4"], [63793, 1, "\u6AD3"], [63794, 1, "\u7210"], [63795, 1, "\u76E7"], [63796, 1, "\u8001"], [63797, 1, "\u8606"], [63798, 1, "\u865C"], [63799, 1, "\u8DEF"], [63800, 1, "\u9732"], [63801, 1, "\u9B6F"], [63802, 1, "\u9DFA"], [63803, 1, "\u788C"], [63804, 1, "\u797F"], [63805, 1, "\u7DA0"], [63806, 1, "\u83C9"], [63807, 1, "\u9304"], [63808, 1, "\u9E7F"], [63809, 1, "\u8AD6"], [63810, 1, "\u58DF"], [63811, 1, "\u5F04"], [63812, 1, "\u7C60"], [63813, 1, "\u807E"], [63814, 1, "\u7262"], [63815, 1, "\u78CA"], [63816, 1, "\u8CC2"], [63817, 1, "\u96F7"], [63818, 1, "\u58D8"], [63819, 1, "\u5C62"], [63820, 1, "\u6A13"], [63821, 1, "\u6DDA"], [63822, 1, "\u6F0F"], [63823, 1, "\u7D2F"], [63824, 1, "\u7E37"], [63825, 1, "\u964B"], [63826, 1, "\u52D2"], [63827, 1, "\u808B"], [63828, 1, "\u51DC"], [63829, 1, "\u51CC"], [63830, 1, "\u7A1C"], [63831, 1, "\u7DBE"], [63832, 1, "\u83F1"], [63833, 1, "\u9675"], [63834, 1, "\u8B80"], [63835, 1, "\u62CF"], [63836, 1, "\u6A02"], [63837, 1, "\u8AFE"], [63838, 1, "\u4E39"], [63839, 1, "\u5BE7"], [63840, 1, "\u6012"], [63841, 1, "\u7387"], [63842, 1, "\u7570"], [63843, 1, "\u5317"], [63844, 1, "\u78FB"], [63845, 1, "\u4FBF"], [63846, 1, "\u5FA9"], [63847, 1, "\u4E0D"], [63848, 1, "\u6CCC"], [63849, 1, "\u6578"], [63850, 1, "\u7D22"], [63851, 1, "\u53C3"], [63852, 1, "\u585E"], [63853, 1, "\u7701"], [63854, 1, "\u8449"], [63855, 1, "\u8AAA"], [63856, 1, "\u6BBA"], [63857, 1, "\u8FB0"], [63858, 1, "\u6C88"], [63859, 1, "\u62FE"], [63860, 1, "\u82E5"], [63861, 1, "\u63A0"], [63862, 1, "\u7565"], [63863, 1, "\u4EAE"], [63864, 1, "\u5169"], [63865, 1, "\u51C9"], [63866, 1, "\u6881"], [63867, 1, "\u7CE7"], [63868, 1, "\u826F"], [63869, 1, "\u8AD2"], [63870, 1, "\u91CF"], [63871, 1, "\u52F5"], [63872, 1, "\u5442"], [63873, 1, "\u5973"], [63874, 1, "\u5EEC"], [63875, 1, "\u65C5"], [63876, 1, "\u6FFE"], [63877, 1, "\u792A"], [63878, 1, "\u95AD"], [63879, 1, "\u9A6A"], [63880, 1, "\u9E97"], [63881, 1, "\u9ECE"], [63882, 1, "\u529B"], [63883, 1, "\u66C6"], [63884, 1, "\u6B77"], [63885, 1, "\u8F62"], [63886, 1, "\u5E74"], [63887, 1, "\u6190"], [63888, 1, "\u6200"], [63889, 1, "\u649A"], [63890, 1, "\u6F23"], [63891, 1, "\u7149"], [63892, 1, "\u7489"], [63893, 1, "\u79CA"], [63894, 1, "\u7DF4"], [63895, 1, "\u806F"], [63896, 1, "\u8F26"], [63897, 1, "\u84EE"], [63898, 1, "\u9023"], [63899, 1, "\u934A"], [63900, 1, "\u5217"], [63901, 1, "\u52A3"], [63902, 1, "\u54BD"], [63903, 1, "\u70C8"], [63904, 1, "\u88C2"], [63905, 1, "\u8AAA"], [63906, 1, "\u5EC9"], [63907, 1, "\u5FF5"], [63908, 1, "\u637B"], [63909, 1, "\u6BAE"], [63910, 1, "\u7C3E"], [63911, 1, "\u7375"], [63912, 1, "\u4EE4"], [63913, 1, "\u56F9"], [63914, 1, "\u5BE7"], [63915, 1, "\u5DBA"], [63916, 1, "\u601C"], [63917, 1, "\u73B2"], [63918, 1, "\u7469"], [63919, 1, "\u7F9A"], [63920, 1, "\u8046"], [63921, 1, "\u9234"], [63922, 1, "\u96F6"], [63923, 1, "\u9748"], [63924, 1, "\u9818"], [63925, 1, "\u4F8B"], [63926, 1, "\u79AE"], [63927, 1, "\u91B4"], [63928, 1, "\u96B8"], [63929, 1, "\u60E1"], [63930, 1, "\u4E86"], [63931, 1, "\u50DA"], [63932, 1, "\u5BEE"], [63933, 1, "\u5C3F"], [63934, 1, "\u6599"], [63935, 1, "\u6A02"], [63936, 1, "\u71CE"], [63937, 1, "\u7642"], [63938, 1, "\u84FC"], [63939, 1, "\u907C"], [63940, 1, "\u9F8D"], [63941, 1, "\u6688"], [63942, 1, "\u962E"], [63943, 1, "\u5289"], [63944, 1, "\u677B"], [63945, 1, "\u67F3"], [63946, 1, "\u6D41"], [63947, 1, "\u6E9C"], [63948, 1, "\u7409"], [63949, 1, "\u7559"], [63950, 1, "\u786B"], [63951, 1, "\u7D10"], [63952, 1, "\u985E"], [63953, 1, "\u516D"], [63954, 1, "\u622E"], [63955, 1, "\u9678"], [63956, 1, "\u502B"], [63957, 1, "\u5D19"], [63958, 1, "\u6DEA"], [63959, 1, "\u8F2A"], [63960, 1, "\u5F8B"], [63961, 1, "\u6144"], [63962, 1, "\u6817"], [63963, 1, "\u7387"], [63964, 1, "\u9686"], [63965, 1, "\u5229"], [63966, 1, "\u540F"], [63967, 1, "\u5C65"], [63968, 1, "\u6613"], [63969, 1, "\u674E"], [63970, 1, "\u68A8"], [63971, 1, "\u6CE5"], [63972, 1, "\u7406"], [63973, 1, "\u75E2"], [63974, 1, "\u7F79"], [63975, 1, "\u88CF"], [63976, 1, "\u88E1"], [63977, 1, "\u91CC"], [63978, 1, "\u96E2"], [63979, 1, "\u533F"], [63980, 1, "\u6EBA"], [63981, 1, "\u541D"], [63982, 1, "\u71D0"], [63983, 1, "\u7498"], [63984, 1, "\u85FA"], [63985, 1, "\u96A3"], [63986, 1, "\u9C57"], [63987, 1, "\u9E9F"], [63988, 1, "\u6797"], [63989, 1, "\u6DCB"], [63990, 1, "\u81E8"], [63991, 1, "\u7ACB"], [63992, 1, "\u7B20"], [63993, 1, "\u7C92"], [63994, 1, "\u72C0"], [63995, 1, "\u7099"], [63996, 1, "\u8B58"], [63997, 1, "\u4EC0"], [63998, 1, "\u8336"], [63999, 1, "\u523A"], [64e3, 1, "\u5207"], [64001, 1, "\u5EA6"], [64002, 1, "\u62D3"], [64003, 1, "\u7CD6"], [64004, 1, "\u5B85"], [64005, 1, "\u6D1E"], [64006, 1, "\u66B4"], [64007, 1, "\u8F3B"], [64008, 1, "\u884C"], [64009, 1, "\u964D"], [64010, 1, "\u898B"], [64011, 1, "\u5ED3"], [64012, 1, "\u5140"], [64013, 1, "\u55C0"], [[64014, 64015], 2], [64016, 1, "\u585A"], [64017, 2], [64018, 1, "\u6674"], [[64019, 64020], 2], [64021, 1, "\u51DE"], [64022, 1, "\u732A"], [64023, 1, "\u76CA"], [64024, 1, "\u793C"], [64025, 1, "\u795E"], [64026, 1, "\u7965"], [64027, 1, "\u798F"], [64028, 1, "\u9756"], [64029, 1, "\u7CBE"], [64030, 1, "\u7FBD"], [64031, 2], [64032, 1, "\u8612"], [64033, 2], [64034, 1, "\u8AF8"], [[64035, 64036], 2], [64037, 1, "\u9038"], [64038, 1, "\u90FD"], [[64039, 64041], 2], [64042, 1, "\u98EF"], [64043, 1, "\u98FC"], [64044, 1, "\u9928"], [64045, 1, "\u9DB4"], [64046, 1, "\u90DE"], [64047, 1, "\u96B7"], [64048, 1, "\u4FAE"], [64049, 1, "\u50E7"], [64050, 1, "\u514D"], [64051, 1, "\u52C9"], [64052, 1, "\u52E4"], [64053, 1, "\u5351"], [64054, 1, "\u559D"], [64055, 1, "\u5606"], [64056, 1, "\u5668"], [64057, 1, "\u5840"], [64058, 1, "\u58A8"], [64059, 1, "\u5C64"], [64060, 1, "\u5C6E"], [64061, 1, "\u6094"], [64062, 1, "\u6168"], [64063, 1, "\u618E"], [64064, 1, "\u61F2"], [64065, 1, "\u654F"], [64066, 1, "\u65E2"], [64067, 1, "\u6691"], [64068, 1, "\u6885"], [64069, 1, "\u6D77"], [64070, 1, "\u6E1A"], [64071, 1, "\u6F22"], [64072, 1, "\u716E"], [64073, 1, "\u722B"], [64074, 1, "\u7422"], [64075, 1, "\u7891"], [64076, 1, "\u793E"], [64077, 1, "\u7949"], [64078, 1, "\u7948"], [64079, 1, "\u7950"], [64080, 1, "\u7956"], [64081, 1, "\u795D"], [64082, 1, "\u798D"], [64083, 1, "\u798E"], [64084, 1, "\u7A40"], [64085, 1, "\u7A81"], [64086, 1, "\u7BC0"], [64087, 1, "\u7DF4"], [64088, 1, "\u7E09"], [64089, 1, "\u7E41"], [64090, 1, "\u7F72"], [64091, 1, "\u8005"], [64092, 1, "\u81ED"], [[64093, 64094], 1, "\u8279"], [64095, 1, "\u8457"], [64096, 1, "\u8910"], [64097, 1, "\u8996"], [64098, 1, "\u8B01"], [64099, 1, "\u8B39"], [64100, 1, "\u8CD3"], [64101, 1, "\u8D08"], [64102, 1, "\u8FB6"], [64103, 1, "\u9038"], [64104, 1, "\u96E3"], [64105, 1, "\u97FF"], [64106, 1, "\u983B"], [64107, 1, "\u6075"], [64108, 1, "\u{242EE}"], [64109, 1, "\u8218"], [[64110, 64111], 3], [64112, 1, "\u4E26"], [64113, 1, "\u51B5"], [64114, 1, "\u5168"], [64115, 1, "\u4F80"], [64116, 1, "\u5145"], [64117, 1, "\u5180"], [64118, 1, "\u52C7"], [64119, 1, "\u52FA"], [64120, 1, "\u559D"], [64121, 1, "\u5555"], [64122, 1, "\u5599"], [64123, 1, "\u55E2"], [64124, 1, "\u585A"], [64125, 1, "\u58B3"], [64126, 1, "\u5944"], [64127, 1, "\u5954"], [64128, 1, "\u5A62"], [64129, 1, "\u5B28"], [64130, 1, "\u5ED2"], [64131, 1, "\u5ED9"], [64132, 1, "\u5F69"], [64133, 1, "\u5FAD"], [64134, 1, "\u60D8"], [64135, 1, "\u614E"], [64136, 1, "\u6108"], [64137, 1, "\u618E"], [64138, 1, "\u6160"], [64139, 1, "\u61F2"], [64140, 1, "\u6234"], [64141, 1, "\u63C4"], [64142, 1, "\u641C"], [64143, 1, "\u6452"], [64144, 1, "\u6556"], [64145, 1, "\u6674"], [64146, 1, "\u6717"], [64147, 1, "\u671B"], [64148, 1, "\u6756"], [64149, 1, "\u6B79"], [64150, 1, "\u6BBA"], [64151, 1, "\u6D41"], [64152, 1, "\u6EDB"], [64153, 1, "\u6ECB"], [64154, 1, "\u6F22"], [64155, 1, "\u701E"], [64156, 1, "\u716E"], [64157, 1, "\u77A7"], [64158, 1, "\u7235"], [64159, 1, "\u72AF"], [64160, 1, "\u732A"], [64161, 1, "\u7471"], [64162, 1, "\u7506"], [64163, 1, "\u753B"], [64164, 1, "\u761D"], [64165, 1, "\u761F"], [64166, 1, "\u76CA"], [64167, 1, "\u76DB"], [64168, 1, "\u76F4"], [64169, 1, "\u774A"], [64170, 1, "\u7740"], [64171, 1, "\u78CC"], [64172, 1, "\u7AB1"], [64173, 1, "\u7BC0"], [64174, 1, "\u7C7B"], [64175, 1, "\u7D5B"], [64176, 1, "\u7DF4"], [64177, 1, "\u7F3E"], [64178, 1, "\u8005"], [64179, 1, "\u8352"], [64180, 1, "\u83EF"], [64181, 1, "\u8779"], [64182, 1, "\u8941"], [64183, 1, "\u8986"], [64184, 1, "\u8996"], [64185, 1, "\u8ABF"], [64186, 1, "\u8AF8"], [64187, 1, "\u8ACB"], [64188, 1, "\u8B01"], [64189, 1, "\u8AFE"], [64190, 1, "\u8AED"], [64191, 1, "\u8B39"], [64192, 1, "\u8B8A"], [64193, 1, "\u8D08"], [64194, 1, "\u8F38"], [64195, 1, "\u9072"], [64196, 1, "\u9199"], [64197, 1, "\u9276"], [64198, 1, "\u967C"], [64199, 1, "\u96E3"], [64200, 1, "\u9756"], [64201, 1, "\u97DB"], [64202, 1, "\u97FF"], [64203, 1, "\u980B"], [64204, 1, "\u983B"], [64205, 1, "\u9B12"], [64206, 1, "\u9F9C"], [64207, 1, "\u{2284A}"], [64208, 1, "\u{22844}"], [64209, 1, "\u{233D5}"], [64210, 1, "\u3B9D"], [64211, 1, "\u4018"], [64212, 1, "\u4039"], [64213, 1, "\u{25249}"], [64214, 1, "\u{25CD0}"], [64215, 1, "\u{27ED3}"], [64216, 1, "\u9F43"], [64217, 1, "\u9F8E"], [[64218, 64255], 3], [64256, 1, "ff"], [64257, 1, "fi"], [64258, 1, "fl"], [64259, 1, "ffi"], [64260, 1, "ffl"], [[64261, 64262], 1, "st"], [[64263, 64274], 3], [64275, 1, "\u0574\u0576"], [64276, 1, "\u0574\u0565"], [64277, 1, "\u0574\u056B"], [64278, 1, "\u057E\u0576"], [64279, 1, "\u0574\u056D"], [[64280, 64284], 3], [64285, 1, "\u05D9\u05B4"], [64286, 2], [64287, 1, "\u05F2\u05B7"], [64288, 1, "\u05E2"], [64289, 1, "\u05D0"], [64290, 1, "\u05D3"], [64291, 1, "\u05D4"], [64292, 1, "\u05DB"], [64293, 1, "\u05DC"], [64294, 1, "\u05DD"], [64295, 1, "\u05E8"], [64296, 1, "\u05EA"], [64297, 5, "+"], [64298, 1, "\u05E9\u05C1"], [64299, 1, "\u05E9\u05C2"], [64300, 1, "\u05E9\u05BC\u05C1"], [64301, 1, "\u05E9\u05BC\u05C2"], [64302, 1, "\u05D0\u05B7"], [64303, 1, "\u05D0\u05B8"], [64304, 1, "\u05D0\u05BC"], [64305, 1, "\u05D1\u05BC"], [64306, 1, "\u05D2\u05BC"], [64307, 1, "\u05D3\u05BC"], [64308, 1, "\u05D4\u05BC"], [64309, 1, "\u05D5\u05BC"], [64310, 1, "\u05D6\u05BC"], [64311, 3], [64312, 1, "\u05D8\u05BC"], [64313, 1, "\u05D9\u05BC"], [64314, 1, "\u05DA\u05BC"], [64315, 1, "\u05DB\u05BC"], [64316, 1, "\u05DC\u05BC"], [64317, 3], [64318, 1, "\u05DE\u05BC"], [64319, 3], [64320, 1, "\u05E0\u05BC"], [64321, 1, "\u05E1\u05BC"], [64322, 3], [64323, 1, "\u05E3\u05BC"], [64324, 1, "\u05E4\u05BC"], [64325, 3], [64326, 1, "\u05E6\u05BC"], [64327, 1, "\u05E7\u05BC"], [64328, 1, "\u05E8\u05BC"], [64329, 1, "\u05E9\u05BC"], [64330, 1, "\u05EA\u05BC"], [64331, 1, "\u05D5\u05B9"], [64332, 1, "\u05D1\u05BF"], [64333, 1, "\u05DB\u05BF"], [64334, 1, "\u05E4\u05BF"], [64335, 1, "\u05D0\u05DC"], [[64336, 64337], 1, "\u0671"], [[64338, 64341], 1, "\u067B"], [[64342, 64345], 1, "\u067E"], [[64346, 64349], 1, "\u0680"], [[64350, 64353], 1, "\u067A"], [[64354, 64357], 1, "\u067F"], [[64358, 64361], 1, "\u0679"], [[64362, 64365], 1, "\u06A4"], [[64366, 64369], 1, "\u06A6"], [[64370, 64373], 1, "\u0684"], [[64374, 64377], 1, "\u0683"], [[64378, 64381], 1, "\u0686"], [[64382, 64385], 1, "\u0687"], [[64386, 64387], 1, "\u068D"], [[64388, 64389], 1, "\u068C"], [[64390, 64391], 1, "\u068E"], [[64392, 64393], 1, "\u0688"], [[64394, 64395], 1, "\u0698"], [[64396, 64397], 1, "\u0691"], [[64398, 64401], 1, "\u06A9"], [[64402, 64405], 1, "\u06AF"], [[64406, 64409], 1, "\u06B3"], [[64410, 64413], 1, "\u06B1"], [[64414, 64415], 1, "\u06BA"], [[64416, 64419], 1, "\u06BB"], [[64420, 64421], 1, "\u06C0"], [[64422, 64425], 1, "\u06C1"], [[64426, 64429], 1, "\u06BE"], [[64430, 64431], 1, "\u06D2"], [[64432, 64433], 1, "\u06D3"], [[64434, 64449], 2], [64450, 2], [[64451, 64466], 3], [[64467, 64470], 1, "\u06AD"], [[64471, 64472], 1, "\u06C7"], [[64473, 64474], 1, "\u06C6"], [[64475, 64476], 1, "\u06C8"], [64477, 1, "\u06C7\u0674"], [[64478, 64479], 1, "\u06CB"], [[64480, 64481], 1, "\u06C5"], [[64482, 64483], 1, "\u06C9"], [[64484, 64487], 1, "\u06D0"], [[64488, 64489], 1, "\u0649"], [[64490, 64491], 1, "\u0626\u0627"], [[64492, 64493], 1, "\u0626\u06D5"], [[64494, 64495], 1, "\u0626\u0648"], [[64496, 64497], 1, "\u0626\u06C7"], [[64498, 64499], 1, "\u0626\u06C6"], [[64500, 64501], 1, "\u0626\u06C8"], [[64502, 64504], 1, "\u0626\u06D0"], [[64505, 64507], 1, "\u0626\u0649"], [[64508, 64511], 1, "\u06CC"], [64512, 1, "\u0626\u062C"], [64513, 1, "\u0626\u062D"], [64514, 1, "\u0626\u0645"], [64515, 1, "\u0626\u0649"], [64516, 1, "\u0626\u064A"], [64517, 1, "\u0628\u062C"], [64518, 1, "\u0628\u062D"], [64519, 1, "\u0628\u062E"], [64520, 1, "\u0628\u0645"], [64521, 1, "\u0628\u0649"], [64522, 1, "\u0628\u064A"], [64523, 1, "\u062A\u062C"], [64524, 1, "\u062A\u062D"], [64525, 1, "\u062A\u062E"], [64526, 1, "\u062A\u0645"], [64527, 1, "\u062A\u0649"], [64528, 1, "\u062A\u064A"], [64529, 1, "\u062B\u062C"], [64530, 1, "\u062B\u0645"], [64531, 1, "\u062B\u0649"], [64532, 1, "\u062B\u064A"], [64533, 1, "\u062C\u062D"], [64534, 1, "\u062C\u0645"], [64535, 1, "\u062D\u062C"], [64536, 1, "\u062D\u0645"], [64537, 1, "\u062E\u062C"], [64538, 1, "\u062E\u062D"], [64539, 1, "\u062E\u0645"], [64540, 1, "\u0633\u062C"], [64541, 1, "\u0633\u062D"], [64542, 1, "\u0633\u062E"], [64543, 1, "\u0633\u0645"], [64544, 1, "\u0635\u062D"], [64545, 1, "\u0635\u0645"], [64546, 1, "\u0636\u062C"], [64547, 1, "\u0636\u062D"], [64548, 1, "\u0636\u062E"], [64549, 1, "\u0636\u0645"], [64550, 1, "\u0637\u062D"], [64551, 1, "\u0637\u0645"], [64552, 1, "\u0638\u0645"], [64553, 1, "\u0639\u062C"], [64554, 1, "\u0639\u0645"], [64555, 1, "\u063A\u062C"], [64556, 1, "\u063A\u0645"], [64557, 1, "\u0641\u062C"], [64558, 1, "\u0641\u062D"], [64559, 1, "\u0641\u062E"], [64560, 1, "\u0641\u0645"], [64561, 1, "\u0641\u0649"], [64562, 1, "\u0641\u064A"], [64563, 1, "\u0642\u062D"], [64564, 1, "\u0642\u0645"], [64565, 1, "\u0642\u0649"], [64566, 1, "\u0642\u064A"], [64567, 1, "\u0643\u0627"], [64568, 1, "\u0643\u062C"], [64569, 1, "\u0643\u062D"], [64570, 1, "\u0643\u062E"], [64571, 1, "\u0643\u0644"], [64572, 1, "\u0643\u0645"], [64573, 1, "\u0643\u0649"], [64574, 1, "\u0643\u064A"], [64575, 1, "\u0644\u062C"], [64576, 1, "\u0644\u062D"], [64577, 1, "\u0644\u062E"], [64578, 1, "\u0644\u0645"], [64579, 1, "\u0644\u0649"], [64580, 1, "\u0644\u064A"], [64581, 1, "\u0645\u062C"], [64582, 1, "\u0645\u062D"], [64583, 1, "\u0645\u062E"], [64584, 1, "\u0645\u0645"], [64585, 1, "\u0645\u0649"], [64586, 1, "\u0645\u064A"], [64587, 1, "\u0646\u062C"], [64588, 1, "\u0646\u062D"], [64589, 1, "\u0646\u062E"], [64590, 1, "\u0646\u0645"], [64591, 1, "\u0646\u0649"], [64592, 1, "\u0646\u064A"], [64593, 1, "\u0647\u062C"], [64594, 1, "\u0647\u0645"], [64595, 1, "\u0647\u0649"], [64596, 1, "\u0647\u064A"], [64597, 1, "\u064A\u062C"], [64598, 1, "\u064A\u062D"], [64599, 1, "\u064A\u062E"], [64600, 1, "\u064A\u0645"], [64601, 1, "\u064A\u0649"], [64602, 1, "\u064A\u064A"], [64603, 1, "\u0630\u0670"], [64604, 1, "\u0631\u0670"], [64605, 1, "\u0649\u0670"], [64606, 5, " \u064C\u0651"], [64607, 5, " \u064D\u0651"], [64608, 5, " \u064E\u0651"], [64609, 5, " \u064F\u0651"], [64610, 5, " \u0650\u0651"], [64611, 5, " \u0651\u0670"], [64612, 1, "\u0626\u0631"], [64613, 1, "\u0626\u0632"], [64614, 1, "\u0626\u0645"], [64615, 1, "\u0626\u0646"], [64616, 1, "\u0626\u0649"], [64617, 1, "\u0626\u064A"], [64618, 1, "\u0628\u0631"], [64619, 1, "\u0628\u0632"], [64620, 1, "\u0628\u0645"], [64621, 1, "\u0628\u0646"], [64622, 1, "\u0628\u0649"], [64623, 1, "\u0628\u064A"], [64624, 1, "\u062A\u0631"], [64625, 1, "\u062A\u0632"], [64626, 1, "\u062A\u0645"], [64627, 1, "\u062A\u0646"], [64628, 1, "\u062A\u0649"], [64629, 1, "\u062A\u064A"], [64630, 1, "\u062B\u0631"], [64631, 1, "\u062B\u0632"], [64632, 1, "\u062B\u0645"], [64633, 1, "\u062B\u0646"], [64634, 1, "\u062B\u0649"], [64635, 1, "\u062B\u064A"], [64636, 1, "\u0641\u0649"], [64637, 1, "\u0641\u064A"], [64638, 1, "\u0642\u0649"], [64639, 1, "\u0642\u064A"], [64640, 1, "\u0643\u0627"], [64641, 1, "\u0643\u0644"], [64642, 1, "\u0643\u0645"], [64643, 1, "\u0643\u0649"], [64644, 1, "\u0643\u064A"], [64645, 1, "\u0644\u0645"], [64646, 1, "\u0644\u0649"], [64647, 1, "\u0644\u064A"], [64648, 1, "\u0645\u0627"], [64649, 1, "\u0645\u0645"], [64650, 1, "\u0646\u0631"], [64651, 1, "\u0646\u0632"], [64652, 1, "\u0646\u0645"], [64653, 1, "\u0646\u0646"], [64654, 1, "\u0646\u0649"], [64655, 1, "\u0646\u064A"], [64656, 1, "\u0649\u0670"], [64657, 1, "\u064A\u0631"], [64658, 1, "\u064A\u0632"], [64659, 1, "\u064A\u0645"], [64660, 1, "\u064A\u0646"], [64661, 1, "\u064A\u0649"], [64662, 1, "\u064A\u064A"], [64663, 1, "\u0626\u062C"], [64664, 1, "\u0626\u062D"], [64665, 1, "\u0626\u062E"], [64666, 1, "\u0626\u0645"], [64667, 1, "\u0626\u0647"], [64668, 1, "\u0628\u062C"], [64669, 1, "\u0628\u062D"], [64670, 1, "\u0628\u062E"], [64671, 1, "\u0628\u0645"], [64672, 1, "\u0628\u0647"], [64673, 1, "\u062A\u062C"], [64674, 1, "\u062A\u062D"], [64675, 1, "\u062A\u062E"], [64676, 1, "\u062A\u0645"], [64677, 1, "\u062A\u0647"], [64678, 1, "\u062B\u0645"], [64679, 1, "\u062C\u062D"], [64680, 1, "\u062C\u0645"], [64681, 1, "\u062D\u062C"], [64682, 1, "\u062D\u0645"], [64683, 1, "\u062E\u062C"], [64684, 1, "\u062E\u0645"], [64685, 1, "\u0633\u062C"], [64686, 1, "\u0633\u062D"], [64687, 1, "\u0633\u062E"], [64688, 1, "\u0633\u0645"], [64689, 1, "\u0635\u062D"], [64690, 1, "\u0635\u062E"], [64691, 1, "\u0635\u0645"], [64692, 1, "\u0636\u062C"], [64693, 1, "\u0636\u062D"], [64694, 1, "\u0636\u062E"], [64695, 1, "\u0636\u0645"], [64696, 1, "\u0637\u062D"], [64697, 1, "\u0638\u0645"], [64698, 1, "\u0639\u062C"], [64699, 1, "\u0639\u0645"], [64700, 1, "\u063A\u062C"], [64701, 1, "\u063A\u0645"], [64702, 1, "\u0641\u062C"], [64703, 1, "\u0641\u062D"], [64704, 1, "\u0641\u062E"], [64705, 1, "\u0641\u0645"], [64706, 1, "\u0642\u062D"], [64707, 1, "\u0642\u0645"], [64708, 1, "\u0643\u062C"], [64709, 1, "\u0643\u062D"], [64710, 1, "\u0643\u062E"], [64711, 1, "\u0643\u0644"], [64712, 1, "\u0643\u0645"], [64713, 1, "\u0644\u062C"], [64714, 1, "\u0644\u062D"], [64715, 1, "\u0644\u062E"], [64716, 1, "\u0644\u0645"], [64717, 1, "\u0644\u0647"], [64718, 1, "\u0645\u062C"], [64719, 1, "\u0645\u062D"], [64720, 1, "\u0645\u062E"], [64721, 1, "\u0645\u0645"], [64722, 1, "\u0646\u062C"], [64723, 1, "\u0646\u062D"], [64724, 1, "\u0646\u062E"], [64725, 1, "\u0646\u0645"], [64726, 1, "\u0646\u0647"], [64727, 1, "\u0647\u062C"], [64728, 1, "\u0647\u0645"], [64729, 1, "\u0647\u0670"], [64730, 1, "\u064A\u062C"], [64731, 1, "\u064A\u062D"], [64732, 1, "\u064A\u062E"], [64733, 1, "\u064A\u0645"], [64734, 1, "\u064A\u0647"], [64735, 1, "\u0626\u0645"], [64736, 1, "\u0626\u0647"], [64737, 1, "\u0628\u0645"], [64738, 1, "\u0628\u0647"], [64739, 1, "\u062A\u0645"], [64740, 1, "\u062A\u0647"], [64741, 1, "\u062B\u0645"], [64742, 1, "\u062B\u0647"], [64743, 1, "\u0633\u0645"], [64744, 1, "\u0633\u0647"], [64745, 1, "\u0634\u0645"], [64746, 1, "\u0634\u0647"], [64747, 1, "\u0643\u0644"], [64748, 1, "\u0643\u0645"], [64749, 1, "\u0644\u0645"], [64750, 1, "\u0646\u0645"], [64751, 1, "\u0646\u0647"], [64752, 1, "\u064A\u0645"], [64753, 1, "\u064A\u0647"], [64754, 1, "\u0640\u064E\u0651"], [64755, 1, "\u0640\u064F\u0651"], [64756, 1, "\u0640\u0650\u0651"], [64757, 1, "\u0637\u0649"], [64758, 1, "\u0637\u064A"], [64759, 1, "\u0639\u0649"], [64760, 1, "\u0639\u064A"], [64761, 1, "\u063A\u0649"], [64762, 1, "\u063A\u064A"], [64763, 1, "\u0633\u0649"], [64764, 1, "\u0633\u064A"], [64765, 1, "\u0634\u0649"], [64766, 1, "\u0634\u064A"], [64767, 1, "\u062D\u0649"], [64768, 1, "\u062D\u064A"], [64769, 1, "\u062C\u0649"], [64770, 1, "\u062C\u064A"], [64771, 1, "\u062E\u0649"], [64772, 1, "\u062E\u064A"], [64773, 1, "\u0635\u0649"], [64774, 1, "\u0635\u064A"], [64775, 1, "\u0636\u0649"], [64776, 1, "\u0636\u064A"], [64777, 1, "\u0634\u062C"], [64778, 1, "\u0634\u062D"], [64779, 1, "\u0634\u062E"], [64780, 1, "\u0634\u0645"], [64781, 1, "\u0634\u0631"], [64782, 1, "\u0633\u0631"], [64783, 1, "\u0635\u0631"], [64784, 1, "\u0636\u0631"], [64785, 1, "\u0637\u0649"], [64786, 1, "\u0637\u064A"], [64787, 1, "\u0639\u0649"], [64788, 1, "\u0639\u064A"], [64789, 1, "\u063A\u0649"], [64790, 1, "\u063A\u064A"], [64791, 1, "\u0633\u0649"], [64792, 1, "\u0633\u064A"], [64793, 1, "\u0634\u0649"], [64794, 1, "\u0634\u064A"], [64795, 1, "\u062D\u0649"], [64796, 1, "\u062D\u064A"], [64797, 1, "\u062C\u0649"], [64798, 1, "\u062C\u064A"], [64799, 1, "\u062E\u0649"], [64800, 1, "\u062E\u064A"], [64801, 1, "\u0635\u0649"], [64802, 1, "\u0635\u064A"], [64803, 1, "\u0636\u0649"], [64804, 1, "\u0636\u064A"], [64805, 1, "\u0634\u062C"], [64806, 1, "\u0634\u062D"], [64807, 1, "\u0634\u062E"], [64808, 1, "\u0634\u0645"], [64809, 1, "\u0634\u0631"], [64810, 1, "\u0633\u0631"], [64811, 1, "\u0635\u0631"], [64812, 1, "\u0636\u0631"], [64813, 1, "\u0634\u062C"], [64814, 1, "\u0634\u062D"], [64815, 1, "\u0634\u062E"], [64816, 1, "\u0634\u0645"], [64817, 1, "\u0633\u0647"], [64818, 1, "\u0634\u0647"], [64819, 1, "\u0637\u0645"], [64820, 1, "\u0633\u062C"], [64821, 1, "\u0633\u062D"], [64822, 1, "\u0633\u062E"], [64823, 1, "\u0634\u062C"], [64824, 1, "\u0634\u062D"], [64825, 1, "\u0634\u062E"], [64826, 1, "\u0637\u0645"], [64827, 1, "\u0638\u0645"], [[64828, 64829], 1, "\u0627\u064B"], [[64830, 64831], 2], [[64832, 64847], 2], [64848, 1, "\u062A\u062C\u0645"], [[64849, 64850], 1, "\u062A\u062D\u062C"], [64851, 1, "\u062A\u062D\u0645"], [64852, 1, "\u062A\u062E\u0645"], [64853, 1, "\u062A\u0645\u062C"], [64854, 1, "\u062A\u0645\u062D"], [64855, 1, "\u062A\u0645\u062E"], [[64856, 64857], 1, "\u062C\u0645\u062D"], [64858, 1, "\u062D\u0645\u064A"], [64859, 1, "\u062D\u0645\u0649"], [64860, 1, "\u0633\u062D\u062C"], [64861, 1, "\u0633\u062C\u062D"], [64862, 1, "\u0633\u062C\u0649"], [[64863, 64864], 1, "\u0633\u0645\u062D"], [64865, 1, "\u0633\u0645\u062C"], [[64866, 64867], 1, "\u0633\u0645\u0645"], [[64868, 64869], 1, "\u0635\u062D\u062D"], [64870, 1, "\u0635\u0645\u0645"], [[64871, 64872], 1, "\u0634\u062D\u0645"], [64873, 1, "\u0634\u062C\u064A"], [[64874, 64875], 1, "\u0634\u0645\u062E"], [[64876, 64877], 1, "\u0634\u0645\u0645"], [64878, 1, "\u0636\u062D\u0649"], [[64879, 64880], 1, "\u0636\u062E\u0645"], [[64881, 64882], 1, "\u0637\u0645\u062D"], [64883, 1, "\u0637\u0645\u0645"], [64884, 1, "\u0637\u0645\u064A"], [64885, 1, "\u0639\u062C\u0645"], [[64886, 64887], 1, "\u0639\u0645\u0645"], [64888, 1, "\u0639\u0645\u0649"], [64889, 1, "\u063A\u0645\u0645"], [64890, 1, "\u063A\u0645\u064A"], [64891, 1, "\u063A\u0645\u0649"], [[64892, 64893], 1, "\u0641\u062E\u0645"], [64894, 1, "\u0642\u0645\u062D"], [64895, 1, "\u0642\u0645\u0645"], [64896, 1, "\u0644\u062D\u0645"], [64897, 1, "\u0644\u062D\u064A"], [64898, 1, "\u0644\u062D\u0649"], [[64899, 64900], 1, "\u0644\u062C\u062C"], [[64901, 64902], 1, "\u0644\u062E\u0645"], [[64903, 64904], 1, "\u0644\u0645\u062D"], [64905, 1, "\u0645\u062D\u062C"], [64906, 1, "\u0645\u062D\u0645"], [64907, 1, "\u0645\u062D\u064A"], [64908, 1, "\u0645\u062C\u062D"], [64909, 1, "\u0645\u062C\u0645"], [64910, 1, "\u0645\u062E\u062C"], [64911, 1, "\u0645\u062E\u0645"], [[64912, 64913], 3], [64914, 1, "\u0645\u062C\u062E"], [64915, 1, "\u0647\u0645\u062C"], [64916, 1, "\u0647\u0645\u0645"], [64917, 1, "\u0646\u062D\u0645"], [64918, 1, "\u0646\u062D\u0649"], [[64919, 64920], 1, "\u0646\u062C\u0645"], [64921, 1, "\u0646\u062C\u0649"], [64922, 1, "\u0646\u0645\u064A"], [64923, 1, "\u0646\u0645\u0649"], [[64924, 64925], 1, "\u064A\u0645\u0645"], [64926, 1, "\u0628\u062E\u064A"], [64927, 1, "\u062A\u062C\u064A"], [64928, 1, "\u062A\u062C\u0649"], [64929, 1, "\u062A\u062E\u064A"], [64930, 1, "\u062A\u062E\u0649"], [64931, 1, "\u062A\u0645\u064A"], [64932, 1, "\u062A\u0645\u0649"], [64933, 1, "\u062C\u0645\u064A"], [64934, 1, "\u062C\u062D\u0649"], [64935, 1, "\u062C\u0645\u0649"], [64936, 1, "\u0633\u062E\u0649"], [64937, 1, "\u0635\u062D\u064A"], [64938, 1, "\u0634\u062D\u064A"], [64939, 1, "\u0636\u062D\u064A"], [64940, 1, "\u0644\u062C\u064A"], [64941, 1, "\u0644\u0645\u064A"], [64942, 1, "\u064A\u062D\u064A"], [64943, 1, "\u064A\u062C\u064A"], [64944, 1, "\u064A\u0645\u064A"], [64945, 1, "\u0645\u0645\u064A"], [64946, 1, "\u0642\u0645\u064A"], [64947, 1, "\u0646\u062D\u064A"], [64948, 1, "\u0642\u0645\u062D"], [64949, 1, "\u0644\u062D\u0645"], [64950, 1, "\u0639\u0645\u064A"], [64951, 1, "\u0643\u0645\u064A"], [64952, 1, "\u0646\u062C\u062D"], [64953, 1, "\u0645\u062E\u064A"], [64954, 1, "\u0644\u062C\u0645"], [64955, 1, "\u0643\u0645\u0645"], [64956, 1, "\u0644\u062C\u0645"], [64957, 1, "\u0646\u062C\u062D"], [64958, 1, "\u062C\u062D\u064A"], [64959, 1, "\u062D\u062C\u064A"], [64960, 1, "\u0645\u062C\u064A"], [64961, 1, "\u0641\u0645\u064A"], [64962, 1, "\u0628\u062D\u064A"], [64963, 1, "\u0643\u0645\u0645"], [64964, 1, "\u0639\u062C\u0645"], [64965, 1, "\u0635\u0645\u0645"], [64966, 1, "\u0633\u062E\u064A"], [64967, 1, "\u0646\u062C\u064A"], [[64968, 64974], 3], [64975, 2], [[64976, 65007], 3], [65008, 1, "\u0635\u0644\u06D2"], [65009, 1, "\u0642\u0644\u06D2"], [65010, 1, "\u0627\u0644\u0644\u0647"], [65011, 1, "\u0627\u0643\u0628\u0631"], [65012, 1, "\u0645\u062D\u0645\u062F"], [65013, 1, "\u0635\u0644\u0639\u0645"], [65014, 1, "\u0631\u0633\u0648\u0644"], [65015, 1, "\u0639\u0644\u064A\u0647"], [65016, 1, "\u0648\u0633\u0644\u0645"], [65017, 1, "\u0635\u0644\u0649"], [65018, 5, "\u0635\u0644\u0649 \u0627\u0644\u0644\u0647 \u0639\u0644\u064A\u0647 \u0648\u0633\u0644\u0645"], [65019, 5, "\u062C\u0644 \u062C\u0644\u0627\u0644\u0647"], [65020, 1, "\u0631\u06CC\u0627\u0644"], [65021, 2], [[65022, 65023], 2], [[65024, 65039], 7], [65040, 5, ","], [65041, 1, "\u3001"], [65042, 3], [65043, 5, ":"], [65044, 5, ";"], [65045, 5, "!"], [65046, 5, "?"], [65047, 1, "\u3016"], [65048, 1, "\u3017"], [65049, 3], [[65050, 65055], 3], [[65056, 65059], 2], [[65060, 65062], 2], [[65063, 65069], 2], [[65070, 65071], 2], [65072, 3], [65073, 1, "\u2014"], [65074, 1, "\u2013"], [[65075, 65076], 5, "_"], [65077, 5, "("], [65078, 5, ")"], [65079, 5, "{"], [65080, 5, "}"], [65081, 1, "\u3014"], [65082, 1, "\u3015"], [65083, 1, "\u3010"], [65084, 1, "\u3011"], [65085, 1, "\u300A"], [65086, 1, "\u300B"], [65087, 1, "\u3008"], [65088, 1, "\u3009"], [65089, 1, "\u300C"], [65090, 1, "\u300D"], [65091, 1, "\u300E"], [65092, 1, "\u300F"], [[65093, 65094], 2], [65095, 5, "["], [65096, 5, "]"], [[65097, 65100], 5, " \u0305"], [[65101, 65103], 5, "_"], [65104, 5, ","], [65105, 1, "\u3001"], [65106, 3], [65107, 3], [65108, 5, ";"], [65109, 5, ":"], [65110, 5, "?"], [65111, 5, "!"], [65112, 1, "\u2014"], [65113, 5, "("], [65114, 5, ")"], [65115, 5, "{"], [65116, 5, "}"], [65117, 1, "\u3014"], [65118, 1, "\u3015"], [65119, 5, "#"], [65120, 5, "&"], [65121, 5, "*"], [65122, 5, "+"], [65123, 1, "-"], [65124, 5, "<"], [65125, 5, ">"], [65126, 5, "="], [65127, 3], [65128, 5, "\\"], [65129, 5, "$"], [65130, 5, "%"], [65131, 5, "@"], [[65132, 65135], 3], [65136, 5, " \u064B"], [65137, 1, "\u0640\u064B"], [65138, 5, " \u064C"], [65139, 2], [65140, 5, " \u064D"], [65141, 3], [65142, 5, " \u064E"], [65143, 1, "\u0640\u064E"], [65144, 5, " \u064F"], [65145, 1, "\u0640\u064F"], [65146, 5, " \u0650"], [65147, 1, "\u0640\u0650"], [65148, 5, " \u0651"], [65149, 1, "\u0640\u0651"], [65150, 5, " \u0652"], [65151, 1, "\u0640\u0652"], [65152, 1, "\u0621"], [[65153, 65154], 1, "\u0622"], [[65155, 65156], 1, "\u0623"], [[65157, 65158], 1, "\u0624"], [[65159, 65160], 1, "\u0625"], [[65161, 65164], 1, "\u0626"], [[65165, 65166], 1, "\u0627"], [[65167, 65170], 1, "\u0628"], [[65171, 65172], 1, "\u0629"], [[65173, 65176], 1, "\u062A"], [[65177, 65180], 1, "\u062B"], [[65181, 65184], 1, "\u062C"], [[65185, 65188], 1, "\u062D"], [[65189, 65192], 1, "\u062E"], [[65193, 65194], 1, "\u062F"], [[65195, 65196], 1, "\u0630"], [[65197, 65198], 1, "\u0631"], [[65199, 65200], 1, "\u0632"], [[65201, 65204], 1, "\u0633"], [[65205, 65208], 1, "\u0634"], [[65209, 65212], 1, "\u0635"], [[65213, 65216], 1, "\u0636"], [[65217, 65220], 1, "\u0637"], [[65221, 65224], 1, "\u0638"], [[65225, 65228], 1, "\u0639"], [[65229, 65232], 1, "\u063A"], [[65233, 65236], 1, "\u0641"], [[65237, 65240], 1, "\u0642"], [[65241, 65244], 1, "\u0643"], [[65245, 65248], 1, "\u0644"], [[65249, 65252], 1, "\u0645"], [[65253, 65256], 1, "\u0646"], [[65257, 65260], 1, "\u0647"], [[65261, 65262], 1, "\u0648"], [[65263, 65264], 1, "\u0649"], [[65265, 65268], 1, "\u064A"], [[65269, 65270], 1, "\u0644\u0622"], [[65271, 65272], 1, "\u0644\u0623"], [[65273, 65274], 1, "\u0644\u0625"], [[65275, 65276], 1, "\u0644\u0627"], [[65277, 65278], 3], [65279, 7], [65280, 3], [65281, 5, "!"], [65282, 5, '"'], [65283, 5, "#"], [65284, 5, "$"], [65285, 5, "%"], [65286, 5, "&"], [65287, 5, "'"], [65288, 5, "("], [65289, 5, ")"], [65290, 5, "*"], [65291, 5, "+"], [65292, 5, ","], [65293, 1, "-"], [65294, 1, "."], [65295, 5, "/"], [65296, 1, "0"], [65297, 1, "1"], [65298, 1, "2"], [65299, 1, "3"], [65300, 1, "4"], [65301, 1, "5"], [65302, 1, "6"], [65303, 1, "7"], [65304, 1, "8"], [65305, 1, "9"], [65306, 5, ":"], [65307, 5, ";"], [65308, 5, "<"], [65309, 5, "="], [65310, 5, ">"], [65311, 5, "?"], [65312, 5, "@"], [65313, 1, "a"], [65314, 1, "b"], [65315, 1, "c"], [65316, 1, "d"], [65317, 1, "e"], [65318, 1, "f"], [65319, 1, "g"], [65320, 1, "h"], [65321, 1, "i"], [65322, 1, "j"], [65323, 1, "k"], [65324, 1, "l"], [65325, 1, "m"], [65326, 1, "n"], [65327, 1, "o"], [65328, 1, "p"], [65329, 1, "q"], [65330, 1, "r"], [65331, 1, "s"], [65332, 1, "t"], [65333, 1, "u"], [65334, 1, "v"], [65335, 1, "w"], [65336, 1, "x"], [65337, 1, "y"], [65338, 1, "z"], [65339, 5, "["], [65340, 5, "\\"], [65341, 5, "]"], [65342, 5, "^"], [65343, 5, "_"], [65344, 5, "`"], [65345, 1, "a"], [65346, 1, "b"], [65347, 1, "c"], [65348, 1, "d"], [65349, 1, "e"], [65350, 1, "f"], [65351, 1, "g"], [65352, 1, "h"], [65353, 1, "i"], [65354, 1, "j"], [65355, 1, "k"], [65356, 1, "l"], [65357, 1, "m"], [65358, 1, "n"], [65359, 1, "o"], [65360, 1, "p"], [65361, 1, "q"], [65362, 1, "r"], [65363, 1, "s"], [65364, 1, "t"], [65365, 1, "u"], [65366, 1, "v"], [65367, 1, "w"], [65368, 1, "x"], [65369, 1, "y"], [65370, 1, "z"], [65371, 5, "{"], [65372, 5, "|"], [65373, 5, "}"], [65374, 5, "~"], [65375, 1, "\u2985"], [65376, 1, "\u2986"], [65377, 1, "."], [65378, 1, "\u300C"], [65379, 1, "\u300D"], [65380, 1, "\u3001"], [65381, 1, "\u30FB"], [65382, 1, "\u30F2"], [65383, 1, "\u30A1"], [65384, 1, "\u30A3"], [65385, 1, "\u30A5"], [65386, 1, "\u30A7"], [65387, 1, "\u30A9"], [65388, 1, "\u30E3"], [65389, 1, "\u30E5"], [65390, 1, "\u30E7"], [65391, 1, "\u30C3"], [65392, 1, "\u30FC"], [65393, 1, "\u30A2"], [65394, 1, "\u30A4"], [65395, 1, "\u30A6"], [65396, 1, "\u30A8"], [65397, 1, "\u30AA"], [65398, 1, "\u30AB"], [65399, 1, "\u30AD"], [65400, 1, "\u30AF"], [65401, 1, "\u30B1"], [65402, 1, "\u30B3"], [65403, 1, "\u30B5"], [65404, 1, "\u30B7"], [65405, 1, "\u30B9"], [65406, 1, "\u30BB"], [65407, 1, "\u30BD"], [65408, 1, "\u30BF"], [65409, 1, "\u30C1"], [65410, 1, "\u30C4"], [65411, 1, "\u30C6"], [65412, 1, "\u30C8"], [65413, 1, "\u30CA"], [65414, 1, "\u30CB"], [65415, 1, "\u30CC"], [65416, 1, "\u30CD"], [65417, 1, "\u30CE"], [65418, 1, "\u30CF"], [65419, 1, "\u30D2"], [65420, 1, "\u30D5"], [65421, 1, "\u30D8"], [65422, 1, "\u30DB"], [65423, 1, "\u30DE"], [65424, 1, "\u30DF"], [65425, 1, "\u30E0"], [65426, 1, "\u30E1"], [65427, 1, "\u30E2"], [65428, 1, "\u30E4"], [65429, 1, "\u30E6"], [65430, 1, "\u30E8"], [65431, 1, "\u30E9"], [65432, 1, "\u30EA"], [65433, 1, "\u30EB"], [65434, 1, "\u30EC"], [65435, 1, "\u30ED"], [65436, 1, "\u30EF"], [65437, 1, "\u30F3"], [65438, 1, "\u3099"], [65439, 1, "\u309A"], [65440, 3], [65441, 1, "\u1100"], [65442, 1, "\u1101"], [65443, 1, "\u11AA"], [65444, 1, "\u1102"], [65445, 1, "\u11AC"], [65446, 1, "\u11AD"], [65447, 1, "\u1103"], [65448, 1, "\u1104"], [65449, 1, "\u1105"], [65450, 1, "\u11B0"], [65451, 1, "\u11B1"], [65452, 1, "\u11B2"], [65453, 1, "\u11B3"], [65454, 1, "\u11B4"], [65455, 1, "\u11B5"], [65456, 1, "\u111A"], [65457, 1, "\u1106"], [65458, 1, "\u1107"], [65459, 1, "\u1108"], [65460, 1, "\u1121"], [65461, 1, "\u1109"], [65462, 1, "\u110A"], [65463, 1, "\u110B"], [65464, 1, "\u110C"], [65465, 1, "\u110D"], [65466, 1, "\u110E"], [65467, 1, "\u110F"], [65468, 1, "\u1110"], [65469, 1, "\u1111"], [65470, 1, "\u1112"], [[65471, 65473], 3], [65474, 1, "\u1161"], [65475, 1, "\u1162"], [65476, 1, "\u1163"], [65477, 1, "\u1164"], [65478, 1, "\u1165"], [65479, 1, "\u1166"], [[65480, 65481], 3], [65482, 1, "\u1167"], [65483, 1, "\u1168"], [65484, 1, "\u1169"], [65485, 1, "\u116A"], [65486, 1, "\u116B"], [65487, 1, "\u116C"], [[65488, 65489], 3], [65490, 1, "\u116D"], [65491, 1, "\u116E"], [65492, 1, "\u116F"], [65493, 1, "\u1170"], [65494, 1, "\u1171"], [65495, 1, "\u1172"], [[65496, 65497], 3], [65498, 1, "\u1173"], [65499, 1, "\u1174"], [65500, 1, "\u1175"], [[65501, 65503], 3], [65504, 1, "\xA2"], [65505, 1, "\xA3"], [65506, 1, "\xAC"], [65507, 5, " \u0304"], [65508, 1, "\xA6"], [65509, 1, "\xA5"], [65510, 1, "\u20A9"], [65511, 3], [65512, 1, "\u2502"], [65513, 1, "\u2190"], [65514, 1, "\u2191"], [65515, 1, "\u2192"], [65516, 1, "\u2193"], [65517, 1, "\u25A0"], [65518, 1, "\u25CB"], [[65519, 65528], 3], [[65529, 65531], 3], [65532, 3], [65533, 3], [[65534, 65535], 3], [[65536, 65547], 2], [65548, 3], [[65549, 65574], 2], [65575, 3], [[65576, 65594], 2], [65595, 3], [[65596, 65597], 2], [65598, 3], [[65599, 65613], 2], [[65614, 65615], 3], [[65616, 65629], 2], [[65630, 65663], 3], [[65664, 65786], 2], [[65787, 65791], 3], [[65792, 65794], 2], [[65795, 65798], 3], [[65799, 65843], 2], [[65844, 65846], 3], [[65847, 65855], 2], [[65856, 65930], 2], [[65931, 65932], 2], [[65933, 65934], 2], [65935, 3], [[65936, 65947], 2], [65948, 2], [[65949, 65951], 3], [65952, 2], [[65953, 65999], 3], [[66e3, 66044], 2], [66045, 2], [[66046, 66175], 3], [[66176, 66204], 2], [[66205, 66207], 3], [[66208, 66256], 2], [[66257, 66271], 3], [66272, 2], [[66273, 66299], 2], [[66300, 66303], 3], [[66304, 66334], 2], [66335, 2], [[66336, 66339], 2], [[66340, 66348], 3], [[66349, 66351], 2], [[66352, 66368], 2], [66369, 2], [[66370, 66377], 2], [66378, 2], [[66379, 66383], 3], [[66384, 66426], 2], [[66427, 66431], 3], [[66432, 66461], 2], [66462, 3], [66463, 2], [[66464, 66499], 2], [[66500, 66503], 3], [[66504, 66511], 2], [[66512, 66517], 2], [[66518, 66559], 3], [66560, 1, "\u{10428}"], [66561, 1, "\u{10429}"], [66562, 1, "\u{1042A}"], [66563, 1, "\u{1042B}"], [66564, 1, "\u{1042C}"], [66565, 1, "\u{1042D}"], [66566, 1, "\u{1042E}"], [66567, 1, "\u{1042F}"], [66568, 1, "\u{10430}"], [66569, 1, "\u{10431}"], [66570, 1, "\u{10432}"], [66571, 1, "\u{10433}"], [66572, 1, "\u{10434}"], [66573, 1, "\u{10435}"], [66574, 1, "\u{10436}"], [66575, 1, "\u{10437}"], [66576, 1, "\u{10438}"], [66577, 1, "\u{10439}"], [66578, 1, "\u{1043A}"], [66579, 1, "\u{1043B}"], [66580, 1, "\u{1043C}"], [66581, 1, "\u{1043D}"], [66582, 1, "\u{1043E}"], [66583, 1, "\u{1043F}"], [66584, 1, "\u{10440}"], [66585, 1, "\u{10441}"], [66586, 1, "\u{10442}"], [66587, 1, "\u{10443}"], [66588, 1, "\u{10444}"], [66589, 1, "\u{10445}"], [66590, 1, "\u{10446}"], [66591, 1, "\u{10447}"], [66592, 1, "\u{10448}"], [66593, 1, "\u{10449}"], [66594, 1, "\u{1044A}"], [66595, 1, "\u{1044B}"], [66596, 1, "\u{1044C}"], [66597, 1, "\u{1044D}"], [66598, 1, "\u{1044E}"], [66599, 1, "\u{1044F}"], [[66600, 66637], 2], [[66638, 66717], 2], [[66718, 66719], 3], [[66720, 66729], 2], [[66730, 66735], 3], [66736, 1, "\u{104D8}"], [66737, 1, "\u{104D9}"], [66738, 1, "\u{104DA}"], [66739, 1, "\u{104DB}"], [66740, 1, "\u{104DC}"], [66741, 1, "\u{104DD}"], [66742, 1, "\u{104DE}"], [66743, 1, "\u{104DF}"], [66744, 1, "\u{104E0}"], [66745, 1, "\u{104E1}"], [66746, 1, "\u{104E2}"], [66747, 1, "\u{104E3}"], [66748, 1, "\u{104E4}"], [66749, 1, "\u{104E5}"], [66750, 1, "\u{104E6}"], [66751, 1, "\u{104E7}"], [66752, 1, "\u{104E8}"], [66753, 1, "\u{104E9}"], [66754, 1, "\u{104EA}"], [66755, 1, "\u{104EB}"], [66756, 1, "\u{104EC}"], [66757, 1, "\u{104ED}"], [66758, 1, "\u{104EE}"], [66759, 1, "\u{104EF}"], [66760, 1, "\u{104F0}"], [66761, 1, "\u{104F1}"], [66762, 1, "\u{104F2}"], [66763, 1, "\u{104F3}"], [66764, 1, "\u{104F4}"], [66765, 1, "\u{104F5}"], [66766, 1, "\u{104F6}"], [66767, 1, "\u{104F7}"], [66768, 1, "\u{104F8}"], [66769, 1, "\u{104F9}"], [66770, 1, "\u{104FA}"], [66771, 1, "\u{104FB}"], [[66772, 66775], 3], [[66776, 66811], 2], [[66812, 66815], 3], [[66816, 66855], 2], [[66856, 66863], 3], [[66864, 66915], 2], [[66916, 66926], 3], [66927, 2], [66928, 1, "\u{10597}"], [66929, 1, "\u{10598}"], [66930, 1, "\u{10599}"], [66931, 1, "\u{1059A}"], [66932, 1, "\u{1059B}"], [66933, 1, "\u{1059C}"], [66934, 1, "\u{1059D}"], [66935, 1, "\u{1059E}"], [66936, 1, "\u{1059F}"], [66937, 1, "\u{105A0}"], [66938, 1, "\u{105A1}"], [66939, 3], [66940, 1, "\u{105A3}"], [66941, 1, "\u{105A4}"], [66942, 1, "\u{105A5}"], [66943, 1, "\u{105A6}"], [66944, 1, "\u{105A7}"], [66945, 1, "\u{105A8}"], [66946, 1, "\u{105A9}"], [66947, 1, "\u{105AA}"], [66948, 1, "\u{105AB}"], [66949, 1, "\u{105AC}"], [66950, 1, "\u{105AD}"], [66951, 1, "\u{105AE}"], [66952, 1, "\u{105AF}"], [66953, 1, "\u{105B0}"], [66954, 1, "\u{105B1}"], [66955, 3], [66956, 1, "\u{105B3}"], [66957, 1, "\u{105B4}"], [66958, 1, "\u{105B5}"], [66959, 1, "\u{105B6}"], [66960, 1, "\u{105B7}"], [66961, 1, "\u{105B8}"], [66962, 1, "\u{105B9}"], [66963, 3], [66964, 1, "\u{105BB}"], [66965, 1, "\u{105BC}"], [66966, 3], [[66967, 66977], 2], [66978, 3], [[66979, 66993], 2], [66994, 3], [[66995, 67001], 2], [67002, 3], [[67003, 67004], 2], [[67005, 67071], 3], [[67072, 67382], 2], [[67383, 67391], 3], [[67392, 67413], 2], [[67414, 67423], 3], [[67424, 67431], 2], [[67432, 67455], 3], [67456, 2], [67457, 1, "\u02D0"], [67458, 1, "\u02D1"], [67459, 1, "\xE6"], [67460, 1, "\u0299"], [67461, 1, "\u0253"], [67462, 3], [67463, 1, "\u02A3"], [67464, 1, "\uAB66"], [67465, 1, "\u02A5"], [67466, 1, "\u02A4"], [67467, 1, "\u0256"], [67468, 1, "\u0257"], [67469, 1, "\u1D91"], [67470, 1, "\u0258"], [67471, 1, "\u025E"], [67472, 1, "\u02A9"], [67473, 1, "\u0264"], [67474, 1, "\u0262"], [67475, 1, "\u0260"], [67476, 1, "\u029B"], [67477, 1, "\u0127"], [67478, 1, "\u029C"], [67479, 1, "\u0267"], [67480, 1, "\u0284"], [67481, 1, "\u02AA"], [67482, 1, "\u02AB"], [67483, 1, "\u026C"], [67484, 1, "\u{1DF04}"], [67485, 1, "\uA78E"], [67486, 1, "\u026E"], [67487, 1, "\u{1DF05}"], [67488, 1, "\u028E"], [67489, 1, "\u{1DF06}"], [67490, 1, "\xF8"], [67491, 1, "\u0276"], [67492, 1, "\u0277"], [67493, 1, "q"], [67494, 1, "\u027A"], [67495, 1, "\u{1DF08}"], [67496, 1, "\u027D"], [67497, 1, "\u027E"], [67498, 1, "\u0280"], [67499, 1, "\u02A8"], [67500, 1, "\u02A6"], [67501, 1, "\uAB67"], [67502, 1, "\u02A7"], [67503, 1, "\u0288"], [67504, 1, "\u2C71"], [67505, 3], [67506, 1, "\u028F"], [67507, 1, "\u02A1"], [67508, 1, "\u02A2"], [67509, 1, "\u0298"], [67510, 1, "\u01C0"], [67511, 1, "\u01C1"], [67512, 1, "\u01C2"], [67513, 1, "\u{1DF0A}"], [67514, 1, "\u{1DF1E}"], [[67515, 67583], 3], [[67584, 67589], 2], [[67590, 67591], 3], [67592, 2], [67593, 3], [[67594, 67637], 2], [67638, 3], [[67639, 67640], 2], [[67641, 67643], 3], [67644, 2], [[67645, 67646], 3], [67647, 2], [[67648, 67669], 2], [67670, 3], [[67671, 67679], 2], [[67680, 67702], 2], [[67703, 67711], 2], [[67712, 67742], 2], [[67743, 67750], 3], [[67751, 67759], 2], [[67760, 67807], 3], [[67808, 67826], 2], [67827, 3], [[67828, 67829], 2], [[67830, 67834], 3], [[67835, 67839], 2], [[67840, 67861], 2], [[67862, 67865], 2], [[67866, 67867], 2], [[67868, 67870], 3], [67871, 2], [[67872, 67897], 2], [[67898, 67902], 3], [67903, 2], [[67904, 67967], 3], [[67968, 68023], 2], [[68024, 68027], 3], [[68028, 68029], 2], [[68030, 68031], 2], [[68032, 68047], 2], [[68048, 68049], 3], [[68050, 68095], 2], [[68096, 68099], 2], [68100, 3], [[68101, 68102], 2], [[68103, 68107], 3], [[68108, 68115], 2], [68116, 3], [[68117, 68119], 2], [68120, 3], [[68121, 68147], 2], [[68148, 68149], 2], [[68150, 68151], 3], [[68152, 68154], 2], [[68155, 68158], 3], [68159, 2], [[68160, 68167], 2], [68168, 2], [[68169, 68175], 3], [[68176, 68184], 2], [[68185, 68191], 3], [[68192, 68220], 2], [[68221, 68223], 2], [[68224, 68252], 2], [[68253, 68255], 2], [[68256, 68287], 3], [[68288, 68295], 2], [68296, 2], [[68297, 68326], 2], [[68327, 68330], 3], [[68331, 68342], 2], [[68343, 68351], 3], [[68352, 68405], 2], [[68406, 68408], 3], [[68409, 68415], 2], [[68416, 68437], 2], [[68438, 68439], 3], [[68440, 68447], 2], [[68448, 68466], 2], [[68467, 68471], 3], [[68472, 68479], 2], [[68480, 68497], 2], [[68498, 68504], 3], [[68505, 68508], 2], [[68509, 68520], 3], [[68521, 68527], 2], [[68528, 68607], 3], [[68608, 68680], 2], [[68681, 68735], 3], [68736, 1, "\u{10CC0}"], [68737, 1, "\u{10CC1}"], [68738, 1, "\u{10CC2}"], [68739, 1, "\u{10CC3}"], [68740, 1, "\u{10CC4}"], [68741, 1, "\u{10CC5}"], [68742, 1, "\u{10CC6}"], [68743, 1, "\u{10CC7}"], [68744, 1, "\u{10CC8}"], [68745, 1, "\u{10CC9}"], [68746, 1, "\u{10CCA}"], [68747, 1, "\u{10CCB}"], [68748, 1, "\u{10CCC}"], [68749, 1, "\u{10CCD}"], [68750, 1, "\u{10CCE}"], [68751, 1, "\u{10CCF}"], [68752, 1, "\u{10CD0}"], [68753, 1, "\u{10CD1}"], [68754, 1, "\u{10CD2}"], [68755, 1, "\u{10CD3}"], [68756, 1, "\u{10CD4}"], [68757, 1, "\u{10CD5}"], [68758, 1, "\u{10CD6}"], [68759, 1, "\u{10CD7}"], [68760, 1, "\u{10CD8}"], [68761, 1, "\u{10CD9}"], [68762, 1, "\u{10CDA}"], [68763, 1, "\u{10CDB}"], [68764, 1, "\u{10CDC}"], [68765, 1, "\u{10CDD}"], [68766, 1, "\u{10CDE}"], [68767, 1, "\u{10CDF}"], [68768, 1, "\u{10CE0}"], [68769, 1, "\u{10CE1}"], [68770, 1, "\u{10CE2}"], [68771, 1, "\u{10CE3}"], [68772, 1, "\u{10CE4}"], [68773, 1, "\u{10CE5}"], [68774, 1, "\u{10CE6}"], [68775, 1, "\u{10CE7}"], [68776, 1, "\u{10CE8}"], [68777, 1, "\u{10CE9}"], [68778, 1, "\u{10CEA}"], [68779, 1, "\u{10CEB}"], [68780, 1, "\u{10CEC}"], [68781, 1, "\u{10CED}"], [68782, 1, "\u{10CEE}"], [68783, 1, "\u{10CEF}"], [68784, 1, "\u{10CF0}"], [68785, 1, "\u{10CF1}"], [68786, 1, "\u{10CF2}"], [[68787, 68799], 3], [[68800, 68850], 2], [[68851, 68857], 3], [[68858, 68863], 2], [[68864, 68903], 2], [[68904, 68911], 3], [[68912, 68921], 2], [[68922, 69215], 3], [[69216, 69246], 2], [69247, 3], [[69248, 69289], 2], [69290, 3], [[69291, 69292], 2], [69293, 2], [[69294, 69295], 3], [[69296, 69297], 2], [[69298, 69372], 3], [[69373, 69375], 2], [[69376, 69404], 2], [[69405, 69414], 2], [69415, 2], [[69416, 69423], 3], [[69424, 69456], 2], [[69457, 69465], 2], [[69466, 69487], 3], [[69488, 69509], 2], [[69510, 69513], 2], [[69514, 69551], 3], [[69552, 69572], 2], [[69573, 69579], 2], [[69580, 69599], 3], [[69600, 69622], 2], [[69623, 69631], 3], [[69632, 69702], 2], [[69703, 69709], 2], [[69710, 69713], 3], [[69714, 69733], 2], [[69734, 69743], 2], [[69744, 69749], 2], [[69750, 69758], 3], [69759, 2], [[69760, 69818], 2], [[69819, 69820], 2], [69821, 3], [[69822, 69825], 2], [69826, 2], [[69827, 69836], 3], [69837, 3], [[69838, 69839], 3], [[69840, 69864], 2], [[69865, 69871], 3], [[69872, 69881], 2], [[69882, 69887], 3], [[69888, 69940], 2], [69941, 3], [[69942, 69951], 2], [[69952, 69955], 2], [[69956, 69958], 2], [69959, 2], [[69960, 69967], 3], [[69968, 70003], 2], [[70004, 70005], 2], [70006, 2], [[70007, 70015], 3], [[70016, 70084], 2], [[70085, 70088], 2], [[70089, 70092], 2], [70093, 2], [[70094, 70095], 2], [[70096, 70105], 2], [70106, 2], [70107, 2], [70108, 2], [[70109, 70111], 2], [70112, 3], [[70113, 70132], 2], [[70133, 70143], 3], [[70144, 70161], 2], [70162, 3], [[70163, 70199], 2], [[70200, 70205], 2], [70206, 2], [[70207, 70209], 2], [[70210, 70271], 3], [[70272, 70278], 2], [70279, 3], [70280, 2], [70281, 3], [[70282, 70285], 2], [70286, 3], [[70287, 70301], 2], [70302, 3], [[70303, 70312], 2], [70313, 2], [[70314, 70319], 3], [[70320, 70378], 2], [[70379, 70383], 3], [[70384, 70393], 2], [[70394, 70399], 3], [70400, 2], [[70401, 70403], 2], [70404, 3], [[70405, 70412], 2], [[70413, 70414], 3], [[70415, 70416], 2], [[70417, 70418], 3], [[70419, 70440], 2], [70441, 3], [[70442, 70448], 2], [70449, 3], [[70450, 70451], 2], [70452, 3], [[70453, 70457], 2], [70458, 3], [70459, 2], [[70460, 70468], 2], [[70469, 70470], 3], [[70471, 70472], 2], [[70473, 70474], 3], [[70475, 70477], 2], [[70478, 70479], 3], [70480, 2], [[70481, 70486], 3], [70487, 2], [[70488, 70492], 3], [[70493, 70499], 2], [[70500, 70501], 3], [[70502, 70508], 2], [[70509, 70511], 3], [[70512, 70516], 2], [[70517, 70655], 3], [[70656, 70730], 2], [[70731, 70735], 2], [[70736, 70745], 2], [70746, 2], [70747, 2], [70748, 3], [70749, 2], [70750, 2], [70751, 2], [[70752, 70753], 2], [[70754, 70783], 3], [[70784, 70853], 2], [70854, 2], [70855, 2], [[70856, 70863], 3], [[70864, 70873], 2], [[70874, 71039], 3], [[71040, 71093], 2], [[71094, 71095], 3], [[71096, 71104], 2], [[71105, 71113], 2], [[71114, 71127], 2], [[71128, 71133], 2], [[71134, 71167], 3], [[71168, 71232], 2], [[71233, 71235], 2], [71236, 2], [[71237, 71247], 3], [[71248, 71257], 2], [[71258, 71263], 3], [[71264, 71276], 2], [[71277, 71295], 3], [[71296, 71351], 2], [71352, 2], [71353, 2], [[71354, 71359], 3], [[71360, 71369], 2], [[71370, 71423], 3], [[71424, 71449], 2], [71450, 2], [[71451, 71452], 3], [[71453, 71467], 2], [[71468, 71471], 3], [[71472, 71481], 2], [[71482, 71487], 2], [[71488, 71494], 2], [[71495, 71679], 3], [[71680, 71738], 2], [71739, 2], [[71740, 71839], 3], [71840, 1, "\u{118C0}"], [71841, 1, "\u{118C1}"], [71842, 1, "\u{118C2}"], [71843, 1, "\u{118C3}"], [71844, 1, "\u{118C4}"], [71845, 1, "\u{118C5}"], [71846, 1, "\u{118C6}"], [71847, 1, "\u{118C7}"], [71848, 1, "\u{118C8}"], [71849, 1, "\u{118C9}"], [71850, 1, "\u{118CA}"], [71851, 1, "\u{118CB}"], [71852, 1, "\u{118CC}"], [71853, 1, "\u{118CD}"], [71854, 1, "\u{118CE}"], [71855, 1, "\u{118CF}"], [71856, 1, "\u{118D0}"], [71857, 1, "\u{118D1}"], [71858, 1, "\u{118D2}"], [71859, 1, "\u{118D3}"], [71860, 1, "\u{118D4}"], [71861, 1, "\u{118D5}"], [71862, 1, "\u{118D6}"], [71863, 1, "\u{118D7}"], [71864, 1, "\u{118D8}"], [71865, 1, "\u{118D9}"], [71866, 1, "\u{118DA}"], [71867, 1, "\u{118DB}"], [71868, 1, "\u{118DC}"], [71869, 1, "\u{118DD}"], [71870, 1, "\u{118DE}"], [71871, 1, "\u{118DF}"], [[71872, 71913], 2], [[71914, 71922], 2], [[71923, 71934], 3], [71935, 2], [[71936, 71942], 2], [[71943, 71944], 3], [71945, 2], [[71946, 71947], 3], [[71948, 71955], 2], [71956, 3], [[71957, 71958], 2], [71959, 3], [[71960, 71989], 2], [71990, 3], [[71991, 71992], 2], [[71993, 71994], 3], [[71995, 72003], 2], [[72004, 72006], 2], [[72007, 72015], 3], [[72016, 72025], 2], [[72026, 72095], 3], [[72096, 72103], 2], [[72104, 72105], 3], [[72106, 72151], 2], [[72152, 72153], 3], [[72154, 72161], 2], [72162, 2], [[72163, 72164], 2], [[72165, 72191], 3], [[72192, 72254], 2], [[72255, 72262], 2], [72263, 2], [[72264, 72271], 3], [[72272, 72323], 2], [[72324, 72325], 2], [[72326, 72345], 2], [[72346, 72348], 2], [72349, 2], [[72350, 72354], 2], [[72355, 72367], 3], [[72368, 72383], 2], [[72384, 72440], 2], [[72441, 72447], 3], [[72448, 72457], 2], [[72458, 72703], 3], [[72704, 72712], 2], [72713, 3], [[72714, 72758], 2], [72759, 3], [[72760, 72768], 2], [[72769, 72773], 2], [[72774, 72783], 3], [[72784, 72793], 2], [[72794, 72812], 2], [[72813, 72815], 3], [[72816, 72817], 2], [[72818, 72847], 2], [[72848, 72849], 3], [[72850, 72871], 2], [72872, 3], [[72873, 72886], 2], [[72887, 72959], 3], [[72960, 72966], 2], [72967, 3], [[72968, 72969], 2], [72970, 3], [[72971, 73014], 2], [[73015, 73017], 3], [73018, 2], [73019, 3], [[73020, 73021], 2], [73022, 3], [[73023, 73031], 2], [[73032, 73039], 3], [[73040, 73049], 2], [[73050, 73055], 3], [[73056, 73061], 2], [73062, 3], [[73063, 73064], 2], [73065, 3], [[73066, 73102], 2], [73103, 3], [[73104, 73105], 2], [73106, 3], [[73107, 73112], 2], [[73113, 73119], 3], [[73120, 73129], 2], [[73130, 73439], 3], [[73440, 73462], 2], [[73463, 73464], 2], [[73465, 73471], 3], [[73472, 73488], 2], [73489, 3], [[73490, 73530], 2], [[73531, 73533], 3], [[73534, 73538], 2], [[73539, 73551], 2], [[73552, 73561], 2], [[73562, 73647], 3], [73648, 2], [[73649, 73663], 3], [[73664, 73713], 2], [[73714, 73726], 3], [73727, 2], [[73728, 74606], 2], [[74607, 74648], 2], [74649, 2], [[74650, 74751], 3], [[74752, 74850], 2], [[74851, 74862], 2], [74863, 3], [[74864, 74867], 2], [74868, 2], [[74869, 74879], 3], [[74880, 75075], 2], [[75076, 77711], 3], [[77712, 77808], 2], [[77809, 77810], 2], [[77811, 77823], 3], [[77824, 78894], 2], [78895, 2], [[78896, 78904], 3], [[78905, 78911], 3], [[78912, 78933], 2], [[78934, 82943], 3], [[82944, 83526], 2], [[83527, 92159], 3], [[92160, 92728], 2], [[92729, 92735], 3], [[92736, 92766], 2], [92767, 3], [[92768, 92777], 2], [[92778, 92781], 3], [[92782, 92783], 2], [[92784, 92862], 2], [92863, 3], [[92864, 92873], 2], [[92874, 92879], 3], [[92880, 92909], 2], [[92910, 92911], 3], [[92912, 92916], 2], [92917, 2], [[92918, 92927], 3], [[92928, 92982], 2], [[92983, 92991], 2], [[92992, 92995], 2], [[92996, 92997], 2], [[92998, 93007], 3], [[93008, 93017], 2], [93018, 3], [[93019, 93025], 2], [93026, 3], [[93027, 93047], 2], [[93048, 93052], 3], [[93053, 93071], 2], [[93072, 93759], 3], [93760, 1, "\u{16E60}"], [93761, 1, "\u{16E61}"], [93762, 1, "\u{16E62}"], [93763, 1, "\u{16E63}"], [93764, 1, "\u{16E64}"], [93765, 1, "\u{16E65}"], [93766, 1, "\u{16E66}"], [93767, 1, "\u{16E67}"], [93768, 1, "\u{16E68}"], [93769, 1, "\u{16E69}"], [93770, 1, "\u{16E6A}"], [93771, 1, "\u{16E6B}"], [93772, 1, "\u{16E6C}"], [93773, 1, "\u{16E6D}"], [93774, 1, "\u{16E6E}"], [93775, 1, "\u{16E6F}"], [93776, 1, "\u{16E70}"], [93777, 1, "\u{16E71}"], [93778, 1, "\u{16E72}"], [93779, 1, "\u{16E73}"], [93780, 1, "\u{16E74}"], [93781, 1, "\u{16E75}"], [93782, 1, "\u{16E76}"], [93783, 1, "\u{16E77}"], [93784, 1, "\u{16E78}"], [93785, 1, "\u{16E79}"], [93786, 1, "\u{16E7A}"], [93787, 1, "\u{16E7B}"], [93788, 1, "\u{16E7C}"], [93789, 1, "\u{16E7D}"], [93790, 1, "\u{16E7E}"], [93791, 1, "\u{16E7F}"], [[93792, 93823], 2], [[93824, 93850], 2], [[93851, 93951], 3], [[93952, 94020], 2], [[94021, 94026], 2], [[94027, 94030], 3], [94031, 2], [[94032, 94078], 2], [[94079, 94087], 2], [[94088, 94094], 3], [[94095, 94111], 2], [[94112, 94175], 3], [94176, 2], [94177, 2], [94178, 2], [94179, 2], [94180, 2], [[94181, 94191], 3], [[94192, 94193], 2], [[94194, 94207], 3], [[94208, 100332], 2], [[100333, 100337], 2], [[100338, 100343], 2], [[100344, 100351], 3], [[100352, 101106], 2], [[101107, 101589], 2], [[101590, 101631], 3], [[101632, 101640], 2], [[101641, 110575], 3], [[110576, 110579], 2], [110580, 3], [[110581, 110587], 2], [110588, 3], [[110589, 110590], 2], [110591, 3], [[110592, 110593], 2], [[110594, 110878], 2], [[110879, 110882], 2], [[110883, 110897], 3], [110898, 2], [[110899, 110927], 3], [[110928, 110930], 2], [[110931, 110932], 3], [110933, 2], [[110934, 110947], 3], [[110948, 110951], 2], [[110952, 110959], 3], [[110960, 111355], 2], [[111356, 113663], 3], [[113664, 113770], 2], [[113771, 113775], 3], [[113776, 113788], 2], [[113789, 113791], 3], [[113792, 113800], 2], [[113801, 113807], 3], [[113808, 113817], 2], [[113818, 113819], 3], [113820, 2], [[113821, 113822], 2], [113823, 2], [[113824, 113827], 7], [[113828, 118527], 3], [[118528, 118573], 2], [[118574, 118575], 3], [[118576, 118598], 2], [[118599, 118607], 3], [[118608, 118723], 2], [[118724, 118783], 3], [[118784, 119029], 2], [[119030, 119039], 3], [[119040, 119078], 2], [[119079, 119080], 3], [119081, 2], [[119082, 119133], 2], [119134, 1, "\u{1D157}\u{1D165}"], [119135, 1, "\u{1D158}\u{1D165}"], [119136, 1, "\u{1D158}\u{1D165}\u{1D16E}"], [119137, 1, "\u{1D158}\u{1D165}\u{1D16F}"], [119138, 1, "\u{1D158}\u{1D165}\u{1D170}"], [119139, 1, "\u{1D158}\u{1D165}\u{1D171}"], [119140, 1, "\u{1D158}\u{1D165}\u{1D172}"], [[119141, 119154], 2], [[119155, 119162], 3], [[119163, 119226], 2], [119227, 1, "\u{1D1B9}\u{1D165}"], [119228, 1, "\u{1D1BA}\u{1D165}"], [119229, 1, "\u{1D1B9}\u{1D165}\u{1D16E}"], [119230, 1, "\u{1D1BA}\u{1D165}\u{1D16E}"], [119231, 1, "\u{1D1B9}\u{1D165}\u{1D16F}"], [119232, 1, "\u{1D1BA}\u{1D165}\u{1D16F}"], [[119233, 119261], 2], [[119262, 119272], 2], [[119273, 119274], 2], [[119275, 119295], 3], [[119296, 119365], 2], [[119366, 119487], 3], [[119488, 119507], 2], [[119508, 119519], 3], [[119520, 119539], 2], [[119540, 119551], 3], [[119552, 119638], 2], [[119639, 119647], 3], [[119648, 119665], 2], [[119666, 119672], 2], [[119673, 119807], 3], [119808, 1, "a"], [119809, 1, "b"], [119810, 1, "c"], [119811, 1, "d"], [119812, 1, "e"], [119813, 1, "f"], [119814, 1, "g"], [119815, 1, "h"], [119816, 1, "i"], [119817, 1, "j"], [119818, 1, "k"], [119819, 1, "l"], [119820, 1, "m"], [119821, 1, "n"], [119822, 1, "o"], [119823, 1, "p"], [119824, 1, "q"], [119825, 1, "r"], [119826, 1, "s"], [119827, 1, "t"], [119828, 1, "u"], [119829, 1, "v"], [119830, 1, "w"], [119831, 1, "x"], [119832, 1, "y"], [119833, 1, "z"], [119834, 1, "a"], [119835, 1, "b"], [119836, 1, "c"], [119837, 1, "d"], [119838, 1, "e"], [119839, 1, "f"], [119840, 1, "g"], [119841, 1, "h"], [119842, 1, "i"], [119843, 1, "j"], [119844, 1, "k"], [119845, 1, "l"], [119846, 1, "m"], [119847, 1, "n"], [119848, 1, "o"], [119849, 1, "p"], [119850, 1, "q"], [119851, 1, "r"], [119852, 1, "s"], [119853, 1, "t"], [119854, 1, "u"], [119855, 1, "v"], [119856, 1, "w"], [119857, 1, "x"], [119858, 1, "y"], [119859, 1, "z"], [119860, 1, "a"], [119861, 1, "b"], [119862, 1, "c"], [119863, 1, "d"], [119864, 1, "e"], [119865, 1, "f"], [119866, 1, "g"], [119867, 1, "h"], [119868, 1, "i"], [119869, 1, "j"], [119870, 1, "k"], [119871, 1, "l"], [119872, 1, "m"], [119873, 1, "n"], [119874, 1, "o"], [119875, 1, "p"], [119876, 1, "q"], [119877, 1, "r"], [119878, 1, "s"], [119879, 1, "t"], [119880, 1, "u"], [119881, 1, "v"], [119882, 1, "w"], [119883, 1, "x"], [119884, 1, "y"], [119885, 1, "z"], [119886, 1, "a"], [119887, 1, "b"], [119888, 1, "c"], [119889, 1, "d"], [119890, 1, "e"], [119891, 1, "f"], [119892, 1, "g"], [119893, 3], [119894, 1, "i"], [119895, 1, "j"], [119896, 1, "k"], [119897, 1, "l"], [119898, 1, "m"], [119899, 1, "n"], [119900, 1, "o"], [119901, 1, "p"], [119902, 1, "q"], [119903, 1, "r"], [119904, 1, "s"], [119905, 1, "t"], [119906, 1, "u"], [119907, 1, "v"], [119908, 1, "w"], [119909, 1, "x"], [119910, 1, "y"], [119911, 1, "z"], [119912, 1, "a"], [119913, 1, "b"], [119914, 1, "c"], [119915, 1, "d"], [119916, 1, "e"], [119917, 1, "f"], [119918, 1, "g"], [119919, 1, "h"], [119920, 1, "i"], [119921, 1, "j"], [119922, 1, "k"], [119923, 1, "l"], [119924, 1, "m"], [119925, 1, "n"], [119926, 1, "o"], [119927, 1, "p"], [119928, 1, "q"], [119929, 1, "r"], [119930, 1, "s"], [119931, 1, "t"], [119932, 1, "u"], [119933, 1, "v"], [119934, 1, "w"], [119935, 1, "x"], [119936, 1, "y"], [119937, 1, "z"], [119938, 1, "a"], [119939, 1, "b"], [119940, 1, "c"], [119941, 1, "d"], [119942, 1, "e"], [119943, 1, "f"], [119944, 1, "g"], [119945, 1, "h"], [119946, 1, "i"], [119947, 1, "j"], [119948, 1, "k"], [119949, 1, "l"], [119950, 1, "m"], [119951, 1, "n"], [119952, 1, "o"], [119953, 1, "p"], [119954, 1, "q"], [119955, 1, "r"], [119956, 1, "s"], [119957, 1, "t"], [119958, 1, "u"], [119959, 1, "v"], [119960, 1, "w"], [119961, 1, "x"], [119962, 1, "y"], [119963, 1, "z"], [119964, 1, "a"], [119965, 3], [119966, 1, "c"], [119967, 1, "d"], [[119968, 119969], 3], [119970, 1, "g"], [[119971, 119972], 3], [119973, 1, "j"], [119974, 1, "k"], [[119975, 119976], 3], [119977, 1, "n"], [119978, 1, "o"], [119979, 1, "p"], [119980, 1, "q"], [119981, 3], [119982, 1, "s"], [119983, 1, "t"], [119984, 1, "u"], [119985, 1, "v"], [119986, 1, "w"], [119987, 1, "x"], [119988, 1, "y"], [119989, 1, "z"], [119990, 1, "a"], [119991, 1, "b"], [119992, 1, "c"], [119993, 1, "d"], [119994, 3], [119995, 1, "f"], [119996, 3], [119997, 1, "h"], [119998, 1, "i"], [119999, 1, "j"], [12e4, 1, "k"], [120001, 1, "l"], [120002, 1, "m"], [120003, 1, "n"], [120004, 3], [120005, 1, "p"], [120006, 1, "q"], [120007, 1, "r"], [120008, 1, "s"], [120009, 1, "t"], [120010, 1, "u"], [120011, 1, "v"], [120012, 1, "w"], [120013, 1, "x"], [120014, 1, "y"], [120015, 1, "z"], [120016, 1, "a"], [120017, 1, "b"], [120018, 1, "c"], [120019, 1, "d"], [120020, 1, "e"], [120021, 1, "f"], [120022, 1, "g"], [120023, 1, "h"], [120024, 1, "i"], [120025, 1, "j"], [120026, 1, "k"], [120027, 1, "l"], [120028, 1, "m"], [120029, 1, "n"], [120030, 1, "o"], [120031, 1, "p"], [120032, 1, "q"], [120033, 1, "r"], [120034, 1, "s"], [120035, 1, "t"], [120036, 1, "u"], [120037, 1, "v"], [120038, 1, "w"], [120039, 1, "x"], [120040, 1, "y"], [120041, 1, "z"], [120042, 1, "a"], [120043, 1, "b"], [120044, 1, "c"], [120045, 1, "d"], [120046, 1, "e"], [120047, 1, "f"], [120048, 1, "g"], [120049, 1, "h"], [120050, 1, "i"], [120051, 1, "j"], [120052, 1, "k"], [120053, 1, "l"], [120054, 1, "m"], [120055, 1, "n"], [120056, 1, "o"], [120057, 1, "p"], [120058, 1, "q"], [120059, 1, "r"], [120060, 1, "s"], [120061, 1, "t"], [120062, 1, "u"], [120063, 1, "v"], [120064, 1, "w"], [120065, 1, "x"], [120066, 1, "y"], [120067, 1, "z"], [120068, 1, "a"], [120069, 1, "b"], [120070, 3], [120071, 1, "d"], [120072, 1, "e"], [120073, 1, "f"], [120074, 1, "g"], [[120075, 120076], 3], [120077, 1, "j"], [120078, 1, "k"], [120079, 1, "l"], [120080, 1, "m"], [120081, 1, "n"], [120082, 1, "o"], [120083, 1, "p"], [120084, 1, "q"], [120085, 3], [120086, 1, "s"], [120087, 1, "t"], [120088, 1, "u"], [120089, 1, "v"], [120090, 1, "w"], [120091, 1, "x"], [120092, 1, "y"], [120093, 3], [120094, 1, "a"], [120095, 1, "b"], [120096, 1, "c"], [120097, 1, "d"], [120098, 1, "e"], [120099, 1, "f"], [120100, 1, "g"], [120101, 1, "h"], [120102, 1, "i"], [120103, 1, "j"], [120104, 1, "k"], [120105, 1, "l"], [120106, 1, "m"], [120107, 1, "n"], [120108, 1, "o"], [120109, 1, "p"], [120110, 1, "q"], [120111, 1, "r"], [120112, 1, "s"], [120113, 1, "t"], [120114, 1, "u"], [120115, 1, "v"], [120116, 1, "w"], [120117, 1, "x"], [120118, 1, "y"], [120119, 1, "z"], [120120, 1, "a"], [120121, 1, "b"], [120122, 3], [120123, 1, "d"], [120124, 1, "e"], [120125, 1, "f"], [120126, 1, "g"], [120127, 3], [120128, 1, "i"], [120129, 1, "j"], [120130, 1, "k"], [120131, 1, "l"], [120132, 1, "m"], [120133, 3], [120134, 1, "o"], [[120135, 120137], 3], [120138, 1, "s"], [120139, 1, "t"], [120140, 1, "u"], [120141, 1, "v"], [120142, 1, "w"], [120143, 1, "x"], [120144, 1, "y"], [120145, 3], [120146, 1, "a"], [120147, 1, "b"], [120148, 1, "c"], [120149, 1, "d"], [120150, 1, "e"], [120151, 1, "f"], [120152, 1, "g"], [120153, 1, "h"], [120154, 1, "i"], [120155, 1, "j"], [120156, 1, "k"], [120157, 1, "l"], [120158, 1, "m"], [120159, 1, "n"], [120160, 1, "o"], [120161, 1, "p"], [120162, 1, "q"], [120163, 1, "r"], [120164, 1, "s"], [120165, 1, "t"], [120166, 1, "u"], [120167, 1, "v"], [120168, 1, "w"], [120169, 1, "x"], [120170, 1, "y"], [120171, 1, "z"], [120172, 1, "a"], [120173, 1, "b"], [120174, 1, "c"], [120175, 1, "d"], [120176, 1, "e"], [120177, 1, "f"], [120178, 1, "g"], [120179, 1, "h"], [120180, 1, "i"], [120181, 1, "j"], [120182, 1, "k"], [120183, 1, "l"], [120184, 1, "m"], [120185, 1, "n"], [120186, 1, "o"], [120187, 1, "p"], [120188, 1, "q"], [120189, 1, "r"], [120190, 1, "s"], [120191, 1, "t"], [120192, 1, "u"], [120193, 1, "v"], [120194, 1, "w"], [120195, 1, "x"], [120196, 1, "y"], [120197, 1, "z"], [120198, 1, "a"], [120199, 1, "b"], [120200, 1, "c"], [120201, 1, "d"], [120202, 1, "e"], [120203, 1, "f"], [120204, 1, "g"], [120205, 1, "h"], [120206, 1, "i"], [120207, 1, "j"], [120208, 1, "k"], [120209, 1, "l"], [120210, 1, "m"], [120211, 1, "n"], [120212, 1, "o"], [120213, 1, "p"], [120214, 1, "q"], [120215, 1, "r"], [120216, 1, "s"], [120217, 1, "t"], [120218, 1, "u"], [120219, 1, "v"], [120220, 1, "w"], [120221, 1, "x"], [120222, 1, "y"], [120223, 1, "z"], [120224, 1, "a"], [120225, 1, "b"], [120226, 1, "c"], [120227, 1, "d"], [120228, 1, "e"], [120229, 1, "f"], [120230, 1, "g"], [120231, 1, "h"], [120232, 1, "i"], [120233, 1, "j"], [120234, 1, "k"], [120235, 1, "l"], [120236, 1, "m"], [120237, 1, "n"], [120238, 1, "o"], [120239, 1, "p"], [120240, 1, "q"], [120241, 1, "r"], [120242, 1, "s"], [120243, 1, "t"], [120244, 1, "u"], [120245, 1, "v"], [120246, 1, "w"], [120247, 1, "x"], [120248, 1, "y"], [120249, 1, "z"], [120250, 1, "a"], [120251, 1, "b"], [120252, 1, "c"], [120253, 1, "d"], [120254, 1, "e"], [120255, 1, "f"], [120256, 1, "g"], [120257, 1, "h"], [120258, 1, "i"], [120259, 1, "j"], [120260, 1, "k"], [120261, 1, "l"], [120262, 1, "m"], [120263, 1, "n"], [120264, 1, "o"], [120265, 1, "p"], [120266, 1, "q"], [120267, 1, "r"], [120268, 1, "s"], [120269, 1, "t"], [120270, 1, "u"], [120271, 1, "v"], [120272, 1, "w"], [120273, 1, "x"], [120274, 1, "y"], [120275, 1, "z"], [120276, 1, "a"], [120277, 1, "b"], [120278, 1, "c"], [120279, 1, "d"], [120280, 1, "e"], [120281, 1, "f"], [120282, 1, "g"], [120283, 1, "h"], [120284, 1, "i"], [120285, 1, "j"], [120286, 1, "k"], [120287, 1, "l"], [120288, 1, "m"], [120289, 1, "n"], [120290, 1, "o"], [120291, 1, "p"], [120292, 1, "q"], [120293, 1, "r"], [120294, 1, "s"], [120295, 1, "t"], [120296, 1, "u"], [120297, 1, "v"], [120298, 1, "w"], [120299, 1, "x"], [120300, 1, "y"], [120301, 1, "z"], [120302, 1, "a"], [120303, 1, "b"], [120304, 1, "c"], [120305, 1, "d"], [120306, 1, "e"], [120307, 1, "f"], [120308, 1, "g"], [120309, 1, "h"], [120310, 1, "i"], [120311, 1, "j"], [120312, 1, "k"], [120313, 1, "l"], [120314, 1, "m"], [120315, 1, "n"], [120316, 1, "o"], [120317, 1, "p"], [120318, 1, "q"], [120319, 1, "r"], [120320, 1, "s"], [120321, 1, "t"], [120322, 1, "u"], [120323, 1, "v"], [120324, 1, "w"], [120325, 1, "x"], [120326, 1, "y"], [120327, 1, "z"], [120328, 1, "a"], [120329, 1, "b"], [120330, 1, "c"], [120331, 1, "d"], [120332, 1, "e"], [120333, 1, "f"], [120334, 1, "g"], [120335, 1, "h"], [120336, 1, "i"], [120337, 1, "j"], [120338, 1, "k"], [120339, 1, "l"], [120340, 1, "m"], [120341, 1, "n"], [120342, 1, "o"], [120343, 1, "p"], [120344, 1, "q"], [120345, 1, "r"], [120346, 1, "s"], [120347, 1, "t"], [120348, 1, "u"], [120349, 1, "v"], [120350, 1, "w"], [120351, 1, "x"], [120352, 1, "y"], [120353, 1, "z"], [120354, 1, "a"], [120355, 1, "b"], [120356, 1, "c"], [120357, 1, "d"], [120358, 1, "e"], [120359, 1, "f"], [120360, 1, "g"], [120361, 1, "h"], [120362, 1, "i"], [120363, 1, "j"], [120364, 1, "k"], [120365, 1, "l"], [120366, 1, "m"], [120367, 1, "n"], [120368, 1, "o"], [120369, 1, "p"], [120370, 1, "q"], [120371, 1, "r"], [120372, 1, "s"], [120373, 1, "t"], [120374, 1, "u"], [120375, 1, "v"], [120376, 1, "w"], [120377, 1, "x"], [120378, 1, "y"], [120379, 1, "z"], [120380, 1, "a"], [120381, 1, "b"], [120382, 1, "c"], [120383, 1, "d"], [120384, 1, "e"], [120385, 1, "f"], [120386, 1, "g"], [120387, 1, "h"], [120388, 1, "i"], [120389, 1, "j"], [120390, 1, "k"], [120391, 1, "l"], [120392, 1, "m"], [120393, 1, "n"], [120394, 1, "o"], [120395, 1, "p"], [120396, 1, "q"], [120397, 1, "r"], [120398, 1, "s"], [120399, 1, "t"], [120400, 1, "u"], [120401, 1, "v"], [120402, 1, "w"], [120403, 1, "x"], [120404, 1, "y"], [120405, 1, "z"], [120406, 1, "a"], [120407, 1, "b"], [120408, 1, "c"], [120409, 1, "d"], [120410, 1, "e"], [120411, 1, "f"], [120412, 1, "g"], [120413, 1, "h"], [120414, 1, "i"], [120415, 1, "j"], [120416, 1, "k"], [120417, 1, "l"], [120418, 1, "m"], [120419, 1, "n"], [120420, 1, "o"], [120421, 1, "p"], [120422, 1, "q"], [120423, 1, "r"], [120424, 1, "s"], [120425, 1, "t"], [120426, 1, "u"], [120427, 1, "v"], [120428, 1, "w"], [120429, 1, "x"], [120430, 1, "y"], [120431, 1, "z"], [120432, 1, "a"], [120433, 1, "b"], [120434, 1, "c"], [120435, 1, "d"], [120436, 1, "e"], [120437, 1, "f"], [120438, 1, "g"], [120439, 1, "h"], [120440, 1, "i"], [120441, 1, "j"], [120442, 1, "k"], [120443, 1, "l"], [120444, 1, "m"], [120445, 1, "n"], [120446, 1, "o"], [120447, 1, "p"], [120448, 1, "q"], [120449, 1, "r"], [120450, 1, "s"], [120451, 1, "t"], [120452, 1, "u"], [120453, 1, "v"], [120454, 1, "w"], [120455, 1, "x"], [120456, 1, "y"], [120457, 1, "z"], [120458, 1, "a"], [120459, 1, "b"], [120460, 1, "c"], [120461, 1, "d"], [120462, 1, "e"], [120463, 1, "f"], [120464, 1, "g"], [120465, 1, "h"], [120466, 1, "i"], [120467, 1, "j"], [120468, 1, "k"], [120469, 1, "l"], [120470, 1, "m"], [120471, 1, "n"], [120472, 1, "o"], [120473, 1, "p"], [120474, 1, "q"], [120475, 1, "r"], [120476, 1, "s"], [120477, 1, "t"], [120478, 1, "u"], [120479, 1, "v"], [120480, 1, "w"], [120481, 1, "x"], [120482, 1, "y"], [120483, 1, "z"], [120484, 1, "\u0131"], [120485, 1, "\u0237"], [[120486, 120487], 3], [120488, 1, "\u03B1"], [120489, 1, "\u03B2"], [120490, 1, "\u03B3"], [120491, 1, "\u03B4"], [120492, 1, "\u03B5"], [120493, 1, "\u03B6"], [120494, 1, "\u03B7"], [120495, 1, "\u03B8"], [120496, 1, "\u03B9"], [120497, 1, "\u03BA"], [120498, 1, "\u03BB"], [120499, 1, "\u03BC"], [120500, 1, "\u03BD"], [120501, 1, "\u03BE"], [120502, 1, "\u03BF"], [120503, 1, "\u03C0"], [120504, 1, "\u03C1"], [120505, 1, "\u03B8"], [120506, 1, "\u03C3"], [120507, 1, "\u03C4"], [120508, 1, "\u03C5"], [120509, 1, "\u03C6"], [120510, 1, "\u03C7"], [120511, 1, "\u03C8"], [120512, 1, "\u03C9"], [120513, 1, "\u2207"], [120514, 1, "\u03B1"], [120515, 1, "\u03B2"], [120516, 1, "\u03B3"], [120517, 1, "\u03B4"], [120518, 1, "\u03B5"], [120519, 1, "\u03B6"], [120520, 1, "\u03B7"], [120521, 1, "\u03B8"], [120522, 1, "\u03B9"], [120523, 1, "\u03BA"], [120524, 1, "\u03BB"], [120525, 1, "\u03BC"], [120526, 1, "\u03BD"], [120527, 1, "\u03BE"], [120528, 1, "\u03BF"], [120529, 1, "\u03C0"], [120530, 1, "\u03C1"], [[120531, 120532], 1, "\u03C3"], [120533, 1, "\u03C4"], [120534, 1, "\u03C5"], [120535, 1, "\u03C6"], [120536, 1, "\u03C7"], [120537, 1, "\u03C8"], [120538, 1, "\u03C9"], [120539, 1, "\u2202"], [120540, 1, "\u03B5"], [120541, 1, "\u03B8"], [120542, 1, "\u03BA"], [120543, 1, "\u03C6"], [120544, 1, "\u03C1"], [120545, 1, "\u03C0"], [120546, 1, "\u03B1"], [120547, 1, "\u03B2"], [120548, 1, "\u03B3"], [120549, 1, "\u03B4"], [120550, 1, "\u03B5"], [120551, 1, "\u03B6"], [120552, 1, "\u03B7"], [120553, 1, "\u03B8"], [120554, 1, "\u03B9"], [120555, 1, "\u03BA"], [120556, 1, "\u03BB"], [120557, 1, "\u03BC"], [120558, 1, "\u03BD"], [120559, 1, "\u03BE"], [120560, 1, "\u03BF"], [120561, 1, "\u03C0"], [120562, 1, "\u03C1"], [120563, 1, "\u03B8"], [120564, 1, "\u03C3"], [120565, 1, "\u03C4"], [120566, 1, "\u03C5"], [120567, 1, "\u03C6"], [120568, 1, "\u03C7"], [120569, 1, "\u03C8"], [120570, 1, "\u03C9"], [120571, 1, "\u2207"], [120572, 1, "\u03B1"], [120573, 1, "\u03B2"], [120574, 1, "\u03B3"], [120575, 1, "\u03B4"], [120576, 1, "\u03B5"], [120577, 1, "\u03B6"], [120578, 1, "\u03B7"], [120579, 1, "\u03B8"], [120580, 1, "\u03B9"], [120581, 1, "\u03BA"], [120582, 1, "\u03BB"], [120583, 1, "\u03BC"], [120584, 1, "\u03BD"], [120585, 1, "\u03BE"], [120586, 1, "\u03BF"], [120587, 1, "\u03C0"], [120588, 1, "\u03C1"], [[120589, 120590], 1, "\u03C3"], [120591, 1, "\u03C4"], [120592, 1, "\u03C5"], [120593, 1, "\u03C6"], [120594, 1, "\u03C7"], [120595, 1, "\u03C8"], [120596, 1, "\u03C9"], [120597, 1, "\u2202"], [120598, 1, "\u03B5"], [120599, 1, "\u03B8"], [120600, 1, "\u03BA"], [120601, 1, "\u03C6"], [120602, 1, "\u03C1"], [120603, 1, "\u03C0"], [120604, 1, "\u03B1"], [120605, 1, "\u03B2"], [120606, 1, "\u03B3"], [120607, 1, "\u03B4"], [120608, 1, "\u03B5"], [120609, 1, "\u03B6"], [120610, 1, "\u03B7"], [120611, 1, "\u03B8"], [120612, 1, "\u03B9"], [120613, 1, "\u03BA"], [120614, 1, "\u03BB"], [120615, 1, "\u03BC"], [120616, 1, "\u03BD"], [120617, 1, "\u03BE"], [120618, 1, "\u03BF"], [120619, 1, "\u03C0"], [120620, 1, "\u03C1"], [120621, 1, "\u03B8"], [120622, 1, "\u03C3"], [120623, 1, "\u03C4"], [120624, 1, "\u03C5"], [120625, 1, "\u03C6"], [120626, 1, "\u03C7"], [120627, 1, "\u03C8"], [120628, 1, "\u03C9"], [120629, 1, "\u2207"], [120630, 1, "\u03B1"], [120631, 1, "\u03B2"], [120632, 1, "\u03B3"], [120633, 1, "\u03B4"], [120634, 1, "\u03B5"], [120635, 1, "\u03B6"], [120636, 1, "\u03B7"], [120637, 1, "\u03B8"], [120638, 1, "\u03B9"], [120639, 1, "\u03BA"], [120640, 1, "\u03BB"], [120641, 1, "\u03BC"], [120642, 1, "\u03BD"], [120643, 1, "\u03BE"], [120644, 1, "\u03BF"], [120645, 1, "\u03C0"], [120646, 1, "\u03C1"], [[120647, 120648], 1, "\u03C3"], [120649, 1, "\u03C4"], [120650, 1, "\u03C5"], [120651, 1, "\u03C6"], [120652, 1, "\u03C7"], [120653, 1, "\u03C8"], [120654, 1, "\u03C9"], [120655, 1, "\u2202"], [120656, 1, "\u03B5"], [120657, 1, "\u03B8"], [120658, 1, "\u03BA"], [120659, 1, "\u03C6"], [120660, 1, "\u03C1"], [120661, 1, "\u03C0"], [120662, 1, "\u03B1"], [120663, 1, "\u03B2"], [120664, 1, "\u03B3"], [120665, 1, "\u03B4"], [120666, 1, "\u03B5"], [120667, 1, "\u03B6"], [120668, 1, "\u03B7"], [120669, 1, "\u03B8"], [120670, 1, "\u03B9"], [120671, 1, "\u03BA"], [120672, 1, "\u03BB"], [120673, 1, "\u03BC"], [120674, 1, "\u03BD"], [120675, 1, "\u03BE"], [120676, 1, "\u03BF"], [120677, 1, "\u03C0"], [120678, 1, "\u03C1"], [120679, 1, "\u03B8"], [120680, 1, "\u03C3"], [120681, 1, "\u03C4"], [120682, 1, "\u03C5"], [120683, 1, "\u03C6"], [120684, 1, "\u03C7"], [120685, 1, "\u03C8"], [120686, 1, "\u03C9"], [120687, 1, "\u2207"], [120688, 1, "\u03B1"], [120689, 1, "\u03B2"], [120690, 1, "\u03B3"], [120691, 1, "\u03B4"], [120692, 1, "\u03B5"], [120693, 1, "\u03B6"], [120694, 1, "\u03B7"], [120695, 1, "\u03B8"], [120696, 1, "\u03B9"], [120697, 1, "\u03BA"], [120698, 1, "\u03BB"], [120699, 1, "\u03BC"], [120700, 1, "\u03BD"], [120701, 1, "\u03BE"], [120702, 1, "\u03BF"], [120703, 1, "\u03C0"], [120704, 1, "\u03C1"], [[120705, 120706], 1, "\u03C3"], [120707, 1, "\u03C4"], [120708, 1, "\u03C5"], [120709, 1, "\u03C6"], [120710, 1, "\u03C7"], [120711, 1, "\u03C8"], [120712, 1, "\u03C9"], [120713, 1, "\u2202"], [120714, 1, "\u03B5"], [120715, 1, "\u03B8"], [120716, 1, "\u03BA"], [120717, 1, "\u03C6"], [120718, 1, "\u03C1"], [120719, 1, "\u03C0"], [120720, 1, "\u03B1"], [120721, 1, "\u03B2"], [120722, 1, "\u03B3"], [120723, 1, "\u03B4"], [120724, 1, "\u03B5"], [120725, 1, "\u03B6"], [120726, 1, "\u03B7"], [120727, 1, "\u03B8"], [120728, 1, "\u03B9"], [120729, 1, "\u03BA"], [120730, 1, "\u03BB"], [120731, 1, "\u03BC"], [120732, 1, "\u03BD"], [120733, 1, "\u03BE"], [120734, 1, "\u03BF"], [120735, 1, "\u03C0"], [120736, 1, "\u03C1"], [120737, 1, "\u03B8"], [120738, 1, "\u03C3"], [120739, 1, "\u03C4"], [120740, 1, "\u03C5"], [120741, 1, "\u03C6"], [120742, 1, "\u03C7"], [120743, 1, "\u03C8"], [120744, 1, "\u03C9"], [120745, 1, "\u2207"], [120746, 1, "\u03B1"], [120747, 1, "\u03B2"], [120748, 1, "\u03B3"], [120749, 1, "\u03B4"], [120750, 1, "\u03B5"], [120751, 1, "\u03B6"], [120752, 1, "\u03B7"], [120753, 1, "\u03B8"], [120754, 1, "\u03B9"], [120755, 1, "\u03BA"], [120756, 1, "\u03BB"], [120757, 1, "\u03BC"], [120758, 1, "\u03BD"], [120759, 1, "\u03BE"], [120760, 1, "\u03BF"], [120761, 1, "\u03C0"], [120762, 1, "\u03C1"], [[120763, 120764], 1, "\u03C3"], [120765, 1, "\u03C4"], [120766, 1, "\u03C5"], [120767, 1, "\u03C6"], [120768, 1, "\u03C7"], [120769, 1, "\u03C8"], [120770, 1, "\u03C9"], [120771, 1, "\u2202"], [120772, 1, "\u03B5"], [120773, 1, "\u03B8"], [120774, 1, "\u03BA"], [120775, 1, "\u03C6"], [120776, 1, "\u03C1"], [120777, 1, "\u03C0"], [[120778, 120779], 1, "\u03DD"], [[120780, 120781], 3], [120782, 1, "0"], [120783, 1, "1"], [120784, 1, "2"], [120785, 1, "3"], [120786, 1, "4"], [120787, 1, "5"], [120788, 1, "6"], [120789, 1, "7"], [120790, 1, "8"], [120791, 1, "9"], [120792, 1, "0"], [120793, 1, "1"], [120794, 1, "2"], [120795, 1, "3"], [120796, 1, "4"], [120797, 1, "5"], [120798, 1, "6"], [120799, 1, "7"], [120800, 1, "8"], [120801, 1, "9"], [120802, 1, "0"], [120803, 1, "1"], [120804, 1, "2"], [120805, 1, "3"], [120806, 1, "4"], [120807, 1, "5"], [120808, 1, "6"], [120809, 1, "7"], [120810, 1, "8"], [120811, 1, "9"], [120812, 1, "0"], [120813, 1, "1"], [120814, 1, "2"], [120815, 1, "3"], [120816, 1, "4"], [120817, 1, "5"], [120818, 1, "6"], [120819, 1, "7"], [120820, 1, "8"], [120821, 1, "9"], [120822, 1, "0"], [120823, 1, "1"], [120824, 1, "2"], [120825, 1, "3"], [120826, 1, "4"], [120827, 1, "5"], [120828, 1, "6"], [120829, 1, "7"], [120830, 1, "8"], [120831, 1, "9"], [[120832, 121343], 2], [[121344, 121398], 2], [[121399, 121402], 2], [[121403, 121452], 2], [[121453, 121460], 2], [121461, 2], [[121462, 121475], 2], [121476, 2], [[121477, 121483], 2], [[121484, 121498], 3], [[121499, 121503], 2], [121504, 3], [[121505, 121519], 2], [[121520, 122623], 3], [[122624, 122654], 2], [[122655, 122660], 3], [[122661, 122666], 2], [[122667, 122879], 3], [[122880, 122886], 2], [122887, 3], [[122888, 122904], 2], [[122905, 122906], 3], [[122907, 122913], 2], [122914, 3], [[122915, 122916], 2], [122917, 3], [[122918, 122922], 2], [[122923, 122927], 3], [122928, 1, "\u0430"], [122929, 1, "\u0431"], [122930, 1, "\u0432"], [122931, 1, "\u0433"], [122932, 1, "\u0434"], [122933, 1, "\u0435"], [122934, 1, "\u0436"], [122935, 1, "\u0437"], [122936, 1, "\u0438"], [122937, 1, "\u043A"], [122938, 1, "\u043B"], [122939, 1, "\u043C"], [122940, 1, "\u043E"], [122941, 1, "\u043F"], [122942, 1, "\u0440"], [122943, 1, "\u0441"], [122944, 1, "\u0442"], [122945, 1, "\u0443"], [122946, 1, "\u0444"], [122947, 1, "\u0445"], [122948, 1, "\u0446"], [122949, 1, "\u0447"], [122950, 1, "\u0448"], [122951, 1, "\u044B"], [122952, 1, "\u044D"], [122953, 1, "\u044E"], [122954, 1, "\uA689"], [122955, 1, "\u04D9"], [122956, 1, "\u0456"], [122957, 1, "\u0458"], [122958, 1, "\u04E9"], [122959, 1, "\u04AF"], [122960, 1, "\u04CF"], [122961, 1, "\u0430"], [122962, 1, "\u0431"], [122963, 1, "\u0432"], [122964, 1, "\u0433"], [122965, 1, "\u0434"], [122966, 1, "\u0435"], [122967, 1, "\u0436"], [122968, 1, "\u0437"], [122969, 1, "\u0438"], [122970, 1, "\u043A"], [122971, 1, "\u043B"], [122972, 1, "\u043E"], [122973, 1, "\u043F"], [122974, 1, "\u0441"], [122975, 1, "\u0443"], [122976, 1, "\u0444"], [122977, 1, "\u0445"], [122978, 1, "\u0446"], [122979, 1, "\u0447"], [122980, 1, "\u0448"], [122981, 1, "\u044A"], [122982, 1, "\u044B"], [122983, 1, "\u0491"], [122984, 1, "\u0456"], [122985, 1, "\u0455"], [122986, 1, "\u045F"], [122987, 1, "\u04AB"], [122988, 1, "\uA651"], [122989, 1, "\u04B1"], [[122990, 123022], 3], [123023, 2], [[123024, 123135], 3], [[123136, 123180], 2], [[123181, 123183], 3], [[123184, 123197], 2], [[123198, 123199], 3], [[123200, 123209], 2], [[123210, 123213], 3], [123214, 2], [123215, 2], [[123216, 123535], 3], [[123536, 123566], 2], [[123567, 123583], 3], [[123584, 123641], 2], [[123642, 123646], 3], [123647, 2], [[123648, 124111], 3], [[124112, 124153], 2], [[124154, 124895], 3], [[124896, 124902], 2], [124903, 3], [[124904, 124907], 2], [124908, 3], [[124909, 124910], 2], [124911, 3], [[124912, 124926], 2], [124927, 3], [[124928, 125124], 2], [[125125, 125126], 3], [[125127, 125135], 2], [[125136, 125142], 2], [[125143, 125183], 3], [125184, 1, "\u{1E922}"], [125185, 1, "\u{1E923}"], [125186, 1, "\u{1E924}"], [125187, 1, "\u{1E925}"], [125188, 1, "\u{1E926}"], [125189, 1, "\u{1E927}"], [125190, 1, "\u{1E928}"], [125191, 1, "\u{1E929}"], [125192, 1, "\u{1E92A}"], [125193, 1, "\u{1E92B}"], [125194, 1, "\u{1E92C}"], [125195, 1, "\u{1E92D}"], [125196, 1, "\u{1E92E}"], [125197, 1, "\u{1E92F}"], [125198, 1, "\u{1E930}"], [125199, 1, "\u{1E931}"], [125200, 1, "\u{1E932}"], [125201, 1, "\u{1E933}"], [125202, 1, "\u{1E934}"], [125203, 1, "\u{1E935}"], [125204, 1, "\u{1E936}"], [125205, 1, "\u{1E937}"], [125206, 1, "\u{1E938}"], [125207, 1, "\u{1E939}"], [125208, 1, "\u{1E93A}"], [125209, 1, "\u{1E93B}"], [125210, 1, "\u{1E93C}"], [125211, 1, "\u{1E93D}"], [125212, 1, "\u{1E93E}"], [125213, 1, "\u{1E93F}"], [125214, 1, "\u{1E940}"], [125215, 1, "\u{1E941}"], [125216, 1, "\u{1E942}"], [125217, 1, "\u{1E943}"], [[125218, 125258], 2], [125259, 2], [[125260, 125263], 3], [[125264, 125273], 2], [[125274, 125277], 3], [[125278, 125279], 2], [[125280, 126064], 3], [[126065, 126132], 2], [[126133, 126208], 3], [[126209, 126269], 2], [[126270, 126463], 3], [126464, 1, "\u0627"], [126465, 1, "\u0628"], [126466, 1, "\u062C"], [126467, 1, "\u062F"], [126468, 3], [126469, 1, "\u0648"], [126470, 1, "\u0632"], [126471, 1, "\u062D"], [126472, 1, "\u0637"], [126473, 1, "\u064A"], [126474, 1, "\u0643"], [126475, 1, "\u0644"], [126476, 1, "\u0645"], [126477, 1, "\u0646"], [126478, 1, "\u0633"], [126479, 1, "\u0639"], [126480, 1, "\u0641"], [126481, 1, "\u0635"], [126482, 1, "\u0642"], [126483, 1, "\u0631"], [126484, 1, "\u0634"], [126485, 1, "\u062A"], [126486, 1, "\u062B"], [126487, 1, "\u062E"], [126488, 1, "\u0630"], [126489, 1, "\u0636"], [126490, 1, "\u0638"], [126491, 1, "\u063A"], [126492, 1, "\u066E"], [126493, 1, "\u06BA"], [126494, 1, "\u06A1"], [126495, 1, "\u066F"], [126496, 3], [126497, 1, "\u0628"], [126498, 1, "\u062C"], [126499, 3], [126500, 1, "\u0647"], [[126501, 126502], 3], [126503, 1, "\u062D"], [126504, 3], [126505, 1, "\u064A"], [126506, 1, "\u0643"], [126507, 1, "\u0644"], [126508, 1, "\u0645"], [126509, 1, "\u0646"], [126510, 1, "\u0633"], [126511, 1, "\u0639"], [126512, 1, "\u0641"], [126513, 1, "\u0635"], [126514, 1, "\u0642"], [126515, 3], [126516, 1, "\u0634"], [126517, 1, "\u062A"], [126518, 1, "\u062B"], [126519, 1, "\u062E"], [126520, 3], [126521, 1, "\u0636"], [126522, 3], [126523, 1, "\u063A"], [[126524, 126529], 3], [126530, 1, "\u062C"], [[126531, 126534], 3], [126535, 1, "\u062D"], [126536, 3], [126537, 1, "\u064A"], [126538, 3], [126539, 1, "\u0644"], [126540, 3], [126541, 1, "\u0646"], [126542, 1, "\u0633"], [126543, 1, "\u0639"], [126544, 3], [126545, 1, "\u0635"], [126546, 1, "\u0642"], [126547, 3], [126548, 1, "\u0634"], [[126549, 126550], 3], [126551, 1, "\u062E"], [126552, 3], [126553, 1, "\u0636"], [126554, 3], [126555, 1, "\u063A"], [126556, 3], [126557, 1, "\u06BA"], [126558, 3], [126559, 1, "\u066F"], [126560, 3], [126561, 1, "\u0628"], [126562, 1, "\u062C"], [126563, 3], [126564, 1, "\u0647"], [[126565, 126566], 3], [126567, 1, "\u062D"], [126568, 1, "\u0637"], [126569, 1, "\u064A"], [126570, 1, "\u0643"], [126571, 3], [126572, 1, "\u0645"], [126573, 1, "\u0646"], [126574, 1, "\u0633"], [126575, 1, "\u0639"], [126576, 1, "\u0641"], [126577, 1, "\u0635"], [126578, 1, "\u0642"], [126579, 3], [126580, 1, "\u0634"], [126581, 1, "\u062A"], [126582, 1, "\u062B"], [126583, 1, "\u062E"], [126584, 3], [126585, 1, "\u0636"], [126586, 1, "\u0638"], [126587, 1, "\u063A"], [126588, 1, "\u066E"], [126589, 3], [126590, 1, "\u06A1"], [126591, 3], [126592, 1, "\u0627"], [126593, 1, "\u0628"], [126594, 1, "\u062C"], [126595, 1, "\u062F"], [126596, 1, "\u0647"], [126597, 1, "\u0648"], [126598, 1, "\u0632"], [126599, 1, "\u062D"], [126600, 1, "\u0637"], [126601, 1, "\u064A"], [126602, 3], [126603, 1, "\u0644"], [126604, 1, "\u0645"], [126605, 1, "\u0646"], [126606, 1, "\u0633"], [126607, 1, "\u0639"], [126608, 1, "\u0641"], [126609, 1, "\u0635"], [126610, 1, "\u0642"], [126611, 1, "\u0631"], [126612, 1, "\u0634"], [126613, 1, "\u062A"], [126614, 1, "\u062B"], [126615, 1, "\u062E"], [126616, 1, "\u0630"], [126617, 1, "\u0636"], [126618, 1, "\u0638"], [126619, 1, "\u063A"], [[126620, 126624], 3], [126625, 1, "\u0628"], [126626, 1, "\u062C"], [126627, 1, "\u062F"], [126628, 3], [126629, 1, "\u0648"], [126630, 1, "\u0632"], [126631, 1, "\u062D"], [126632, 1, "\u0637"], [126633, 1, "\u064A"], [126634, 3], [126635, 1, "\u0644"], [126636, 1, "\u0645"], [126637, 1, "\u0646"], [126638, 1, "\u0633"], [126639, 1, "\u0639"], [126640, 1, "\u0641"], [126641, 1, "\u0635"], [126642, 1, "\u0642"], [126643, 1, "\u0631"], [126644, 1, "\u0634"], [126645, 1, "\u062A"], [126646, 1, "\u062B"], [126647, 1, "\u062E"], [126648, 1, "\u0630"], [126649, 1, "\u0636"], [126650, 1, "\u0638"], [126651, 1, "\u063A"], [[126652, 126703], 3], [[126704, 126705], 2], [[126706, 126975], 3], [[126976, 127019], 2], [[127020, 127023], 3], [[127024, 127123], 2], [[127124, 127135], 3], [[127136, 127150], 2], [[127151, 127152], 3], [[127153, 127166], 2], [127167, 2], [127168, 3], [[127169, 127183], 2], [127184, 3], [[127185, 127199], 2], [[127200, 127221], 2], [[127222, 127231], 3], [127232, 3], [127233, 5, "0,"], [127234, 5, "1,"], [127235, 5, "2,"], [127236, 5, "3,"], [127237, 5, "4,"], [127238, 5, "5,"], [127239, 5, "6,"], [127240, 5, "7,"], [127241, 5, "8,"], [127242, 5, "9,"], [[127243, 127244], 2], [[127245, 127247], 2], [127248, 5, "(a)"], [127249, 5, "(b)"], [127250, 5, "(c)"], [127251, 5, "(d)"], [127252, 5, "(e)"], [127253, 5, "(f)"], [127254, 5, "(g)"], [127255, 5, "(h)"], [127256, 5, "(i)"], [127257, 5, "(j)"], [127258, 5, "(k)"], [127259, 5, "(l)"], [127260, 5, "(m)"], [127261, 5, "(n)"], [127262, 5, "(o)"], [127263, 5, "(p)"], [127264, 5, "(q)"], [127265, 5, "(r)"], [127266, 5, "(s)"], [127267, 5, "(t)"], [127268, 5, "(u)"], [127269, 5, "(v)"], [127270, 5, "(w)"], [127271, 5, "(x)"], [127272, 5, "(y)"], [127273, 5, "(z)"], [127274, 1, "\u3014s\u3015"], [127275, 1, "c"], [127276, 1, "r"], [127277, 1, "cd"], [127278, 1, "wz"], [127279, 2], [127280, 1, "a"], [127281, 1, "b"], [127282, 1, "c"], [127283, 1, "d"], [127284, 1, "e"], [127285, 1, "f"], [127286, 1, "g"], [127287, 1, "h"], [127288, 1, "i"], [127289, 1, "j"], [127290, 1, "k"], [127291, 1, "l"], [127292, 1, "m"], [127293, 1, "n"], [127294, 1, "o"], [127295, 1, "p"], [127296, 1, "q"], [127297, 1, "r"], [127298, 1, "s"], [127299, 1, "t"], [127300, 1, "u"], [127301, 1, "v"], [127302, 1, "w"], [127303, 1, "x"], [127304, 1, "y"], [127305, 1, "z"], [127306, 1, "hv"], [127307, 1, "mv"], [127308, 1, "sd"], [127309, 1, "ss"], [127310, 1, "ppv"], [127311, 1, "wc"], [[127312, 127318], 2], [127319, 2], [[127320, 127326], 2], [127327, 2], [[127328, 127337], 2], [127338, 1, "mc"], [127339, 1, "md"], [127340, 1, "mr"], [[127341, 127343], 2], [[127344, 127352], 2], [127353, 2], [127354, 2], [[127355, 127356], 2], [[127357, 127358], 2], [127359, 2], [[127360, 127369], 2], [[127370, 127373], 2], [[127374, 127375], 2], [127376, 1, "dj"], [[127377, 127386], 2], [[127387, 127404], 2], [127405, 2], [[127406, 127461], 3], [[127462, 127487], 2], [127488, 1, "\u307B\u304B"], [127489, 1, "\u30B3\u30B3"], [127490, 1, "\u30B5"], [[127491, 127503], 3], [127504, 1, "\u624B"], [127505, 1, "\u5B57"], [127506, 1, "\u53CC"], [127507, 1, "\u30C7"], [127508, 1, "\u4E8C"], [127509, 1, "\u591A"], [127510, 1, "\u89E3"], [127511, 1, "\u5929"], [127512, 1, "\u4EA4"], [127513, 1, "\u6620"], [127514, 1, "\u7121"], [127515, 1, "\u6599"], [127516, 1, "\u524D"], [127517, 1, "\u5F8C"], [127518, 1, "\u518D"], [127519, 1, "\u65B0"], [127520, 1, "\u521D"], [127521, 1, "\u7D42"], [127522, 1, "\u751F"], [127523, 1, "\u8CA9"], [127524, 1, "\u58F0"], [127525, 1, "\u5439"], [127526, 1, "\u6F14"], [127527, 1, "\u6295"], [127528, 1, "\u6355"], [127529, 1, "\u4E00"], [127530, 1, "\u4E09"], [127531, 1, "\u904A"], [127532, 1, "\u5DE6"], [127533, 1, "\u4E2D"], [127534, 1, "\u53F3"], [127535, 1, "\u6307"], [127536, 1, "\u8D70"], [127537, 1, "\u6253"], [127538, 1, "\u7981"], [127539, 1, "\u7A7A"], [127540, 1, "\u5408"], [127541, 1, "\u6E80"], [127542, 1, "\u6709"], [127543, 1, "\u6708"], [127544, 1, "\u7533"], [127545, 1, "\u5272"], [127546, 1, "\u55B6"], [127547, 1, "\u914D"], [[127548, 127551], 3], [127552, 1, "\u3014\u672C\u3015"], [127553, 1, "\u3014\u4E09\u3015"], [127554, 1, "\u3014\u4E8C\u3015"], [127555, 1, "\u3014\u5B89\u3015"], [127556, 1, "\u3014\u70B9\u3015"], [127557, 1, "\u3014\u6253\u3015"], [127558, 1, "\u3014\u76D7\u3015"], [127559, 1, "\u3014\u52DD\u3015"], [127560, 1, "\u3014\u6557\u3015"], [[127561, 127567], 3], [127568, 1, "\u5F97"], [127569, 1, "\u53EF"], [[127570, 127583], 3], [[127584, 127589], 2], [[127590, 127743], 3], [[127744, 127776], 2], [[127777, 127788], 2], [[127789, 127791], 2], [[127792, 127797], 2], [127798, 2], [[127799, 127868], 2], [127869, 2], [[127870, 127871], 2], [[127872, 127891], 2], [[127892, 127903], 2], [[127904, 127940], 2], [127941, 2], [[127942, 127946], 2], [[127947, 127950], 2], [[127951, 127955], 2], [[127956, 127967], 2], [[127968, 127984], 2], [[127985, 127991], 2], [[127992, 127999], 2], [[128e3, 128062], 2], [128063, 2], [128064, 2], [128065, 2], [[128066, 128247], 2], [128248, 2], [[128249, 128252], 2], [[128253, 128254], 2], [128255, 2], [[128256, 128317], 2], [[128318, 128319], 2], [[128320, 128323], 2], [[128324, 128330], 2], [[128331, 128335], 2], [[128336, 128359], 2], [[128360, 128377], 2], [128378, 2], [[128379, 128419], 2], [128420, 2], [[128421, 128506], 2], [[128507, 128511], 2], [128512, 2], [[128513, 128528], 2], [128529, 2], [[128530, 128532], 2], [128533, 2], [128534, 2], [128535, 2], [128536, 2], [128537, 2], [128538, 2], [128539, 2], [[128540, 128542], 2], [128543, 2], [[128544, 128549], 2], [[128550, 128551], 2], [[128552, 128555], 2], [128556, 2], [128557, 2], [[128558, 128559], 2], [[128560, 128563], 2], [128564, 2], [[128565, 128576], 2], [[128577, 128578], 2], [[128579, 128580], 2], [[128581, 128591], 2], [[128592, 128639], 2], [[128640, 128709], 2], [[128710, 128719], 2], [128720, 2], [[128721, 128722], 2], [[128723, 128724], 2], [128725, 2], [[128726, 128727], 2], [[128728, 128731], 3], [128732, 2], [[128733, 128735], 2], [[128736, 128748], 2], [[128749, 128751], 3], [[128752, 128755], 2], [[128756, 128758], 2], [[128759, 128760], 2], [128761, 2], [128762, 2], [[128763, 128764], 2], [[128765, 128767], 3], [[128768, 128883], 2], [[128884, 128886], 2], [[128887, 128890], 3], [[128891, 128895], 2], [[128896, 128980], 2], [[128981, 128984], 2], [128985, 2], [[128986, 128991], 3], [[128992, 129003], 2], [[129004, 129007], 3], [129008, 2], [[129009, 129023], 3], [[129024, 129035], 2], [[129036, 129039], 3], [[129040, 129095], 2], [[129096, 129103], 3], [[129104, 129113], 2], [[129114, 129119], 3], [[129120, 129159], 2], [[129160, 129167], 3], [[129168, 129197], 2], [[129198, 129199], 3], [[129200, 129201], 2], [[129202, 129279], 3], [[129280, 129291], 2], [129292, 2], [[129293, 129295], 2], [[129296, 129304], 2], [[129305, 129310], 2], [129311, 2], [[129312, 129319], 2], [[129320, 129327], 2], [129328, 2], [[129329, 129330], 2], [[129331, 129342], 2], [129343, 2], [[129344, 129355], 2], [129356, 2], [[129357, 129359], 2], [[129360, 129374], 2], [[129375, 129387], 2], [[129388, 129392], 2], [129393, 2], [129394, 2], [[129395, 129398], 2], [[129399, 129400], 2], [129401, 2], [129402, 2], [129403, 2], [[129404, 129407], 2], [[129408, 129412], 2], [[129413, 129425], 2], [[129426, 129431], 2], [[129432, 129442], 2], [[129443, 129444], 2], [[129445, 129450], 2], [[129451, 129453], 2], [[129454, 129455], 2], [[129456, 129465], 2], [[129466, 129471], 2], [129472, 2], [[129473, 129474], 2], [[129475, 129482], 2], [129483, 2], [129484, 2], [[129485, 129487], 2], [[129488, 129510], 2], [[129511, 129535], 2], [[129536, 129619], 2], [[129620, 129631], 3], [[129632, 129645], 2], [[129646, 129647], 3], [[129648, 129651], 2], [129652, 2], [[129653, 129655], 2], [[129656, 129658], 2], [[129659, 129660], 2], [[129661, 129663], 3], [[129664, 129666], 2], [[129667, 129670], 2], [[129671, 129672], 2], [[129673, 129679], 3], [[129680, 129685], 2], [[129686, 129704], 2], [[129705, 129708], 2], [[129709, 129711], 2], [[129712, 129718], 2], [[129719, 129722], 2], [[129723, 129725], 2], [129726, 3], [129727, 2], [[129728, 129730], 2], [[129731, 129733], 2], [[129734, 129741], 3], [[129742, 129743], 2], [[129744, 129750], 2], [[129751, 129753], 2], [[129754, 129755], 2], [[129756, 129759], 3], [[129760, 129767], 2], [129768, 2], [[129769, 129775], 3], [[129776, 129782], 2], [[129783, 129784], 2], [[129785, 129791], 3], [[129792, 129938], 2], [129939, 3], [[129940, 129994], 2], [[129995, 130031], 3], [130032, 1, "0"], [130033, 1, "1"], [130034, 1, "2"], [130035, 1, "3"], [130036, 1, "4"], [130037, 1, "5"], [130038, 1, "6"], [130039, 1, "7"], [130040, 1, "8"], [130041, 1, "9"], [[130042, 131069], 3], [[131070, 131071], 3], [[131072, 173782], 2], [[173783, 173789], 2], [[173790, 173791], 2], [[173792, 173823], 3], [[173824, 177972], 2], [[177973, 177976], 2], [177977, 2], [[177978, 177983], 3], [[177984, 178205], 2], [[178206, 178207], 3], [[178208, 183969], 2], [[183970, 183983], 3], [[183984, 191456], 2], [[191457, 194559], 3], [194560, 1, "\u4E3D"], [194561, 1, "\u4E38"], [194562, 1, "\u4E41"], [194563, 1, "\u{20122}"], [194564, 1, "\u4F60"], [194565, 1, "\u4FAE"], [194566, 1, "\u4FBB"], [194567, 1, "\u5002"], [194568, 1, "\u507A"], [194569, 1, "\u5099"], [194570, 1, "\u50E7"], [194571, 1, "\u50CF"], [194572, 1, "\u349E"], [194573, 1, "\u{2063A}"], [194574, 1, "\u514D"], [194575, 1, "\u5154"], [194576, 1, "\u5164"], [194577, 1, "\u5177"], [194578, 1, "\u{2051C}"], [194579, 1, "\u34B9"], [194580, 1, "\u5167"], [194581, 1, "\u518D"], [194582, 1, "\u{2054B}"], [194583, 1, "\u5197"], [194584, 1, "\u51A4"], [194585, 1, "\u4ECC"], [194586, 1, "\u51AC"], [194587, 1, "\u51B5"], [194588, 1, "\u{291DF}"], [194589, 1, "\u51F5"], [194590, 1, "\u5203"], [194591, 1, "\u34DF"], [194592, 1, "\u523B"], [194593, 1, "\u5246"], [194594, 1, "\u5272"], [194595, 1, "\u5277"], [194596, 1, "\u3515"], [194597, 1, "\u52C7"], [194598, 1, "\u52C9"], [194599, 1, "\u52E4"], [194600, 1, "\u52FA"], [194601, 1, "\u5305"], [194602, 1, "\u5306"], [194603, 1, "\u5317"], [194604, 1, "\u5349"], [194605, 1, "\u5351"], [194606, 1, "\u535A"], [194607, 1, "\u5373"], [194608, 1, "\u537D"], [[194609, 194611], 1, "\u537F"], [194612, 1, "\u{20A2C}"], [194613, 1, "\u7070"], [194614, 1, "\u53CA"], [194615, 1, "\u53DF"], [194616, 1, "\u{20B63}"], [194617, 1, "\u53EB"], [194618, 1, "\u53F1"], [194619, 1, "\u5406"], [194620, 1, "\u549E"], [194621, 1, "\u5438"], [194622, 1, "\u5448"], [194623, 1, "\u5468"], [194624, 1, "\u54A2"], [194625, 1, "\u54F6"], [194626, 1, "\u5510"], [194627, 1, "\u5553"], [194628, 1, "\u5563"], [[194629, 194630], 1, "\u5584"], [194631, 1, "\u5599"], [194632, 1, "\u55AB"], [194633, 1, "\u55B3"], [194634, 1, "\u55C2"], [194635, 1, "\u5716"], [194636, 1, "\u5606"], [194637, 1, "\u5717"], [194638, 1, "\u5651"], [194639, 1, "\u5674"], [194640, 1, "\u5207"], [194641, 1, "\u58EE"], [194642, 1, "\u57CE"], [194643, 1, "\u57F4"], [194644, 1, "\u580D"], [194645, 1, "\u578B"], [194646, 1, "\u5832"], [194647, 1, "\u5831"], [194648, 1, "\u58AC"], [194649, 1, "\u{214E4}"], [194650, 1, "\u58F2"], [194651, 1, "\u58F7"], [194652, 1, "\u5906"], [194653, 1, "\u591A"], [194654, 1, "\u5922"], [194655, 1, "\u5962"], [194656, 1, "\u{216A8}"], [194657, 1, "\u{216EA}"], [194658, 1, "\u59EC"], [194659, 1, "\u5A1B"], [194660, 1, "\u5A27"], [194661, 1, "\u59D8"], [194662, 1, "\u5A66"], [194663, 1, "\u36EE"], [194664, 3], [194665, 1, "\u5B08"], [[194666, 194667], 1, "\u5B3E"], [194668, 1, "\u{219C8}"], [194669, 1, "\u5BC3"], [194670, 1, "\u5BD8"], [194671, 1, "\u5BE7"], [194672, 1, "\u5BF3"], [194673, 1, "\u{21B18}"], [194674, 1, "\u5BFF"], [194675, 1, "\u5C06"], [194676, 3], [194677, 1, "\u5C22"], [194678, 1, "\u3781"], [194679, 1, "\u5C60"], [194680, 1, "\u5C6E"], [194681, 1, "\u5CC0"], [194682, 1, "\u5C8D"], [194683, 1, "\u{21DE4}"], [194684, 1, "\u5D43"], [194685, 1, "\u{21DE6}"], [194686, 1, "\u5D6E"], [194687, 1, "\u5D6B"], [194688, 1, "\u5D7C"], [194689, 1, "\u5DE1"], [194690, 1, "\u5DE2"], [194691, 1, "\u382F"], [194692, 1, "\u5DFD"], [194693, 1, "\u5E28"], [194694, 1, "\u5E3D"], [194695, 1, "\u5E69"], [194696, 1, "\u3862"], [194697, 1, "\u{22183}"], [194698, 1, "\u387C"], [194699, 1, "\u5EB0"], [194700, 1, "\u5EB3"], [194701, 1, "\u5EB6"], [194702, 1, "\u5ECA"], [194703, 1, "\u{2A392}"], [194704, 1, "\u5EFE"], [[194705, 194706], 1, "\u{22331}"], [194707, 1, "\u8201"], [[194708, 194709], 1, "\u5F22"], [194710, 1, "\u38C7"], [194711, 1, "\u{232B8}"], [194712, 1, "\u{261DA}"], [194713, 1, "\u5F62"], [194714, 1, "\u5F6B"], [194715, 1, "\u38E3"], [194716, 1, "\u5F9A"], [194717, 1, "\u5FCD"], [194718, 1, "\u5FD7"], [194719, 1, "\u5FF9"], [194720, 1, "\u6081"], [194721, 1, "\u393A"], [194722, 1, "\u391C"], [194723, 1, "\u6094"], [194724, 1, "\u{226D4}"], [194725, 1, "\u60C7"], [194726, 1, "\u6148"], [194727, 1, "\u614C"], [194728, 1, "\u614E"], [194729, 1, "\u614C"], [194730, 1, "\u617A"], [194731, 1, "\u618E"], [194732, 1, "\u61B2"], [194733, 1, "\u61A4"], [194734, 1, "\u61AF"], [194735, 1, "\u61DE"], [194736, 1, "\u61F2"], [194737, 1, "\u61F6"], [194738, 1, "\u6210"], [194739, 1, "\u621B"], [194740, 1, "\u625D"], [194741, 1, "\u62B1"], [194742, 1, "\u62D4"], [194743, 1, "\u6350"], [194744, 1, "\u{22B0C}"], [194745, 1, "\u633D"], [194746, 1, "\u62FC"], [194747, 1, "\u6368"], [194748, 1, "\u6383"], [194749, 1, "\u63E4"], [194750, 1, "\u{22BF1}"], [194751, 1, "\u6422"], [194752, 1, "\u63C5"], [194753, 1, "\u63A9"], [194754, 1, "\u3A2E"], [194755, 1, "\u6469"], [194756, 1, "\u647E"], [194757, 1, "\u649D"], [194758, 1, "\u6477"], [194759, 1, "\u3A6C"], [194760, 1, "\u654F"], [194761, 1, "\u656C"], [194762, 1, "\u{2300A}"], [194763, 1, "\u65E3"], [194764, 1, "\u66F8"], [194765, 1, "\u6649"], [194766, 1, "\u3B19"], [194767, 1, "\u6691"], [194768, 1, "\u3B08"], [194769, 1, "\u3AE4"], [194770, 1, "\u5192"], [194771, 1, "\u5195"], [194772, 1, "\u6700"], [194773, 1, "\u669C"], [194774, 1, "\u80AD"], [194775, 1, "\u43D9"], [194776, 1, "\u6717"], [194777, 1, "\u671B"], [194778, 1, "\u6721"], [194779, 1, "\u675E"], [194780, 1, "\u6753"], [194781, 1, "\u{233C3}"], [194782, 1, "\u3B49"], [194783, 1, "\u67FA"], [194784, 1, "\u6785"], [194785, 1, "\u6852"], [194786, 1, "\u6885"], [194787, 1, "\u{2346D}"], [194788, 1, "\u688E"], [194789, 1, "\u681F"], [194790, 1, "\u6914"], [194791, 1, "\u3B9D"], [194792, 1, "\u6942"], [194793, 1, "\u69A3"], [194794, 1, "\u69EA"], [194795, 1, "\u6AA8"], [194796, 1, "\u{236A3}"], [194797, 1, "\u6ADB"], [194798, 1, "\u3C18"], [194799, 1, "\u6B21"], [194800, 1, "\u{238A7}"], [194801, 1, "\u6B54"], [194802, 1, "\u3C4E"], [194803, 1, "\u6B72"], [194804, 1, "\u6B9F"], [194805, 1, "\u6BBA"], [194806, 1, "\u6BBB"], [194807, 1, "\u{23A8D}"], [194808, 1, "\u{21D0B}"], [194809, 1, "\u{23AFA}"], [194810, 1, "\u6C4E"], [194811, 1, "\u{23CBC}"], [194812, 1, "\u6CBF"], [194813, 1, "\u6CCD"], [194814, 1, "\u6C67"], [194815, 1, "\u6D16"], [194816, 1, "\u6D3E"], [194817, 1, "\u6D77"], [194818, 1, "\u6D41"], [194819, 1, "\u6D69"], [194820, 1, "\u6D78"], [194821, 1, "\u6D85"], [194822, 1, "\u{23D1E}"], [194823, 1, "\u6D34"], [194824, 1, "\u6E2F"], [194825, 1, "\u6E6E"], [194826, 1, "\u3D33"], [194827, 1, "\u6ECB"], [194828, 1, "\u6EC7"], [194829, 1, "\u{23ED1}"], [194830, 1, "\u6DF9"], [194831, 1, "\u6F6E"], [194832, 1, "\u{23F5E}"], [194833, 1, "\u{23F8E}"], [194834, 1, "\u6FC6"], [194835, 1, "\u7039"], [194836, 1, "\u701E"], [194837, 1, "\u701B"], [194838, 1, "\u3D96"], [194839, 1, "\u704A"], [194840, 1, "\u707D"], [194841, 1, "\u7077"], [194842, 1, "\u70AD"], [194843, 1, "\u{20525}"], [194844, 1, "\u7145"], [194845, 1, "\u{24263}"], [194846, 1, "\u719C"], [194847, 3], [194848, 1, "\u7228"], [194849, 1, "\u7235"], [194850, 1, "\u7250"], [194851, 1, "\u{24608}"], [194852, 1, "\u7280"], [194853, 1, "\u7295"], [194854, 1, "\u{24735}"], [194855, 1, "\u{24814}"], [194856, 1, "\u737A"], [194857, 1, "\u738B"], [194858, 1, "\u3EAC"], [194859, 1, "\u73A5"], [[194860, 194861], 1, "\u3EB8"], [194862, 1, "\u7447"], [194863, 1, "\u745C"], [194864, 1, "\u7471"], [194865, 1, "\u7485"], [194866, 1, "\u74CA"], [194867, 1, "\u3F1B"], [194868, 1, "\u7524"], [194869, 1, "\u{24C36}"], [194870, 1, "\u753E"], [194871, 1, "\u{24C92}"], [194872, 1, "\u7570"], [194873, 1, "\u{2219F}"], [194874, 1, "\u7610"], [194875, 1, "\u{24FA1}"], [194876, 1, "\u{24FB8}"], [194877, 1, "\u{25044}"], [194878, 1, "\u3FFC"], [194879, 1, "\u4008"], [194880, 1, "\u76F4"], [194881, 1, "\u{250F3}"], [194882, 1, "\u{250F2}"], [194883, 1, "\u{25119}"], [194884, 1, "\u{25133}"], [194885, 1, "\u771E"], [[194886, 194887], 1, "\u771F"], [194888, 1, "\u774A"], [194889, 1, "\u4039"], [194890, 1, "\u778B"], [194891, 1, "\u4046"], [194892, 1, "\u4096"], [194893, 1, "\u{2541D}"], [194894, 1, "\u784E"], [194895, 1, "\u788C"], [194896, 1, "\u78CC"], [194897, 1, "\u40E3"], [194898, 1, "\u{25626}"], [194899, 1, "\u7956"], [194900, 1, "\u{2569A}"], [194901, 1, "\u{256C5}"], [194902, 1, "\u798F"], [194903, 1, "\u79EB"], [194904, 1, "\u412F"], [194905, 1, "\u7A40"], [194906, 1, "\u7A4A"], [194907, 1, "\u7A4F"], [194908, 1, "\u{2597C}"], [[194909, 194910], 1, "\u{25AA7}"], [194911, 3], [194912, 1, "\u4202"], [194913, 1, "\u{25BAB}"], [194914, 1, "\u7BC6"], [194915, 1, "\u7BC9"], [194916, 1, "\u4227"], [194917, 1, "\u{25C80}"], [194918, 1, "\u7CD2"], [194919, 1, "\u42A0"], [194920, 1, "\u7CE8"], [194921, 1, "\u7CE3"], [194922, 1, "\u7D00"], [194923, 1, "\u{25F86}"], [194924, 1, "\u7D63"], [194925, 1, "\u4301"], [194926, 1, "\u7DC7"], [194927, 1, "\u7E02"], [194928, 1, "\u7E45"], [194929, 1, "\u4334"], [194930, 1, "\u{26228}"], [194931, 1, "\u{26247}"], [194932, 1, "\u4359"], [194933, 1, "\u{262D9}"], [194934, 1, "\u7F7A"], [194935, 1, "\u{2633E}"], [194936, 1, "\u7F95"], [194937, 1, "\u7FFA"], [194938, 1, "\u8005"], [194939, 1, "\u{264DA}"], [194940, 1, "\u{26523}"], [194941, 1, "\u8060"], [194942, 1, "\u{265A8}"], [194943, 1, "\u8070"], [194944, 1, "\u{2335F}"], [194945, 1, "\u43D5"], [194946, 1, "\u80B2"], [194947, 1, "\u8103"], [194948, 1, "\u440B"], [194949, 1, "\u813E"], [194950, 1, "\u5AB5"], [194951, 1, "\u{267A7}"], [194952, 1, "\u{267B5}"], [194953, 1, "\u{23393}"], [194954, 1, "\u{2339C}"], [194955, 1, "\u8201"], [194956, 1, "\u8204"], [194957, 1, "\u8F9E"], [194958, 1, "\u446B"], [194959, 1, "\u8291"], [194960, 1, "\u828B"], [194961, 1, "\u829D"], [194962, 1, "\u52B3"], [194963, 1, "\u82B1"], [194964, 1, "\u82B3"], [194965, 1, "\u82BD"], [194966, 1, "\u82E6"], [194967, 1, "\u{26B3C}"], [194968, 1, "\u82E5"], [194969, 1, "\u831D"], [194970, 1, "\u8363"], [194971, 1, "\u83AD"], [194972, 1, "\u8323"], [194973, 1, "\u83BD"], [194974, 1, "\u83E7"], [194975, 1, "\u8457"], [194976, 1, "\u8353"], [194977, 1, "\u83CA"], [194978, 1, "\u83CC"], [194979, 1, "\u83DC"], [194980, 1, "\u{26C36}"], [194981, 1, "\u{26D6B}"], [194982, 1, "\u{26CD5}"], [194983, 1, "\u452B"], [194984, 1, "\u84F1"], [194985, 1, "\u84F3"], [194986, 1, "\u8516"], [194987, 1, "\u{273CA}"], [194988, 1, "\u8564"], [194989, 1, "\u{26F2C}"], [194990, 1, "\u455D"], [194991, 1, "\u4561"], [194992, 1, "\u{26FB1}"], [194993, 1, "\u{270D2}"], [194994, 1, "\u456B"], [194995, 1, "\u8650"], [194996, 1, "\u865C"], [194997, 1, "\u8667"], [194998, 1, "\u8669"], [194999, 1, "\u86A9"], [195e3, 1, "\u8688"], [195001, 1, "\u870E"], [195002, 1, "\u86E2"], [195003, 1, "\u8779"], [195004, 1, "\u8728"], [195005, 1, "\u876B"], [195006, 1, "\u8786"], [195007, 3], [195008, 1, "\u87E1"], [195009, 1, "\u8801"], [195010, 1, "\u45F9"], [195011, 1, "\u8860"], [195012, 1, "\u8863"], [195013, 1, "\u{27667}"], [195014, 1, "\u88D7"], [195015, 1, "\u88DE"], [195016, 1, "\u4635"], [195017, 1, "\u88FA"], [195018, 1, "\u34BB"], [195019, 1, "\u{278AE}"], [195020, 1, "\u{27966}"], [195021, 1, "\u46BE"], [195022, 1, "\u46C7"], [195023, 1, "\u8AA0"], [195024, 1, "\u8AED"], [195025, 1, "\u8B8A"], [195026, 1, "\u8C55"], [195027, 1, "\u{27CA8}"], [195028, 1, "\u8CAB"], [195029, 1, "\u8CC1"], [195030, 1, "\u8D1B"], [195031, 1, "\u8D77"], [195032, 1, "\u{27F2F}"], [195033, 1, "\u{20804}"], [195034, 1, "\u8DCB"], [195035, 1, "\u8DBC"], [195036, 1, "\u8DF0"], [195037, 1, "\u{208DE}"], [195038, 1, "\u8ED4"], [195039, 1, "\u8F38"], [195040, 1, "\u{285D2}"], [195041, 1, "\u{285ED}"], [195042, 1, "\u9094"], [195043, 1, "\u90F1"], [195044, 1, "\u9111"], [195045, 1, "\u{2872E}"], [195046, 1, "\u911B"], [195047, 1, "\u9238"], [195048, 1, "\u92D7"], [195049, 1, "\u92D8"], [195050, 1, "\u927C"], [195051, 1, "\u93F9"], [195052, 1, "\u9415"], [195053, 1, "\u{28BFA}"], [195054, 1, "\u958B"], [195055, 1, "\u4995"], [195056, 1, "\u95B7"], [195057, 1, "\u{28D77}"], [195058, 1, "\u49E6"], [195059, 1, "\u96C3"], [195060, 1, "\u5DB2"], [195061, 1, "\u9723"], [195062, 1, "\u{29145}"], [195063, 1, "\u{2921A}"], [195064, 1, "\u4A6E"], [195065, 1, "\u4A76"], [195066, 1, "\u97E0"], [195067, 1, "\u{2940A}"], [195068, 1, "\u4AB2"], [195069, 1, "\u{29496}"], [[195070, 195071], 1, "\u980B"], [195072, 1, "\u9829"], [195073, 1, "\u{295B6}"], [195074, 1, "\u98E2"], [195075, 1, "\u4B33"], [195076, 1, "\u9929"], [195077, 1, "\u99A7"], [195078, 1, "\u99C2"], [195079, 1, "\u99FE"], [195080, 1, "\u4BCE"], [195081, 1, "\u{29B30}"], [195082, 1, "\u9B12"], [195083, 1, "\u9C40"], [195084, 1, "\u9CFD"], [195085, 1, "\u4CCE"], [195086, 1, "\u4CED"], [195087, 1, "\u9D67"], [195088, 1, "\u{2A0CE}"], [195089, 1, "\u4CF8"], [195090, 1, "\u{2A105}"], [195091, 1, "\u{2A20E}"], [195092, 1, "\u{2A291}"], [195093, 1, "\u9EBB"], [195094, 1, "\u4D56"], [195095, 1, "\u9EF9"], [195096, 1, "\u9EFE"], [195097, 1, "\u9F05"], [195098, 1, "\u9F0F"], [195099, 1, "\u9F16"], [195100, 1, "\u9F3B"], [195101, 1, "\u{2A600}"], [[195102, 196605], 3], [[196606, 196607], 3], [[196608, 201546], 2], [[201547, 201551], 3], [[201552, 205743], 2], [[205744, 262141], 3], [[262142, 262143], 3], [[262144, 327677], 3], [[327678, 327679], 3], [[327680, 393213], 3], [[393214, 393215], 3], [[393216, 458749], 3], [[458750, 458751], 3], [[458752, 524285], 3], [[524286, 524287], 3], [[524288, 589821], 3], [[589822, 589823], 3], [[589824, 655357], 3], [[655358, 655359], 3], [[655360, 720893], 3], [[720894, 720895], 3], [[720896, 786429], 3], [[786430, 786431], 3], [[786432, 851965], 3], [[851966, 851967], 3], [[851968, 917501], 3], [[917502, 917503], 3], [917504, 3], [917505, 3], [[917506, 917535], 3], [[917536, 917631], 3], [[917632, 917759], 3], [[917760, 917999], 7], [[918e3, 983037], 3], [[983038, 983039], 3], [[983040, 1048573], 3], [[1048574, 1048575], 3], [[1048576, 1114109], 3], [[1114110, 1114111], 3]];
+  }
+});
+
+// node_modules/tr46/lib/statusMapping.js
+var require_statusMapping = __commonJS({
+  "node_modules/tr46/lib/statusMapping.js"(exports, module2) {
+    "use strict";
+    module2.exports.STATUS_MAPPING = {
+      mapped: 1,
+      valid: 2,
+      disallowed: 3,
+      disallowed_STD3_valid: 4,
+      disallowed_STD3_mapped: 5,
+      deviation: 6,
+      ignored: 7
+    };
   }
 });
 
@@ -20487,26 +21096,31 @@ var require_mappingTable = __commonJS({
 var require_tr46 = __commonJS({
   "node_modules/tr46/index.js"(exports, module2) {
     "use strict";
-    var punycode = require("punycode");
+    var punycode = require_punycode();
+    var regexes = require_regexes();
     var mappingTable = require_mappingTable();
-    var PROCESSING_OPTIONS = {
-      TRANSITIONAL: 0,
-      NONTRANSITIONAL: 1
-    };
-    function normalize(str) {
-      return str.split("\0").map(function(s2) {
-        return s2.normalize("NFC");
-      }).join("\0");
+    var { STATUS_MAPPING } = require_statusMapping();
+    function containsNonASCII(str) {
+      return /[^\x00-\x7F]/u.test(str);
     }
-    function findStatus(val) {
-      var start = 0;
-      var end = mappingTable.length - 1;
+    function findStatus(val, { useSTD3ASCIIRules }) {
+      let start = 0;
+      let end = mappingTable.length - 1;
       while (start <= end) {
-        var mid = Math.floor((start + end) / 2);
-        var target = mappingTable[mid];
-        if (target[0][0] <= val && target[0][1] >= val) {
-          return target;
-        } else if (target[0][0] > val) {
+        const mid = Math.floor((start + end) / 2);
+        const target = mappingTable[mid];
+        const min = Array.isArray(target[0]) ? target[0][0] : target[0];
+        const max = Array.isArray(target[0]) ? target[0][1] : target[0];
+        if (min <= val && max >= val) {
+          if (useSTD3ASCIIRules && (target[1] === STATUS_MAPPING.disallowed_STD3_valid || target[1] === STATUS_MAPPING.disallowed_STD3_mapped)) {
+            return [STATUS_MAPPING.disallowed, ...target.slice(2)];
+          } else if (target[1] === STATUS_MAPPING.disallowed_STD3_valid) {
+            return [STATUS_MAPPING.valid, ...target.slice(2)];
+          } else if (target[1] === STATUS_MAPPING.disallowed_STD3_mapped) {
+            return [STATUS_MAPPING.mapped, ...target.slice(2)];
+          }
+          return target.slice(1);
+        } else if (min > val) {
           end = mid - 1;
         } else {
           start = mid + 1;
@@ -20514,50 +21128,30 @@ var require_tr46 = __commonJS({
       }
       return null;
     }
-    var regexAstralSymbols = /[\uD800-\uDBFF][\uDC00-\uDFFF]/g;
-    function countSymbols(string) {
-      return string.replace(regexAstralSymbols, "_").length;
-    }
-    function mapChars(domain_name, useSTD3, processing_option) {
-      var hasError = false;
-      var processed = "";
-      var len = countSymbols(domain_name);
-      for (var i3 = 0; i3 < len; ++i3) {
-        var codePoint = domain_name.codePointAt(i3);
-        var status = findStatus(codePoint);
-        switch (status[1]) {
-          case "disallowed":
+    function mapChars(domainName, { useSTD3ASCIIRules, processingOption }) {
+      let hasError = false;
+      let processed = "";
+      for (const ch of domainName) {
+        const [status, mapping] = findStatus(ch.codePointAt(0), { useSTD3ASCIIRules });
+        switch (status) {
+          case STATUS_MAPPING.disallowed:
             hasError = true;
-            processed += String.fromCodePoint(codePoint);
+            processed += ch;
             break;
-          case "ignored":
+          case STATUS_MAPPING.ignored:
             break;
-          case "mapped":
-            processed += String.fromCodePoint.apply(String, status[2]);
+          case STATUS_MAPPING.mapped:
+            processed += mapping;
             break;
-          case "deviation":
-            if (processing_option === PROCESSING_OPTIONS.TRANSITIONAL) {
-              processed += String.fromCodePoint.apply(String, status[2]);
+          case STATUS_MAPPING.deviation:
+            if (processingOption === "transitional") {
+              processed += mapping;
             } else {
-              processed += String.fromCodePoint(codePoint);
+              processed += ch;
             }
             break;
-          case "valid":
-            processed += String.fromCodePoint(codePoint);
-            break;
-          case "disallowed_STD3_mapped":
-            if (useSTD3) {
-              hasError = true;
-              processed += String.fromCodePoint(codePoint);
-            } else {
-              processed += String.fromCodePoint.apply(String, status[2]);
-            }
-            break;
-          case "disallowed_STD3_valid":
-            if (useSTD3) {
-              hasError = true;
-            }
-            processed += String.fromCodePoint(codePoint);
+          case STATUS_MAPPING.valid:
+            processed += ch;
             break;
         }
       }
@@ -20566,108 +21160,190 @@ var require_tr46 = __commonJS({
         error: hasError
       };
     }
-    var combiningMarksRegex = /[\u0300-\u036F\u0483-\u0489\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u0711\u0730-\u074A\u07A6-\u07B0\u07EB-\u07F3\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u08E4-\u0903\u093A-\u093C\u093E-\u094F\u0951-\u0957\u0962\u0963\u0981-\u0983\u09BC\u09BE-\u09C4\u09C7\u09C8\u09CB-\u09CD\u09D7\u09E2\u09E3\u0A01-\u0A03\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A70\u0A71\u0A75\u0A81-\u0A83\u0ABC\u0ABE-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AE2\u0AE3\u0B01-\u0B03\u0B3C\u0B3E-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B56\u0B57\u0B62\u0B63\u0B82\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD7\u0C00-\u0C03\u0C3E-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C81-\u0C83\u0CBC\u0CBE-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CE2\u0CE3\u0D01-\u0D03\u0D3E-\u0D44\u0D46-\u0D48\u0D4A-\u0D4D\u0D57\u0D62\u0D63\u0D82\u0D83\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DF2\u0DF3\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0EB1\u0EB4-\u0EB9\u0EBB\u0EBC\u0EC8-\u0ECD\u0F18\u0F19\u0F35\u0F37\u0F39\u0F3E\u0F3F\u0F71-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102B-\u103E\u1056-\u1059\u105E-\u1060\u1062-\u1064\u1067-\u106D\u1071-\u1074\u1082-\u108D\u108F\u109A-\u109D\u135D-\u135F\u1712-\u1714\u1732-\u1734\u1752\u1753\u1772\u1773\u17B4-\u17D3\u17DD\u180B-\u180D\u18A9\u1920-\u192B\u1930-\u193B\u19B0-\u19C0\u19C8\u19C9\u1A17-\u1A1B\u1A55-\u1A5E\u1A60-\u1A7C\u1A7F\u1AB0-\u1ABE\u1B00-\u1B04\u1B34-\u1B44\u1B6B-\u1B73\u1B80-\u1B82\u1BA1-\u1BAD\u1BE6-\u1BF3\u1C24-\u1C37\u1CD0-\u1CD2\u1CD4-\u1CE8\u1CED\u1CF2-\u1CF4\u1CF8\u1CF9\u1DC0-\u1DF5\u1DFC-\u1DFF\u20D0-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302F\u3099\u309A\uA66F-\uA672\uA674-\uA67D\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA823-\uA827\uA880\uA881\uA8B4-\uA8C4\uA8E0-\uA8F1\uA926-\uA92D\uA947-\uA953\uA980-\uA983\uA9B3-\uA9C0\uA9E5\uAA29-\uAA36\uAA43\uAA4C\uAA4D\uAA7B-\uAA7D\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEB-\uAAEF\uAAF5\uAAF6\uABE3-\uABEA\uABEC\uABED\uFB1E\uFE00-\uFE0F\uFE20-\uFE2D]|\uD800[\uDDFD\uDEE0\uDF76-\uDF7A]|\uD802[\uDE01-\uDE03\uDE05\uDE06\uDE0C-\uDE0F\uDE38-\uDE3A\uDE3F\uDEE5\uDEE6]|\uD804[\uDC00-\uDC02\uDC38-\uDC46\uDC7F-\uDC82\uDCB0-\uDCBA\uDD00-\uDD02\uDD27-\uDD34\uDD73\uDD80-\uDD82\uDDB3-\uDDC0\uDE2C-\uDE37\uDEDF-\uDEEA\uDF01-\uDF03\uDF3C\uDF3E-\uDF44\uDF47\uDF48\uDF4B-\uDF4D\uDF57\uDF62\uDF63\uDF66-\uDF6C\uDF70-\uDF74]|\uD805[\uDCB0-\uDCC3\uDDAF-\uDDB5\uDDB8-\uDDC0\uDE30-\uDE40\uDEAB-\uDEB7]|\uD81A[\uDEF0-\uDEF4\uDF30-\uDF36]|\uD81B[\uDF51-\uDF7E\uDF8F-\uDF92]|\uD82F[\uDC9D\uDC9E]|\uD834[\uDD65-\uDD69\uDD6D-\uDD72\uDD7B-\uDD82\uDD85-\uDD8B\uDDAA-\uDDAD\uDE42-\uDE44]|\uD83A[\uDCD0-\uDCD6]|\uDB40[\uDD00-\uDDEF]/;
-    function validateLabel(label, processing_option) {
-      if (label.substr(0, 4) === "xn--") {
-        label = punycode.toUnicode(label);
-        processing_option = PROCESSING_OPTIONS.NONTRANSITIONAL;
+    function validateLabel(label, { checkHyphens, checkBidi, checkJoiners, processingOption, useSTD3ASCIIRules }) {
+      if (label.normalize("NFC") !== label) {
+        return false;
       }
-      var error = false;
-      if (normalize(label) !== label || label[3] === "-" && label[4] === "-" || label[0] === "-" || label[label.length - 1] === "-" || label.indexOf(".") !== -1 || label.search(combiningMarksRegex) === 0) {
-        error = true;
-      }
-      var len = countSymbols(label);
-      for (var i3 = 0; i3 < len; ++i3) {
-        var status = findStatus(label.codePointAt(i3));
-        if (processing === PROCESSING_OPTIONS.TRANSITIONAL && status[1] !== "valid" || processing === PROCESSING_OPTIONS.NONTRANSITIONAL && status[1] !== "valid" && status[1] !== "deviation") {
-          error = true;
-          break;
+      const codePoints = Array.from(label);
+      if (checkHyphens) {
+        if (codePoints[2] === "-" && codePoints[3] === "-" || (label.startsWith("-") || label.endsWith("-"))) {
+          return false;
         }
       }
-      return {
-        label,
-        error
-      };
+      if (label.includes(".") || codePoints.length > 0 && regexes.combiningMarks.test(codePoints[0])) {
+        return false;
+      }
+      for (const ch of codePoints) {
+        const [status] = findStatus(ch.codePointAt(0), { useSTD3ASCIIRules });
+        if (processingOption === "transitional" && status !== STATUS_MAPPING.valid || processingOption === "nontransitional" && status !== STATUS_MAPPING.valid && status !== STATUS_MAPPING.deviation) {
+          return false;
+        }
+      }
+      if (checkJoiners) {
+        let last = 0;
+        for (const [i3, ch] of codePoints.entries()) {
+          if (ch === "\u200C" || ch === "\u200D") {
+            if (i3 > 0) {
+              if (regexes.combiningClassVirama.test(codePoints[i3 - 1])) {
+                continue;
+              }
+              if (ch === "\u200C") {
+                const next = codePoints.indexOf("\u200C", i3 + 1);
+                const test = next < 0 ? codePoints.slice(last) : codePoints.slice(last, next);
+                if (regexes.validZWNJ.test(test.join(""))) {
+                  last = i3 + 1;
+                  continue;
+                }
+              }
+            }
+            return false;
+          }
+        }
+      }
+      if (checkBidi && codePoints.length > 0) {
+        let rtl;
+        if (regexes.bidiS1LTR.test(codePoints[0])) {
+          rtl = false;
+        } else if (regexes.bidiS1RTL.test(codePoints[0])) {
+          rtl = true;
+        } else {
+          return false;
+        }
+        if (rtl) {
+          if (!regexes.bidiS2.test(label) || !regexes.bidiS3.test(label) || regexes.bidiS4EN.test(label) && regexes.bidiS4AN.test(label)) {
+            return false;
+          }
+        } else if (!regexes.bidiS5.test(label) || !regexes.bidiS6.test(label)) {
+          return false;
+        }
+      }
+      return true;
     }
-    function processing(domain_name, useSTD3, processing_option) {
-      var result = mapChars(domain_name, useSTD3, processing_option);
-      result.string = normalize(result.string);
-      var labels = result.string.split(".");
-      for (var i3 = 0; i3 < labels.length; ++i3) {
-        try {
-          var validation = validateLabel(labels[i3]);
-          labels[i3] = validation.label;
-          result.error = result.error || validation.error;
-        } catch (e3) {
-          result.error = true;
+    function isBidiDomain(labels) {
+      const domain = labels.map((label) => {
+        if (label.startsWith("xn--")) {
+          try {
+            return punycode.decode(label.substring(4));
+          } catch (err) {
+            return "";
+          }
+        }
+        return label;
+      }).join(".");
+      return regexes.bidiDomain.test(domain);
+    }
+    function processing(domainName, options) {
+      const { processingOption } = options;
+      let { string, error } = mapChars(domainName, options);
+      string = string.normalize("NFC");
+      const labels = string.split(".");
+      const isBidi = isBidiDomain(labels);
+      for (const [i3, origLabel] of labels.entries()) {
+        let label = origLabel;
+        let curProcessing = processingOption;
+        if (label.startsWith("xn--")) {
+          try {
+            label = punycode.decode(label.substring(4));
+            labels[i3] = label;
+          } catch (err) {
+            error = true;
+            continue;
+          }
+          curProcessing = "nontransitional";
+        }
+        if (error) {
+          continue;
+        }
+        const validation = validateLabel(label, {
+          ...options,
+          processingOption: curProcessing,
+          checkBidi: options.checkBidi && isBidi
+        });
+        if (!validation) {
+          error = true;
         }
       }
       return {
         string: labels.join("."),
-        error: result.error
+        error
       };
     }
-    module2.exports.toASCII = function(domain_name, useSTD3, processing_option, verifyDnsLength) {
-      var result = processing(domain_name, useSTD3, processing_option);
-      var labels = result.string.split(".");
-      labels = labels.map(function(l3) {
-        try {
-          return punycode.toASCII(l3);
-        } catch (e3) {
-          result.error = true;
-          return l3;
-        }
+    function toASCII(domainName, {
+      checkHyphens = false,
+      checkBidi = false,
+      checkJoiners = false,
+      useSTD3ASCIIRules = false,
+      processingOption = "nontransitional",
+      verifyDNSLength = false
+    } = {}) {
+      if (processingOption !== "transitional" && processingOption !== "nontransitional") {
+        throw new RangeError("processingOption must be either transitional or nontransitional");
+      }
+      const result = processing(domainName, {
+        processingOption,
+        checkHyphens,
+        checkBidi,
+        checkJoiners,
+        useSTD3ASCIIRules
       });
-      if (verifyDnsLength) {
-        var total = labels.slice(0, labels.length - 1).join(".").length;
-        if (total.length > 253 || total.length === 0) {
+      let labels = result.string.split(".");
+      labels = labels.map((l3) => {
+        if (containsNonASCII(l3)) {
+          try {
+            return `xn--${punycode.encode(l3)}`;
+          } catch (e3) {
+            result.error = true;
+          }
+        }
+        return l3;
+      });
+      if (verifyDNSLength) {
+        const total = labels.join(".").length;
+        if (total > 253 || total === 0) {
           result.error = true;
         }
-        for (var i3 = 0; i3 < labels.length; ++i3) {
-          if (labels.length > 63 || labels.length === 0) {
+        for (let i3 = 0; i3 < labels.length; ++i3) {
+          if (labels[i3].length > 63 || labels[i3].length === 0) {
             result.error = true;
             break;
           }
         }
       }
-      if (result.error)
+      if (result.error) {
         return null;
+      }
       return labels.join(".");
-    };
-    module2.exports.toUnicode = function(domain_name, useSTD3) {
-      var result = processing(domain_name, useSTD3, PROCESSING_OPTIONS.NONTRANSITIONAL);
+    }
+    function toUnicode(domainName, {
+      checkHyphens = false,
+      checkBidi = false,
+      checkJoiners = false,
+      useSTD3ASCIIRules = false,
+      processingOption = "nontransitional"
+    } = {}) {
+      const result = processing(domainName, {
+        processingOption,
+        checkHyphens,
+        checkBidi,
+        checkJoiners,
+        useSTD3ASCIIRules
+      });
       return {
         domain: result.string,
         error: result.error
       };
+    }
+    module2.exports = {
+      toASCII,
+      toUnicode
     };
-    module2.exports.PROCESSING_OPTIONS = PROCESSING_OPTIONS;
   }
 });
 
-// node_modules/whatwg-url/lib/url-state-machine.js
-var require_url_state_machine = __commonJS({
-  "node_modules/whatwg-url/lib/url-state-machine.js"(exports, module2) {
+// node_modules/whatwg-url/lib/infra.js
+var require_infra = __commonJS({
+  "node_modules/whatwg-url/lib/infra.js"(exports, module2) {
     "use strict";
-    var punycode = require("punycode");
-    var tr46 = require_tr46();
-    var specialSchemes = {
-      ftp: 21,
-      file: null,
-      gopher: 70,
-      http: 80,
-      https: 443,
-      ws: 80,
-      wss: 443
-    };
-    var failure = Symbol("failure");
-    function countSymbols(str) {
-      return punycode.ucs2.decode(str).length;
-    }
-    function at2(input, idx) {
-      const c2 = input[idx];
-      return isNaN(c2) ? void 0 : String.fromCodePoint(c2);
-    }
     function isASCIIDigit(c2) {
       return c2 >= 48 && c2 <= 57;
     }
@@ -20680,6 +21356,180 @@ var require_url_state_machine = __commonJS({
     function isASCIIHex(c2) {
       return isASCIIDigit(c2) || c2 >= 65 && c2 <= 70 || c2 >= 97 && c2 <= 102;
     }
+    module2.exports = {
+      isASCIIDigit,
+      isASCIIAlpha,
+      isASCIIAlphanumeric,
+      isASCIIHex
+    };
+  }
+});
+
+// node_modules/whatwg-url/lib/encoding.js
+var require_encoding2 = __commonJS({
+  "node_modules/whatwg-url/lib/encoding.js"(exports, module2) {
+    "use strict";
+    var utf8Encoder = new TextEncoder();
+    var utf8Decoder = new TextDecoder("utf-8", { ignoreBOM: true });
+    function utf8Encode(string) {
+      return utf8Encoder.encode(string);
+    }
+    function utf8DecodeWithoutBOM(bytes) {
+      return utf8Decoder.decode(bytes);
+    }
+    module2.exports = {
+      utf8Encode,
+      utf8DecodeWithoutBOM
+    };
+  }
+});
+
+// node_modules/whatwg-url/lib/percent-encoding.js
+var require_percent_encoding = __commonJS({
+  "node_modules/whatwg-url/lib/percent-encoding.js"(exports, module2) {
+    "use strict";
+    var { isASCIIHex } = require_infra();
+    var { utf8Encode } = require_encoding2();
+    function p3(char) {
+      return char.codePointAt(0);
+    }
+    function percentEncode(c2) {
+      let hex = c2.toString(16).toUpperCase();
+      if (hex.length === 1) {
+        hex = `0${hex}`;
+      }
+      return `%${hex}`;
+    }
+    function percentDecodeBytes(input) {
+      const output = new Uint8Array(input.byteLength);
+      let outputIndex = 0;
+      for (let i3 = 0; i3 < input.byteLength; ++i3) {
+        const byte = input[i3];
+        if (byte !== 37) {
+          output[outputIndex++] = byte;
+        } else if (byte === 37 && (!isASCIIHex(input[i3 + 1]) || !isASCIIHex(input[i3 + 2]))) {
+          output[outputIndex++] = byte;
+        } else {
+          const bytePoint = parseInt(String.fromCodePoint(input[i3 + 1], input[i3 + 2]), 16);
+          output[outputIndex++] = bytePoint;
+          i3 += 2;
+        }
+      }
+      return output.slice(0, outputIndex);
+    }
+    function percentDecodeString(input) {
+      const bytes = utf8Encode(input);
+      return percentDecodeBytes(bytes);
+    }
+    function isC0ControlPercentEncode(c2) {
+      return c2 <= 31 || c2 > 126;
+    }
+    var extraFragmentPercentEncodeSet = /* @__PURE__ */ new Set([p3(" "), p3('"'), p3("<"), p3(">"), p3("`")]);
+    function isFragmentPercentEncode(c2) {
+      return isC0ControlPercentEncode(c2) || extraFragmentPercentEncodeSet.has(c2);
+    }
+    var extraQueryPercentEncodeSet = /* @__PURE__ */ new Set([p3(" "), p3('"'), p3("#"), p3("<"), p3(">")]);
+    function isQueryPercentEncode(c2) {
+      return isC0ControlPercentEncode(c2) || extraQueryPercentEncodeSet.has(c2);
+    }
+    function isSpecialQueryPercentEncode(c2) {
+      return isQueryPercentEncode(c2) || c2 === p3("'");
+    }
+    var extraPathPercentEncodeSet = /* @__PURE__ */ new Set([p3("?"), p3("`"), p3("{"), p3("}")]);
+    function isPathPercentEncode(c2) {
+      return isQueryPercentEncode(c2) || extraPathPercentEncodeSet.has(c2);
+    }
+    var extraUserinfoPercentEncodeSet = /* @__PURE__ */ new Set([p3("/"), p3(":"), p3(";"), p3("="), p3("@"), p3("["), p3("\\"), p3("]"), p3("^"), p3("|")]);
+    function isUserinfoPercentEncode(c2) {
+      return isPathPercentEncode(c2) || extraUserinfoPercentEncodeSet.has(c2);
+    }
+    var extraComponentPercentEncodeSet = /* @__PURE__ */ new Set([p3("$"), p3("%"), p3("&"), p3("+"), p3(",")]);
+    function isComponentPercentEncode(c2) {
+      return isUserinfoPercentEncode(c2) || extraComponentPercentEncodeSet.has(c2);
+    }
+    var extraURLEncodedPercentEncodeSet = /* @__PURE__ */ new Set([p3("!"), p3("'"), p3("("), p3(")"), p3("~")]);
+    function isURLEncodedPercentEncode(c2) {
+      return isComponentPercentEncode(c2) || extraURLEncodedPercentEncodeSet.has(c2);
+    }
+    function utf8PercentEncodeCodePointInternal(codePoint, percentEncodePredicate) {
+      const bytes = utf8Encode(codePoint);
+      let output = "";
+      for (const byte of bytes) {
+        if (!percentEncodePredicate(byte)) {
+          output += String.fromCharCode(byte);
+        } else {
+          output += percentEncode(byte);
+        }
+      }
+      return output;
+    }
+    function utf8PercentEncodeCodePoint(codePoint, percentEncodePredicate) {
+      return utf8PercentEncodeCodePointInternal(String.fromCodePoint(codePoint), percentEncodePredicate);
+    }
+    function utf8PercentEncodeString(input, percentEncodePredicate, spaceAsPlus = false) {
+      let output = "";
+      for (const codePoint of input) {
+        if (spaceAsPlus && codePoint === " ") {
+          output += "+";
+        } else {
+          output += utf8PercentEncodeCodePointInternal(codePoint, percentEncodePredicate);
+        }
+      }
+      return output;
+    }
+    module2.exports = {
+      isC0ControlPercentEncode,
+      isFragmentPercentEncode,
+      isQueryPercentEncode,
+      isSpecialQueryPercentEncode,
+      isPathPercentEncode,
+      isUserinfoPercentEncode,
+      isURLEncodedPercentEncode,
+      percentDecodeString,
+      percentDecodeBytes,
+      utf8PercentEncodeString,
+      utf8PercentEncodeCodePoint
+    };
+  }
+});
+
+// node_modules/whatwg-url/lib/url-state-machine.js
+var require_url_state_machine = __commonJS({
+  "node_modules/whatwg-url/lib/url-state-machine.js"(exports, module2) {
+    "use strict";
+    var tr46 = require_tr46();
+    var infra = require_infra();
+    var { utf8DecodeWithoutBOM } = require_encoding2();
+    var {
+      percentDecodeString,
+      utf8PercentEncodeCodePoint,
+      utf8PercentEncodeString,
+      isC0ControlPercentEncode,
+      isFragmentPercentEncode,
+      isQueryPercentEncode,
+      isSpecialQueryPercentEncode,
+      isPathPercentEncode,
+      isUserinfoPercentEncode
+    } = require_percent_encoding();
+    function p3(char) {
+      return char.codePointAt(0);
+    }
+    var specialSchemes = {
+      ftp: 21,
+      file: null,
+      http: 80,
+      https: 443,
+      ws: 80,
+      wss: 443
+    };
+    var failure = Symbol("failure");
+    function countSymbols(str) {
+      return [...str].length;
+    }
+    function at2(input, idx) {
+      const c2 = input[idx];
+      return isNaN(c2) ? void 0 : String.fromCodePoint(c2);
+    }
     function isSingleDot(buffer) {
       return buffer === "." || buffer.toLowerCase() === "%2e";
     }
@@ -20688,19 +21538,19 @@ var require_url_state_machine = __commonJS({
       return buffer === ".." || buffer === "%2e." || buffer === ".%2e" || buffer === "%2e%2e";
     }
     function isWindowsDriveLetterCodePoints(cp1, cp2) {
-      return isASCIIAlpha(cp1) && (cp2 === 58 || cp2 === 124);
+      return infra.isASCIIAlpha(cp1) && (cp2 === p3(":") || cp2 === p3("|"));
     }
     function isWindowsDriveLetterString(string) {
-      return string.length === 2 && isASCIIAlpha(string.codePointAt(0)) && (string[1] === ":" || string[1] === "|");
+      return string.length === 2 && infra.isASCIIAlpha(string.codePointAt(0)) && (string[1] === ":" || string[1] === "|");
     }
     function isNormalizedWindowsDriveLetterString(string) {
-      return string.length === 2 && isASCIIAlpha(string.codePointAt(0)) && string[1] === ":";
+      return string.length === 2 && infra.isASCIIAlpha(string.codePointAt(0)) && string[1] === ":";
     }
     function containsForbiddenHostCodePoint(string) {
-      return string.search(/\u0000|\u0009|\u000A|\u000D|\u0020|#|%|\/|:|\?|@|\[|\\|\]/) !== -1;
+      return string.search(/\u0000|\u0009|\u000A|\u000D|\u0020|#|\/|:|<|>|\?|@|\[|\\|\]|\^|\|/u) !== -1;
     }
-    function containsForbiddenHostCodePointExcludingPercent(string) {
-      return string.search(/\u0000|\u0009|\u000A|\u000D|\u0020|#|\/|:|\?|@|\[|\\|\]/) !== -1;
+    function containsForbiddenDomainCodePoint(string) {
+      return containsForbiddenHostCodePoint(string) || string.search(/[\u0000-\u001F]|%|\u007F/u) !== -1;
     }
     function isSpecialScheme(scheme) {
       return specialSchemes[scheme] !== void 0;
@@ -20708,58 +21558,16 @@ var require_url_state_machine = __commonJS({
     function isSpecial(url2) {
       return isSpecialScheme(url2.scheme);
     }
+    function isNotSpecial(url2) {
+      return !isSpecialScheme(url2.scheme);
+    }
     function defaultPort(scheme) {
       return specialSchemes[scheme];
     }
-    function percentEncode(c2) {
-      let hex = c2.toString(16).toUpperCase();
-      if (hex.length === 1) {
-        hex = "0" + hex;
-      }
-      return "%" + hex;
-    }
-    function utf8PercentEncode(c2) {
-      const buf = new Buffer(c2);
-      let str = "";
-      for (let i3 = 0; i3 < buf.length; ++i3) {
-        str += percentEncode(buf[i3]);
-      }
-      return str;
-    }
-    function utf8PercentDecode(str) {
-      const input = new Buffer(str);
-      const output = [];
-      for (let i3 = 0; i3 < input.length; ++i3) {
-        if (input[i3] !== 37) {
-          output.push(input[i3]);
-        } else if (input[i3] === 37 && isASCIIHex(input[i3 + 1]) && isASCIIHex(input[i3 + 2])) {
-          output.push(parseInt(input.slice(i3 + 1, i3 + 3).toString(), 16));
-          i3 += 2;
-        } else {
-          output.push(input[i3]);
-        }
-      }
-      return new Buffer(output).toString();
-    }
-    function isC0ControlPercentEncode(c2) {
-      return c2 <= 31 || c2 > 126;
-    }
-    var extraPathPercentEncodeSet = /* @__PURE__ */ new Set([32, 34, 35, 60, 62, 63, 96, 123, 125]);
-    function isPathPercentEncode(c2) {
-      return isC0ControlPercentEncode(c2) || extraPathPercentEncodeSet.has(c2);
-    }
-    var extraUserinfoPercentEncodeSet = /* @__PURE__ */ new Set([47, 58, 59, 61, 64, 91, 92, 93, 94, 124]);
-    function isUserinfoPercentEncode(c2) {
-      return isPathPercentEncode(c2) || extraUserinfoPercentEncodeSet.has(c2);
-    }
-    function percentEncodeChar(c2, encodeSetPredicate) {
-      const cStr = String.fromCodePoint(c2);
-      if (encodeSetPredicate(c2)) {
-        return utf8PercentEncode(cStr);
-      }
-      return cStr;
-    }
     function parseIPv4Number(input) {
+      if (input === "") {
+        return failure;
+      }
       let R3 = 10;
       if (input.length >= 2 && input.charAt(0) === "0" && input.charAt(1).toLowerCase() === "x") {
         input = input.substring(2);
@@ -20771,7 +21579,13 @@ var require_url_state_machine = __commonJS({
       if (input === "") {
         return 0;
       }
-      const regex = R3 === 10 ? /[^0-9]/ : R3 === 16 ? /[^0-9A-Fa-f]/ : /[^0-7]/;
+      let regex = /[^0-7]/u;
+      if (R3 === 10) {
+        regex = /[^0-9]/u;
+      }
+      if (R3 === 16) {
+        regex = /[^0-9A-Fa-f]/u;
+      }
       if (regex.test(input)) {
         return failure;
       }
@@ -20785,16 +21599,13 @@ var require_url_state_machine = __commonJS({
         }
       }
       if (parts.length > 4) {
-        return input;
+        return failure;
       }
       const numbers = [];
       for (const part of parts) {
-        if (part === "") {
-          return input;
-        }
         const n2 = parseIPv4Number(part);
         if (n2 === failure) {
-          return input;
+          return failure;
         }
         numbers.push(n2);
       }
@@ -20803,13 +21614,13 @@ var require_url_state_machine = __commonJS({
           return failure;
         }
       }
-      if (numbers[numbers.length - 1] >= Math.pow(256, 5 - numbers.length)) {
+      if (numbers[numbers.length - 1] >= 256 ** (5 - numbers.length)) {
         return failure;
       }
       let ipv4 = numbers.pop();
       let counter = 0;
       for (const n2 of numbers) {
-        ipv4 += n2 * Math.pow(256, 3 - counter);
+        ipv4 += n2 * 256 ** (3 - counter);
         ++counter;
       }
       return ipv4;
@@ -20820,7 +21631,7 @@ var require_url_state_machine = __commonJS({
       for (let i3 = 1; i3 <= 4; ++i3) {
         output = String(n2 % 256) + output;
         if (i3 !== 4) {
-          output = "." + output;
+          output = `.${output}`;
         }
         n2 = Math.floor(n2 / 256);
       }
@@ -20831,9 +21642,9 @@ var require_url_state_machine = __commonJS({
       let pieceIndex = 0;
       let compress = null;
       let pointer = 0;
-      input = punycode.ucs2.decode(input);
-      if (input[pointer] === 58) {
-        if (input[pointer + 1] !== 58) {
+      input = Array.from(input, (c2) => c2.codePointAt(0));
+      if (input[pointer] === p3(":")) {
+        if (input[pointer + 1] !== p3(":")) {
           return failure;
         }
         pointer += 2;
@@ -20844,7 +21655,7 @@ var require_url_state_machine = __commonJS({
         if (pieceIndex === 8) {
           return failure;
         }
-        if (input[pointer] === 58) {
+        if (input[pointer] === p3(":")) {
           if (compress !== null) {
             return failure;
           }
@@ -20855,12 +21666,12 @@ var require_url_state_machine = __commonJS({
         }
         let value = 0;
         let length = 0;
-        while (length < 4 && isASCIIHex(input[pointer])) {
+        while (length < 4 && infra.isASCIIHex(input[pointer])) {
           value = value * 16 + parseInt(at2(input, pointer), 16);
           ++pointer;
           ++length;
         }
-        if (input[pointer] === 46) {
+        if (input[pointer] === p3(".")) {
           if (length === 0) {
             return failure;
           }
@@ -20872,16 +21683,16 @@ var require_url_state_machine = __commonJS({
           while (input[pointer] !== void 0) {
             let ipv4Piece = null;
             if (numbersSeen > 0) {
-              if (input[pointer] === 46 && numbersSeen < 4) {
+              if (input[pointer] === p3(".") && numbersSeen < 4) {
                 ++pointer;
               } else {
                 return failure;
               }
             }
-            if (!isASCIIDigit(input[pointer])) {
+            if (!infra.isASCIIDigit(input[pointer])) {
               return failure;
             }
-            while (isASCIIDigit(input[pointer])) {
+            while (infra.isASCIIDigit(input[pointer])) {
               const number = parseInt(at2(input, pointer));
               if (ipv4Piece === null) {
                 ipv4Piece = number;
@@ -20905,7 +21716,7 @@ var require_url_state_machine = __commonJS({
             return failure;
           }
           break;
-        } else if (input[pointer] === 58) {
+        } else if (input[pointer] === p3(":")) {
           ++pointer;
           if (input[pointer] === void 0) {
             return failure;
@@ -20933,8 +21744,7 @@ var require_url_state_machine = __commonJS({
     }
     function serializeIPv6(address) {
       let output = "";
-      const seqResult = findLongestZeroSequence(address);
-      const compress = seqResult.idx;
+      const compress = findLongestZeroSequence(address);
       let ignore0 = false;
       for (let pieceIndex = 0; pieceIndex <= 7; ++pieceIndex) {
         if (ignore0 && address[pieceIndex] === 0) {
@@ -20955,40 +21765,51 @@ var require_url_state_machine = __commonJS({
       }
       return output;
     }
-    function parseHost(input, isSpecialArg) {
+    function parseHost(input, isNotSpecialArg = false) {
       if (input[0] === "[") {
         if (input[input.length - 1] !== "]") {
           return failure;
         }
         return parseIPv6(input.substring(1, input.length - 1));
       }
-      if (!isSpecialArg) {
+      if (isNotSpecialArg) {
         return parseOpaqueHost(input);
       }
-      const domain = utf8PercentDecode(input);
-      const asciiDomain = tr46.toASCII(domain, false, tr46.PROCESSING_OPTIONS.NONTRANSITIONAL, false);
-      if (asciiDomain === null) {
+      const domain = utf8DecodeWithoutBOM(percentDecodeString(input));
+      const asciiDomain = domainToASCII(domain);
+      if (asciiDomain === failure) {
         return failure;
       }
-      if (containsForbiddenHostCodePoint(asciiDomain)) {
+      if (containsForbiddenDomainCodePoint(asciiDomain)) {
         return failure;
       }
-      const ipv4Host = parseIPv4(asciiDomain);
-      if (typeof ipv4Host === "number" || ipv4Host === failure) {
-        return ipv4Host;
+      if (endsInANumber(asciiDomain)) {
+        return parseIPv4(asciiDomain);
       }
       return asciiDomain;
     }
+    function endsInANumber(input) {
+      const parts = input.split(".");
+      if (parts[parts.length - 1] === "") {
+        if (parts.length === 1) {
+          return false;
+        }
+        parts.pop();
+      }
+      const last = parts[parts.length - 1];
+      if (parseIPv4Number(last) !== failure) {
+        return true;
+      }
+      if (/^[0-9]+$/u.test(last)) {
+        return true;
+      }
+      return false;
+    }
     function parseOpaqueHost(input) {
-      if (containsForbiddenHostCodePointExcludingPercent(input)) {
+      if (containsForbiddenHostCodePoint(input)) {
         return failure;
       }
-      let output = "";
-      const decoded = punycode.ucs2.decode(input);
-      for (let i3 = 0; i3 < decoded.length; ++i3) {
-        output += percentEncodeChar(decoded[i3], isC0ControlPercentEncode);
-      }
-      return output;
+      return utf8PercentEncodeString(input, isC0ControlPercentEncode);
     }
     function findLongestZeroSequence(arr) {
       let maxIdx = null;
@@ -21011,31 +21832,40 @@ var require_url_state_machine = __commonJS({
         }
       }
       if (currLen > maxLen) {
-        maxIdx = currStart;
-        maxLen = currLen;
+        return currStart;
       }
-      return {
-        idx: maxIdx,
-        len: maxLen
-      };
+      return maxIdx;
     }
     function serializeHost(host) {
       if (typeof host === "number") {
         return serializeIPv4(host);
       }
       if (host instanceof Array) {
-        return "[" + serializeIPv6(host) + "]";
+        return `[${serializeIPv6(host)}]`;
       }
       return host;
     }
+    function domainToASCII(domain, beStrict = false) {
+      const result = tr46.toASCII(domain, {
+        checkBidi: true,
+        checkHyphens: false,
+        checkJoiners: true,
+        useSTD3ASCIIRules: beStrict,
+        verifyDNSLength: beStrict
+      });
+      if (result === null || result === "") {
+        return failure;
+      }
+      return result;
+    }
     function trimControlChars(url2) {
-      return url2.replace(/^[\u0000-\u001F\u0020]+|[\u0000-\u001F\u0020]+$/g, "");
+      return url2.replace(/^[\u0000-\u001F\u0020]+|[\u0000-\u001F\u0020]+$/ug, "");
     }
     function trimTabAndNewline(url2) {
-      return url2.replace(/\u0009|\u000A|\u000D/g, "");
+      return url2.replace(/\u0009|\u000A|\u000D/ug, "");
     }
     function shortenPath(url2) {
-      const path2 = url2.path;
+      const { path: path2 } = url2;
       if (path2.length === 0) {
         return;
       }
@@ -21048,10 +21878,13 @@ var require_url_state_machine = __commonJS({
       return url2.username !== "" || url2.password !== "";
     }
     function cannotHaveAUsernamePasswordPort(url2) {
-      return url2.host === null || url2.host === "" || url2.cannotBeABaseURL || url2.scheme === "file";
+      return url2.host === null || url2.host === "" || url2.scheme === "file";
+    }
+    function hasAnOpaquePath(url2) {
+      return typeof url2.path === "string";
     }
     function isNormalizedWindowsDriveLetter(string) {
-      return /^[A-Za-z]:$/.test(string);
+      return /^[A-Za-z]:$/u.test(string);
     }
     function URLStateMachine(input, base, encodingOverride, url2, stateOverride) {
       this.pointer = 0;
@@ -21071,8 +21904,7 @@ var require_url_state_machine = __commonJS({
           port: null,
           path: [],
           query: null,
-          fragment: null,
-          cannotBeABaseURL: false
+          fragment: null
         };
         const res2 = trimControlChars(this.input);
         if (res2 !== this.input) {
@@ -21090,11 +21922,11 @@ var require_url_state_machine = __commonJS({
       this.atFlag = false;
       this.arrFlag = false;
       this.passwordTokenSeenFlag = false;
-      this.input = punycode.ucs2.decode(this.input);
+      this.input = Array.from(this.input, (c2) => c2.codePointAt(0));
       for (; this.pointer <= this.input.length; ++this.pointer) {
         const c2 = this.input[this.pointer];
         const cStr = isNaN(c2) ? void 0 : String.fromCodePoint(c2);
-        const ret = this["parse " + this.state](c2, cStr);
+        const ret = this[`parse ${this.state}`](c2, cStr);
         if (!ret) {
           break;
         } else if (ret === failure) {
@@ -21104,7 +21936,7 @@ var require_url_state_machine = __commonJS({
       }
     }
     URLStateMachine.prototype["parse scheme start"] = function parseSchemeStart(c2, cStr) {
-      if (isASCIIAlpha(c2)) {
+      if (infra.isASCIIAlpha(c2)) {
         this.buffer += cStr.toLowerCase();
         this.state = "scheme";
       } else if (!this.stateOverride) {
@@ -21117,9 +21949,9 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse scheme"] = function parseScheme(c2, cStr) {
-      if (isASCIIAlphanumeric(c2) || c2 === 43 || c2 === 45 || c2 === 46) {
+      if (infra.isASCIIAlphanumeric(c2) || c2 === p3("+") || c2 === p3("-") || c2 === p3(".")) {
         this.buffer += cStr.toLowerCase();
-      } else if (c2 === 58) {
+      } else if (c2 === p3(":")) {
         if (this.stateOverride) {
           if (isSpecial(this.url) && !isSpecialScheme(this.buffer)) {
             return false;
@@ -21130,17 +21962,20 @@ var require_url_state_machine = __commonJS({
           if ((includesCredentials(this.url) || this.url.port !== null) && this.buffer === "file") {
             return false;
           }
-          if (this.url.scheme === "file" && (this.url.host === "" || this.url.host === null)) {
+          if (this.url.scheme === "file" && this.url.host === "") {
             return false;
           }
         }
         this.url.scheme = this.buffer;
-        this.buffer = "";
         if (this.stateOverride) {
+          if (this.url.port === defaultPort(this.url.scheme)) {
+            this.url.port = null;
+          }
           return false;
         }
+        this.buffer = "";
         if (this.url.scheme === "file") {
-          if (this.input[this.pointer + 1] !== 47 || this.input[this.pointer + 2] !== 47) {
+          if (this.input[this.pointer + 1] !== p3("/") || this.input[this.pointer + 2] !== p3("/")) {
             this.parseError = true;
           }
           this.state = "file";
@@ -21148,13 +21983,12 @@ var require_url_state_machine = __commonJS({
           this.state = "special relative or authority";
         } else if (isSpecial(this.url)) {
           this.state = "special authority slashes";
-        } else if (this.input[this.pointer + 1] === 47) {
+        } else if (this.input[this.pointer + 1] === p3("/")) {
           this.state = "path or authority";
           ++this.pointer;
         } else {
-          this.url.cannotBeABaseURL = true;
-          this.url.path.push("");
-          this.state = "cannot-be-a-base-URL path";
+          this.url.path = "";
+          this.state = "opaque path";
         }
       } else if (!this.stateOverride) {
         this.buffer = "";
@@ -21167,14 +22001,13 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse no scheme"] = function parseNoScheme(c2) {
-      if (this.base === null || this.base.cannotBeABaseURL && c2 !== 35) {
+      if (this.base === null || hasAnOpaquePath(this.base) && c2 !== p3("#")) {
         return failure;
-      } else if (this.base.cannotBeABaseURL && c2 === 35) {
+      } else if (hasAnOpaquePath(this.base) && c2 === p3("#")) {
         this.url.scheme = this.base.scheme;
-        this.url.path = this.base.path.slice();
+        this.url.path = this.base.path;
         this.url.query = this.base.query;
         this.url.fragment = "";
-        this.url.cannotBeABaseURL = true;
         this.state = "fragment";
       } else if (this.base.scheme === "file") {
         this.state = "file";
@@ -21186,7 +22019,7 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse special relative or authority"] = function parseSpecialRelativeOrAuthority(c2) {
-      if (c2 === 47 && this.input[this.pointer + 1] === 47) {
+      if (c2 === p3("/") && this.input[this.pointer + 1] === p3("/")) {
         this.state = "special authority ignore slashes";
         ++this.pointer;
       } else {
@@ -21197,7 +22030,7 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse path or authority"] = function parsePathOrAuthority(c2) {
-      if (c2 === 47) {
+      if (c2 === p3("/")) {
         this.state = "authority";
       } else {
         this.state = "path";
@@ -21207,33 +22040,9 @@ var require_url_state_machine = __commonJS({
     };
     URLStateMachine.prototype["parse relative"] = function parseRelative(c2) {
       this.url.scheme = this.base.scheme;
-      if (isNaN(c2)) {
-        this.url.username = this.base.username;
-        this.url.password = this.base.password;
-        this.url.host = this.base.host;
-        this.url.port = this.base.port;
-        this.url.path = this.base.path.slice();
-        this.url.query = this.base.query;
-      } else if (c2 === 47) {
+      if (c2 === p3("/")) {
         this.state = "relative slash";
-      } else if (c2 === 63) {
-        this.url.username = this.base.username;
-        this.url.password = this.base.password;
-        this.url.host = this.base.host;
-        this.url.port = this.base.port;
-        this.url.path = this.base.path.slice();
-        this.url.query = "";
-        this.state = "query";
-      } else if (c2 === 35) {
-        this.url.username = this.base.username;
-        this.url.password = this.base.password;
-        this.url.host = this.base.host;
-        this.url.port = this.base.port;
-        this.url.path = this.base.path.slice();
-        this.url.query = this.base.query;
-        this.url.fragment = "";
-        this.state = "fragment";
-      } else if (isSpecial(this.url) && c2 === 92) {
+      } else if (isSpecial(this.url) && c2 === p3("\\")) {
         this.parseError = true;
         this.state = "relative slash";
       } else {
@@ -21241,19 +22050,30 @@ var require_url_state_machine = __commonJS({
         this.url.password = this.base.password;
         this.url.host = this.base.host;
         this.url.port = this.base.port;
-        this.url.path = this.base.path.slice(0, this.base.path.length - 1);
-        this.state = "path";
-        --this.pointer;
+        this.url.path = this.base.path.slice();
+        this.url.query = this.base.query;
+        if (c2 === p3("?")) {
+          this.url.query = "";
+          this.state = "query";
+        } else if (c2 === p3("#")) {
+          this.url.fragment = "";
+          this.state = "fragment";
+        } else if (!isNaN(c2)) {
+          this.url.query = null;
+          this.url.path.pop();
+          this.state = "path";
+          --this.pointer;
+        }
       }
       return true;
     };
     URLStateMachine.prototype["parse relative slash"] = function parseRelativeSlash(c2) {
-      if (isSpecial(this.url) && (c2 === 47 || c2 === 92)) {
-        if (c2 === 92) {
+      if (isSpecial(this.url) && (c2 === p3("/") || c2 === p3("\\"))) {
+        if (c2 === p3("\\")) {
           this.parseError = true;
         }
         this.state = "special authority ignore slashes";
-      } else if (c2 === 47) {
+      } else if (c2 === p3("/")) {
         this.state = "authority";
       } else {
         this.url.username = this.base.username;
@@ -21266,7 +22086,7 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse special authority slashes"] = function parseSpecialAuthoritySlashes(c2) {
-      if (c2 === 47 && this.input[this.pointer + 1] === 47) {
+      if (c2 === p3("/") && this.input[this.pointer + 1] === p3("/")) {
         this.state = "special authority ignore slashes";
         ++this.pointer;
       } else {
@@ -21277,7 +22097,7 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse special authority ignore slashes"] = function parseSpecialAuthorityIgnoreSlashes(c2) {
-      if (c2 !== 47 && c2 !== 92) {
+      if (c2 !== p3("/") && c2 !== p3("\\")) {
         this.state = "authority";
         --this.pointer;
       } else {
@@ -21286,20 +22106,20 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse authority"] = function parseAuthority(c2, cStr) {
-      if (c2 === 64) {
+      if (c2 === p3("@")) {
         this.parseError = true;
         if (this.atFlag) {
-          this.buffer = "%40" + this.buffer;
+          this.buffer = `%40${this.buffer}`;
         }
         this.atFlag = true;
         const len = countSymbols(this.buffer);
         for (let pointer = 0; pointer < len; ++pointer) {
           const codePoint = this.buffer.codePointAt(pointer);
-          if (codePoint === 58 && !this.passwordTokenSeenFlag) {
+          if (codePoint === p3(":") && !this.passwordTokenSeenFlag) {
             this.passwordTokenSeenFlag = true;
             continue;
           }
-          const encodedCodePoints = percentEncodeChar(codePoint, isUserinfoPercentEncode);
+          const encodedCodePoints = utf8PercentEncodeCodePoint(codePoint, isUserinfoPercentEncode);
           if (this.passwordTokenSeenFlag) {
             this.url.password += encodedCodePoints;
           } else {
@@ -21307,7 +22127,7 @@ var require_url_state_machine = __commonJS({
           }
         }
         this.buffer = "";
-      } else if (isNaN(c2) || c2 === 47 || c2 === 63 || c2 === 35 || isSpecial(this.url) && c2 === 92) {
+      } else if (isNaN(c2) || c2 === p3("/") || c2 === p3("?") || c2 === p3("#") || isSpecial(this.url) && c2 === p3("\\")) {
         if (this.atFlag && this.buffer === "") {
           this.parseError = true;
           return failure;
@@ -21324,22 +22144,22 @@ var require_url_state_machine = __commonJS({
       if (this.stateOverride && this.url.scheme === "file") {
         --this.pointer;
         this.state = "file host";
-      } else if (c2 === 58 && !this.arrFlag) {
+      } else if (c2 === p3(":") && !this.arrFlag) {
         if (this.buffer === "") {
           this.parseError = true;
           return failure;
         }
-        const host = parseHost(this.buffer, isSpecial(this.url));
+        if (this.stateOverride === "hostname") {
+          return false;
+        }
+        const host = parseHost(this.buffer, isNotSpecial(this.url));
         if (host === failure) {
           return failure;
         }
         this.url.host = host;
         this.buffer = "";
         this.state = "port";
-        if (this.stateOverride === "hostname") {
-          return false;
-        }
-      } else if (isNaN(c2) || c2 === 47 || c2 === 63 || c2 === 35 || isSpecial(this.url) && c2 === 92) {
+      } else if (isNaN(c2) || c2 === p3("/") || c2 === p3("?") || c2 === p3("#") || isSpecial(this.url) && c2 === p3("\\")) {
         --this.pointer;
         if (isSpecial(this.url) && this.buffer === "") {
           this.parseError = true;
@@ -21348,7 +22168,7 @@ var require_url_state_machine = __commonJS({
           this.parseError = true;
           return false;
         }
-        const host = parseHost(this.buffer, isSpecial(this.url));
+        const host = parseHost(this.buffer, isNotSpecial(this.url));
         if (host === failure) {
           return failure;
         }
@@ -21359,9 +22179,9 @@ var require_url_state_machine = __commonJS({
           return false;
         }
       } else {
-        if (c2 === 91) {
+        if (c2 === p3("[")) {
           this.arrFlag = true;
-        } else if (c2 === 93) {
+        } else if (c2 === p3("]")) {
           this.arrFlag = false;
         }
         this.buffer += cStr;
@@ -21369,12 +22189,12 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse port"] = function parsePort(c2, cStr) {
-      if (isASCIIDigit(c2)) {
+      if (infra.isASCIIDigit(c2)) {
         this.buffer += cStr;
-      } else if (isNaN(c2) || c2 === 47 || c2 === 63 || c2 === 35 || isSpecial(this.url) && c2 === 92 || this.stateOverride) {
+      } else if (isNaN(c2) || c2 === p3("/") || c2 === p3("?") || c2 === p3("#") || isSpecial(this.url) && c2 === p3("\\") || this.stateOverride) {
         if (this.buffer !== "") {
           const port = parseInt(this.buffer);
-          if (port > Math.pow(2, 16) - 1) {
+          if (port > 2 ** 16 - 1) {
             this.parseError = true;
             return failure;
           }
@@ -21392,37 +22212,36 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    var fileOtherwiseCodePoints = /* @__PURE__ */ new Set([47, 92, 63, 35]);
+    var fileOtherwiseCodePoints = /* @__PURE__ */ new Set([p3("/"), p3("\\"), p3("?"), p3("#")]);
+    function startsWithWindowsDriveLetter(input, pointer) {
+      const length = input.length - pointer;
+      return length >= 2 && isWindowsDriveLetterCodePoints(input[pointer], input[pointer + 1]) && (length === 2 || fileOtherwiseCodePoints.has(input[pointer + 2]));
+    }
     URLStateMachine.prototype["parse file"] = function parseFile(c2) {
       this.url.scheme = "file";
-      if (c2 === 47 || c2 === 92) {
-        if (c2 === 92) {
+      this.url.host = "";
+      if (c2 === p3("/") || c2 === p3("\\")) {
+        if (c2 === p3("\\")) {
           this.parseError = true;
         }
         this.state = "file slash";
       } else if (this.base !== null && this.base.scheme === "file") {
-        if (isNaN(c2)) {
-          this.url.host = this.base.host;
-          this.url.path = this.base.path.slice();
-          this.url.query = this.base.query;
-        } else if (c2 === 63) {
-          this.url.host = this.base.host;
-          this.url.path = this.base.path.slice();
+        this.url.host = this.base.host;
+        this.url.path = this.base.path.slice();
+        this.url.query = this.base.query;
+        if (c2 === p3("?")) {
           this.url.query = "";
           this.state = "query";
-        } else if (c2 === 35) {
-          this.url.host = this.base.host;
-          this.url.path = this.base.path.slice();
-          this.url.query = this.base.query;
+        } else if (c2 === p3("#")) {
           this.url.fragment = "";
           this.state = "fragment";
-        } else {
-          if (this.input.length - this.pointer - 1 === 0 || !isWindowsDriveLetterCodePoints(c2, this.input[this.pointer + 1]) || this.input.length - this.pointer - 1 >= 2 && !fileOtherwiseCodePoints.has(this.input[this.pointer + 2])) {
-            this.url.host = this.base.host;
-            this.url.path = this.base.path.slice();
+        } else if (!isNaN(c2)) {
+          this.url.query = null;
+          if (!startsWithWindowsDriveLetter(this.input, this.pointer)) {
             shortenPath(this.url);
           } else {
             this.parseError = true;
+            this.url.path = [];
           }
           this.state = "path";
           --this.pointer;
@@ -21434,18 +22253,17 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse file slash"] = function parseFileSlash(c2) {
-      if (c2 === 47 || c2 === 92) {
-        if (c2 === 92) {
+      if (c2 === p3("/") || c2 === p3("\\")) {
+        if (c2 === p3("\\")) {
           this.parseError = true;
         }
         this.state = "file host";
       } else {
         if (this.base !== null && this.base.scheme === "file") {
-          if (isNormalizedWindowsDriveLetterString(this.base.path[0])) {
+          if (!startsWithWindowsDriveLetter(this.input, this.pointer) && isNormalizedWindowsDriveLetterString(this.base.path[0])) {
             this.url.path.push(this.base.path[0]);
-          } else {
-            this.url.host = this.base.host;
           }
+          this.url.host = this.base.host;
         }
         this.state = "path";
         --this.pointer;
@@ -21453,7 +22271,7 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse file host"] = function parseFileHost(c2, cStr) {
-      if (isNaN(c2) || c2 === 47 || c2 === 92 || c2 === 63 || c2 === 35) {
+      if (isNaN(c2) || c2 === p3("/") || c2 === p3("\\") || c2 === p3("?") || c2 === p3("#")) {
         --this.pointer;
         if (!this.stateOverride && isWindowsDriveLetterString(this.buffer)) {
           this.parseError = true;
@@ -21465,7 +22283,7 @@ var require_url_state_machine = __commonJS({
           }
           this.state = "path start";
         } else {
-          let host = parseHost(this.buffer, isSpecial(this.url));
+          let host = parseHost(this.buffer, isNotSpecial(this.url));
           if (host === failure) {
             return failure;
           }
@@ -21486,112 +22304,98 @@ var require_url_state_machine = __commonJS({
     };
     URLStateMachine.prototype["parse path start"] = function parsePathStart(c2) {
       if (isSpecial(this.url)) {
-        if (c2 === 92) {
+        if (c2 === p3("\\")) {
           this.parseError = true;
         }
         this.state = "path";
-        if (c2 !== 47 && c2 !== 92) {
+        if (c2 !== p3("/") && c2 !== p3("\\")) {
           --this.pointer;
         }
-      } else if (!this.stateOverride && c2 === 63) {
+      } else if (!this.stateOverride && c2 === p3("?")) {
         this.url.query = "";
         this.state = "query";
-      } else if (!this.stateOverride && c2 === 35) {
+      } else if (!this.stateOverride && c2 === p3("#")) {
         this.url.fragment = "";
         this.state = "fragment";
       } else if (c2 !== void 0) {
         this.state = "path";
-        if (c2 !== 47) {
+        if (c2 !== p3("/")) {
           --this.pointer;
         }
+      } else if (this.stateOverride && this.url.host === null) {
+        this.url.path.push("");
       }
       return true;
     };
     URLStateMachine.prototype["parse path"] = function parsePath(c2) {
-      if (isNaN(c2) || c2 === 47 || isSpecial(this.url) && c2 === 92 || !this.stateOverride && (c2 === 63 || c2 === 35)) {
-        if (isSpecial(this.url) && c2 === 92) {
+      if (isNaN(c2) || c2 === p3("/") || isSpecial(this.url) && c2 === p3("\\") || !this.stateOverride && (c2 === p3("?") || c2 === p3("#"))) {
+        if (isSpecial(this.url) && c2 === p3("\\")) {
           this.parseError = true;
         }
         if (isDoubleDot(this.buffer)) {
           shortenPath(this.url);
-          if (c2 !== 47 && !(isSpecial(this.url) && c2 === 92)) {
+          if (c2 !== p3("/") && !(isSpecial(this.url) && c2 === p3("\\"))) {
             this.url.path.push("");
           }
-        } else if (isSingleDot(this.buffer) && c2 !== 47 && !(isSpecial(this.url) && c2 === 92)) {
+        } else if (isSingleDot(this.buffer) && c2 !== p3("/") && !(isSpecial(this.url) && c2 === p3("\\"))) {
           this.url.path.push("");
         } else if (!isSingleDot(this.buffer)) {
           if (this.url.scheme === "file" && this.url.path.length === 0 && isWindowsDriveLetterString(this.buffer)) {
-            if (this.url.host !== "" && this.url.host !== null) {
-              this.parseError = true;
-              this.url.host = "";
-            }
-            this.buffer = this.buffer[0] + ":";
+            this.buffer = `${this.buffer[0]}:`;
           }
           this.url.path.push(this.buffer);
         }
         this.buffer = "";
-        if (this.url.scheme === "file" && (c2 === void 0 || c2 === 63 || c2 === 35)) {
-          while (this.url.path.length > 1 && this.url.path[0] === "") {
-            this.parseError = true;
-            this.url.path.shift();
-          }
-        }
-        if (c2 === 63) {
+        if (c2 === p3("?")) {
           this.url.query = "";
           this.state = "query";
         }
-        if (c2 === 35) {
+        if (c2 === p3("#")) {
           this.url.fragment = "";
           this.state = "fragment";
         }
       } else {
-        if (c2 === 37 && (!isASCIIHex(this.input[this.pointer + 1]) || !isASCIIHex(this.input[this.pointer + 2]))) {
+        if (c2 === p3("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
-        this.buffer += percentEncodeChar(c2, isPathPercentEncode);
+        this.buffer += utf8PercentEncodeCodePoint(c2, isPathPercentEncode);
       }
       return true;
     };
-    URLStateMachine.prototype["parse cannot-be-a-base-URL path"] = function parseCannotBeABaseURLPath(c2) {
-      if (c2 === 63) {
+    URLStateMachine.prototype["parse opaque path"] = function parseOpaquePath(c2) {
+      if (c2 === p3("?")) {
         this.url.query = "";
         this.state = "query";
-      } else if (c2 === 35) {
+      } else if (c2 === p3("#")) {
         this.url.fragment = "";
         this.state = "fragment";
       } else {
-        if (!isNaN(c2) && c2 !== 37) {
+        if (!isNaN(c2) && c2 !== p3("%")) {
           this.parseError = true;
         }
-        if (c2 === 37 && (!isASCIIHex(this.input[this.pointer + 1]) || !isASCIIHex(this.input[this.pointer + 2]))) {
+        if (c2 === p3("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
         if (!isNaN(c2)) {
-          this.url.path[0] = this.url.path[0] + percentEncodeChar(c2, isC0ControlPercentEncode);
+          this.url.path += utf8PercentEncodeCodePoint(c2, isC0ControlPercentEncode);
         }
       }
       return true;
     };
     URLStateMachine.prototype["parse query"] = function parseQuery(c2, cStr) {
-      if (isNaN(c2) || !this.stateOverride && c2 === 35) {
-        if (!isSpecial(this.url) || this.url.scheme === "ws" || this.url.scheme === "wss") {
-          this.encodingOverride = "utf-8";
-        }
-        const buffer = new Buffer(this.buffer);
-        for (let i3 = 0; i3 < buffer.length; ++i3) {
-          if (buffer[i3] < 33 || buffer[i3] > 126 || buffer[i3] === 34 || buffer[i3] === 35 || buffer[i3] === 60 || buffer[i3] === 62) {
-            this.url.query += percentEncode(buffer[i3]);
-          } else {
-            this.url.query += String.fromCodePoint(buffer[i3]);
-          }
-        }
+      if (!isSpecial(this.url) || this.url.scheme === "ws" || this.url.scheme === "wss") {
+        this.encodingOverride = "utf-8";
+      }
+      if (!this.stateOverride && c2 === p3("#") || isNaN(c2)) {
+        const queryPercentEncodePredicate = isSpecial(this.url) ? isSpecialQueryPercentEncode : isQueryPercentEncode;
+        this.url.query += utf8PercentEncodeString(this.buffer, queryPercentEncodePredicate);
         this.buffer = "";
-        if (c2 === 35) {
+        if (c2 === p3("#")) {
           this.url.fragment = "";
           this.state = "fragment";
         }
-      } else {
-        if (c2 === 37 && (!isASCIIHex(this.input[this.pointer + 1]) || !isASCIIHex(this.input[this.pointer + 2]))) {
+      } else if (!isNaN(c2)) {
+        if (c2 === p3("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
         this.buffer += cStr;
@@ -21599,69 +22403,75 @@ var require_url_state_machine = __commonJS({
       return true;
     };
     URLStateMachine.prototype["parse fragment"] = function parseFragment(c2) {
-      if (isNaN(c2)) {
-      } else if (c2 === 0) {
-        this.parseError = true;
-      } else {
-        if (c2 === 37 && (!isASCIIHex(this.input[this.pointer + 1]) || !isASCIIHex(this.input[this.pointer + 2]))) {
+      if (!isNaN(c2)) {
+        if (c2 === p3("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
-        this.url.fragment += percentEncodeChar(c2, isC0ControlPercentEncode);
+        this.url.fragment += utf8PercentEncodeCodePoint(c2, isFragmentPercentEncode);
       }
       return true;
     };
     function serializeURL(url2, excludeFragment) {
-      let output = url2.scheme + ":";
+      let output = `${url2.scheme}:`;
       if (url2.host !== null) {
         output += "//";
         if (url2.username !== "" || url2.password !== "") {
           output += url2.username;
           if (url2.password !== "") {
-            output += ":" + url2.password;
+            output += `:${url2.password}`;
           }
           output += "@";
         }
         output += serializeHost(url2.host);
         if (url2.port !== null) {
-          output += ":" + url2.port;
-        }
-      } else if (url2.host === null && url2.scheme === "file") {
-        output += "//";
-      }
-      if (url2.cannotBeABaseURL) {
-        output += url2.path[0];
-      } else {
-        for (const string of url2.path) {
-          output += "/" + string;
+          output += `:${url2.port}`;
         }
       }
+      if (url2.host === null && !hasAnOpaquePath(url2) && url2.path.length > 1 && url2.path[0] === "") {
+        output += "/.";
+      }
+      output += serializePath(url2);
       if (url2.query !== null) {
-        output += "?" + url2.query;
+        output += `?${url2.query}`;
       }
       if (!excludeFragment && url2.fragment !== null) {
-        output += "#" + url2.fragment;
+        output += `#${url2.fragment}`;
       }
       return output;
     }
     function serializeOrigin(tuple) {
-      let result = tuple.scheme + "://";
+      let result = `${tuple.scheme}://`;
       result += serializeHost(tuple.host);
       if (tuple.port !== null) {
-        result += ":" + tuple.port;
+        result += `:${tuple.port}`;
       }
       return result;
     }
+    function serializePath(url2) {
+      if (hasAnOpaquePath(url2)) {
+        return url2.path;
+      }
+      let output = "";
+      for (const segment of url2.path) {
+        output += `/${segment}`;
+      }
+      return output;
+    }
     module2.exports.serializeURL = serializeURL;
+    module2.exports.serializePath = serializePath;
     module2.exports.serializeURLOrigin = function(url2) {
       switch (url2.scheme) {
-        case "blob":
-          try {
-            return module2.exports.serializeURLOrigin(module2.exports.parseURL(url2.path[0]));
-          } catch (e3) {
+        case "blob": {
+          const pathURL = module2.exports.parseURL(serializePath(url2));
+          if (pathURL === null) {
             return "null";
           }
+          if (pathURL.scheme !== "http" && pathURL.scheme !== "https") {
+            return "null";
+          }
+          return module2.exports.serializeURLOrigin(pathURL);
+        }
         case "ftp":
-        case "gopher":
         case "http":
         case "https":
         case "ws":
@@ -21672,7 +22482,7 @@ var require_url_state_machine = __commonJS({
             port: url2.port
           });
         case "file":
-          return "file://";
+          return "null";
         default:
           return "null";
       }
@@ -21683,26 +22493,19 @@ var require_url_state_machine = __commonJS({
       }
       const usm = new URLStateMachine(input, options.baseURL, options.encodingOverride, options.url, options.stateOverride);
       if (usm.failure) {
-        return "failure";
+        return null;
       }
       return usm.url;
     };
     module2.exports.setTheUsername = function(url2, username) {
-      url2.username = "";
-      const decoded = punycode.ucs2.decode(username);
-      for (let i3 = 0; i3 < decoded.length; ++i3) {
-        url2.username += percentEncodeChar(decoded[i3], isUserinfoPercentEncode);
-      }
+      url2.username = utf8PercentEncodeString(username, isUserinfoPercentEncode);
     };
     module2.exports.setThePassword = function(url2, password) {
-      url2.password = "";
-      const decoded = punycode.ucs2.decode(password);
-      for (let i3 = 0; i3 < decoded.length; ++i3) {
-        url2.password += percentEncodeChar(decoded[i3], isUserinfoPercentEncode);
-      }
+      url2.password = utf8PercentEncodeString(password, isUserinfoPercentEncode);
     };
     module2.exports.serializeHost = serializeHost;
     module2.exports.cannotHaveAUsernamePasswordPort = cannotHaveAUsernamePasswordPort;
+    module2.exports.hasAnOpaquePath = hasAnOpaquePath;
     module2.exports.serializeInteger = function(integer) {
       return String(integer);
     };
@@ -21715,46 +22518,772 @@ var require_url_state_machine = __commonJS({
   }
 });
 
+// node_modules/whatwg-url/lib/urlencoded.js
+var require_urlencoded2 = __commonJS({
+  "node_modules/whatwg-url/lib/urlencoded.js"(exports, module2) {
+    "use strict";
+    var { utf8Encode, utf8DecodeWithoutBOM } = require_encoding2();
+    var { percentDecodeBytes, utf8PercentEncodeString, isURLEncodedPercentEncode } = require_percent_encoding();
+    function p3(char) {
+      return char.codePointAt(0);
+    }
+    function parseUrlencoded(input) {
+      const sequences = strictlySplitByteSequence(input, p3("&"));
+      const output = [];
+      for (const bytes of sequences) {
+        if (bytes.length === 0) {
+          continue;
+        }
+        let name, value;
+        const indexOfEqual = bytes.indexOf(p3("="));
+        if (indexOfEqual >= 0) {
+          name = bytes.slice(0, indexOfEqual);
+          value = bytes.slice(indexOfEqual + 1);
+        } else {
+          name = bytes;
+          value = new Uint8Array(0);
+        }
+        name = replaceByteInByteSequence(name, 43, 32);
+        value = replaceByteInByteSequence(value, 43, 32);
+        const nameString = utf8DecodeWithoutBOM(percentDecodeBytes(name));
+        const valueString = utf8DecodeWithoutBOM(percentDecodeBytes(value));
+        output.push([nameString, valueString]);
+      }
+      return output;
+    }
+    function parseUrlencodedString(input) {
+      return parseUrlencoded(utf8Encode(input));
+    }
+    function serializeUrlencoded(tuples, encodingOverride = void 0) {
+      let encoding = "utf-8";
+      if (encodingOverride !== void 0) {
+        encoding = encodingOverride;
+      }
+      let output = "";
+      for (const [i3, tuple] of tuples.entries()) {
+        const name = utf8PercentEncodeString(tuple[0], isURLEncodedPercentEncode, true);
+        let value = tuple[1];
+        if (tuple.length > 2 && tuple[2] !== void 0) {
+          if (tuple[2] === "hidden" && name === "_charset_") {
+            value = encoding;
+          } else if (tuple[2] === "file") {
+            value = value.name;
+          }
+        }
+        value = utf8PercentEncodeString(value, isURLEncodedPercentEncode, true);
+        if (i3 !== 0) {
+          output += "&";
+        }
+        output += `${name}=${value}`;
+      }
+      return output;
+    }
+    function strictlySplitByteSequence(buf, cp) {
+      const list = [];
+      let last = 0;
+      let i3 = buf.indexOf(cp);
+      while (i3 >= 0) {
+        list.push(buf.slice(last, i3));
+        last = i3 + 1;
+        i3 = buf.indexOf(cp, last);
+      }
+      if (last !== buf.length) {
+        list.push(buf.slice(last));
+      }
+      return list;
+    }
+    function replaceByteInByteSequence(buf, from, to) {
+      let i3 = buf.indexOf(from);
+      while (i3 >= 0) {
+        buf[i3] = to;
+        i3 = buf.indexOf(from, i3 + 1);
+      }
+      return buf;
+    }
+    module2.exports = {
+      parseUrlencodedString,
+      serializeUrlencoded
+    };
+  }
+});
+
+// node_modules/whatwg-url/lib/Function.js
+var require_Function = __commonJS({
+  "node_modules/whatwg-url/lib/Function.js"(exports) {
+    "use strict";
+    var conversions = require_lib2();
+    var utils = require_utils4();
+    exports.convert = (globalObject, value, { context: context2 = "The provided value" } = {}) => {
+      if (typeof value !== "function") {
+        throw new globalObject.TypeError(context2 + " is not a function");
+      }
+      function invokeTheCallbackFunction(...args) {
+        const thisArg = utils.tryWrapperForImpl(this);
+        let callResult;
+        for (let i3 = 0; i3 < args.length; i3++) {
+          args[i3] = utils.tryWrapperForImpl(args[i3]);
+        }
+        callResult = Reflect.apply(value, thisArg, args);
+        callResult = conversions["any"](callResult, { context: context2, globals: globalObject });
+        return callResult;
+      }
+      invokeTheCallbackFunction.construct = (...args) => {
+        for (let i3 = 0; i3 < args.length; i3++) {
+          args[i3] = utils.tryWrapperForImpl(args[i3]);
+        }
+        let callResult = Reflect.construct(value, args);
+        callResult = conversions["any"](callResult, { context: context2, globals: globalObject });
+        return callResult;
+      };
+      invokeTheCallbackFunction[utils.wrapperSymbol] = value;
+      invokeTheCallbackFunction.objectReference = value;
+      return invokeTheCallbackFunction;
+    };
+  }
+});
+
+// node_modules/whatwg-url/lib/URLSearchParams-impl.js
+var require_URLSearchParams_impl = __commonJS({
+  "node_modules/whatwg-url/lib/URLSearchParams-impl.js"(exports) {
+    "use strict";
+    var urlencoded = require_urlencoded2();
+    exports.implementation = class URLSearchParamsImpl {
+      constructor(globalObject, constructorArgs, { doNotStripQMark = false }) {
+        let init = constructorArgs[0];
+        this._list = [];
+        this._url = null;
+        if (!doNotStripQMark && typeof init === "string" && init[0] === "?") {
+          init = init.slice(1);
+        }
+        if (Array.isArray(init)) {
+          for (const pair of init) {
+            if (pair.length !== 2) {
+              throw new TypeError("Failed to construct 'URLSearchParams': parameter 1 sequence's element does not contain exactly two elements.");
+            }
+            this._list.push([pair[0], pair[1]]);
+          }
+        } else if (typeof init === "object" && Object.getPrototypeOf(init) === null) {
+          for (const name of Object.keys(init)) {
+            const value = init[name];
+            this._list.push([name, value]);
+          }
+        } else {
+          this._list = urlencoded.parseUrlencodedString(init);
+        }
+      }
+      _updateSteps() {
+        if (this._url !== null) {
+          let serializedQuery = urlencoded.serializeUrlencoded(this._list);
+          if (serializedQuery === "") {
+            serializedQuery = null;
+          }
+          this._url._url.query = serializedQuery;
+          if (serializedQuery === null) {
+            this._url._potentiallyStripTrailingSpacesFromAnOpaquePath();
+          }
+        }
+      }
+      get size() {
+        return this._list.length;
+      }
+      append(name, value) {
+        this._list.push([name, value]);
+        this._updateSteps();
+      }
+      delete(name, value) {
+        let i3 = 0;
+        while (i3 < this._list.length) {
+          if (this._list[i3][0] === name && (value === void 0 || this._list[i3][1] === value)) {
+            this._list.splice(i3, 1);
+          } else {
+            i3++;
+          }
+        }
+        this._updateSteps();
+      }
+      get(name) {
+        for (const tuple of this._list) {
+          if (tuple[0] === name) {
+            return tuple[1];
+          }
+        }
+        return null;
+      }
+      getAll(name) {
+        const output = [];
+        for (const tuple of this._list) {
+          if (tuple[0] === name) {
+            output.push(tuple[1]);
+          }
+        }
+        return output;
+      }
+      has(name, value) {
+        for (const tuple of this._list) {
+          if (tuple[0] === name && (value === void 0 || tuple[1] === value)) {
+            return true;
+          }
+        }
+        return false;
+      }
+      set(name, value) {
+        let found = false;
+        let i3 = 0;
+        while (i3 < this._list.length) {
+          if (this._list[i3][0] === name) {
+            if (found) {
+              this._list.splice(i3, 1);
+            } else {
+              found = true;
+              this._list[i3][1] = value;
+              i3++;
+            }
+          } else {
+            i3++;
+          }
+        }
+        if (!found) {
+          this._list.push([name, value]);
+        }
+        this._updateSteps();
+      }
+      sort() {
+        this._list.sort((a3, b3) => {
+          if (a3[0] < b3[0]) {
+            return -1;
+          }
+          if (a3[0] > b3[0]) {
+            return 1;
+          }
+          return 0;
+        });
+        this._updateSteps();
+      }
+      [Symbol.iterator]() {
+        return this._list[Symbol.iterator]();
+      }
+      toString() {
+        return urlencoded.serializeUrlencoded(this._list);
+      }
+    };
+  }
+});
+
+// node_modules/whatwg-url/lib/URLSearchParams.js
+var require_URLSearchParams = __commonJS({
+  "node_modules/whatwg-url/lib/URLSearchParams.js"(exports) {
+    "use strict";
+    var conversions = require_lib2();
+    var utils = require_utils4();
+    var Function2 = require_Function();
+    var newObjectInRealm = utils.newObjectInRealm;
+    var implSymbol = utils.implSymbol;
+    var ctorRegistrySymbol = utils.ctorRegistrySymbol;
+    var interfaceName = "URLSearchParams";
+    exports.is = (value) => {
+      return utils.isObject(value) && utils.hasOwn(value, implSymbol) && value[implSymbol] instanceof Impl.implementation;
+    };
+    exports.isImpl = (value) => {
+      return utils.isObject(value) && value instanceof Impl.implementation;
+    };
+    exports.convert = (globalObject, value, { context: context2 = "The provided value" } = {}) => {
+      if (exports.is(value)) {
+        return utils.implForWrapper(value);
+      }
+      throw new globalObject.TypeError(`${context2} is not of type 'URLSearchParams'.`);
+    };
+    exports.createDefaultIterator = (globalObject, target, kind2) => {
+      const ctorRegistry = globalObject[ctorRegistrySymbol];
+      const iteratorPrototype = ctorRegistry["URLSearchParams Iterator"];
+      const iterator = Object.create(iteratorPrototype);
+      Object.defineProperty(iterator, utils.iterInternalSymbol, {
+        value: { target, kind: kind2, index: 0 },
+        configurable: true
+      });
+      return iterator;
+    };
+    function makeWrapper(globalObject, newTarget) {
+      let proto2;
+      if (newTarget !== void 0) {
+        proto2 = newTarget.prototype;
+      }
+      if (!utils.isObject(proto2)) {
+        proto2 = globalObject[ctorRegistrySymbol]["URLSearchParams"].prototype;
+      }
+      return Object.create(proto2);
+    }
+    exports.create = (globalObject, constructorArgs, privateData) => {
+      const wrapper = makeWrapper(globalObject);
+      return exports.setup(wrapper, globalObject, constructorArgs, privateData);
+    };
+    exports.createImpl = (globalObject, constructorArgs, privateData) => {
+      const wrapper = exports.create(globalObject, constructorArgs, privateData);
+      return utils.implForWrapper(wrapper);
+    };
+    exports._internalSetup = (wrapper, globalObject) => {
+    };
+    exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) => {
+      privateData.wrapper = wrapper;
+      exports._internalSetup(wrapper, globalObject);
+      Object.defineProperty(wrapper, implSymbol, {
+        value: new Impl.implementation(globalObject, constructorArgs, privateData),
+        configurable: true
+      });
+      wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
+      if (Impl.init) {
+        Impl.init(wrapper[implSymbol]);
+      }
+      return wrapper;
+    };
+    exports.new = (globalObject, newTarget) => {
+      const wrapper = makeWrapper(globalObject, newTarget);
+      exports._internalSetup(wrapper, globalObject);
+      Object.defineProperty(wrapper, implSymbol, {
+        value: Object.create(Impl.implementation.prototype),
+        configurable: true
+      });
+      wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
+      if (Impl.init) {
+        Impl.init(wrapper[implSymbol]);
+      }
+      return wrapper[implSymbol];
+    };
+    var exposed = /* @__PURE__ */ new Set(["Window", "Worker"]);
+    exports.install = (globalObject, globalNames) => {
+      if (!globalNames.some((globalName) => exposed.has(globalName))) {
+        return;
+      }
+      const ctorRegistry = utils.initCtorRegistry(globalObject);
+      class URLSearchParams2 {
+        constructor() {
+          const args = [];
+          {
+            let curArg = arguments[0];
+            if (curArg !== void 0) {
+              if (utils.isObject(curArg)) {
+                if (curArg[Symbol.iterator] !== void 0) {
+                  if (!utils.isObject(curArg)) {
+                    throw new globalObject.TypeError(
+                      "Failed to construct 'URLSearchParams': parameter 1 sequence is not an iterable object."
+                    );
+                  } else {
+                    const V4 = [];
+                    const tmp = curArg;
+                    for (let nextItem of tmp) {
+                      if (!utils.isObject(nextItem)) {
+                        throw new globalObject.TypeError(
+                          "Failed to construct 'URLSearchParams': parameter 1 sequence's element is not an iterable object."
+                        );
+                      } else {
+                        const V5 = [];
+                        const tmp2 = nextItem;
+                        for (let nextItem2 of tmp2) {
+                          nextItem2 = conversions["USVString"](nextItem2, {
+                            context: "Failed to construct 'URLSearchParams': parameter 1 sequence's element's element",
+                            globals: globalObject
+                          });
+                          V5.push(nextItem2);
+                        }
+                        nextItem = V5;
+                      }
+                      V4.push(nextItem);
+                    }
+                    curArg = V4;
+                  }
+                } else {
+                  if (!utils.isObject(curArg)) {
+                    throw new globalObject.TypeError(
+                      "Failed to construct 'URLSearchParams': parameter 1 record is not an object."
+                    );
+                  } else {
+                    const result = /* @__PURE__ */ Object.create(null);
+                    for (const key of Reflect.ownKeys(curArg)) {
+                      const desc = Object.getOwnPropertyDescriptor(curArg, key);
+                      if (desc && desc.enumerable) {
+                        let typedKey = key;
+                        typedKey = conversions["USVString"](typedKey, {
+                          context: "Failed to construct 'URLSearchParams': parameter 1 record's key",
+                          globals: globalObject
+                        });
+                        let typedValue = curArg[key];
+                        typedValue = conversions["USVString"](typedValue, {
+                          context: "Failed to construct 'URLSearchParams': parameter 1 record's value",
+                          globals: globalObject
+                        });
+                        result[typedKey] = typedValue;
+                      }
+                    }
+                    curArg = result;
+                  }
+                }
+              } else {
+                curArg = conversions["USVString"](curArg, {
+                  context: "Failed to construct 'URLSearchParams': parameter 1",
+                  globals: globalObject
+                });
+              }
+            } else {
+              curArg = "";
+            }
+            args.push(curArg);
+          }
+          return exports.setup(Object.create(new.target.prototype), globalObject, args);
+        }
+        append(name, value) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError(
+              "'append' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          if (arguments.length < 2) {
+            throw new globalObject.TypeError(
+              `Failed to execute 'append' on 'URLSearchParams': 2 arguments required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'append' on 'URLSearchParams': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          {
+            let curArg = arguments[1];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'append' on 'URLSearchParams': parameter 2",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          return utils.tryWrapperForImpl(esValue[implSymbol].append(...args));
+        }
+        delete(name) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError(
+              "'delete' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          if (arguments.length < 1) {
+            throw new globalObject.TypeError(
+              `Failed to execute 'delete' on 'URLSearchParams': 1 argument required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'delete' on 'URLSearchParams': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          {
+            let curArg = arguments[1];
+            if (curArg !== void 0) {
+              curArg = conversions["USVString"](curArg, {
+                context: "Failed to execute 'delete' on 'URLSearchParams': parameter 2",
+                globals: globalObject
+              });
+            }
+            args.push(curArg);
+          }
+          return utils.tryWrapperForImpl(esValue[implSymbol].delete(...args));
+        }
+        get(name) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get' called on an object that is not a valid instance of URLSearchParams.");
+          }
+          if (arguments.length < 1) {
+            throw new globalObject.TypeError(
+              `Failed to execute 'get' on 'URLSearchParams': 1 argument required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'get' on 'URLSearchParams': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          return esValue[implSymbol].get(...args);
+        }
+        getAll(name) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError(
+              "'getAll' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          if (arguments.length < 1) {
+            throw new globalObject.TypeError(
+              `Failed to execute 'getAll' on 'URLSearchParams': 1 argument required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'getAll' on 'URLSearchParams': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          return utils.tryWrapperForImpl(esValue[implSymbol].getAll(...args));
+        }
+        has(name) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'has' called on an object that is not a valid instance of URLSearchParams.");
+          }
+          if (arguments.length < 1) {
+            throw new globalObject.TypeError(
+              `Failed to execute 'has' on 'URLSearchParams': 1 argument required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'has' on 'URLSearchParams': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          {
+            let curArg = arguments[1];
+            if (curArg !== void 0) {
+              curArg = conversions["USVString"](curArg, {
+                context: "Failed to execute 'has' on 'URLSearchParams': parameter 2",
+                globals: globalObject
+              });
+            }
+            args.push(curArg);
+          }
+          return esValue[implSymbol].has(...args);
+        }
+        set(name, value) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set' called on an object that is not a valid instance of URLSearchParams.");
+          }
+          if (arguments.length < 2) {
+            throw new globalObject.TypeError(
+              `Failed to execute 'set' on 'URLSearchParams': 2 arguments required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'set' on 'URLSearchParams': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          {
+            let curArg = arguments[1];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'set' on 'URLSearchParams': parameter 2",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          return utils.tryWrapperForImpl(esValue[implSymbol].set(...args));
+        }
+        sort() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'sort' called on an object that is not a valid instance of URLSearchParams.");
+          }
+          return utils.tryWrapperForImpl(esValue[implSymbol].sort());
+        }
+        toString() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError(
+              "'toString' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          return esValue[implSymbol].toString();
+        }
+        keys() {
+          if (!exports.is(this)) {
+            throw new globalObject.TypeError("'keys' called on an object that is not a valid instance of URLSearchParams.");
+          }
+          return exports.createDefaultIterator(globalObject, this, "key");
+        }
+        values() {
+          if (!exports.is(this)) {
+            throw new globalObject.TypeError(
+              "'values' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          return exports.createDefaultIterator(globalObject, this, "value");
+        }
+        entries() {
+          if (!exports.is(this)) {
+            throw new globalObject.TypeError(
+              "'entries' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          return exports.createDefaultIterator(globalObject, this, "key+value");
+        }
+        forEach(callback) {
+          if (!exports.is(this)) {
+            throw new globalObject.TypeError(
+              "'forEach' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          if (arguments.length < 1) {
+            throw new globalObject.TypeError(
+              "Failed to execute 'forEach' on 'iterable': 1 argument required, but only 0 present."
+            );
+          }
+          callback = Function2.convert(globalObject, callback, {
+            context: "Failed to execute 'forEach' on 'iterable': The callback provided as parameter 1"
+          });
+          const thisArg = arguments[1];
+          let pairs = Array.from(this[implSymbol]);
+          let i3 = 0;
+          while (i3 < pairs.length) {
+            const [key, value] = pairs[i3].map(utils.tryWrapperForImpl);
+            callback.call(thisArg, value, key, this);
+            pairs = Array.from(this[implSymbol]);
+            i3++;
+          }
+        }
+        get size() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError(
+              "'get size' called on an object that is not a valid instance of URLSearchParams."
+            );
+          }
+          return esValue[implSymbol]["size"];
+        }
+      }
+      Object.defineProperties(URLSearchParams2.prototype, {
+        append: { enumerable: true },
+        delete: { enumerable: true },
+        get: { enumerable: true },
+        getAll: { enumerable: true },
+        has: { enumerable: true },
+        set: { enumerable: true },
+        sort: { enumerable: true },
+        toString: { enumerable: true },
+        keys: { enumerable: true },
+        values: { enumerable: true },
+        entries: { enumerable: true },
+        forEach: { enumerable: true },
+        size: { enumerable: true },
+        [Symbol.toStringTag]: { value: "URLSearchParams", configurable: true },
+        [Symbol.iterator]: { value: URLSearchParams2.prototype.entries, configurable: true, writable: true }
+      });
+      ctorRegistry[interfaceName] = URLSearchParams2;
+      ctorRegistry["URLSearchParams Iterator"] = Object.create(ctorRegistry["%IteratorPrototype%"], {
+        [Symbol.toStringTag]: {
+          configurable: true,
+          value: "URLSearchParams Iterator"
+        }
+      });
+      utils.define(ctorRegistry["URLSearchParams Iterator"], {
+        next() {
+          const internal = this && this[utils.iterInternalSymbol];
+          if (!internal) {
+            throw new globalObject.TypeError("next() called on a value that is not a URLSearchParams iterator object");
+          }
+          const { target, kind: kind2, index } = internal;
+          const values = Array.from(target[implSymbol]);
+          const len = values.length;
+          if (index >= len) {
+            return newObjectInRealm(globalObject, { value: void 0, done: true });
+          }
+          const pair = values[index];
+          internal.index = index + 1;
+          return newObjectInRealm(globalObject, utils.iteratorResult(pair.map(utils.tryWrapperForImpl), kind2));
+        }
+      });
+      Object.defineProperty(globalObject, interfaceName, {
+        configurable: true,
+        writable: true,
+        value: URLSearchParams2
+      });
+    };
+    var Impl = require_URLSearchParams_impl();
+  }
+});
+
 // node_modules/whatwg-url/lib/URL-impl.js
 var require_URL_impl = __commonJS({
   "node_modules/whatwg-url/lib/URL-impl.js"(exports) {
     "use strict";
     var usm = require_url_state_machine();
+    var urlencoded = require_urlencoded2();
+    var URLSearchParams2 = require_URLSearchParams();
     exports.implementation = class URLImpl {
-      constructor(constructorArgs) {
+      constructor(globalObject, constructorArgs) {
         const url2 = constructorArgs[0];
         const base = constructorArgs[1];
         let parsedBase = null;
         if (base !== void 0) {
           parsedBase = usm.basicURLParse(base);
-          if (parsedBase === "failure") {
-            throw new TypeError("Invalid base URL");
+          if (parsedBase === null) {
+            throw new TypeError(`Invalid base URL: ${base}`);
           }
         }
         const parsedURL = usm.basicURLParse(url2, { baseURL: parsedBase });
-        if (parsedURL === "failure") {
-          throw new TypeError("Invalid URL");
+        if (parsedURL === null) {
+          throw new TypeError(`Invalid URL: ${url2}`);
         }
+        const query = parsedURL.query !== null ? parsedURL.query : "";
         this._url = parsedURL;
+        this._query = URLSearchParams2.createImpl(globalObject, [query], { doNotStripQMark: true });
+        this._query._url = this;
+      }
+      static canParse(url2, base) {
+        let parsedBase = null;
+        if (base !== void 0) {
+          parsedBase = usm.basicURLParse(base);
+          if (parsedBase === null) {
+            return false;
+          }
+        }
+        const parsedURL = usm.basicURLParse(url2, { baseURL: parsedBase });
+        if (parsedURL === null) {
+          return false;
+        }
+        return true;
       }
       get href() {
         return usm.serializeURL(this._url);
       }
       set href(v2) {
         const parsedURL = usm.basicURLParse(v2);
-        if (parsedURL === "failure") {
-          throw new TypeError("Invalid URL");
+        if (parsedURL === null) {
+          throw new TypeError(`Invalid URL: ${v2}`);
         }
         this._url = parsedURL;
+        this._query._list.splice(0);
+        const { query } = parsedURL;
+        if (query !== null) {
+          this._query._list = urlencoded.parseUrlencodedString(query);
+        }
       }
       get origin() {
         return usm.serializeURLOrigin(this._url);
       }
       get protocol() {
-        return this._url.scheme + ":";
+        return `${this._url.scheme}:`;
       }
       set protocol(v2) {
-        usm.basicURLParse(v2 + ":", { url: this._url, stateOverride: "scheme start" });
+        usm.basicURLParse(`${v2}:`, { url: this._url, stateOverride: "scheme start" });
       }
       get username() {
         return this._url.username;
@@ -21782,10 +23311,10 @@ var require_URL_impl = __commonJS({
         if (url2.port === null) {
           return usm.serializeHost(url2.host);
         }
-        return usm.serializeHost(url2.host) + ":" + usm.serializeInteger(url2.port);
+        return `${usm.serializeHost(url2.host)}:${usm.serializeInteger(url2.port)}`;
       }
       set host(v2) {
-        if (this._url.cannotBeABaseURL) {
+        if (usm.hasAnOpaquePath(this._url)) {
           return;
         }
         usm.basicURLParse(v2, { url: this._url, stateOverride: "host" });
@@ -21797,7 +23326,7 @@ var require_URL_impl = __commonJS({
         return usm.serializeHost(this._url.host);
       }
       set hostname(v2) {
-        if (this._url.cannotBeABaseURL) {
+        if (usm.hasAnOpaquePath(this._url)) {
           return;
         }
         usm.basicURLParse(v2, { url: this._url, stateOverride: "hostname" });
@@ -21819,16 +23348,10 @@ var require_URL_impl = __commonJS({
         }
       }
       get pathname() {
-        if (this._url.cannotBeABaseURL) {
-          return this._url.path[0];
-        }
-        if (this._url.path.length === 0) {
-          return "";
-        }
-        return "/" + this._url.path.join("/");
+        return usm.serializePath(this._url);
       }
       set pathname(v2) {
-        if (this._url.cannotBeABaseURL) {
+        if (usm.hasAnOpaquePath(this._url)) {
           return;
         }
         this._url.path = [];
@@ -21838,27 +23361,34 @@ var require_URL_impl = __commonJS({
         if (this._url.query === null || this._url.query === "") {
           return "";
         }
-        return "?" + this._url.query;
+        return `?${this._url.query}`;
       }
       set search(v2) {
         const url2 = this._url;
         if (v2 === "") {
           url2.query = null;
+          this._query._list = [];
+          this._potentiallyStripTrailingSpacesFromAnOpaquePath();
           return;
         }
         const input = v2[0] === "?" ? v2.substring(1) : v2;
         url2.query = "";
         usm.basicURLParse(input, { url: url2, stateOverride: "query" });
+        this._query._list = urlencoded.parseUrlencodedString(input);
+      }
+      get searchParams() {
+        return this._query;
       }
       get hash() {
         if (this._url.fragment === null || this._url.fragment === "") {
           return "";
         }
-        return "#" + this._url.fragment;
+        return `#${this._url.fragment}`;
       }
       set hash(v2) {
         if (v2 === "") {
           this._url.fragment = null;
+          this._potentiallyStripTrailingSpacesFromAnOpaquePath();
           return;
         }
         const input = v2[0] === "#" ? v2.substring(1) : v2;
@@ -21868,206 +23398,433 @@ var require_URL_impl = __commonJS({
       toJSON() {
         return this.href;
       }
+      _potentiallyStripTrailingSpacesFromAnOpaquePath() {
+        if (!usm.hasAnOpaquePath(this._url)) {
+          return;
+        }
+        if (this._url.fragment !== null) {
+          return;
+        }
+        if (this._url.query !== null) {
+          return;
+        }
+        this._url.path = this._url.path.replace(/\u0020+$/u, "");
+      }
     };
   }
 });
 
 // node_modules/whatwg-url/lib/URL.js
 var require_URL = __commonJS({
-  "node_modules/whatwg-url/lib/URL.js"(exports, module2) {
+  "node_modules/whatwg-url/lib/URL.js"(exports) {
     "use strict";
     var conversions = require_lib2();
     var utils = require_utils4();
-    var Impl = require_URL_impl();
-    var impl = utils.implSymbol;
-    function URL2(url2) {
-      if (!this || this[impl] || !(this instanceof URL2)) {
-        throw new TypeError("Failed to construct 'URL': Please use the 'new' operator, this DOM object constructor cannot be called as a function.");
+    var implSymbol = utils.implSymbol;
+    var ctorRegistrySymbol = utils.ctorRegistrySymbol;
+    var interfaceName = "URL";
+    exports.is = (value) => {
+      return utils.isObject(value) && utils.hasOwn(value, implSymbol) && value[implSymbol] instanceof Impl.implementation;
+    };
+    exports.isImpl = (value) => {
+      return utils.isObject(value) && value instanceof Impl.implementation;
+    };
+    exports.convert = (globalObject, value, { context: context2 = "The provided value" } = {}) => {
+      if (exports.is(value)) {
+        return utils.implForWrapper(value);
       }
-      if (arguments.length < 1) {
-        throw new TypeError("Failed to construct 'URL': 1 argument required, but only " + arguments.length + " present.");
+      throw new globalObject.TypeError(`${context2} is not of type 'URL'.`);
+    };
+    function makeWrapper(globalObject, newTarget) {
+      let proto2;
+      if (newTarget !== void 0) {
+        proto2 = newTarget.prototype;
       }
-      const args = [];
-      for (let i3 = 0; i3 < arguments.length && i3 < 2; ++i3) {
-        args[i3] = arguments[i3];
+      if (!utils.isObject(proto2)) {
+        proto2 = globalObject[ctorRegistrySymbol]["URL"].prototype;
       }
-      args[0] = conversions["USVString"](args[0]);
-      if (args[1] !== void 0) {
-        args[1] = conversions["USVString"](args[1]);
-      }
-      module2.exports.setup(this, args);
+      return Object.create(proto2);
     }
-    URL2.prototype.toJSON = function toJSON2() {
-      if (!this || !module2.exports.is(this)) {
-        throw new TypeError("Illegal invocation");
-      }
-      const args = [];
-      for (let i3 = 0; i3 < arguments.length && i3 < 0; ++i3) {
-        args[i3] = arguments[i3];
-      }
-      return this[impl].toJSON.apply(this[impl], args);
+    exports.create = (globalObject, constructorArgs, privateData) => {
+      const wrapper = makeWrapper(globalObject);
+      return exports.setup(wrapper, globalObject, constructorArgs, privateData);
     };
-    Object.defineProperty(URL2.prototype, "href", {
-      get() {
-        return this[impl].href;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].href = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    URL2.prototype.toString = function() {
-      if (!this || !module2.exports.is(this)) {
-        throw new TypeError("Illegal invocation");
-      }
-      return this.href;
+    exports.createImpl = (globalObject, constructorArgs, privateData) => {
+      const wrapper = exports.create(globalObject, constructorArgs, privateData);
+      return utils.implForWrapper(wrapper);
     };
-    Object.defineProperty(URL2.prototype, "origin", {
-      get() {
-        return this[impl].origin;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "protocol", {
-      get() {
-        return this[impl].protocol;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].protocol = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "username", {
-      get() {
-        return this[impl].username;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].username = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "password", {
-      get() {
-        return this[impl].password;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].password = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "host", {
-      get() {
-        return this[impl].host;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].host = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "hostname", {
-      get() {
-        return this[impl].hostname;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].hostname = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "port", {
-      get() {
-        return this[impl].port;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].port = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "pathname", {
-      get() {
-        return this[impl].pathname;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].pathname = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "search", {
-      get() {
-        return this[impl].search;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].search = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    Object.defineProperty(URL2.prototype, "hash", {
-      get() {
-        return this[impl].hash;
-      },
-      set(V4) {
-        V4 = conversions["USVString"](V4);
-        this[impl].hash = V4;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    module2.exports = {
-      is(obj) {
-        return !!obj && obj[impl] instanceof Impl.implementation;
-      },
-      create(constructorArgs, privateData) {
-        let obj = Object.create(URL2.prototype);
-        this.setup(obj, constructorArgs, privateData);
-        return obj;
-      },
-      setup(obj, constructorArgs, privateData) {
-        if (!privateData)
-          privateData = {};
-        privateData.wrapper = obj;
-        obj[impl] = new Impl.implementation(constructorArgs, privateData);
-        obj[impl][utils.wrapperSymbol] = obj;
-      },
-      interface: URL2,
-      expose: {
-        Window: { URL: URL2 },
-        Worker: { URL: URL2 }
+    exports._internalSetup = (wrapper, globalObject) => {
+    };
+    exports.setup = (wrapper, globalObject, constructorArgs = [], privateData = {}) => {
+      privateData.wrapper = wrapper;
+      exports._internalSetup(wrapper, globalObject);
+      Object.defineProperty(wrapper, implSymbol, {
+        value: new Impl.implementation(globalObject, constructorArgs, privateData),
+        configurable: true
+      });
+      wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
+      if (Impl.init) {
+        Impl.init(wrapper[implSymbol]);
+      }
+      return wrapper;
+    };
+    exports.new = (globalObject, newTarget) => {
+      const wrapper = makeWrapper(globalObject, newTarget);
+      exports._internalSetup(wrapper, globalObject);
+      Object.defineProperty(wrapper, implSymbol, {
+        value: Object.create(Impl.implementation.prototype),
+        configurable: true
+      });
+      wrapper[implSymbol][utils.wrapperSymbol] = wrapper;
+      if (Impl.init) {
+        Impl.init(wrapper[implSymbol]);
+      }
+      return wrapper[implSymbol];
+    };
+    var exposed = /* @__PURE__ */ new Set(["Window", "Worker"]);
+    exports.install = (globalObject, globalNames) => {
+      if (!globalNames.some((globalName) => exposed.has(globalName))) {
+        return;
+      }
+      const ctorRegistry = utils.initCtorRegistry(globalObject);
+      class URL2 {
+        constructor(url2) {
+          if (arguments.length < 1) {
+            throw new globalObject.TypeError(
+              `Failed to construct 'URL': 1 argument required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to construct 'URL': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          {
+            let curArg = arguments[1];
+            if (curArg !== void 0) {
+              curArg = conversions["USVString"](curArg, {
+                context: "Failed to construct 'URL': parameter 2",
+                globals: globalObject
+              });
+            }
+            args.push(curArg);
+          }
+          return exports.setup(Object.create(new.target.prototype), globalObject, args);
+        }
+        toJSON() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'toJSON' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol].toJSON();
+        }
+        get href() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get href' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["href"];
+        }
+        set href(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set href' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'href' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["href"] = V4;
+        }
+        toString() {
+          const esValue = this;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'toString' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["href"];
+        }
+        get origin() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get origin' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["origin"];
+        }
+        get protocol() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get protocol' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["protocol"];
+        }
+        set protocol(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set protocol' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'protocol' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["protocol"] = V4;
+        }
+        get username() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get username' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["username"];
+        }
+        set username(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set username' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'username' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["username"] = V4;
+        }
+        get password() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get password' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["password"];
+        }
+        set password(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set password' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'password' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["password"] = V4;
+        }
+        get host() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get host' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["host"];
+        }
+        set host(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set host' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'host' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["host"] = V4;
+        }
+        get hostname() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get hostname' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["hostname"];
+        }
+        set hostname(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set hostname' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'hostname' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["hostname"] = V4;
+        }
+        get port() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get port' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["port"];
+        }
+        set port(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set port' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'port' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["port"] = V4;
+        }
+        get pathname() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get pathname' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["pathname"];
+        }
+        set pathname(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set pathname' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'pathname' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["pathname"] = V4;
+        }
+        get search() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get search' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["search"];
+        }
+        set search(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set search' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'search' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["search"] = V4;
+        }
+        get searchParams() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get searchParams' called on an object that is not a valid instance of URL.");
+          }
+          return utils.getSameObject(this, "searchParams", () => {
+            return utils.tryWrapperForImpl(esValue[implSymbol]["searchParams"]);
+          });
+        }
+        get hash() {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'get hash' called on an object that is not a valid instance of URL.");
+          }
+          return esValue[implSymbol]["hash"];
+        }
+        set hash(V4) {
+          const esValue = this !== null && this !== void 0 ? this : globalObject;
+          if (!exports.is(esValue)) {
+            throw new globalObject.TypeError("'set hash' called on an object that is not a valid instance of URL.");
+          }
+          V4 = conversions["USVString"](V4, {
+            context: "Failed to set the 'hash' property on 'URL': The provided value",
+            globals: globalObject
+          });
+          esValue[implSymbol]["hash"] = V4;
+        }
+        static canParse(url2) {
+          if (arguments.length < 1) {
+            throw new globalObject.TypeError(
+              `Failed to execute 'canParse' on 'URL': 1 argument required, but only ${arguments.length} present.`
+            );
+          }
+          const args = [];
+          {
+            let curArg = arguments[0];
+            curArg = conversions["USVString"](curArg, {
+              context: "Failed to execute 'canParse' on 'URL': parameter 1",
+              globals: globalObject
+            });
+            args.push(curArg);
+          }
+          {
+            let curArg = arguments[1];
+            if (curArg !== void 0) {
+              curArg = conversions["USVString"](curArg, {
+                context: "Failed to execute 'canParse' on 'URL': parameter 2",
+                globals: globalObject
+              });
+            }
+            args.push(curArg);
+          }
+          return Impl.implementation.canParse(...args);
+        }
+      }
+      Object.defineProperties(URL2.prototype, {
+        toJSON: { enumerable: true },
+        href: { enumerable: true },
+        toString: { enumerable: true },
+        origin: { enumerable: true },
+        protocol: { enumerable: true },
+        username: { enumerable: true },
+        password: { enumerable: true },
+        host: { enumerable: true },
+        hostname: { enumerable: true },
+        port: { enumerable: true },
+        pathname: { enumerable: true },
+        search: { enumerable: true },
+        searchParams: { enumerable: true },
+        hash: { enumerable: true },
+        [Symbol.toStringTag]: { value: "URL", configurable: true }
+      });
+      Object.defineProperties(URL2, { canParse: { enumerable: true } });
+      ctorRegistry[interfaceName] = URL2;
+      Object.defineProperty(globalObject, interfaceName, {
+        configurable: true,
+        writable: true,
+        value: URL2
+      });
+      if (globalNames.includes("Window")) {
+        Object.defineProperty(globalObject, "webkitURL", {
+          configurable: true,
+          writable: true,
+          value: URL2
+        });
       }
     };
+    var Impl = require_URL_impl();
   }
 });
 
-// node_modules/whatwg-url/lib/public-api.js
-var require_public_api = __commonJS({
-  "node_modules/whatwg-url/lib/public-api.js"(exports) {
+// node_modules/whatwg-url/webidl2js-wrapper.js
+var require_webidl2js_wrapper = __commonJS({
+  "node_modules/whatwg-url/webidl2js-wrapper.js"(exports) {
     "use strict";
-    exports.URL = require_URL().interface;
-    exports.serializeURL = require_url_state_machine().serializeURL;
-    exports.serializeURLOrigin = require_url_state_machine().serializeURLOrigin;
-    exports.basicURLParse = require_url_state_machine().basicURLParse;
-    exports.setTheUsername = require_url_state_machine().setTheUsername;
-    exports.setThePassword = require_url_state_machine().setThePassword;
-    exports.serializeHost = require_url_state_machine().serializeHost;
-    exports.serializeInteger = require_url_state_machine().serializeInteger;
-    exports.parseURL = require_url_state_machine().parseURL;
+    var URL2 = require_URL();
+    var URLSearchParams2 = require_URLSearchParams();
+    exports.URL = URL2;
+    exports.URLSearchParams = URLSearchParams2;
+  }
+});
+
+// node_modules/whatwg-url/index.js
+var require_whatwg_url = __commonJS({
+  "node_modules/whatwg-url/index.js"(exports) {
+    "use strict";
+    var { URL: URL2, URLSearchParams: URLSearchParams2 } = require_webidl2js_wrapper();
+    var urlStateMachine = require_url_state_machine();
+    var percentEncoding = require_percent_encoding();
+    var sharedGlobalObject = { Array, Object, Promise, String, TypeError };
+    URL2.install(sharedGlobalObject, ["Window"]);
+    URLSearchParams2.install(sharedGlobalObject, ["Window"]);
+    exports.URL = sharedGlobalObject.URL;
+    exports.URLSearchParams = sharedGlobalObject.URLSearchParams;
+    exports.parseURL = urlStateMachine.parseURL;
+    exports.basicURLParse = urlStateMachine.basicURLParse;
+    exports.serializeURL = urlStateMachine.serializeURL;
+    exports.serializePath = urlStateMachine.serializePath;
+    exports.serializeHost = urlStateMachine.serializeHost;
+    exports.serializeInteger = urlStateMachine.serializeInteger;
+    exports.serializeURLOrigin = urlStateMachine.serializeURLOrigin;
+    exports.setTheUsername = urlStateMachine.setTheUsername;
+    exports.setThePassword = urlStateMachine.setThePassword;
+    exports.cannotHaveAUsernamePasswordPort = urlStateMachine.cannotHaveAUsernamePasswordPort;
+    exports.hasAnOpaquePath = urlStateMachine.hasAnOpaquePath;
+    exports.percentDecodeString = percentEncoding.percentDecodeString;
+    exports.percentDecodeBytes = percentEncoding.percentDecodeBytes;
   }
 });
 
@@ -22082,7 +23839,7 @@ var require_lib3 = __commonJS({
     var Stream2 = _interopDefault(require("stream"));
     var http3 = _interopDefault(require("http"));
     var Url = _interopDefault(require("url"));
-    var whatwgUrl = _interopDefault(require_public_api());
+    var whatwgUrl = _interopDefault(require_whatwg_url());
     var https3 = _interopDefault(require("https"));
     var zlib3 = _interopDefault(require("zlib"));
     var Readable4 = Stream2.Readable;
@@ -53038,7 +54795,7 @@ if (provider === "openai" && !apiKey && command !== "config" && mode !== "set" /
   process.exit(1);
 }
 var MODEL = config3?.OCO_MODEL || "gpt-3.5-turbo";
-if (provider === "openai" && MODEL.typeof !== "string" && command !== "config" && mode !== "set" /* set */) {
+if (provider === "openai" && typeof MODEL !== "string" && command !== "config" && mode !== "set" /* set */) {
   ce(
     `${source_default.red("\u2716")} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
   );
@@ -56085,7 +57842,7 @@ if (provider2 === "anthropic" && !apiKey2 && command2 !== "config" && mode2 !== 
   process.exit(1);
 }
 var MODEL2 = config5?.OCO_MODEL;
-if (provider2 === "anthropic" && MODEL2.typeof !== "string" && command2 !== "config" && mode2 !== "set" /* set */) {
+if (provider2 === "anthropic" && typeof MODEL2 !== "string" && command2 !== "config" && mode2 !== "set" /* set */) {
   ce(
     `${source_default.red("\u2716")} Unsupported model ${MODEL2}. The model can be any string, but the current configuration is not supported.`
   );
