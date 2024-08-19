@@ -49470,6 +49470,7 @@ var TestAi = class {
 // src/commands/config.ts
 var MODEL_LIST = {
   openai: [
+    "gpt-4o-mini",
     "gpt-3.5-turbo",
     "gpt-3.5-turbo-instruct",
     "gpt-3.5-turbo-0613",
@@ -49494,7 +49495,6 @@ var MODEL_LIST = {
     "gpt-4-32k-0613",
     "gpt-4o",
     "gpt-4o-2024-05-13",
-    "gpt-4o-mini",
     "gpt-4o-mini-2024-07-18"
   ],
   anthropic: [
@@ -49538,7 +49538,7 @@ var configValidators = {
     validateConfig(
       "OpenAI API_KEY",
       value || config11.OCO_ANTHROPIC_API_KEY || config11.OCO_AI_PROVIDER.startsWith("ollama") || config11.OCO_AZURE_API_KEY || config11.OCO_AI_PROVIDER == "test" || config11.OCO_AI_PROVIDER == "flowise",
-      "You need to provide an OpenAI/Anthropic/Azure API key"
+      "You need to provide an OpenAI/Anthropic/Azure or other provider API key via `oco config set OCO_OPENAI_API_KEY=your_key`, for help refer to docs https://github.com/di-sukharev/opencommit"
     );
     validateConfig(
       "OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */,
@@ -49648,11 +49648,7 @@ var configValidators = {
   ["OCO_MODEL" /* OCO_MODEL */](value, config11 = {}) {
     validateConfig(
       "OCO_MODEL" /* OCO_MODEL */,
-      [
-        ...MODEL_LIST.openai,
-        ...MODEL_LIST.anthropic,
-        ...MODEL_LIST.gemini
-      ].includes(value) || config11.OCO_AI_PROVIDER == "ollama" || config11.OCO_AI_PROVIDER == "azure" || config11.OCO_AI_PROVIDER == "test" || config11.OCO_AI_PROVIDER == "flowise",
+      typeof value === "string",
       `${value} is not supported yet, use:
 
  ${[
