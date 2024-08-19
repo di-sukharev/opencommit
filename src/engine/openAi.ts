@@ -54,7 +54,7 @@ if (
 
 const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
 if (provider === 'openai' &&
-  MODEL.typeof !== 'string' && 
+  typeof MODEL !== 'string' && 
     command !== 'config' &&
     mode !== CONFIG_MODES.set) {
   outro(
