@@ -45,6 +45,7 @@ export enum CONFIG_MODES {
 
 export const MODEL_LIST = {
   openai: [
+    'gpt-4o-mini',
     'gpt-3.5-turbo',
     'gpt-3.5-turbo-instruct',
     'gpt-3.5-turbo-0613',
@@ -69,7 +70,6 @@ export const MODEL_LIST = {
     'gpt-4-32k-0613',
     'gpt-4o',
     'gpt-4o-2024-05-13',
-    'gpt-4o-mini',
     'gpt-4o-mini-2024-07-18'
   ],
 
@@ -134,7 +134,7 @@ export const configValidators = {
         config.OCO_AZURE_API_KEY ||
         config.OCO_AI_PROVIDER == 'test' ||
         config.OCO_AI_PROVIDER == 'flowise',
-      'You need to provide an OpenAI/Anthropic/Azure API key'
+      'You need to provide an OpenAI/Anthropic/Azure or other provider API key via `oco config set OCO_OPENAI_API_KEY=your_key`, for help refer to docs https://github.com/di-sukharev/opencommit'
     );
     validateConfig(
       CONFIG_KEYS.OCO_OPENAI_API_KEY,
@@ -276,15 +276,7 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_MODEL](value: any, config: any = {}) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
-      [
-        ...MODEL_LIST.openai,
-        ...MODEL_LIST.anthropic,
-        ...MODEL_LIST.gemini
-      ].includes(value) ||
-        config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'azure' ||
-        config.OCO_AI_PROVIDER == 'test' ||
-        config.OCO_AI_PROVIDER == 'flowise',
+      typeof value === 'string',
       `${value} is not supported yet, use:\n\n ${[
         ...MODEL_LIST.openai,
         ...MODEL_LIST.anthropic,
@@ -459,6 +451,7 @@ export const getConfig = ({
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
+
       process.exit(1);
     }
   }
