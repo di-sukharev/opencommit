@@ -2,12 +2,11 @@ import {
   ChatCompletionRequestMessage,
   ChatCompletionRequestMessageRoleEnum
 } from 'openai';
-
 import { DEFAULT_TOKEN_LIMITS, getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
+import { getEngine } from './utils/engine';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
-import { getEngine } from './utils/engine';
 
 const config = getConfig();
 const MAX_TOKENS_INPUT =

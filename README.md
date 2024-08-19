@@ -68,20 +68,20 @@ You can also run it with local model through ollama:
 
 ```sh
 git add <files...>
-OCO_AI_PROVIDER='ollama' opencommit
+OCO_AI_PROVIDER='ollama'
 ```
 
 If you want to use a model other than mistral, you can do so by setting the `OCO_AI_PROVIDER` environment variable as follows:
 
 ```sh
-OCO_AI_PROVIDER='ollama/llama3:8b' opencommit
+OCO_AI_PROVIDER='ollama/llama3:8b'
 ```
 
 if you have ollama that is set up in docker/ on another machine with GPUs (not locally), you can change the default endpoint url.
 You can do so by setting the `OCO_OLLAMA_API_URL` environment variable as follows:
 
 ```sh
-OCO_OLLAMA_API_URL='http://192.168.1.10:11434/api/chat' opencommit
+OCO_OLLAMA_API_URL='http://192.168.1.10:11434/api/chat'
 ```
 
 where 192.168.1.10 is example of endpoint URL, where you have ollama set up.
@@ -127,7 +127,7 @@ OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
-OCO_AI_PROVIDER=<anthropic, azure, ollama or ollama/model default ollama model: mistral>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama or ollama/model>
 ```
 
 ### Global config for all repos

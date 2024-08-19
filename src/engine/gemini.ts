@@ -61,7 +61,7 @@ export class Gemini implements AiEngine {
         (m) =>
           ({
             parts: [{ text: m.content } as Part],
-            role: m.role == 'user' ? m.role : 'model'
+            role: m.role === 'user' ? m.role : 'model'
           } as Content)
       );
 

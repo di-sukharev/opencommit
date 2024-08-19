@@ -1,3 +1,4 @@
+import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
 import * as dotenv from 'dotenv';
@@ -5,12 +6,9 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { parse as iniParse, stringify as iniStringify } from 'ini';
 import { homedir } from 'os';
 import { join as pathJoin, resolve as pathResolve } from 'path';
-
-import { intro, outro } from '@clack/prompts';
-
 import { COMMANDS } from '../CommandsEnum';
-import { getI18nLocal } from '../i18n';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
+import { getI18nLocal, i18n } from '../i18n';
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
@@ -114,7 +112,9 @@ const validateConfig = (
 ) => {
   if (!condition) {
     outro(
-      `${chalk.red('✖')} Unsupported config key ${key}: ${validationMessage}`
+      `${chalk.red(
+        '✖'
+      )} Unsupported config key ${key}: ${validationMessage}. For more help refer to docs https://github.com/di-sukharev/opencommit`
     );
 
     process.exit(1);
@@ -123,65 +123,48 @@ const validateConfig = (
 
 export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
-    if (config.OCO_AI_PROVIDER == 'gemini') return value;
+    if (config.OCO_AI_PROVIDER !== 'openai') return value;
 
-    //need api key unless running locally with ollama
     validateConfig(
-      'OpenAI API_KEY',
-      value ||
-        config.OCO_ANTHROPIC_API_KEY ||
-        config.OCO_AI_PROVIDER.startsWith('ollama') ||
-        config.OCO_AZURE_API_KEY ||
-        config.OCO_AI_PROVIDER == 'test' ||
-        config.OCO_AI_PROVIDER == 'flowise',
-      'You need to provide an OpenAI/Anthropic/Azure or other provider API key via `oco config set OCO_OPENAI_API_KEY=your_key`, for help refer to docs https://github.com/di-sukharev/opencommit'
-    );
-    validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.startsWith('sk-') || config.OCO_AI_PROVIDER != 'openai',
-      'Must start with "sk-" for openai provider'
+      'OCO_OPENAI_API_KEY',
+      !!value,
+      'You need to provide the OCO_OPENAI_API_KEY when OCO_AI_PROVIDER is set to "openai" (default). Run `oco config set OCO_OPENAI_API_KEY=your_key`'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_AZURE_API_KEY](value: any, config: any = {}) {
+    if (config.OCO_AI_PROVIDER !== 'azure') return value;
+
     validateConfig(
-      'ANTHROPIC_API_KEY',
-      value ||
-        config.OCO_OPENAI_API_KEY ||
-        config.OCO_AZURE_API_KEY ||
-        config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'test' ||
-        config.OCO_AI_PROVIDER == 'flowise',
-      'You need to provide an OpenAI/Anthropic/Azure API key'
+      'OCO_AZURE_API_KEY',
+      !!value,
+      'You need to provide the OCO_AZURE_API_KEY when OCO_AI_PROVIDER is set to "azure". Run: `oco config set OCO_AZURE_API_KEY=your_key`'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_GEMINI_API_KEY](value: any, config: any = {}) {
-    // only need to check for gemini api key if using gemini
-    if (config.OCO_AI_PROVIDER != 'gemini') return value;
+    if (config.OCO_AI_PROVIDER !== 'gemini') return value;
 
     validateConfig(
-      'Gemini API Key',
-      value || config.OCO_GEMINI_API_KEY || config.OCO_AI_PROVIDER == 'test',
-      'You need to provide an Gemini API key'
+      'OCO_GEMINI_API_KEY',
+      value || config.OCO_GEMINI_API_KEY || config.OCO_AI_PROVIDER === 'test',
+      'You need to provide the OCO_GEMINI_API_KEY when OCO_AI_PROVIDER is set to "gemini". Run: `oco config set OCO_GEMINI_API_KEY=your_key`'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
+    if (config.OCO_AI_PROVIDER !== 'anthropic') return value;
+
     validateConfig(
       'ANTHROPIC_API_KEY',
-      value ||
-        config.OCO_OPENAI_API_KEY ||
-        config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'test' ||
-        config.OCO_AI_PROVIDER == 'flowise',
-      'You need to provide an OpenAI/Anthropic API key'
+      !!value,
+      'You need to provide the OCO_ANTHROPIC_API_KEY key when OCO_AI_PROVIDER is set to "anthropic". Run: `oco config set OCO_ANTHROPIC_API_KEY=your_key`'
     );
 
     return value;
@@ -190,8 +173,8 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_FLOWISE_API_KEY](value: any, config: any = {}) {
     validateConfig(
       CONFIG_KEYS.OCO_FLOWISE_API_KEY,
-      value || config.OCO_AI_PROVIDER != 'flowise',
-      'You need to provide a flowise API key'
+      value || config.OCO_AI_PROVIDER !== 'flowise',
+      'You need to provide the OCO_FLOWISE_API_KEY when OCO_AI_PROVIDER is set to "flowise". Run: `oco config set OCO_FLOWISE_API_KEY=your_key`'
     );
 
     return value;
@@ -201,25 +184,17 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_DESCRIPTION,
       typeof value === 'boolean',
-      'Must be true or false'
+      'Must be boolean: true or false'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT](value: any) {
-    // If the value is a string, convert it to a number.
-    if (typeof value === 'string') {
-      value = parseInt(value);
-      validateConfig(
-        CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
-        !isNaN(value),
-        'Must be a number'
-      );
-    }
+    value = parseInt(value);
     validateConfig(
       CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
-      value ? typeof value === 'number' : undefined,
+      !isNaN(value),
       'Must be a number'
     );
 
@@ -227,18 +202,10 @@ export const configValidators = {
   },
 
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT](value: any) {
-    // If the value is a string, convert it to a number.
-    if (typeof value === 'string') {
-      value = parseInt(value);
-      validateConfig(
-        CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
-        !isNaN(value),
-        'Must be a number'
-      );
-    }
+    value = parseInt(value);
     validateConfig(
       CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
-      value ? typeof value === 'number' : undefined,
+      !isNaN(value),
       'Must be a number'
     );
 
@@ -249,18 +216,21 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_EMOJI,
       typeof value === 'boolean',
-      'Must be true or false'
+      'Must be boolean: true or false'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_LANGUAGE](value: any) {
+    const supportedLanguages = Object.keys(i18n);
+
     validateConfig(
       CONFIG_KEYS.OCO_LANGUAGE,
       getI18nLocal(value),
-      `${value} is not supported yet`
+      `${value} is not supported yet. Supported languages: ${supportedLanguages}`
     );
+
     return getI18nLocal(value);
   },
 
@@ -314,19 +284,16 @@ export const configValidators = {
   },
 
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
+    if (!value) value = 'openai';
+
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      [
-        '',
-        'openai',
-        'anthropic',
-        'gemini',
-        'azure',
-        'test',
-        'flowise'
-      ].includes(value) || value.startsWith('ollama'),
+      ['openai', 'anthropic', 'gemini', 'azure', 'test', 'flowise'].includes(
+        value
+      ) || value.startsWith('ollama'),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
+
     return value;
   },
 
@@ -354,7 +321,7 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_FLOWISE_ENDPOINT,
       typeof value === 'string' && value.includes(':'),
-      'Value must be string and should include both I.P. and port number' // Considering the possibility of DNS lookup or feeding the I.P. explicitely, there is no pattern to verify, except a column for the port number
+      'Value must be string and should include both I.P. and port number' // Considering the possibility of DNS lookup or feeding the I.P. explicitly, there is no pattern to verify, except a column for the port number
     );
 
     return value;
@@ -372,11 +339,10 @@ export const configValidators = {
   },
 
   [CONFIG_KEYS.OCO_OLLAMA_API_URL](value: any) {
-    // add simple api validator
     validateConfig(
-      CONFIG_KEYS.OCO_API_URL,
+      CONFIG_KEYS.OCO_OLLAMA_API_URL,
       typeof value === 'string' && value.startsWith('http'),
-      `${value} is not a valid URL`
+      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
   }
@@ -388,14 +354,16 @@ export type ConfigType = {
 
 const defaultConfigPath = pathJoin(homedir(), '.opencommit');
 const defaultEnvPath = pathResolve(process.cwd(), '.env');
+
 export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
 }: {
   configPath?: string;
   envPath?: string;
-} = {}): ConfigType | null => {
+} = {}) => {
   dotenv.config({ path: envPath });
+
   const configFromEnv = {
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -427,7 +395,9 @@ export const getConfig = ({
     OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || undefined,
     OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined
   };
+
   const configExists = existsSync(configPath);
+
   if (!configExists) return configFromEnv;
 
   const configFile = readFileSync(configPath, 'utf8');
