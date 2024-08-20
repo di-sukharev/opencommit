@@ -2,7 +2,7 @@
   <div>
     <img src=".github/logo-grad.svg" alt="OpenCommit logo"/>
     <h1 align="center">OpenCommit</h1>
-    <h4 align="center">Follow the bird <a href="https://twitter.com/_sukharev_"><img src="https://img.shields.io/twitter/follow/_sukharev_?style=flat&label=_sukharev_&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
+    <h4 align="center">Author <a href="https://twitter.com/_sukharev_"><img src="https://img.shields.io/twitter/follow/_sukharev_?style=flat&label=_sukharev_&logo=twitter&color=0bf&logoColor=fff" align="center"></a>
   </div>
 	<h2>Auto-generate meaningful commits in a second</h2>
 	<p>Killing lame commits with AI 🤯🔫</p>
@@ -16,7 +16,7 @@
     <img src=".github/opencommit-example.png" alt="OpenCommit example"/>
 </div>
 
-All the commits in this repo are authored by OpenCommit — look at [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emojis and long commit descriptions are configurable.
+All of the commits in this repo are authored by OpenCommit — look at [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emojis and long commit descriptions are configurable, basically everything is.
 
 ## Setup OpenCommit as a CLI tool
 
@@ -40,7 +40,7 @@ You can use OpenCommit by simply running it via the CLI like this `oco`. 2 secon
    oco config set OCO_OPENAI_API_KEY=<your_api_key>
    ```
 
-   Your API key is stored locally in the `~/.opencommit` config file.
+   Your API key is stored locally in the `~/.opencommit` config file and never gets uploaded to any server.
 
 ## Usage
 
@@ -58,6 +58,8 @@ git add <files...>
 oco
 ```
 
+Running `git add` is optional, `oco` will do it for you.
+
 ### Running locally with Ollama
 
 You can also run it with local model through ollama:
@@ -68,20 +70,21 @@ You can also run it with local model through ollama:
 
 ```sh
 git add <files...>
-OCO_AI_PROVIDER='ollama'
+oco config set OCO_AI_PROVIDER='ollama'
 ```
 
-If you want to use a model other than mistral, you can do so by setting the `OCO_AI_PROVIDER` environment variable as follows:
+If you want to use a model other than mistral (default), you can do so by setting the `OCO_AI_PROVIDER` environment variable as follows:
 
 ```sh
-OCO_AI_PROVIDER='ollama/llama3:8b'
+oco config set OCO_AI_PROVIDER='ollama/llama3:8b'
 ```
 
-if you have ollama that is set up in docker/ on another machine with GPUs (not locally), you can change the default endpoint url.
+If you have ollama that is set up in docker/ on another machine with GPUs (not locally), you can change the default endpoint url.
+
 You can do so by setting the `OCO_OLLAMA_API_URL` environment variable as follows:
 
 ```sh
-OCO_OLLAMA_API_URL='http://192.168.1.10:11434/api/chat'
+oco config set OCO_OLLAMA_API_URL='http://192.168.1.10:11434/api/chat'
 ```
 
 where 192.168.1.10 is example of endpoint URL, where you have ollama set up.
@@ -95,6 +98,7 @@ There are multiple optional flags that can be used with the `oco` command:
 Link to the GitMoji specification: https://gitmoji.dev/
 
 This flag can only be used if the `OCO_EMOJI` configuration item is set to `true`. This flag allows users to use all emojis in the GitMoji specification, By default, the GitMoji full specification is set to `false`, which only includes 10 emojis (🐛✨📝🚀✅♻️⬆️🔧🌐💡).
+
 This is due to limit the number of tokens sent in each request. However, if you would like to use the full GitMoji specification, you can use the `--fgm` flag.
 
 ```
@@ -116,19 +120,23 @@ oco --yes
 Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
+...
 OCO_OPENAI_API_KEY=<your OpenAI API token>
 OCO_TOKENS_MAX_INPUT=<max model token limit (default: 4096)>
 OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
-OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview'>
+OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview' or any string basically, but it should be a valid model name>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
 OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama or ollama/model>
+...
 ```
+
+This are not all the config options, but you get the point.
 
 ### Global config for all repos
 
@@ -137,7 +145,7 @@ Local config still has more priority than Global config, but you may set `OCO_MO
 Simply set any of the variables above like this:
 
 ```sh
-oco config set OCO_MODEL=gpt-4o
+oco config set OCO_MODEL=gpt-4o-mini
 ```
 
 Configure [GitMoji](https://gitmoji.dev/) to preface a message.
@@ -152,20 +160,22 @@ To remove preface emojis:
 oco config set OCO_EMOJI=false
 ```
 
+Other config options are behaving the same.
+
 ### Switch to GPT-4 or other models
 
-By default, OpenCommit uses `gpt-4o` model.
+By default, OpenCommit uses `gpt-4o-mini` model.
 
-You may switch to GPT-4 which performs better, but costs ~x15 times more 🤠
+You may switch to gpt-4o which performs better, but costs more 🤠
 
 ```sh
-oco config set OCO_MODEL=gpt-4
+oco config set OCO_MODEL=gpt-4o
 ```
 
 or for as a cheaper option:
 
 ```sh
-oco config set OCO_MODEL=gpt-4o-mini
+oco config set OCO_MODEL=gpt-3.5-turbo
 ```
 
 ### Switch to Azure OpenAI
@@ -178,7 +188,7 @@ You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cog
 opencommit config set OCO_AI_PROVIDER=azure
 ```
 
-Of course need to set 'OPENAI_API_KEY'. And also need to set the
+Of course need to set 'OCO_OPENAI_API_KEY'. And also need to set the
 'OPENAI_BASE_PATH' for the endpoint and set the deployment name to
 'model'.
 
