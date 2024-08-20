@@ -11,8 +11,7 @@ export class FlowiseAi implements AiEngine {
   constructor(config) {
     this.config = config;
     this.client = axios.create({
-      url: `api/v1/prediction/${config.apiKey}`,
-      baseURL: config.baseURL,
+      url: `${config.baseURL}/${config.apiKey}`,
       headers: { 'Content-Type': 'application/json' }
     });
   }

@@ -301,7 +301,7 @@ In our codebase, the implementation of this feature can be found in the followin
 
 ```javascript
 commitMessage = messageTemplate.replace(
-  config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+  config.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
   commitMessage
 );
 ```

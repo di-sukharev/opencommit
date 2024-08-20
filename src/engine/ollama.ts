@@ -12,9 +12,8 @@ export class OllamaAi implements AiEngine {
     this.config = config;
     this.client = axios.create({
       url: config.baseURL
-        ? `api/v1/prediction/${config.apiKey}`
-        : 'http://localhost:11434/api/chat', // full URL overrides the baseURL
-      baseURL: config.baseURL,
+        ? `${config.baseURL}/${config.apiKey}`
+        : 'http://localhost:11434/api/chat',
       headers: { 'Content-Type': 'application/json' }
     });
   }
