@@ -26,7 +26,7 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
-  OCO_GITPUSH = 'OCO_GITPUSH',
+  OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
@@ -280,6 +280,7 @@ export const configValidators = {
     return value;
   },
 
+  // todo: deprecate
   [CONFIG_KEYS.OCO_GITPUSH](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_GITPUSH,
@@ -354,8 +355,39 @@ export const configValidators = {
   }
 };
 
+enum OCO_AI_PROVIDER_ENUM {
+  OPENAI = 'openai',
+  ANTHROPIC = 'anthropic',
+  GEMINI = 'gemini',
+  AZURE = 'azure',
+  TEST = 'test',
+  FLOWISE = 'flowise'
+}
+
 export type ConfigType = {
-  [key in CONFIG_KEYS]?: any;
+  [CONFIG_KEYS.OCO_OPENAI_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_AZURE_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_GEMINI_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_GEMINI_BASE_PATH]?: string;
+  [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
+  [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
+  [CONFIG_KEYS.OCO_OPENAI_BASE_PATH]?: string;
+  [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
+  [CONFIG_KEYS.OCO_EMOJI]: boolean;
+  [CONFIG_KEYS.OCO_MODEL]: string;
+  [CONFIG_KEYS.OCO_LANGUAGE]: string;
+  [CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER]: string;
+  [CONFIG_KEYS.OCO_PROMPT_MODULE]: OCO_PROMPT_MODULE_ENUM;
+  [CONFIG_KEYS.OCO_AI_PROVIDER]: OCO_AI_PROVIDER_ENUM;
+  [CONFIG_KEYS.OCO_GITPUSH]: boolean;
+  [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
+  [CONFIG_KEYS.OCO_AZURE_ENDPOINT]?: string;
+  [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
+  [CONFIG_KEYS.OCO_API_URL]?: string;
+  [CONFIG_KEYS.OCO_OLLAMA_API_URL]?: string;
+  [CONFIG_KEYS.OCO_FLOWISE_ENDPOINT]: string;
+  [CONFIG_KEYS.OCO_FLOWISE_API_KEY]?: string;
 };
 
 const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -384,6 +416,42 @@ const assertConfigsAreValid = (config: Record<string, any>) => {
   }
 };
 
+enum OCO_PROMPT_MODULE_ENUM {
+  CONVENTIONAL_COMMIT = 'conventional-commit',
+  COMMITLINT = '@commitlint'
+}
+
+const initGlobalConfig = () => {
+  const defaultConfig = {
+    OCO_TOKENS_MAX_INPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
+    OCO_TOKENS_MAX_OUTPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
+    OCO_DESCRIPTION: false,
+    OCO_EMOJI: false,
+    OCO_MODEL: getDefaultModel('openai'),
+    OCO_LANGUAGE: 'en',
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
+    OCO_PROMPT_MODULE: OCO_PROMPT_MODULE_ENUM.CONVENTIONAL_COMMIT,
+    OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.OPENAI,
+    OCO_GITPUSH: true, // todo: deprecate
+    OCO_ONE_LINE_COMMIT: false,
+    OCO_TEST_MOCK_TYPE: 'commit-message',
+    OCO_FLOWISE_ENDPOINT: ':'
+  };
+
+  writeFileSync(defaultConfigPath, iniStringify(defaultConfig), 'utf8');
+  return defaultConfig;
+};
+
+const parseEnvVarValue = (value?: any) => {
+  if (!value) return null;
+
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return value;
+  }
+};
+
 export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
@@ -394,49 +462,57 @@ export const getConfig = ({
   dotenv.config({ path: envPath });
 
   const configFromEnv = {
+    OCO_MODEL: process.env.OCO_MODEL,
+
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
     OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
     OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
-    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
-      ? Number(process.env.OCO_TOKENS_MAX_INPUT)
-      : DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
-    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT
-      ? Number(process.env.OCO_TOKENS_MAX_OUTPUT)
-      : DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY,
+
+    OCO_TOKENS_MAX_INPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_OUTPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_OUTPUT),
+
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
-    OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL:
-      process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
+
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT,
+    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL,
+
+    OCO_DESCRIPTION: parseEnvVarValue(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: parseEnvVarValue(process.env.OCO_EMOJI),
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
-    OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
-    OCO_ONE_LINE_COMMIT:
-      process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || undefined,
-    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message',
-    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ':',
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || undefined,
-    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined
+      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
+    OCO_ONE_LINE_COMMIT: parseEnvVarValue(process.env.OCO_ONE_LINE_COMMIT),
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
+
+    OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
 
+  let globalConfig: ConfigType;
   const isGlobalConfigFileExist = existsSync(configPath);
+  if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig();
+  else {
+    const configFile = readFileSync(configPath, 'utf8');
+    globalConfig = iniParse(configFile) as ConfigType;
+  }
 
-  if (!isGlobalConfigFileExist) return configFromEnv;
-
-  const configFile = readFileSync(configPath, 'utf8');
-  const globalConfig = iniParse(configFile);
+  function mergeObjects(main: Partial<ConfigType>, fallback: ConfigType) {
+    return Object.keys(fallback).reduce(
+      (acc, key) => {
+        acc[key] = main[key] !== undefined ? main[key] : fallback[key];
+        return acc;
+      },
+      { ...main }
+    );
+  }
 
   // env config takes precedence over global ~/.opencommit config file
-  const config = Object.keys(globalConfig).reduce((acc, key) => {
-    acc[key] = configFromEnv[key] || globalConfig[key];
-    return acc;
-  }, {} as typeof configFromEnv);
+  const config = mergeObjects(configFromEnv, globalConfig);
 
   return config;
 };
@@ -449,7 +525,7 @@ export const setConfig = (
     .map(([key, value]) => `${key} to ${value}`)
     .join(', ');
 
-  const config = getConfig() || {};
+  const config = getConfig();
 
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
@@ -479,7 +555,7 @@ export const setConfig = (
 
   assertConfigsAreValid(config);
 
-  outro(`${chalk.green('✔')} Config successfully set`);
+  outro(`${chalk.green('✔')} config successfully set: ${keysToSet}`);
 };
 
 export const configCommand = command(

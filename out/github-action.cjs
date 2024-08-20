@@ -46835,49 +46835,86 @@ var assertConfigsAreValid = (config6) => {
     }
   }
 };
+var initGlobalConfig = () => {
+  const defaultConfig = {
+    OCO_TOKENS_MAX_INPUT: 40960 /* DEFAULT_MAX_TOKENS_INPUT */,
+    OCO_TOKENS_MAX_OUTPUT: 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */,
+    OCO_DESCRIPTION: false,
+    OCO_EMOJI: false,
+    OCO_MODEL: getDefaultModel("openai"),
+    OCO_LANGUAGE: "en",
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: "$msg",
+    OCO_PROMPT_MODULE: "conventional-commit" /* CONVENTIONAL_COMMIT */,
+    OCO_AI_PROVIDER: "openai" /* OPENAI */,
+    OCO_GITPUSH: true,
+    OCO_ONE_LINE_COMMIT: false,
+    OCO_TEST_MOCK_TYPE: "commit-message",
+    OCO_FLOWISE_ENDPOINT: ":"
+  };
+  (0, import_fs.writeFileSync)(defaultConfigPath, (0, import_ini.stringify)(defaultConfig), "utf8");
+  return defaultConfig;
+};
+var parseEnvVarValue = (value) => {
+  if (!value)
+    return null;
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return value;
+  }
+};
 var getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
 } = {}) => {
   dotenv.config({ path: envPath });
   const configFromEnv = {
+    OCO_MODEL: process.env.OCO_MODEL,
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
     OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
     OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
-    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT ? Number(process.env.OCO_TOKENS_MAX_INPUT) : 40960 /* DEFAULT_MAX_TOKENS_INPUT */,
-    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT ? Number(process.env.OCO_TOKENS_MAX_OUTPUT) : 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */,
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY,
+    OCO_TOKENS_MAX_INPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_OUTPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_OUTPUT),
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
-    OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
-    OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
-    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit",
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || "openai",
-    OCO_GITPUSH: process.env.OCO_GITPUSH === "false" ? false : true,
-    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || void 0,
-    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message",
-    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ":",
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || void 0,
-    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || void 0
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT,
+    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL,
+    OCO_DESCRIPTION: parseEnvVarValue(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: parseEnvVarValue(process.env.OCO_EMOJI),
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE,
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
+    OCO_ONE_LINE_COMMIT: parseEnvVarValue(process.env.OCO_ONE_LINE_COMMIT),
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
+    OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH)
   };
+  let globalConfig;
   const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
   if (!isGlobalConfigFileExist)
-    return configFromEnv;
-  const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
-  const globalConfig = (0, import_ini.parse)(configFile);
-  const config6 = Object.keys(globalConfig).reduce((acc, key) => {
-    acc[key] = configFromEnv[key] || globalConfig[key];
-    return acc;
-  }, {});
+    globalConfig = initGlobalConfig();
+  else {
+    const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
+    globalConfig = (0, import_ini.parse)(configFile);
+  }
+  function mergeObjects(main, fallback) {
+    return Object.keys(fallback).reduce(
+      (acc, key) => {
+        acc[key] = main[key] !== void 0 ? main[key] : fallback[key];
+        return acc;
+      },
+      { ...main }
+    );
+  }
+  const config6 = mergeObjects(configFromEnv, globalConfig);
   return config6;
 };
 var setConfig = (keyValues, configPath = defaultConfigPath) => {
   const keysToSet = keyValues.map(([key, value]) => `${key} to ${value}`).join(", ");
-  const config6 = getConfig() || {};
+  const config6 = getConfig();
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
       const supportedKeys = Object.keys(configValidators).join("\n");
@@ -46903,7 +46940,7 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
   }
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config6), "utf8");
   assertConfigsAreValid(config6);
-  ce(`${source_default.green("\u2714")} Config successfully set`);
+  ce(`${source_default.green("\u2714")} config successfully set: ${keysToSet}`);
 };
 var configCommand = G2(
   {
@@ -55992,8 +56029,7 @@ var FlowiseAi = class {
   constructor(config6) {
     this.config = config6;
     this.client = axios_default.create({
-      url: `api/v1/prediction/${config6.apiKey}`,
-      baseURL: config6.baseURL,
+      url: `${config6.baseURL}/${config6.apiKey}`,
       headers: { "Content-Type": "application/json" }
     });
   }
@@ -56846,8 +56882,7 @@ var OllamaAi = class {
   constructor(config6) {
     this.config = config6;
     this.client = axios_default.create({
-      url: config6.baseURL ? `api/v1/prediction/${config6.apiKey}` : "http://localhost:11434/api/chat",
-      baseURL: config6.baseURL,
+      url: config6.baseURL ? `${config6.baseURL}/${config6.apiKey}` : "http://localhost:11434/api/chat",
       headers: { "Content-Type": "application/json" }
     });
   }
@@ -61183,13 +61218,14 @@ function getEngine() {
       return new TestAi(config6.OCO_TEST_MOCK_TYPE);
     case "gemini":
       return new Gemini({
+        ...DEFAULT_CONFIG,
         apiKey: config6.OCO_GEMINI_API_KEY,
-        ...DEFAULT_CONFIG
+        baseURL: config6.OCO_GEMINI_BASE_PATH
       });
     case "azure":
       return new AzureEngine({
-        apiKey: config6.OCO_AZURE_API_KEY,
-        ...DEFAULT_CONFIG
+        ...DEFAULT_CONFIG,
+        apiKey: config6.OCO_AZURE_API_KEY
       });
     case "flowise":
       return new FlowiseAi({
@@ -61680,8 +61716,8 @@ function mergeDiffs(arr, maxStringLength) {
 
 // src/generateCommitMessageFromGitDiff.ts
 var config5 = getConfig();
-var MAX_TOKENS_INPUT = config5?.OCO_TOKENS_MAX_INPUT || 40960 /* DEFAULT_MAX_TOKENS_INPUT */;
-var MAX_TOKENS_OUTPUT = config5?.OCO_TOKENS_MAX_OUTPUT || 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT || 40960 /* DEFAULT_MAX_TOKENS_INPUT */;
+var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT || 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */;
 var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];

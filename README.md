@@ -211,9 +211,9 @@ oco config set OCO_LANGUAGE=française
 The default language setting is **English**
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
-### Push to git
+### Push to git (gonna be deprecated)
 
-Pushing to git is on by default but if you would like to turn it off just use:
+A prompt to ushing to git is on by default but if you would like to turn it off just use:
 
 ```sh
 oco config set OCO_GITPUSH=false
