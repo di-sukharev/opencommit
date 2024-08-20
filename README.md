@@ -40,7 +40,7 @@ You can use OpenCommit by simply running it via the CLI like this `oco`. 2 secon
    oco config set OCO_OPENAI_API_KEY=<your_api_key>
    ```
 
-   Your API key is stored locally in the `~/.opencommit` config file and never gets uploaded to any server.
+   Your API key is stored locally in the `~/.opencommit` config file.
 
 ## Usage
 
