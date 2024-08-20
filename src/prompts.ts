@@ -1,8 +1,5 @@
 import { note } from '@clack/prompts';
-import {
-  ChatCompletionRequestMessage,
-  ChatCompletionRequestMessageRoleEnum
-} from 'openai';
+import { OpenAI } from 'openai';
 import { getConfig } from './commands/config';
 import { i18n, I18nLocals } from './i18n';
 import { configureCommitlintIntegration } from './modules/commitlint/config';
@@ -117,8 +114,8 @@ const getOneLineCommitInstruction = () =>
 const INIT_MAIN_PROMPT = (
   language: string,
   fullGitMojiSpec: boolean
-): ChatCompletionRequestMessage => ({
-  role: ChatCompletionRequestMessageRoleEnum.System,
+): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
+  role: 'system',
   content: (() => {
     const commitConvention = fullGitMojiSpec
       ? 'GitMoji specification'
@@ -135,9 +132,10 @@ const INIT_MAIN_PROMPT = (
   })()
 });
 
-export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
-  role: ChatCompletionRequestMessageRoleEnum.User,
-  content: `diff --git a/src/server.ts b/src/server.ts
+export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessageParam =
+  {
+    role: 'user',
+    content: `diff --git a/src/server.ts b/src/server.ts
     index ad4db42..f3b18a9 100644
     --- a/src/server.ts
     +++ b/src/server.ts
@@ -161,7 +159,7 @@ export const INIT_DIFF_PROMPT: ChatCompletionRequestMessage = {
                 +app.listen(process.env.PORT || PORT, () => {
                     +  console.log(\`Server listening on port \${PORT}\`);
                 });`
-};
+  };
 
 const getContent = (translation: ConsistencyPrompt) => {
   const fix = config.OCO_EMOJI
@@ -181,14 +179,14 @@ const getContent = (translation: ConsistencyPrompt) => {
 
 const INIT_CONSISTENCY_PROMPT = (
   translation: ConsistencyPrompt
-): ChatCompletionRequestMessage => ({
-  role: ChatCompletionRequestMessageRoleEnum.Assistant,
+): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
+  role: 'assistant',
   content: getContent(translation)
 });
 
 export const getMainCommitPrompt = async (
   fullGitMojiSpec: boolean
-): Promise<ChatCompletionRequestMessage[]> => {
+): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> => {
   switch (config.OCO_PROMPT_MODULE) {
     case '@commitlint':
       if (!(await utils.commitlintLLMConfigExists())) {

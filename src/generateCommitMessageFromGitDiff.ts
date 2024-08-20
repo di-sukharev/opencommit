@@ -1,7 +1,4 @@
-import {
-  ChatCompletionRequestMessage,
-  ChatCompletionRequestMessageRoleEnum
-} from 'openai';
+import { OpenAI } from 'openai';
 import { DEFAULT_TOKEN_LIMITS, getConfig } from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { getEngine } from './utils/engine';
@@ -18,13 +15,13 @@ const MAX_TOKENS_OUTPUT =
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string,
   fullGitMojiSpec: boolean
-): Promise<Array<ChatCompletionRequestMessage>> => {
+): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
 
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
 
   chatContextAsCompletionRequest.push({
-    role: ChatCompletionRequestMessageRoleEnum.User,
+    role: 'user',
     content: diff
   });
 
@@ -42,7 +39,7 @@ const ADJUSTMENT_FACTOR = 20;
 
 export const generateCommitMessageByDiff = async (
   diff: string,
-  fullGitMojiSpec: boolean
+  fullGitMojiSpec: boolean = false
 ): Promise<string> => {
   try {
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
@@ -180,7 +177,7 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
   // merge multiple files-diffs into 1 prompt to save tokens
   const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
 
-  const commitMessagePromises = [] as Promise<string | undefined>[];
+  const commitMessagePromises = [] as Promise<string | null | undefined>[];
 
   for (const fileDiff of mergedFilesDiffs) {
     if (tokenCount(fileDiff) >= maxDiffLength) {
