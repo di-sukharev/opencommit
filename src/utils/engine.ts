@@ -40,14 +40,15 @@ export function getEngine(): AiEngine {
 
     case 'gemini':
       return new Gemini({
+        ...DEFAULT_CONFIG,
         apiKey: config.OCO_GEMINI_API_KEY!,
-        ...DEFAULT_CONFIG
+        baseURL: config.OCO_GEMINI_BASE_PATH!
       });
 
     case 'azure':
       return new AzureEngine({
-        apiKey: config.OCO_AZURE_API_KEY!,
-        ...DEFAULT_CONFIG
+        ...DEFAULT_CONFIG,
+        apiKey: config.OCO_AZURE_API_KEY!
       });
 
     case 'flowise':
