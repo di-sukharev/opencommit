@@ -48602,19 +48602,19 @@ var getConfig = ({
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
     OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
     OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
-    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT ? Number(process.env.OCO_TOKENS_MAX_INPUT) : 1e4,
-    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT ? Number(process.env.OCO_TOKENS_MAX_OUTPUT) : 1e3,
+    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT ? Number(process.env.OCO_TOKENS_MAX_INPUT) : 40960 /* DEFAULT_MAX_TOKENS_INPUT */,
+    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT ? Number(process.env.OCO_TOKENS_MAX_OUTPUT) : 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION || false,
-    OCO_EMOJI: process.env.OCO_EMOJI || false,
+    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === "true" ? true : false,
+    OCO_EMOJI: process.env.OCO_EMOJI === "true" ? true : false,
     OCO_MODEL: process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE || "en",
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || "$msg",
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || "conventional-commit",
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || "openai",
-    OCO_GITPUSH: process.env.OCO_GITPUSH || false,
-    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT || false,
+    OCO_GITPUSH: process.env.OCO_GITPUSH === "false" ? false : true,
+    OCO_ONE_LINE_COMMIT: process.env.OCO_ONE_LINE_COMMIT === "true" ? true : false,
     OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || void 0,
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || "commit-message",
     OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ":",
@@ -62611,7 +62611,6 @@ var OpenAiEngine = class {
       }
     };
     this.config = config6;
-    console.log(this.config);
     this.client = new OpenAI({
       apiKey: config6.apiKey
     });
@@ -63146,8 +63145,8 @@ function mergeDiffs(arr, maxStringLength) {
 
 // src/generateCommitMessageFromGitDiff.ts
 var config5 = getConfig();
-var MAX_TOKENS_INPUT = config5?.OCO_TOKENS_MAX_INPUT || 4096 /* DEFAULT_MAX_TOKENS_INPUT */;
-var MAX_TOKENS_OUTPUT = config5?.OCO_TOKENS_MAX_OUTPUT || 500 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var MAX_TOKENS_INPUT = config5?.OCO_TOKENS_MAX_INPUT || 40960 /* DEFAULT_MAX_TOKENS_INPUT */;
+var MAX_TOKENS_OUTPUT = config5?.OCO_TOKENS_MAX_OUTPUT || 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */;
 var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
@@ -63161,7 +63160,7 @@ var GenerateCommitMessageErrorEnum = ((GenerateCommitMessageErrorEnum2) => {
   GenerateCommitMessageErrorEnum2["tooMuchTokens"] = "TOO_MUCH_TOKENS";
   GenerateCommitMessageErrorEnum2["internalError"] = "INTERNAL_ERROR";
   GenerateCommitMessageErrorEnum2["emptyMessage"] = "EMPTY_MESSAGE";
-  GenerateCommitMessageErrorEnum2[GenerateCommitMessageErrorEnum2["outputTokensTooHigh"] = `Token limit exceeded, OCO_TOKENS_MAX_OUTPUT must not be much higher than the default ${500 /* DEFAULT_MAX_TOKENS_OUTPUT */} tokens.`] = "outputTokensTooHigh";
+  GenerateCommitMessageErrorEnum2[GenerateCommitMessageErrorEnum2["outputTokensTooHigh"] = `Token limit exceeded, OCO_TOKENS_MAX_OUTPUT must not be much higher than the default ${4096 /* DEFAULT_MAX_TOKENS_OUTPUT */} tokens.`] = "outputTokensTooHigh";
   return GenerateCommitMessageErrorEnum2;
 })(GenerateCommitMessageErrorEnum || {});
 var ADJUSTMENT_FACTOR = 20;
