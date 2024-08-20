@@ -46900,20 +46900,14 @@ var getConfig = ({
     const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
     globalConfig = (0, import_ini.parse)(configFile);
   }
-  function mergeObjects(main, fallback) {
-    return Object.keys(fallback).reduce(
-      (acc, key) => {
-        acc[key] = main[key] !== void 0 ? main[key] : fallback[key];
-        return acc;
-      },
-      { ...main }
-    );
-  }
+  const mergeObjects = (main, fallback) => Object.keys(fallback).reduce((acc, key) => {
+    acc[key] = parseEnvVarValue(main[key] || fallback[key]);
+    return acc;
+  }, {});
   const config6 = mergeObjects(configFromEnv, globalConfig);
   return config6;
 };
 var setConfig = (keyValues, configPath = defaultConfigPath) => {
-  const keysToSet = keyValues.map(([key, value]) => `${key} to ${value}`).join(", ");
   const config6 = getConfig();
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
@@ -46940,7 +46934,7 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
   }
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config6), "utf8");
   assertConfigsAreValid(config6);
-  ce(`${source_default.green("\u2714")} config successfully set: ${keysToSet}`);
+  ce(`${source_default.green("\u2714")} config successfully set`);
 };
 var configCommand = G2(
   {
@@ -61201,33 +61195,31 @@ function getEngine() {
     baseURL: config6.OCO_OPENAI_BASE_PATH
   };
   switch (provider) {
-    case (provider?.startsWith("ollama") && provider):
-      const model = provider.substring("ollama/".length);
+    case "ollama" /* OLLAMA */:
       return new OllamaAi({
         ...DEFAULT_CONFIG,
         apiKey: "",
-        model,
         baseURL: config6.OCO_OLLAMA_API_URL
       });
-    case "anthropic":
+    case "anthropic" /* ANTHROPIC */:
       return new AnthropicEngine({
         ...DEFAULT_CONFIG,
         apiKey: config6.OCO_ANTHROPIC_API_KEY
       });
-    case "test":
+    case "test" /* TEST */:
       return new TestAi(config6.OCO_TEST_MOCK_TYPE);
-    case "gemini":
+    case "gemini" /* GEMINI */:
       return new Gemini({
         ...DEFAULT_CONFIG,
         apiKey: config6.OCO_GEMINI_API_KEY,
         baseURL: config6.OCO_GEMINI_BASE_PATH
       });
-    case "azure":
+    case "azure" /* AZURE */:
       return new AzureEngine({
         ...DEFAULT_CONFIG,
         apiKey: config6.OCO_AZURE_API_KEY
       });
-    case "flowise":
+    case "flowise" /* FLOWISE */:
       return new FlowiseAi({
         ...DEFAULT_CONFIG,
         baseURL: config6.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG.baseURL,
