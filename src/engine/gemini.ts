@@ -16,8 +16,8 @@ export class Gemini implements AiEngine {
   client: GoogleGenerativeAI;
 
   constructor(config) {
+    this.client = new GoogleGenerativeAI(config.apiKey);
     this.config = config;
-    this.client = new GoogleGenerativeAI(this.config.apiKey);
   }
 
   async generateCommitMessage(

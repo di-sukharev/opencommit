@@ -433,10 +433,10 @@ const initGlobalConfig = () => {
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
     OCO_PROMPT_MODULE: OCO_PROMPT_MODULE_ENUM.CONVENTIONAL_COMMIT,
     OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.OPENAI,
-    OCO_GITPUSH: true, // todo: deprecate
     OCO_ONE_LINE_COMMIT: false,
     OCO_TEST_MOCK_TYPE: 'commit-message',
-    OCO_FLOWISE_ENDPOINT: ':'
+    OCO_FLOWISE_ENDPOINT: ':',
+    OCO_GITPUSH: true // todo: deprecate
   };
 
   writeFileSync(defaultConfigPath, iniStringify(defaultConfig), 'utf8');
@@ -444,8 +444,6 @@ const initGlobalConfig = () => {
 };
 
 const parseEnvVarValue = (value?: any) => {
-  if (!value) return null;
-
   try {
     return JSON.parse(value);
   } catch (error) {
@@ -462,7 +460,7 @@ export const getConfig = ({
 } = {}): ConfigType => {
   dotenv.config({ path: envPath });
 
-  const configFromEnv = {
+  const envConfig = {
     OCO_MODEL: process.env.OCO_MODEL,
 
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
@@ -503,14 +501,16 @@ export const getConfig = ({
   }
 
   const mergeObjects = (main: Partial<ConfigType>, fallback: ConfigType) =>
-    Object.keys(fallback).reduce((acc, key) => {
-      acc[key] = parseEnvVarValue(main[key] || fallback[key]);
+    Object.keys(CONFIG_KEYS).reduce((acc, key) => {
+      acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
 
       return acc;
     }, {} as ConfigType);
 
   // env config takes precedence over global ~/.opencommit config file
-  const config = mergeObjects(configFromEnv, globalConfig);
+  const config = mergeObjects(envConfig, globalConfig);
+
+  console.log(7777777, { config, envConfig, globalConfig });
 
   return config;
 };

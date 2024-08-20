@@ -56,9 +56,9 @@ OCO_LANGUAGE="fr"
 
     expect(config).not.toEqual(null);
     expect(config!['OCO_OPENAI_API_KEY']).toEqual('local-key');
-    expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('local-anthropic-key');
     expect(config!['OCO_MODEL']).toEqual('gpt-3.5-turbo');
     expect(config!['OCO_LANGUAGE']).toEqual('fr');
+    expect(config!['OCO_ANTHROPIC_API_KEY']).toEqual('local-anthropic-key');
   });
 
   it('should fallback to global config when local config is not set', async () => {
@@ -96,17 +96,17 @@ OCO_ANTHROPIC_API_KEY="local-anthropic-key"
     globalConfigFile = await generateConfig(
       '.opencommit',
       `
-OCO_TOKENS_MAX_INPUT="4096"
-OCO_TOKENS_MAX_OUTPUT="500"
-OCO_GITPUSH="true"
+OCO_TOKENS_MAX_INPUT=4096
+OCO_TOKENS_MAX_OUTPUT=500
+OCO_GITPUSH=true
 `
     );
 
     localEnvFile = await generateConfig(
       '.env',
       `
-OCO_TOKENS_MAX_INPUT="8192"
-OCO_ONE_LINE_COMMIT="false"
+OCO_TOKENS_MAX_INPUT=8192
+OCO_ONE_LINE_COMMIT=false
 `
     );
 
@@ -143,5 +143,26 @@ OCO_LANGUAGE="es"
     expect(config!['OCO_OPENAI_API_KEY']).toEqual('global-key');
     expect(config!['OCO_MODEL']).toEqual('gpt-4');
     expect(config!['OCO_LANGUAGE']).toEqual('es');
+  });
+
+  it('should override global config with null values in local .env', async () => {
+    globalConfigFile = await generateConfig(
+      '.opencommit',
+      `
+OCO_OPENAI_API_KEY="global-key"
+OCO_MODEL="gpt-4"
+OCO_LANGUAGE="es"
+`
+    );
+
+    localEnvFile = await generateConfig('.env', `OCO_OPENAI_API_KEY=null`);
+
+    const config = getConfig({
+      configPath: globalConfigFile.filePath,
+      envPath: localEnvFile.filePath
+    });
+
+    expect(config).not.toEqual(null);
+    expect(config!['OCO_OPENAI_API_KEY']).toEqual(null);
   });
 });
