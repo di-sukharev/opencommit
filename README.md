@@ -16,7 +16,7 @@
     <img src=".github/opencommit-example.png" alt="OpenCommit example"/>
 </div>
 
-All of the commits in this repo are authored by OpenCommit — look at [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emojis and long commit descriptions are configurable, basically everything is.
+All the commits in this repo are authored by OpenCommit — look at [the commits](https://github.com/di-sukharev/opencommit/commit/eae7618d575ee8d2e9fff5de56da79d40c4bc5fc) to see how OpenCommit works. Emojis and long commit descriptions are configurable, basically everything is.
 
 ## Setup OpenCommit as a CLI tool
 
@@ -358,7 +358,7 @@ Or follow the process of your IDE Source Control feature, when it calls `git com
 
 OpenCommit is now available as a GitHub Action which automatically improves all new commits messages when you push to remote!
 
-This is great if you want to make sure all of the commits in all of your repository branches are meaningful and not lame like `fix1` or `done2`.
+This is great if you want to make sure all commits in all of your repository branches are meaningful and not lame like `fix1` or `done2`.
 
 Create a file `.github/workflows/opencommit.yml` with the contents below:
 
