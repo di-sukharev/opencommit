@@ -6,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { parse as iniParse, stringify as iniStringify } from 'ini';
 import { homedir } from 'os';
 import { join as pathJoin, resolve as pathResolve } from 'path';
-import { COMMANDS } from '../ENUMS';
+import { COMMANDS } from './ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
 
@@ -101,8 +101,8 @@ const getDefaultModel = (provider: string | undefined): string => {
 };
 
 export enum DEFAULT_TOKEN_LIMITS {
-  DEFAULT_MAX_TOKENS_INPUT = 4096,
-  DEFAULT_MAX_TOKENS_OUTPUT = 500
+  DEFAULT_MAX_TOKENS_INPUT = 40960,
+  DEFAULT_MAX_TOKENS_OUTPUT = 4096
 }
 
 const validateConfig = (
@@ -111,10 +111,10 @@ const validateConfig = (
   validationMessage: string
 ) => {
   if (!condition) {
+    outro(`${chalk.red('✖')} wrong value for ${key}: ${validationMessage}.`);
+
     outro(
-      `${chalk.red(
-        '✖'
-      )} Unsupported config key ${key}: ${validationMessage}. For more help refer to docs https://github.com/di-sukharev/opencommit`
+      'For more help refer to docs https://github.com/di-sukharev/opencommit'
     );
 
     process.exit(1);
@@ -127,7 +127,13 @@ export const configValidators = {
 
     validateConfig(
       'OCO_OPENAI_API_KEY',
-      !!value,
+      typeof value === 'string' && value.length > 0,
+      'Empty value is not allowed'
+    );
+
+    validateConfig(
+      'OCO_OPENAI_API_KEY',
+      value,
       'You need to provide the OCO_OPENAI_API_KEY when OCO_AI_PROVIDER is set to "openai" (default). Run `oco config set OCO_OPENAI_API_KEY=your_key`'
     );
 
@@ -355,6 +361,29 @@ export type ConfigType = {
 const defaultConfigPath = pathJoin(homedir(), '.opencommit');
 const defaultEnvPath = pathResolve(process.cwd(), '.env');
 
+const assertConfigsAreValid = (config: Record<string, any>) => {
+  for (const [key, value] of Object.entries(config)) {
+    if (!value) continue;
+
+    if (typeof value === 'string' && ['null', 'undefined'].includes(value)) {
+      config[key] = undefined;
+      continue;
+    }
+
+    try {
+      const validate = configValidators[key as CONFIG_KEYS];
+      validate(value, config);
+    } catch (error) {
+      outro(`Unknown '${key}' config option or missing validator.`);
+      outro(
+        `Manually fix the '.env' file or global '~/.opencommit' config file.`
+      );
+
+      process.exit(1);
+    }
+  }
+};
+
 export const getConfig = ({
   configPath = defaultConfigPath,
   envPath = defaultEnvPath
@@ -371,10 +400,10 @@ export const getConfig = ({
     OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
     OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
       ? Number(process.env.OCO_TOKENS_MAX_INPUT)
-      : undefined,
+      : DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
     OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT
       ? Number(process.env.OCO_TOKENS_MAX_OUTPUT)
-      : undefined,
+      : DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
     OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
     OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
     OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
@@ -396,35 +425,18 @@ export const getConfig = ({
     OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined
   };
 
-  const configExists = existsSync(configPath);
+  const isGlobalConfigFileExist = existsSync(configPath);
 
-  if (!configExists) return configFromEnv;
+  if (!isGlobalConfigFileExist) return configFromEnv;
 
   const configFile = readFileSync(configPath, 'utf8');
-  const config = iniParse(configFile);
+  const globalConfig = iniParse(configFile);
 
-  for (const configKey of Object.keys(config)) {
-    if (['null', 'undefined'].includes(config[configKey])) {
-      config[configKey] = undefined;
-      continue;
-    }
-    try {
-      const validator = configValidators[configKey as CONFIG_KEYS];
-      const validValue = validator(
-        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS],
-        config
-      );
-
-      config[configKey] = validValue;
-    } catch (error) {
-      outro(`Unknown '${configKey}' config option or missing validator.`);
-      outro(
-        `Manually fix the '.env' file or global '~/.opencommit' config file.`
-      );
-
-      process.exit(1);
-    }
-  }
+  // env config takes precedence over global ~/.opencommit config file
+  const config = Object.keys(globalConfig).reduce((acc, key) => {
+    acc[key] = configFromEnv[key] || globalConfig[key];
+    return acc;
+  }, {} as typeof configFromEnv);
 
   return config;
 };
@@ -433,27 +445,39 @@ export const setConfig = (
   keyValues: [key: string, value: string][],
   configPath: string = defaultConfigPath
 ) => {
+  const keysToSet = keyValues
+    .map(([key, value]) => `${key} to ${value}`)
+    .join(', ');
+
   const config = getConfig() || {};
 
-  for (const [configKey, configValue] of keyValues) {
-    if (!configValidators.hasOwnProperty(configKey)) {
-      throw new Error(`Unsupported config key: ${configKey}`);
+  for (let [key, value] of keyValues) {
+    if (!configValidators.hasOwnProperty(key)) {
+      const supportedKeys = Object.keys(configValidators).join('\n');
+      throw new Error(
+        `Unsupported config key: ${key}. Expected keys are:\n\n${supportedKeys}.\n\nFor more help refer to our docs: https://github.com/di-sukharev/opencommit`
+      );
     }
 
     let parsedConfigValue;
 
     try {
-      parsedConfigValue = JSON.parse(configValue);
+      parsedConfigValue = JSON.parse(value);
     } catch (error) {
-      parsedConfigValue = configValue;
+      parsedConfigValue = value;
     }
 
-    const validValue =
-      configValidators[configKey as CONFIG_KEYS](parsedConfigValue);
-    config[configKey as CONFIG_KEYS] = validValue;
+    const validValue = configValidators[key as CONFIG_KEYS](
+      parsedConfigValue,
+      config
+    );
+
+    config[key as CONFIG_KEYS] = validValue;
   }
 
   writeFileSync(configPath, iniStringify(config), 'utf8');
+
+  assertConfigsAreValid(config);
 
   outro(`${chalk.green('✔')} Config successfully set`);
 };
@@ -464,9 +488,9 @@ export const configCommand = command(
     parameters: ['<mode>', '<key=values...>']
   },
   async (argv) => {
-    intro('opencommit — config');
     try {
       const { mode, keyValues } = argv._;
+      intro(`COMMAND: config ${mode} ${keyValues}`);
 
       if (mode === CONFIG_MODES.get) {
         const config = getConfig() || {};
