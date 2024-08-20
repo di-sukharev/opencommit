@@ -1,19 +1,33 @@
 import { ChatCompletionRequestMessage } from 'openai';
-import { getConfig } from '../commands/config';
-import { AiEngine } from './Engine';
+import { AiEngine, AiEngineConfig } from './Engine';
 
 export const TEST_MOCK_TYPES = [
   'commit-message',
   'prompt-module-commitlint-config'
 ] as const;
-type TestMockType = (typeof TEST_MOCK_TYPES)[number];
 
-export class TestAi implements AiEngine {
+export type TestMockType = (typeof TEST_MOCK_TYPES)[number];
+
+type TestAiEngine = Partial<AiEngine> & {
+  mockType: TestMockType;
+};
+
+export class TestAi implements TestAiEngine {
+  mockType: TestMockType;
+
+  // those are not used in the test engine
+  config: any;
+  client: any;
+  // ---
+
+  constructor(mockType: TestMockType) {
+    this.mockType = mockType;
+  }
+
   async generateCommitMessage(
     _messages: Array<ChatCompletionRequestMessage>
   ): Promise<string | undefined> {
-    const config = getConfig();
-    switch (config?.OCO_TEST_MOCK_TYPE as TestMockType | undefined) {
+    switch (this.mockType) {
       case 'commit-message':
         return 'fix(testAi.ts): test commit message';
       case 'prompt-module-commitlint-config':

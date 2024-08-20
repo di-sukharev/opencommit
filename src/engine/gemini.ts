@@ -1,57 +1,35 @@
-import { intro, outro } from '@clack/prompts';
 import {
   Content,
-  GenerativeModel,
   GoogleGenerativeAI,
   HarmBlockThreshold,
   HarmCategory,
   Part
 } from '@google/generative-ai';
 import axios from 'axios';
-import chalk from 'chalk';
-import { ChatCompletionRequestMessage } from 'openai';
-import {
-  CONFIG_MODES,
-  ConfigType,
-  DEFAULT_TOKEN_LIMITS,
-  getConfig,
-  MODEL_LIST
-} from '../commands/config';
-import { AiEngine } from './Engine';
+import { OpenAI } from 'openai';
+import { AiEngine, AiEngineConfig } from './Engine';
+
+interface GeminiConfig extends AiEngineConfig {}
 
 export class Gemini implements AiEngine {
-  private readonly config: ConfigType;
-  private readonly googleGenerativeAi: GoogleGenerativeAI;
-  private ai: GenerativeModel;
+  config: GeminiConfig;
+  client: GoogleGenerativeAI;
 
-  // vars
-  private maxTokens = {
-    input: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
-    output: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT
-  };
-  private basePath: string;
-  private apiKey: string;
-  private model: string;
-
-  constructor() {
-    this.config = getConfig() as ConfigType;
-    this.googleGenerativeAi = new GoogleGenerativeAI(
-      this.config.OCO_GEMINI_API_KEY
-    );
-
-    this.warmup();
+  constructor(config) {
+    this.config = config;
+    this.client = new GoogleGenerativeAI(this.config.apiKey);
   }
 
   async generateCommitMessage(
-    messages: ChatCompletionRequestMessage[]
+    messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | undefined> {
     const systemInstruction = messages
       .filter((m) => m.role === 'system')
       .map((m) => m.content)
       .join('\n');
 
-    this.ai = this.googleGenerativeAi.getGenerativeModel({
-      model: this.model,
+    const gemini = this.client.getGenerativeModel({
+      model: this.config.model,
       systemInstruction
     });
 
@@ -66,7 +44,7 @@ export class Gemini implements AiEngine {
       );
 
     try {
-      const result = await this.ai.generateContent({
+      const result = await gemini.generateContent({
         contents,
         safetySettings: [
           {
@@ -87,7 +65,7 @@ export class Gemini implements AiEngine {
           }
         ],
         generationConfig: {
-          maxOutputTokens: this.maxTokens.output,
+          maxOutputTokens: this.config.maxTokensOutput,
           temperature: 0,
           topP: 0.1
         }
@@ -96,70 +74,15 @@ export class Gemini implements AiEngine {
       return result.response.text();
     } catch (error) {
       const err = error as Error;
-      outro(`${chalk.red('✖')} ${err?.message || err}`);
-
       if (
         axios.isAxiosError<{ error?: { message: string } }>(error) &&
         error.response?.status === 401
       ) {
         const geminiError = error.response.data.error;
-
-        if (geminiError?.message) outro(geminiError.message);
-        outro(
-          'For help look into README https://github.com/di-sukharev/opencommit#setup'
-        );
+        if (geminiError) throw new Error(geminiError?.message);
       }
 
       throw err;
-    }
-  }
-
-  private warmup(): void {
-    if (this.config.OCO_TOKENS_MAX_INPUT !== undefined)
-      this.maxTokens.input = this.config.OCO_TOKENS_MAX_INPUT;
-    if (this.config.OCO_TOKENS_MAX_OUTPUT !== undefined)
-      this.maxTokens.output = this.config.OCO_TOKENS_MAX_OUTPUT;
-    this.basePath = this.config.OCO_GEMINI_BASE_PATH;
-    this.apiKey = this.config.OCO_GEMINI_API_KEY;
-
-    const [command, mode] = process.argv.slice(2);
-
-    const provider = this.config.OCO_AI_PROVIDER;
-
-    if (
-      provider === 'gemini' &&
-      !this.apiKey &&
-      command !== 'config' &&
-      mode !== 'set'
-    ) {
-      intro('opencommit');
-
-      outro(
-        'OCO_GEMINI_API_KEY is not set, please run `oco config set OCO_GEMINI_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.'
-      );
-
-      outro(
-        'For help look into README https://github.com/di-sukharev/opencommit#setup'
-      );
-
-      process.exit(1);
-    }
-
-    this.model = this.config.OCO_MODEL || MODEL_LIST.gemini[0];
-
-    if (
-      provider === 'gemini' &&
-      !MODEL_LIST.gemini.includes(this.model) &&
-      command !== 'config' &&
-      mode !== CONFIG_MODES.set
-    ) {
-      outro(
-        `${chalk.red('✖')} Unsupported model ${
-          this.model
-        } for Gemini. Supported models are: ${MODEL_LIST.gemini.join(', ')}`
-      );
-
-      process.exit(1);
     }
   }
 }

@@ -1,78 +1,51 @@
-import { AzureKeyCredential, OpenAIClient } from '@azure/openai';
-import { intro, outro } from '@clack/prompts';
+import {
+  AzureKeyCredential,
+  OpenAIClient as AzureOpenAIClient
+} from '@azure/openai';
+import { outro } from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
-import { ChatCompletionRequestMessage } from 'openai';
-import {
-  CONFIG_MODES,
-  DEFAULT_TOKEN_LIMITS,
-  getConfig
-} from '../commands/config';
+import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
-import { AiEngine } from './Engine';
+import { AiEngine, AiEngineConfig } from './Engine';
 
-const config = getConfig();
-
-const MAX_TOKENS_OUTPUT =
-  config?.OCO_TOKENS_MAX_OUTPUT ||
-  DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
-const MAX_TOKENS_INPUT =
-  config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
-let basePath = config?.OCO_OPENAI_BASE_PATH;
-let apiKey = config?.OCO_AZURE_API_KEY;
-let apiEndpoint = config?.OCO_AZURE_ENDPOINT;
-
-const [command, mode] = process.argv.slice(2);
-
-const provider = config?.OCO_AI_PROVIDER;
-
-if (
-  provider === 'azure' &&
-  !apiKey &&
-  !apiEndpoint &&
-  command !== 'config' &&
-  mode !== CONFIG_MODES.set
-) {
-  intro('opencommit');
-
-  outro(
-    'OCO_AZURE_API_KEY or OCO_AZURE_ENDPOINT are not set, please run `oco config set OCO_AZURE_API_KEY=<your token> . If you are using GPT, make sure you add payment details, so API works.`'
-  );
-  outro(
-    'For help look into README https://github.com/di-sukharev/opencommit#setup'
-  );
-
-  process.exit(1);
+interface AzureAiEngineConfig extends AiEngineConfig {
+  basePath: string;
+  apiKey: string;
 }
 
-const MODEL = config?.OCO_MODEL || 'gpt-3.5-turbo';
+export class AzureEngine implements AiEngine {
+  config: AzureAiEngineConfig;
+  client: AzureOpenAIClient;
 
-export class Azure implements AiEngine {
-  private openAI!: OpenAIClient;
-
-  constructor() {
-    if (provider === 'azure') {
-      this.openAI = new OpenAIClient(
-        apiEndpoint,
-        new AzureKeyCredential(apiKey)
-      );
-    }
+  constructor(config: AzureAiEngineConfig) {
+    this.config = config;
+    this.client = new AzureOpenAIClient(
+      this.config.basePath,
+      new AzureKeyCredential(this.config.apiKey)
+    );
   }
 
-  public generateCommitMessage = async (
-    messages: Array<ChatCompletionRequestMessage>
+  generateCommitMessage = async (
+    messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | undefined> => {
     try {
       const REQUEST_TOKENS = messages
-        .map((msg) => tokenCount(msg.content!) + 4)
+        .map((msg) => tokenCount(msg.content as string) + 4)
         .reduce((a, b) => a + b, 0);
 
-      if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
+      if (
+        REQUEST_TOKENS >
+        this.config.maxTokensInput - this.config.maxTokensOutput
+      ) {
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
       }
 
-      const data = await this.openAI.getChatCompletions(MODEL, messages);
+      const data = await this.client.getChatCompletions(
+        this.config.model,
+        messages
+      );
 
       const message = data.choices[0].message;
 
@@ -81,10 +54,10 @@ export class Azure implements AiEngine {
       }
       return message?.content;
     } catch (error) {
-      outro(`${chalk.red('✖')} ${MODEL}`);
+      outro(`${chalk.red('✖')} ${this.config.model}`);
 
       const err = error as Error;
-      outro(`${chalk.red('✖')} ${err?.message || err}`);
+      outro(`${chalk.red('✖')} ${JSON.stringify(error)}`);
 
       if (
         axios.isAxiosError<{ error?: { message: string } }>(error) &&
@@ -102,5 +75,3 @@ export class Azure implements AiEngine {
     }
   };
 }
-
-export const azure = new Azure();
