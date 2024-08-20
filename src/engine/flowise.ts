@@ -11,9 +11,8 @@ export class FlowiseAi implements AiEngine {
   constructor(config) {
     this.config = config;
     this.client = axios.create({
-      // TODO: verify. basePath should be equal to OCO_FLOWISE_ENDPOINT
-      url: `/api/v1/prediction/${config.apiKey}`,
-      baseURL: `http://${config.basePath}`, // TODO: refactor to baseURL: this.config.basePath
+      url: `api/v1/prediction/${config.apiKey}`,
+      baseURL: config.baseURL,
       headers: { 'Content-Type': 'application/json' }
     });
   }

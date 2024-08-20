@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { ChatCompletionRequestMessage } from 'openai';
+import { OpenAI } from 'openai';
 import { AiEngine, AiEngineConfig } from './Engine';
 
 interface OllamaConfig extends AiEngineConfig {}
@@ -11,15 +11,16 @@ export class OllamaAi implements AiEngine {
   constructor(config) {
     this.config = config;
     this.client = axios.create({
-      // TODO: verify. basePath should be equal to OCO_FLOWISE_ENDPOINT
-      url: '/api/chat',
-      baseURL: config.basePath ?? 'http://localhost:11434',
+      url: config.baseURL
+        ? `api/v1/prediction/${config.apiKey}`
+        : 'http://localhost:11434/api/chat', // full URL overrides the baseURL
+      baseURL: config.baseURL,
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
   async generateCommitMessage(
-    messages: Array<ChatCompletionRequestMessage>
+    messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | undefined> {
     const params = {
       model: this.config.model ?? 'mistral',

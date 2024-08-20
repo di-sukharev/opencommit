@@ -55981,7 +55981,7 @@ var AzureEngine = class {
     };
     this.config = config6;
     this.client = new OpenAIClient(
-      this.config.basePath,
+      this.config.baseURL,
       new AzureKeyCredential(this.config.apiKey)
     );
   }
@@ -55992,8 +55992,8 @@ var FlowiseAi = class {
   constructor(config6) {
     this.config = config6;
     this.client = axios_default.create({
-      url: `/api/v1/prediction/${config6.apiKey}`,
-      baseURL: `http://${config6.basePath}`,
+      url: `api/v1/prediction/${config6.apiKey}`,
+      baseURL: config6.baseURL,
       headers: { "Content-Type": "application/json" }
     });
   }
@@ -56846,8 +56846,8 @@ var OllamaAi = class {
   constructor(config6) {
     this.config = config6;
     this.client = axios_default.create({
-      url: "/api/chat",
-      baseURL: config6.basePath ?? "http://localhost:11434",
+      url: config6.baseURL ? `api/v1/prediction/${config6.apiKey}` : "http://localhost:11434/api/chat",
+      baseURL: config6.baseURL,
       headers: { "Content-Type": "application/json" }
     });
   }
@@ -61151,9 +61151,7 @@ var OpenAiEngine = class {
       }
     };
     this.config = config6;
-    this.client = new OpenAI({
-      apiKey: config6.apiKey
-    });
+    this.client = new OpenAI({ apiKey: config6.apiKey });
   }
 };
 
@@ -61165,7 +61163,7 @@ function getEngine() {
     model: config6.OCO_MODEL,
     maxTokensOutput: config6.OCO_TOKENS_MAX_OUTPUT,
     maxTokensInput: config6.OCO_TOKENS_MAX_INPUT,
-    basePath: config6.OCO_OPENAI_BASE_PATH
+    baseURL: config6.OCO_OPENAI_BASE_PATH
   };
   switch (provider) {
     case (provider?.startsWith("ollama") && provider):
@@ -61174,7 +61172,7 @@ function getEngine() {
         ...DEFAULT_CONFIG,
         apiKey: "",
         model,
-        basePath: config6.OCO_OLLAMA_API_URL
+        baseURL: config6.OCO_OLLAMA_API_URL
       });
     case "anthropic":
       return new AnthropicEngine({
@@ -61195,17 +61193,14 @@ function getEngine() {
       });
     case "flowise":
       return new FlowiseAi({
-        apiKey: config6.OCO_FLOWISE_API_KEY,
-        model: config6.OCO_MODEL,
-        maxTokensOutput: config6.OCO_TOKENS_MAX_OUTPUT,
-        maxTokensInput: config6.OCO_TOKENS_MAX_INPUT
+        ...DEFAULT_CONFIG,
+        baseURL: config6.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG.baseURL,
+        apiKey: config6.OCO_FLOWISE_API_KEY
       });
     default:
       return new OpenAiEngine({
-        apiKey: config6.OCO_OPENAI_API_KEY,
-        model: config6.OCO_MODEL,
-        maxTokensOutput: config6.OCO_TOKENS_MAX_OUTPUT,
-        maxTokensInput: config6.OCO_TOKENS_MAX_INPUT
+        ...DEFAULT_CONFIG,
+        apiKey: config6.OCO_OPENAI_API_KEY
       });
   }
 }

@@ -11,7 +11,7 @@ import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
 
 interface AzureAiEngineConfig extends AiEngineConfig {
-  basePath: string;
+  baseURL: string;
   apiKey: string;
 }
 
@@ -22,7 +22,7 @@ export class AzureEngine implements AiEngine {
   constructor(config: AzureAiEngineConfig) {
     this.config = config;
     this.client = new AzureOpenAIClient(
-      this.config.basePath,
+      this.config.baseURL,
       new AzureKeyCredential(this.config.apiKey)
     );
   }

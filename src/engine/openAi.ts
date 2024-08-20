@@ -12,10 +12,7 @@ export class OpenAiEngine implements AiEngine {
 
   constructor(config: OpenAiConfig) {
     this.config = config;
-
-    this.client = new OpenAI({
-      apiKey: config.apiKey
-    });
+    this.client = new OpenAI({ apiKey: config.apiKey });
   }
 
   public generateCommitMessage = async (

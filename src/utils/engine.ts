@@ -16,7 +16,7 @@ export function getEngine(): AiEngine {
     model: config.OCO_MODEL!,
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
-    basePath: config.OCO_OPENAI_BASE_PATH!
+    baseURL: config.OCO_OPENAI_BASE_PATH!
   };
 
   switch (provider) {
@@ -26,7 +26,7 @@ export function getEngine(): AiEngine {
         ...DEFAULT_CONFIG,
         apiKey: '',
         model,
-        basePath: config.OCO_OLLAMA_API_URL!
+        baseURL: config.OCO_OLLAMA_API_URL!
       });
 
     case 'anthropic':
@@ -52,18 +52,15 @@ export function getEngine(): AiEngine {
 
     case 'flowise':
       return new FlowiseAi({
-        apiKey: config.OCO_FLOWISE_API_KEY!,
-        model: config.OCO_MODEL!,
-        maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
-        maxTokensInput: config.OCO_TOKENS_MAX_INPUT!
+        ...DEFAULT_CONFIG,
+        baseURL: config.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG.baseURL,
+        apiKey: config.OCO_FLOWISE_API_KEY!
       });
 
     default:
       return new OpenAiEngine({
-        apiKey: config.OCO_OPENAI_API_KEY!,
-        model: config.OCO_MODEL!,
-        maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
-        maxTokensInput: config.OCO_TOKENS_MAX_INPUT!
+        ...DEFAULT_CONFIG,
+        apiKey: config.OCO_OPENAI_API_KEY!
       });
   }
 }

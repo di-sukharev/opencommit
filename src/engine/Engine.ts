@@ -9,7 +9,7 @@ export interface AiEngineConfig {
   model: string;
   maxTokensOutput: number;
   maxTokensInput: number;
-  basePath?: string;
+  baseURL?: string;
 }
 
 type Client =
