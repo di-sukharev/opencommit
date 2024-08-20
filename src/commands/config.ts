@@ -355,7 +355,8 @@ export const configValidators = {
   }
 };
 
-enum OCO_AI_PROVIDER_ENUM {
+export enum OCO_AI_PROVIDER_ENUM {
+  OLLAMA = 'ollama',
   OPENAI = 'openai',
   ANTHROPIC = 'anthropic',
   GEMINI = 'gemini',
@@ -458,7 +459,7 @@ export const getConfig = ({
 }: {
   configPath?: string;
   envPath?: string;
-} = {}) => {
+} = {}): ConfigType => {
   dotenv.config({ path: envPath });
 
   const configFromEnv = {
@@ -501,15 +502,12 @@ export const getConfig = ({
     globalConfig = iniParse(configFile) as ConfigType;
   }
 
-  function mergeObjects(main: Partial<ConfigType>, fallback: ConfigType) {
-    return Object.keys(fallback).reduce(
-      (acc, key) => {
-        acc[key] = main[key] !== undefined ? main[key] : fallback[key];
-        return acc;
-      },
-      { ...main }
-    );
-  }
+  const mergeObjects = (main: Partial<ConfigType>, fallback: ConfigType) =>
+    Object.keys(fallback).reduce((acc, key) => {
+      acc[key] = parseEnvVarValue(main[key] || fallback[key]);
+
+      return acc;
+    }, {} as ConfigType);
 
   // env config takes precedence over global ~/.opencommit config file
   const config = mergeObjects(configFromEnv, globalConfig);
@@ -521,10 +519,6 @@ export const setConfig = (
   keyValues: [key: string, value: string][],
   configPath: string = defaultConfigPath
 ) => {
-  const keysToSet = keyValues
-    .map(([key, value]) => `${key} to ${value}`)
-    .join(', ');
-
   const config = getConfig();
 
   for (let [key, value] of keyValues) {
@@ -548,14 +542,14 @@ export const setConfig = (
       config
     );
 
-    config[key as CONFIG_KEYS] = validValue;
+    config[key] = validValue;
   }
 
   writeFileSync(configPath, iniStringify(config), 'utf8');
 
   assertConfigsAreValid(config);
 
-  outro(`${chalk.green('✔')} config successfully set: ${keysToSet}`);
+  outro(`${chalk.green('✔')} config successfully set`);
 };
 
 export const configCommand = command(
