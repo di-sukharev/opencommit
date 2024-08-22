@@ -99,6 +99,8 @@ ${chalk.grey('——————————————————')}`
       if (config?.OCO_GITPUSH === false)
           return
 
+      intro('opencommit - git push');
+
       if (!remotes.length) {
         const { stdout } = await execa('git', ['push']);
         if (stdout) outro(stdout);
@@ -111,9 +113,7 @@ ${chalk.grey('——————————————————')}`
         });
 
         if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
-          const pushSpinner = spinner();
-
-          pushSpinner.start(`Running 'git push ${remotes[0]}'`);
+          outro(`Running 'git push ${remotes[0]}' ...`);
 
           const { stdout } = await execa('git', [
             'push',
@@ -121,7 +121,7 @@ ${chalk.grey('——————————————————')}`
             remotes[0]
           ]);
 
-          pushSpinner.stop(
+          outro(
             `${chalk.green('✔')} Successfully pushed all commits to ${
               remotes[0]
             }`
@@ -139,13 +139,12 @@ ${chalk.grey('——————————————————')}`
         })) as string;
 
         if (!isCancel(selectedRemote)) {
-          const pushSpinner = spinner();
 
-          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
+          outro(`Running 'git push ${selectedRemote}' ...`);
 
           const { stdout } = await execa('git', ['push', selectedRemote]);
 
-          pushSpinner.stop(
+          outro(
             `${chalk.green(
               '✔'
             )} Successfully pushed all commits to ${selectedRemote}`
