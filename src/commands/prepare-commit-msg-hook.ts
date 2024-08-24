@@ -35,7 +35,7 @@ export const prepareCommitMessageHook = async (
 
     if (!staged) return;
 
-    intro('opencommit');
+    intro('OpenCommit');
 
     const config = getConfig();
 

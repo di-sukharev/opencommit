@@ -16,13 +16,18 @@ export const assertGitRepo = async () => {
 //   (file) => `:(exclude)${file}`
 // );
 
+export const getIgnoredFolders = (): string[] => {
+  try {
+    return readFileSync('.opencommitignore').toString().split('\n');
+  } catch (e) {
+    return [];
+  }
+};
+
 export const getOpenCommitIgnore = (): Ignore => {
   const ig = ignore();
-
-  try {
-    ig.add(readFileSync('.opencommitignore').toString().split('\n'));
-  } catch (e) {}
-
+  const ignorePatterns = getIgnoredFolders();
+  ig.add(ignorePatterns);
   return ig;
 };
 

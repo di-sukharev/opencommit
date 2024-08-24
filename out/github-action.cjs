@@ -46551,6 +46551,32 @@ function getI18nLocal(value) {
 }
 
 // src/commands/config.ts
+var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
+  CONFIG_KEYS2["OCO_OPENAI_API_KEY"] = "OCO_OPENAI_API_KEY";
+  CONFIG_KEYS2["OCO_ANTHROPIC_API_KEY"] = "OCO_ANTHROPIC_API_KEY";
+  CONFIG_KEYS2["OCO_AZURE_API_KEY"] = "OCO_AZURE_API_KEY";
+  CONFIG_KEYS2["OCO_GEMINI_API_KEY"] = "OCO_GEMINI_API_KEY";
+  CONFIG_KEYS2["OCO_GEMINI_BASE_PATH"] = "OCO_GEMINI_BASE_PATH";
+  CONFIG_KEYS2["OCO_TOKENS_MAX_INPUT"] = "OCO_TOKENS_MAX_INPUT";
+  CONFIG_KEYS2["OCO_TOKENS_MAX_OUTPUT"] = "OCO_TOKENS_MAX_OUTPUT";
+  CONFIG_KEYS2["OCO_OPENAI_BASE_PATH"] = "OCO_OPENAI_BASE_PATH";
+  CONFIG_KEYS2["OCO_DESCRIPTION"] = "OCO_DESCRIPTION";
+  CONFIG_KEYS2["OCO_EMOJI"] = "OCO_EMOJI";
+  CONFIG_KEYS2["OCO_MODEL"] = "OCO_MODEL";
+  CONFIG_KEYS2["OCO_LANGUAGE"] = "OCO_LANGUAGE";
+  CONFIG_KEYS2["OCO_MESSAGE_TEMPLATE_PLACEHOLDER"] = "OCO_MESSAGE_TEMPLATE_PLACEHOLDER";
+  CONFIG_KEYS2["OCO_PROMPT_MODULE"] = "OCO_PROMPT_MODULE";
+  CONFIG_KEYS2["OCO_AI_PROVIDER"] = "OCO_AI_PROVIDER";
+  CONFIG_KEYS2["OCO_GITPUSH"] = "OCO_GITPUSH";
+  CONFIG_KEYS2["OCO_ONE_LINE_COMMIT"] = "OCO_ONE_LINE_COMMIT";
+  CONFIG_KEYS2["OCO_AZURE_ENDPOINT"] = "OCO_AZURE_ENDPOINT";
+  CONFIG_KEYS2["OCO_TEST_MOCK_TYPE"] = "OCO_TEST_MOCK_TYPE";
+  CONFIG_KEYS2["OCO_API_URL"] = "OCO_API_URL";
+  CONFIG_KEYS2["OCO_OLLAMA_API_URL"] = "OCO_OLLAMA_API_URL";
+  CONFIG_KEYS2["OCO_FLOWISE_ENDPOINT"] = "OCO_FLOWISE_ENDPOINT";
+  CONFIG_KEYS2["OCO_FLOWISE_API_KEY"] = "OCO_FLOWISE_API_KEY";
+  return CONFIG_KEYS2;
+})(CONFIG_KEYS || {});
 var MODEL_LIST = {
   openai: [
     "gpt-4o-mini",
@@ -46846,17 +46872,15 @@ var initGlobalConfig = () => {
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: "$msg",
     OCO_PROMPT_MODULE: "conventional-commit" /* CONVENTIONAL_COMMIT */,
     OCO_AI_PROVIDER: "openai" /* OPENAI */,
-    OCO_GITPUSH: true,
     OCO_ONE_LINE_COMMIT: false,
     OCO_TEST_MOCK_TYPE: "commit-message",
-    OCO_FLOWISE_ENDPOINT: ":"
+    OCO_FLOWISE_ENDPOINT: ":",
+    OCO_GITPUSH: true
   };
   (0, import_fs.writeFileSync)(defaultConfigPath, (0, import_ini.stringify)(defaultConfig), "utf8");
   return defaultConfig;
 };
 var parseEnvVarValue = (value) => {
-  if (!value)
-    return null;
   try {
     return JSON.parse(value);
   } catch (error) {
@@ -46868,7 +46892,7 @@ var getConfig = ({
   envPath = defaultEnvPath
 } = {}) => {
   dotenv.config({ path: envPath });
-  const configFromEnv = {
+  const envConfig = {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -46900,11 +46924,11 @@ var getConfig = ({
     const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
     globalConfig = (0, import_ini.parse)(configFile);
   }
-  const mergeObjects = (main, fallback) => Object.keys(fallback).reduce((acc, key) => {
-    acc[key] = parseEnvVarValue(main[key] || fallback[key]);
+  const mergeObjects = (main, fallback) => Object.keys(CONFIG_KEYS).reduce((acc, key) => {
+    acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
     return acc;
   }, {});
-  const config6 = mergeObjects(configFromEnv, globalConfig);
+  const config6 = mergeObjects(envConfig, globalConfig);
   return config6;
 };
 var setConfig = (keyValues, configPath = defaultConfigPath) => {
@@ -56816,8 +56840,8 @@ var GoogleGenerativeAI = class {
 // src/engine/gemini.ts
 var Gemini = class {
   constructor(config6) {
+    this.client = new GoogleGenerativeAI(config6.apiKey);
     this.config = config6;
-    this.client = new GoogleGenerativeAI(this.config.apiKey);
   }
   async generateCommitMessage(messages) {
     const systemInstruction = messages.filter((m4) => m4.role === "system").map((m4) => m4.content).join("\n");

@@ -9,6 +9,7 @@ import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
+import { findCommand } from './commands/find';
 
 const extraArgs = process.argv.slice(2);
 
@@ -16,7 +17,12 @@ cli(
   {
     version: packageJSON.version,
     name: 'opencommit',
-    commands: [configCommand, hookCommand, commitlintConfigCommand],
+    commands: [
+      configCommand,
+      hookCommand,
+      commitlintConfigCommand,
+      findCommand
+    ],
     flags: {
       fgm: Boolean,
       yes: {
