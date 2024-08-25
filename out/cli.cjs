@@ -37192,41 +37192,41 @@ var OpenAIClient = class {
 // src/engine/azure.ts
 var AzureEngine = class {
   constructor(config7) {
-    this.generateCommitMessage = async (messages) => {
-      try {
-        const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
-        if (REQUEST_TOKENS > this.config.maxTokensInput - this.config.maxTokensOutput) {
-          throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
-        }
-        const data = await this.client.getChatCompletions(
-          this.config.model,
-          messages
-        );
-        const message = data.choices[0].message;
-        if (message?.content === null) {
-          return void 0;
-        }
-        return message?.content;
-      } catch (error) {
-        ce(`${source_default.red("\u2716")} ${this.config.model}`);
-        const err = error;
-        ce(`${source_default.red("\u2716")} ${JSON.stringify(error)}`);
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const openAiError = error.response.data.error;
-          if (openAiError?.message)
-            ce(openAiError.message);
-          ce(
-            "For help look into README https://github.com/di-sukharev/opencommit#setup"
-          );
-        }
-        throw err;
-      }
-    };
     this.config = config7;
     this.client = new OpenAIClient(
       this.config.baseURL,
       new AzureKeyCredential(this.config.apiKey)
     );
+  }
+  async generateCommitMessage(messages) {
+    try {
+      const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
+      if (REQUEST_TOKENS > this.config.maxTokensInput - this.config.maxTokensOutput) {
+        throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+      }
+      const data = await this.client.getChatCompletions(
+        this.config.model,
+        messages
+      );
+      const message = data.choices[0].message;
+      if (message?.content === null) {
+        return void 0;
+      }
+      return message?.content;
+    } catch (error) {
+      ce(`${source_default.red("\u2716")} ${this.config.model}`);
+      const err = error;
+      ce(`${source_default.red("\u2716")} ${JSON.stringify(error)}`);
+      if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+        const openAiError = error.response.data.error;
+        if (openAiError?.message)
+          ce(openAiError.message);
+        ce(
+          "For help look into README https://github.com/di-sukharev/opencommit#setup"
+        );
+      }
+      throw err;
+    }
   }
 };
 
@@ -43535,8 +43535,22 @@ Current version: ${currentVersion}. Latest version: ${latestVersion}.
 };
 
 // src/commands/find.ts
+var findDeclarations = async (query, ignoredFolders) => {
+  const searchQuery = `(async|function)\\s+${query.join("\\S*")}.+{`;
+  ce(`Searching: ${searchQuery}`);
+  const occurrences = await findInFiles(searchQuery, ignoredFolders);
+  if (!occurrences)
+    return [];
+  return occurrences.split("\n");
+};
+var findUsagesByDeclaration = async (declaration, ignoredFolders) => {
+  const searchQuery = `(await)? ?${declaration}(.*)`;
+  const occurrences = await findInFiles(searchQuery, ignoredFolders);
+  if (!occurrences)
+    return [];
+  return occurrences.split("\n");
+};
 var findInFiles = async (query, ignoredFolders) => {
-  const searchQuery = query.join("[^ \\n]*");
   const withIgnoredFolders = ignoredFolders.length > 0 ? [
     "--",
     " ",
@@ -43552,14 +43566,14 @@ var findInFiles = async (query, ignoredFolders) => {
     "-i",
     "-w",
     "--break",
-    "--color=always",
+    "--color=never",
     "-C",
-    "1",
+    "0",
     "--heading",
     "--threads",
     "3",
     "-E",
-    searchQuery,
+    query,
     ...withIgnoredFolders
   ];
   try {
@@ -43603,30 +43617,38 @@ var findCommand = G3(
   },
   async (argv) => {
     const query = argv._;
-    const queryStr = query.join(" ");
     ae(`OpenCommit \u2014 \u{1F526} find`);
     const ignoredFolders = getIgnoredFolders();
-    let result = await findInFiles(query, ignoredFolders);
     const searchSpinner = le();
-    if (!result) {
-      ce(`No matches found. Shuffling the query.`);
-      searchSpinner.start(`Searching for matches...`);
-      const allPossibleQueries = shuffleQuery(query);
-      for (const possibleQuery of allPossibleQueries) {
-        result = await findInFiles(possibleQuery, ignoredFolders);
-        if (result) {
-          searchSpinner.stop(
-            `${source_default.green("\u2714")} found a match for ${possibleQuery.join(" ")}`
-          );
+    let declarations = await findDeclarations(query, ignoredFolders);
+    ce(`Found ${declarations.length} declarations.`);
+    ce(`No matches found. Searching semantically similar queries.`);
+    searchSpinner.start(`Searching for matches...`);
+    if (!declarations.length) {
+      for (const possibleQuery of shuffleQuery(query)) {
+        declarations = await findDeclarations(possibleQuery, ignoredFolders);
+        if (declarations.length > 0) {
+          ce(`Found ${declarations.join("\n")}`);
           break;
         }
       }
     }
-    if (result) {
-      ce(result);
-    } else {
-      searchSpinner.stop(`${source_default.red("\u2718")} 404`);
+    if (!declarations.length) {
+      searchSpinner.stop(`${source_default.red("\u2718")} No function declarations found.`);
+      return process.exit(1);
     }
+    const funcDefinition = declarations[0];
+    let usages = [];
+    usages = await findUsagesByDeclaration(funcDefinition, ignoredFolders);
+    searchSpinner.stop(
+      `${source_default.green("\u2714")} Found ${funcDefinition} definition and ${usages.length} usages.`
+    );
+    ce(`____DECLARATIONS____:
+
+${declarations.join("\n")}`);
+    ce(`____USAGES____:
+
+${usages.join("\n")}`);
   }
 );
 

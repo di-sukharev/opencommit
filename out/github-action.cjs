@@ -56004,41 +56004,41 @@ var OpenAIClient = class {
 // src/engine/azure.ts
 var AzureEngine = class {
   constructor(config6) {
-    this.generateCommitMessage = async (messages) => {
-      try {
-        const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a3, b3) => a3 + b3, 0);
-        if (REQUEST_TOKENS > this.config.maxTokensInput - this.config.maxTokensOutput) {
-          throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
-        }
-        const data = await this.client.getChatCompletions(
-          this.config.model,
-          messages
-        );
-        const message = data.choices[0].message;
-        if (message?.content === null) {
-          return void 0;
-        }
-        return message?.content;
-      } catch (error) {
-        ce(`${source_default.red("\u2716")} ${this.config.model}`);
-        const err = error;
-        ce(`${source_default.red("\u2716")} ${JSON.stringify(error)}`);
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const openAiError = error.response.data.error;
-          if (openAiError?.message)
-            ce(openAiError.message);
-          ce(
-            "For help look into README https://github.com/di-sukharev/opencommit#setup"
-          );
-        }
-        throw err;
-      }
-    };
     this.config = config6;
     this.client = new OpenAIClient(
       this.config.baseURL,
       new AzureKeyCredential(this.config.apiKey)
     );
+  }
+  async generateCommitMessage(messages) {
+    try {
+      const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a3, b3) => a3 + b3, 0);
+      if (REQUEST_TOKENS > this.config.maxTokensInput - this.config.maxTokensOutput) {
+        throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+      }
+      const data = await this.client.getChatCompletions(
+        this.config.model,
+        messages
+      );
+      const message = data.choices[0].message;
+      if (message?.content === null) {
+        return void 0;
+      }
+      return message?.content;
+    } catch (error) {
+      ce(`${source_default.red("\u2716")} ${this.config.model}`);
+      const err = error;
+      ce(`${source_default.red("\u2716")} ${JSON.stringify(error)}`);
+      if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+        const openAiError = error.response.data.error;
+        if (openAiError?.message)
+          ce(openAiError.message);
+        ce(
+          "For help look into README https://github.com/di-sukharev/opencommit#setup"
+        );
+      }
+      throw err;
+    }
   }
 };
 

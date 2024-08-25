@@ -28,9 +28,7 @@ You can use OpenCommit by simply running it via the CLI like this `oco`. 2 secon
    npm install -g opencommit
    ```
 
-   Alternatively run it via `npx opencommit` or `bunx opencommit`
-
-   MacOS may ask to run the command with `sudo` when installing a package globally.
+   Alternatively run it via `npx opencommit` or `bunx opencommit`, but you need to create ~/.opencommit config file in place.
 
 2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure that you add your payment details, so the API works.
 

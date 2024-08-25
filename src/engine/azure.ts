@@ -27,9 +27,9 @@ export class AzureEngine implements AiEngine {
     );
   }
 
-  generateCommitMessage = async (
+  async generateCommitMessage(
     messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
-  ): Promise<string | undefined> => {
+  ): Promise<string | undefined> {
     try {
       const REQUEST_TOKENS = messages
         .map((msg) => tokenCount(msg.content as string) + 4)
@@ -73,5 +73,5 @@ export class AzureEngine implements AiEngine {
 
       throw err;
     }
-  };
+  }
 }
