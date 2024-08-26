@@ -6,6 +6,7 @@ import { OllamaAi } from '../engine/ollama';
 import { AnthropicAi } from '../engine/anthropic'
 import { TestAi } from '../engine/testAi';
 import { Azure } from '../engine/azure';
+import { LlmService } from '../engine/llmservice';
 import { FlowiseAi } from '../engine/flowise'
 
 export function getEngine(): AiEngine {
@@ -28,6 +29,8 @@ export function getEngine(): AiEngine {
     return new Gemini();  
   } else if (provider == 'azure') {
   	return new Azure();
+  } else if(provider == 'llmservice'){
+    return new LlmService();
   } else if( provider == 'flowise'){
     return new FlowiseAi();
   }
