@@ -181,9 +181,7 @@ describe('cli flow to generate commit message using @commitlint prompt-module', 
       [],
       { cwd: gitDir }
     );
-    expect(
-      await commitlintGet.findByText('[object Object]')
-    ).toBeInTheConsole();
+    expect(await commitlintGet.findByText('consistency')).toBeInTheConsole();
 
     // Run 'oco' using .opencommit-commitlint
     await render('echo', [`'console.log("Hello World");' > index.ts`], {
