@@ -510,8 +510,6 @@ export const getConfig = ({
   // env config takes precedence over global ~/.opencommit config file
   const config = mergeObjects(envConfig, globalConfig);
 
-  console.log(7777777, { config, envConfig, globalConfig });
-
   return config;
 };
 
