@@ -25290,7 +25290,8 @@ var package_default = {
     ignore: "^5.2.4",
     ini: "^3.0.1",
     inquirer: "^9.1.4",
-    openai: "^4.56.0"
+    openai: "^4.56.0",
+    "uglify-js": "^3.19.2"
   }
 };
 
@@ -43535,22 +43536,107 @@ Current version: ${currentVersion}. Latest version: ${latestVersion}.
 };
 
 // src/commands/find.ts
+var generateMermaid = async (stdout) => {
+  const config7 = getConfig();
+  const DEFAULT_CONFIG = {
+    model: config7.OCO_MODEL,
+    maxTokensOutput: config7.OCO_TOKENS_MAX_OUTPUT,
+    maxTokensInput: config7.OCO_TOKENS_MAX_INPUT,
+    baseURL: config7.OCO_OPENAI_BASE_PATH
+  };
+  const engine = new OpenAiEngine({
+    ...DEFAULT_CONFIG,
+    apiKey: config7.OCO_OPENAI_API_KEY
+  });
+  const diagram = await engine.generateCommitMessage([
+    {
+      role: "system",
+      content: `You are to generate a mermaid diagram from the given function. Strictly answer in this json format: { "mermaid": "<mermaid diagram>" }. Where <mermaid diagram> is a valid mermaid diagram, e.g:
+graph TD
+    A[Start] --> B[Generate Commit Message]
+    B --> C{Token count >= Max?}
+    C -->|Yes| D[Process file diffs]
+    C -->|No| E[Generate single message]
+    D --> F[Join messages]
+    E --> G[Generate message]
+    F --> H[End]
+    G --> H
+    B --> I{Error occurred?}
+    I -->|Yes| J[Handle error]
+    J --> H
+    I -->|No| H
+`
+    },
+    {
+      role: "user",
+      content: stdout
+    }
+  ]);
+  return JSON.parse(diagram);
+};
+function extractFuncName(line) {
+  const regex = /(?:function|export\s+const|const|let|var)?\s*(?:async\s+)?(\w+)\s*(?:=\s*(?:async\s*)?\(|\()/;
+  const match = line.match(regex);
+  return match ? match[1] : null;
+}
+function extractSingle(lineContent) {
+  const match = lineContent.match(/\s*(?:public\s+)?(?:async\s+)?(\w+)\s*=/);
+  return match ? match[1] : null;
+}
+function mapLinesToOccurrences(input, step = 3) {
+  const occurrences = [];
+  let single;
+  for (let i3 = 0; i3 < input.length; i3 += step) {
+    if (i3 + 1 >= input.length)
+      break;
+    const [fileName, callerLineNumber, ...callerLineContent] = input[i3].split(/[=:]/);
+    const [, definitionLineNumber, ...definitionLineContent] = input[i3 + 1].split(/[:]/);
+    if (!single)
+      single = extractSingle(definitionLineContent.join(":"));
+    occurrences.push({
+      fileName,
+      context: {
+        number: parseInt(callerLineNumber, 10),
+        content: callerLineContent.join("=").trim()
+      },
+      matches: [
+        {
+          number: parseInt(definitionLineNumber, 10),
+          content: definitionLineContent.join(":").trim()
+        }
+      ]
+    });
+  }
+  return { occurrences, single };
+}
 var findDeclarations = async (query, ignoredFolders) => {
-  const searchQuery = `(async|function)\\s+${query.join("\\S*")}.+{`;
+  const searchQuery = `(async|function|public).*${query.join("[^ \\n]*")}`;
   ce(`Searching: ${searchQuery}`);
-  const occurrences = await findInFiles(searchQuery, ignoredFolders);
+  const occurrences = await findInFiles({ query: searchQuery, ignoredFolders });
   if (!occurrences)
-    return [];
-  return occurrences.split("\n");
+    return null;
+  const declarations = mapLinesToOccurrences(occurrences.split("\n"));
+  return declarations;
 };
 var findUsagesByDeclaration = async (declaration, ignoredFolders) => {
-  const searchQuery = `(await)? ?${declaration}(.*)`;
-  const occurrences = await findInFiles(searchQuery, ignoredFolders);
+  const searchQuery = `${declaration}\\(.*\\)`;
+  const occurrences = await findInFiles({
+    query: searchQuery,
+    ignoredFolders
+  });
   if (!occurrences)
-    return [];
-  return occurrences.split("\n");
+    return null;
+  const usages = mapLinesToOccurrences(
+    occurrences.split("\n").filter(Boolean),
+    2
+  );
+  return usages;
 };
-var findInFiles = async (query, ignoredFolders) => {
+var findInFiles = async ({
+  query,
+  ignoredFolders,
+  grepOptions = []
+}) => {
   const withIgnoredFolders = ignoredFolders.length > 0 ? [
     "--",
     " ",
@@ -43561,17 +43647,14 @@ var findInFiles = async (query, ignoredFolders) => {
   const params = [
     "--no-pager",
     "grep",
-    "-p",
+    "--show-function",
     "-n",
     "-i",
-    "-w",
+    ...grepOptions,
     "--break",
     "--color=never",
-    "-C",
-    "0",
-    "--heading",
     "--threads",
-    "3",
+    "10",
     "-E",
     query,
     ...withIgnoredFolders
@@ -43584,27 +43667,28 @@ var findInFiles = async (query, ignoredFolders) => {
   }
 };
 var generatePermutations = (arr) => {
+  const n2 = arr.length;
   const result = [];
-  const used = new Array(arr.length).fill(false);
-  const current = [];
-  function backtrack() {
-    if (current.length === arr.length) {
+  const indices = new Int32Array(n2);
+  const current = new Array(n2);
+  for (let i4 = 0; i4 < n2; i4++) {
+    indices[i4] = i4;
+    current[i4] = arr[i4];
+  }
+  result.push([...current]);
+  let i3 = 1;
+  while (i3 < n2) {
+    if (indices[i3] > 0) {
+      const j4 = indices[i3] % 2 === 1 ? 0 : indices[i3];
+      [current[i3], current[j4]] = [current[j4], current[i3]];
       result.push([...current]);
-      return;
-    }
-    const seen = /* @__PURE__ */ new Set();
-    for (let i3 = 0; i3 < arr.length; i3++) {
-      if (used[i3] || seen.has(arr[i3]))
-        continue;
-      used[i3] = true;
-      current.push(arr[i3]);
-      seen.add(arr[i3]);
-      backtrack();
-      current.pop();
-      used[i3] = false;
+      indices[i3]--;
+      i3 = 1;
+    } else {
+      indices[i3] = i3;
+      i3++;
     }
   }
-  backtrack();
   return result;
 };
 var shuffleQuery = (query) => {
@@ -43621,34 +43705,96 @@ var findCommand = G3(
     const ignoredFolders = getIgnoredFolders();
     const searchSpinner = le();
     let declarations = await findDeclarations(query, ignoredFolders);
-    ce(`Found ${declarations.length} declarations.`);
     ce(`No matches found. Searching semantically similar queries.`);
     searchSpinner.start(`Searching for matches...`);
-    if (!declarations.length) {
-      for (const possibleQuery of shuffleQuery(query)) {
+    if (!declarations?.occurrences.length) {
+      const allPossibleQueries = shuffleQuery(query).reverse();
+      for (const possibleQuery of allPossibleQueries) {
         declarations = await findDeclarations(possibleQuery, ignoredFolders);
-        if (declarations.length > 0) {
-          ce(`Found ${declarations.join("\n")}`);
+        if (declarations?.occurrences.length)
           break;
-        }
       }
     }
-    if (!declarations.length) {
+    if (!declarations?.occurrences.length) {
       searchSpinner.stop(`${source_default.red("\u2718")} No function declarations found.`);
       return process.exit(1);
     }
-    const funcDefinition = declarations[0];
-    let usages = [];
-    usages = await findUsagesByDeclaration(funcDefinition, ignoredFolders);
-    searchSpinner.stop(
-      `${source_default.green("\u2714")} Found ${funcDefinition} definition and ${usages.length} usages.`
+    const usages = await findUsagesByDeclaration(
+      declarations.single,
+      ignoredFolders
     );
-    ce(`____DECLARATIONS____:
-
-${declarations.join("\n")}`);
-    ce(`____USAGES____:
-
-${usages.join("\n")}`);
+    searchSpinner.stop(
+      `${source_default.green("\u2714")} Found ${source_default.green(
+        declarations.single
+      )} definition and ${usages?.occurrences.length} usages.`
+    );
+    ie(
+      declarations.occurrences.map(
+        (o3) => o3.matches.map(
+          (m5) => `${o3.fileName}:${m5.number} ${source_default.cyan(
+            "==>"
+          )} ${m5.content.replace(
+            declarations.single,
+            source_default.green(declarations.single)
+          )}`
+        ).join("\n")
+      ).join("\n"),
+      "\u235C DECLARATIONS \u235C"
+    );
+    ie(
+      usages?.occurrences.map(
+        (o3) => o3.matches.map(
+          (m5) => `${o3.fileName}:${m5.number} ${source_default.cyan(
+            "==>"
+          )} ${m5.content.replace(
+            declarations.single,
+            source_default.green(declarations.single)
+          )}`
+        )
+      ).join("\n"),
+      "\u233E USAGES \u233E"
+    );
+    const usage = await ee({
+      message: source_default.cyan("Expand usage:"),
+      options: usages.occurrences.map(
+        (o3) => o3.matches.map((m5) => ({
+          value: { o: o3, m: m5 },
+          label: `${source_default.yellow(`${o3.fileName}:${m5.number}`)} ${source_default.cyan(
+            "==>"
+          )} ${m5.content.replace(
+            declarations.single,
+            source_default.green(declarations.single)
+          )}`,
+          hint: `parent: ${extractFuncName(o3.context.content) ?? "404"}`
+        }))
+      ).flat()
+    });
+    if (hD2(usage))
+      process.exit(1);
+    const { stdout } = await execa("git", [
+      "--no-pager",
+      "grep",
+      "--function-context",
+      "--heading",
+      "-E",
+      usage.m.content.replace("(", "\\(").replace(")", "\\)"),
+      usage.o.fileName
+    ]);
+    const mermaidSpinner = le();
+    mermaidSpinner.start("Generating mermaid diagram...");
+    const mermaid = await generateMermaid(stdout);
+    mermaidSpinner.stop();
+    if (mermaid)
+      console.log(mermaid.mermaid);
+    else
+      ie("No mermaid diagram found.");
+    const isCommitConfirmedByUser = await Q3({
+      message: "Create Excalidraw file?"
+    });
+    if (isCommitConfirmedByUser)
+      ce("created diagram.excalidraw");
+    else
+      ce("Excalidraw file not created.");
   }
 );
 
