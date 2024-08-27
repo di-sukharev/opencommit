@@ -25290,8 +25290,7 @@ var package_default = {
     ignore: "^5.2.4",
     ini: "^3.0.1",
     inquirer: "^9.1.4",
-    openai: "^4.56.0",
-    "uglify-js": "^3.19.2"
+    openai: "^4.56.0"
   }
 };
 
