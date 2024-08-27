@@ -1,8 +1,5 @@
 import chalk from 'chalk';
-import {
-  ChatCompletionRequestMessage,
-  ChatCompletionRequestMessageRoleEnum
-} from 'openai';
+import { OpenAI } from 'openai';
 
 import { outro } from '@clack/prompts';
 import {
@@ -17,7 +14,7 @@ import { i18n, I18nLocals } from '../../i18n';
 import { IDENTITY, INIT_DIFF_PROMPT } from '../../prompts';
 
 const config = getConfig();
-const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];
+const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
 
 type DeepPartial<T> = {
   [P in keyof T]?: {
@@ -214,11 +211,10 @@ const STRUCTURE_OF_COMMIT = `
 // Prompt to generate LLM-readable rules based on @commitlint rules.
 const GEN_COMMITLINT_CONSISTENCY_PROMPT = (
   prompts: string[]
-): ChatCompletionRequestMessage[] => [
+): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => [
   {
-    role: ChatCompletionRequestMessageRoleEnum.Assistant,
-    // prettier-ignore
-    content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages for two different changes in a single codebase and output them in the provided JSON format: one for a bug fix and another for a new feature. 
+    role: 'system',
+    content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages for two different changes in a single codebase and output them in the provided JSON format: one for a bug fix and another for a new feature.
 
 Here are the specific requirements and conventions that should be strictly followed:
 
@@ -260,22 +256,31 @@ Example Git Diff is to follow:`
 const INIT_MAIN_PROMPT = (
   language: string,
   prompts: string[]
-): ChatCompletionRequestMessage => ({
-  role: ChatCompletionRequestMessageRoleEnum.System,
-  // prettier-ignore
+): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
+  role: 'system',
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
-${config?.OCO_EMOJI ? 'Use GitMoji convention to preface the commit.' : 'Do not preface the commit with anything.'}
-${config?.OCO_DESCRIPTION ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.' : "Don't add any descriptions to the commit, only commit message."}
+${
+  config.OCO_EMOJI
+    ? 'Use GitMoji convention to preface the commit.'
+    : 'Do not preface the commit with anything.'
+}
+${
+  config.OCO_DESCRIPTION
+    ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
+    : "Don't add any descriptions to the commit, only commit message."
+}
 Use the present tense. Use ${language} to answer.
-${ config?.OCO_ONE_LINE_COMMIT ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.' : ""}
+${
+  config.OCO_ONE_LINE_COMMIT
+    ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
+    : ''
+}
     
 You will strictly follow the following conventions to generate the content of the commit message:
 - ${prompts.join('\n- ')}
 
 The conventions refers to the following structure of commit message:
-${STRUCTURE_OF_COMMIT}
-    
-    `
+${STRUCTURE_OF_COMMIT}`
 });
 
 export const commitlintPrompts = {

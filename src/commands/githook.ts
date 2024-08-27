@@ -1,13 +1,11 @@
+import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
 import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
-
-import { intro, outro } from '@clack/prompts';
-
-import { COMMANDS } from '../CommandsEnum.js';
 import { assertGitRepo, getCoreHooksPath } from '../utils/git.js';
+import { COMMANDS } from './ENUMS';
 
 const HOOK_NAME = 'prepare-commit-msg';
 const DEFAULT_SYMLINK_URL = path.join('.git', 'hooks', HOOK_NAME);
@@ -94,7 +92,7 @@ export const hookCommand = command(
       }
 
       throw new Error(
-        `Unsupported mode: ${mode}. Supported modes are: 'set' or 'unset', do: \`oco hook set\``
+        `Unsupported mode: ${mode}. Supported modes are: 'set' or 'unset'. Run: \`oco hook set\``
       );
     } catch (error) {
       outro(`${chalk.red('✖')} ${error}`);

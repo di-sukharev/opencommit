@@ -1,6 +1,3 @@
-import chalk from 'chalk';
-import { execa } from 'execa';
-
 import {
   confirm,
   intro,
@@ -10,7 +7,8 @@ import {
   select,
   spinner
 } from '@clack/prompts';
-
+import chalk from 'chalk';
+import { execa } from 'execa';
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import {
   assertGitRepo,
@@ -32,18 +30,25 @@ const getGitRemotes = async () => {
 // Check for the presence of message templates
 const checkMessageTemplate = (extraArgs: string[]): string | false => {
   for (const key in extraArgs) {
-    if (extraArgs[key].includes(config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
+    if (extraArgs[key].includes(config.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
       return extraArgs[key];
   }
   return false;
 };
 
-const generateCommitMessageFromGitDiff = async (
-  diff: string,
-  extraArgs: string[],
-  fullGitMojiSpec: boolean,
-  skipCommitConfirmation: boolean
-): Promise<void> => {
+interface GenerateCommitMessageFromGitDiffParams {
+  diff: string;
+  extraArgs: string[];
+  fullGitMojiSpec?: boolean;
+  skipCommitConfirmation?: boolean;
+}
+
+const generateCommitMessageFromGitDiff = async ({
+  diff,
+  extraArgs,
+  fullGitMojiSpec = false,
+  skipCommitConfirmation = false
+}: GenerateCommitMessageFromGitDiffParams): Promise<void> => {
   await assertGitRepo();
   const commitSpinner = spinner();
   commitSpinner.start('Generating the commit message');
@@ -56,14 +61,14 @@ const generateCommitMessageFromGitDiff = async (
 
     const messageTemplate = checkMessageTemplate(extraArgs);
     if (
-      config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER &&
+      config.OCO_MESSAGE_TEMPLATE_PLACEHOLDER &&
       typeof messageTemplate === 'string'
     ) {
       const messageTemplateIndex = extraArgs.indexOf(messageTemplate);
       extraArgs.splice(messageTemplateIndex, 1);
 
       commitMessage = messageTemplate.replace(
-        config?.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+        config.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
       );
     }
@@ -77,9 +82,11 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser = skipCommitConfirmation || await confirm({
-      message: 'Confirm the commit message?'
-    });
+    const isCommitConfirmedByUser =
+      skipCommitConfirmation ||
+      (await confirm({
+        message: 'Confirm the commit message?'
+      }));
 
     if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
       const { stdout } = await execa('git', [
@@ -95,17 +102,13 @@ ${chalk.grey('——————————————————')}`
 
       const remotes = await getGitRemotes();
 
-      // user isn't pushing, return early
-      if (config?.OCO_GITPUSH === false)
-          return
-
       if (!remotes.length) {
         const { stdout } = await execa('git', ['push']);
         if (stdout) outro(stdout);
         process.exit(0);
       }
 
-      if (remotes.length === 1 && config?.OCO_GITPUSH !== true) {
+      if (remotes.length === 1 && config.OCO_GITPUSH !== true) {
         const isPushConfirmedByUser = await confirm({
           message: 'Do you want to run `git push`?'
         });
@@ -157,14 +160,14 @@ ${chalk.grey('——————————————————')}`
     }
     if (!isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
       const regenerateMessage = await confirm({
-        message: 'Do you want to regenerate the message ?'
+        message: 'Do you want to regenerate the message?'
       });
       if (regenerateMessage && !isCancel(isCommitConfirmedByUser)) {
-        await generateCommitMessageFromGitDiff(
+        await generateCommitMessageFromGitDiff({
           diff,
           extraArgs,
           fullGitMojiSpec
-        )
+        });
       }
     }
   } catch (error) {
@@ -249,12 +252,12 @@ export async function commit(
   );
 
   const [, generateCommitError] = await trytm(
-    generateCommitMessageFromGitDiff(
-      await getDiff({ files: stagedFiles }),
+    generateCommitMessageFromGitDiff({
+      diff: await getDiff({ files: stagedFiles }),
       extraArgs,
       fullGitMojiSpec,
       skipCommitConfirmation
-    )
+    })
   );
 
   if (generateCommitError) {

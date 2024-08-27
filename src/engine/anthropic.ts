@@ -1,104 +1,62 @@
+import AnthropicClient from '@anthropic-ai/sdk';
+import {
+  MessageCreateParamsNonStreaming,
+  MessageParam
+} from '@anthropic-ai/sdk/resources/messages.mjs';
+import { outro } from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
-
-import Anthropic from '@anthropic-ai/sdk';
-import {ChatCompletionRequestMessage} from 'openai'
-import { MessageCreateParamsNonStreaming, MessageParam } from '@anthropic-ai/sdk/resources';
-
-import { intro, outro } from '@clack/prompts';
-
-import {
-  CONFIG_MODES,
-  DEFAULT_TOKEN_LIMITS,
-  getConfig
-} from '../commands/config';
+import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
-import { AiEngine } from './Engine';
-import { MODEL_LIST } from '../commands/config';
+import { AiEngine, AiEngineConfig } from './Engine';
 
-const config = getConfig();
+interface AnthropicConfig extends AiEngineConfig {}
 
-const MAX_TOKENS_OUTPUT =
-  config?.OCO_TOKENS_MAX_OUTPUT ||
-  DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
-const MAX_TOKENS_INPUT =
-  config?.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
+export class AnthropicEngine implements AiEngine {
+  config: AnthropicConfig;
+  client: AnthropicClient;
 
-let provider = config?.OCO_AI_PROVIDER;
-let apiKey = config?.OCO_ANTHROPIC_API_KEY;
-const [command, mode] = process.argv.slice(2);
-if (
-  provider === 'anthropic' &&
-  !apiKey &&
-  command !== 'config' &&
-  mode !== CONFIG_MODES.set
-) {
-  intro('opencommit');
-
-  outro(
-    'OCO_ANTHROPIC_API_KEY is not set, please run `oco config set OCO_ANTHROPIC_API_KEY=<your token> . If you are using Claude, make sure you add payment details, so API works.`'
-  );
-  outro(
-    'For help look into README https://github.com/di-sukharev/opencommit#setup'
-  );
-
-  process.exit(1);
-}
-
-const MODEL = config?.OCO_MODEL;
-if (provider === 'anthropic' &&
-  typeof MODEL !== 'string' && 
-  command !== 'config' &&
-  mode !== CONFIG_MODES.set) {
-outro(
-  `${chalk.red('✖')} Unsupported model ${MODEL}. The model can be any string, but the current configuration is not supported.`
-);
-process.exit(1);
-}
-
-export class AnthropicAi implements AiEngine {
-  private anthropicAiApiConfiguration = {
-    apiKey: apiKey
-  };
-  private anthropicAI!: Anthropic;
-
-  constructor() {
-    this.anthropicAI = new Anthropic(this.anthropicAiApiConfiguration);
+  constructor(config) {
+    this.config = config;
+    this.client = new AnthropicClient({ apiKey: this.config.apiKey });
   }
 
   public generateCommitMessage = async (
-    messages: Array<ChatCompletionRequestMessage>
+    messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | undefined> => {
-
-    const systemMessage = messages.find(msg => msg.role === 'system')?.content as string;
-    const restMessages = messages.filter((msg) => msg.role !== 'system') as MessageParam[];
+    const systemMessage = messages.find((msg) => msg.role === 'system')
+      ?.content as string;
+    const restMessages = messages.filter(
+      (msg) => msg.role !== 'system'
+    ) as MessageParam[];
 
     const params: MessageCreateParamsNonStreaming = {
-      model: MODEL,
+      model: this.config.model,
       system: systemMessage,
       messages: restMessages,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: MAX_TOKENS_OUTPUT
+      max_tokens: this.config.maxTokensOutput
     };
     try {
       const REQUEST_TOKENS = messages
         .map((msg) => tokenCount(msg.content as string) + 4)
         .reduce((a, b) => a + b, 0);
 
-      if (REQUEST_TOKENS > MAX_TOKENS_INPUT - MAX_TOKENS_OUTPUT) {
+      if (
+        REQUEST_TOKENS >
+        this.config.maxTokensInput - this.config.maxTokensOutput
+      ) {
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
       }
 
-      const data  = await this.anthropicAI.messages.create(params);
+      const data = await this.client.messages.create(params);
 
       const message = data?.content[0].text;
 
       return message;
     } catch (error) {
-      outro(`${chalk.red('✖')} ${JSON.stringify(params)}`);
-
       const err = error as Error;
       outro(`${chalk.red('✖')} ${err?.message || err}`);
 

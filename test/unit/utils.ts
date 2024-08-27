@@ -22,6 +22,7 @@ export async function prepareFile(
   const cleanup = async () => {
     return fsRemove(tempDir, { recursive: true });
   };
+
   return {
     filePath,
     cleanup

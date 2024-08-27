@@ -2,16 +2,16 @@ import { spinner } from '@clack/prompts';
 
 import { getConfig } from '../../commands/config';
 import { i18n, I18nLocals } from '../../i18n';
+import { getEngine } from '../../utils/engine';
 import { COMMITLINT_LLM_CONFIG_PATH } from './constants';
 import { computeHash } from './crypto';
 import { commitlintPrompts, inferPromptsFromCommitlintConfig } from './prompts';
 import { getCommitLintPWDConfig } from './pwd-commitlint';
 import { CommitlintLLMConfig } from './types';
 import * as utils from './utils';
-import { getEngine } from '../../utils/engine';
 
 const config = getConfig();
-const translation = i18n[(config?.OCO_LANGUAGE as I18nLocals) || 'en'];
+const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
 
 export const configureCommitlintIntegration = async (force = false) => {
   const spin = spinner();
@@ -26,7 +26,7 @@ export const configureCommitlintIntegration = async (force = false) => {
       * @commitlint >= 9.0.0 is installed in the local directory.
       * 'node_modules/@commitlint/load' package exists.
       * A valid @commitlint configuration exists.
-      `,
+      `
     );
   }
 
