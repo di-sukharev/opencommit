@@ -422,25 +422,25 @@ enum OCO_PROMPT_MODULE_ENUM {
   COMMITLINT = '@commitlint'
 }
 
-const initGlobalConfig = () => {
-  const defaultConfig = {
-    OCO_TOKENS_MAX_INPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
-    OCO_TOKENS_MAX_OUTPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
-    OCO_DESCRIPTION: false,
-    OCO_EMOJI: false,
-    OCO_MODEL: getDefaultModel('openai'),
-    OCO_LANGUAGE: 'en',
-    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
-    OCO_PROMPT_MODULE: OCO_PROMPT_MODULE_ENUM.CONVENTIONAL_COMMIT,
-    OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.OPENAI,
-    OCO_ONE_LINE_COMMIT: false,
-    OCO_TEST_MOCK_TYPE: 'commit-message',
-    OCO_FLOWISE_ENDPOINT: ':',
-    OCO_GITPUSH: true // todo: deprecate
-  };
+export const DEFAULT_CONFIG = {
+  OCO_TOKENS_MAX_INPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
+  OCO_TOKENS_MAX_OUTPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
+  OCO_DESCRIPTION: false,
+  OCO_EMOJI: false,
+  OCO_MODEL: getDefaultModel('openai'),
+  OCO_LANGUAGE: 'en',
+  OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
+  OCO_PROMPT_MODULE: OCO_PROMPT_MODULE_ENUM.CONVENTIONAL_COMMIT,
+  OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.OPENAI,
+  OCO_ONE_LINE_COMMIT: false,
+  OCO_TEST_MOCK_TYPE: 'commit-message',
+  OCO_FLOWISE_ENDPOINT: ':',
+  OCO_GITPUSH: true // todo: deprecate
+};
 
-  writeFileSync(defaultConfigPath, iniStringify(defaultConfig), 'utf8');
-  return defaultConfig;
+const initGlobalConfig = (configPath: string = defaultConfigPath) => {
+  writeFileSync(configPath, iniStringify(DEFAULT_CONFIG), 'utf8');
+  return DEFAULT_CONFIG;
 };
 
 const parseEnvVarValue = (value?: any) => {
@@ -451,16 +451,10 @@ const parseEnvVarValue = (value?: any) => {
   }
 };
 
-export const getConfig = ({
-  configPath = defaultConfigPath,
-  envPath = defaultEnvPath
-}: {
-  configPath?: string;
-  envPath?: string;
-} = {}): ConfigType => {
+const getEnvConfig = (envPath: string) => {
   dotenv.config({ path: envPath });
 
-  const envConfig = {
+  return {
     OCO_MODEL: process.env.OCO_MODEL,
 
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
@@ -491,33 +485,59 @@ export const getConfig = ({
 
     OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
+};
 
+const getGlobalConfig = (configPath: string) => {
   let globalConfig: ConfigType;
+
   const isGlobalConfigFileExist = existsSync(configPath);
-  if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig();
+  if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
   else {
     const configFile = readFileSync(configPath, 'utf8');
     globalConfig = iniParse(configFile) as ConfigType;
   }
 
-  const mergeObjects = (main: Partial<ConfigType>, fallback: ConfigType) =>
-    Object.keys(CONFIG_KEYS).reduce((acc, key) => {
-      acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
+  return globalConfig;
+};
 
-      return acc;
-    }, {} as ConfigType);
+/**
+ * Merges two configs.
+ * Env config takes precedence over global ~/.opencommit config file
+ * @param main - env config
+ * @param fallback - global ~/.opencommit config file
+ * @returns merged config
+ */
+const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) =>
+  Object.keys(CONFIG_KEYS).reduce((acc, key) => {
+    acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
 
-  // env config takes precedence over global ~/.opencommit config file
-  const config = mergeObjects(envConfig, globalConfig);
+    return acc;
+  }, {} as ConfigType);
+
+interface GetConfigOptions {
+  globalPath?: string;
+  envPath?: string;
+}
+
+export const getConfig = ({
+  envPath = defaultEnvPath,
+  globalPath = defaultConfigPath
+}: GetConfigOptions = {}): ConfigType => {
+  const envConfig = getEnvConfig(envPath);
+  const globalConfig = getGlobalConfig(globalPath);
+
+  const config = mergeConfigs(envConfig, globalConfig);
 
   return config;
 };
 
 export const setConfig = (
   keyValues: [key: string, value: string][],
-  configPath: string = defaultConfigPath
+  globalConfigPath: string = defaultConfigPath
 ) => {
-  const config = getConfig();
+  const config = getConfig({
+    globalPath: globalConfigPath
+  });
 
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
@@ -543,9 +563,7 @@ export const setConfig = (
     config[key] = validValue;
   }
 
-  writeFileSync(configPath, iniStringify(config), 'utf8');
-
-  assertConfigsAreValid(config);
+  writeFileSync(globalConfigPath, iniStringify(config), 'utf8');
 
   outro(`${chalk.green('✔')} config successfully set`);
 };

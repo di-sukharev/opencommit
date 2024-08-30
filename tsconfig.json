@@ -4,7 +4,7 @@
     "lib": ["ES6", "ES2020"],
 
     "module": "CommonJS",
-    
+
     "resolveJsonModule": true,
     "moduleResolution": "Node",
 
@@ -21,9 +21,7 @@
 
     "skipLibCheck": true
   },
-  "include": [
-    "test/jest-setup.ts"
-  ],
+  "include": ["test/jest-setup.ts"],
   "exclude": ["node_modules"],
   "ts-node": {
     "esm": true,

@@ -1,7 +1,7 @@
-import path from 'path';
 import { mkdtemp, rm, writeFile } from 'fs';
-import { promisify } from 'util';
 import { tmpdir } from 'os';
+import path from 'path';
+import { promisify } from 'util';
 const fsMakeTempDir = promisify(mkdtemp);
 const fsRemove = promisify(rm);
 const fsWriteFile = promisify(writeFile);
@@ -19,9 +19,7 @@ export async function prepareFile(
   const tempDir = await fsMakeTempDir(path.join(tmpdir(), 'opencommit-test-'));
   const filePath = path.resolve(tempDir, fileName);
   await fsWriteFile(filePath, content);
-  const cleanup = async () => {
-    return fsRemove(tempDir, { recursive: true });
-  };
+  const cleanup = async () => fsRemove(tempDir, { recursive: true });
 
   return {
     filePath,
