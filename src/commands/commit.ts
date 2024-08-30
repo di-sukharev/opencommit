@@ -50,8 +50,8 @@ const generateCommitMessageFromGitDiff = async ({
   skipCommitConfirmation = false
 }: GenerateCommitMessageFromGitDiffParams): Promise<void> => {
   await assertGitRepo();
-  const commitSpinner = spinner();
-  commitSpinner.start('Generating the commit message');
+  const commitGenerationSpinner = spinner();
+  commitGenerationSpinner.start('Generating the commit message');
 
   try {
     let commitMessage = await generateCommitMessageByDiff(
@@ -73,7 +73,7 @@ const generateCommitMessageFromGitDiff = async ({
       );
     }
 
-    commitSpinner.stop('📝 Commit message generated');
+    commitGenerationSpinner.stop('📝 Commit message generated');
 
     outro(
       `Generated commit message:
@@ -91,14 +91,17 @@ ${chalk.grey('——————————————————')}`
     if (isCancel(isCommitConfirmedByUser)) process.exit(1);
 
     if (isCommitConfirmedByUser) {
+      const committingChangesSpinner = spinner();
+      committingChangesSpinner.start('Committing the changes');
       const { stdout } = await execa('git', [
         'commit',
         '-m',
         commitMessage,
         ...extraArgs
       ]);
-
-      outro(`${chalk.green('✔')} Successfully committed`);
+      committingChangesSpinner.stop(
+        `${chalk.green('✔')} Successfully committed`
+      );
 
       outro(stdout);
 
@@ -177,7 +180,7 @@ ${chalk.grey('——————————————————')}`
       }
     }
   } catch (error) {
-    commitSpinner.stop('📝 Commit message generated');
+    commitGenerationSpinner.stop('📝 Commit message generated');
 
     const err = error as Error;
     outro(`${chalk.red('✖')} ${err?.message || err}`);
