@@ -88,7 +88,9 @@ ${chalk.grey('——————————————————')}`
         message: 'Confirm the commit message?'
       }));
 
-    if (isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
+    if (isCancel(isCommitConfirmedByUser)) process.exit(1);
+
+    if (isCommitConfirmedByUser) {
       const { stdout } = await execa('git', [
         'commit',
         '-m',
@@ -113,7 +115,9 @@ ${chalk.grey('——————————————————')}`
           message: 'Do you want to run `git push`?'
         });
 
-        if (isPushConfirmedByUser && !isCancel(isPushConfirmedByUser)) {
+        if (isCancel(isPushConfirmedByUser)) process.exit(1);
+
+        if (isPushConfirmedByUser) {
           const pushSpinner = spinner();
 
           pushSpinner.start(`Running 'git push ${remotes[0]}'`);
@@ -141,28 +145,30 @@ ${chalk.grey('——————————————————')}`
           options: remotes.map((remote) => ({ value: remote, label: remote }))
         })) as string;
 
-        if (!isCancel(selectedRemote)) {
-          const pushSpinner = spinner();
+        if (isCancel(selectedRemote)) process.exit(1);
 
-          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
+        const pushSpinner = spinner();
 
-          const { stdout } = await execa('git', ['push', selectedRemote]);
+        pushSpinner.start(`Running 'git push ${selectedRemote}'`);
 
-          pushSpinner.stop(
-            `${chalk.green(
-              '✔'
-            )} Successfully pushed all commits to ${selectedRemote}`
-          );
+        const { stdout } = await execa('git', ['push', selectedRemote]);
 
-          if (stdout) outro(stdout);
-        } else outro(`${chalk.gray('✖')} process cancelled`);
+        pushSpinner.stop(
+          `${chalk.green(
+            '✔'
+          )} Successfully pushed all commits to ${selectedRemote}`
+        );
+
+        if (stdout) outro(stdout);
       }
-    }
-    if (!isCommitConfirmedByUser && !isCancel(isCommitConfirmedByUser)) {
+    } else {
       const regenerateMessage = await confirm({
         message: 'Do you want to regenerate the message?'
       });
-      if (regenerateMessage && !isCancel(isCommitConfirmedByUser)) {
+
+      if (isCancel(regenerateMessage)) process.exit(1);
+
+      if (regenerateMessage) {
         await generateCommitMessageFromGitDiff({
           diff,
           extraArgs,
@@ -219,10 +225,9 @@ export async function commit(
       message: 'Do you want to stage all files and generate commit message?'
     });
 
-    if (
-      isStageAllAndCommitConfirmedByUser &&
-      !isCancel(isStageAllAndCommitConfirmedByUser)
-    ) {
+    if (isCancel(isStageAllAndCommitConfirmedByUser)) process.exit(1);
+
+    if (isStageAllAndCommitConfirmedByUser) {
       await commit(extraArgs, true, fullGitMojiSpec);
       process.exit(1);
     }
