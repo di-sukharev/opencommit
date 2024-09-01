@@ -1,4 +1,4 @@
-import { mkdtemp, rm, writeFile } from 'fs';
+import { existsSync, mkdtemp, rm, writeFile } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
 import { promisify } from 'util';
@@ -19,7 +19,11 @@ export async function prepareFile(
   const tempDir = await fsMakeTempDir(path.join(tmpdir(), 'opencommit-test-'));
   const filePath = path.resolve(tempDir, fileName);
   await fsWriteFile(filePath, content);
-  const cleanup = async () => fsRemove(tempDir, { recursive: true });
+  const cleanup = async () => {
+    if (existsSync(tempDir)) {
+      await fsRemove(tempDir, { recursive: true });
+    }
+  };
 
   return {
     filePath,
