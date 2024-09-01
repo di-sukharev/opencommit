@@ -46841,44 +46841,24 @@ var configValidators = {
 };
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var defaultEnvPath = (0, import_path.resolve)(process.cwd(), ".env");
-var assertConfigsAreValid = (config6) => {
-  for (const [key, value] of Object.entries(config6)) {
-    if (!value)
-      continue;
-    if (typeof value === "string" && ["null", "undefined"].includes(value)) {
-      config6[key] = void 0;
-      continue;
-    }
-    try {
-      const validate = configValidators[key];
-      validate(value, config6);
-    } catch (error) {
-      ce(`Unknown '${key}' config option or missing validator.`);
-      ce(
-        `Manually fix the '.env' file or global '~/.opencommit' config file.`
-      );
-      process.exit(1);
-    }
-  }
+var DEFAULT_CONFIG = {
+  OCO_TOKENS_MAX_INPUT: 40960 /* DEFAULT_MAX_TOKENS_INPUT */,
+  OCO_TOKENS_MAX_OUTPUT: 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */,
+  OCO_DESCRIPTION: false,
+  OCO_EMOJI: false,
+  OCO_MODEL: getDefaultModel("openai"),
+  OCO_LANGUAGE: "en",
+  OCO_MESSAGE_TEMPLATE_PLACEHOLDER: "$msg",
+  OCO_PROMPT_MODULE: "conventional-commit" /* CONVENTIONAL_COMMIT */,
+  OCO_AI_PROVIDER: "openai" /* OPENAI */,
+  OCO_ONE_LINE_COMMIT: false,
+  OCO_TEST_MOCK_TYPE: "commit-message",
+  OCO_FLOWISE_ENDPOINT: ":",
+  OCO_GITPUSH: true
 };
-var initGlobalConfig = () => {
-  const defaultConfig = {
-    OCO_TOKENS_MAX_INPUT: 40960 /* DEFAULT_MAX_TOKENS_INPUT */,
-    OCO_TOKENS_MAX_OUTPUT: 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */,
-    OCO_DESCRIPTION: false,
-    OCO_EMOJI: false,
-    OCO_MODEL: getDefaultModel("openai"),
-    OCO_LANGUAGE: "en",
-    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: "$msg",
-    OCO_PROMPT_MODULE: "conventional-commit" /* CONVENTIONAL_COMMIT */,
-    OCO_AI_PROVIDER: "openai" /* OPENAI */,
-    OCO_ONE_LINE_COMMIT: false,
-    OCO_TEST_MOCK_TYPE: "commit-message",
-    OCO_FLOWISE_ENDPOINT: ":",
-    OCO_GITPUSH: true
-  };
-  (0, import_fs.writeFileSync)(defaultConfigPath, (0, import_ini.stringify)(defaultConfig), "utf8");
-  return defaultConfig;
+var initGlobalConfig = (configPath = defaultConfigPath) => {
+  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(DEFAULT_CONFIG), "utf8");
+  return DEFAULT_CONFIG;
 };
 var parseEnvVarValue = (value) => {
   try {
@@ -46887,12 +46867,9 @@ var parseEnvVarValue = (value) => {
     return value;
   }
 };
-var getConfig = ({
-  configPath = defaultConfigPath,
-  envPath = defaultEnvPath
-} = {}) => {
+var getEnvConfig = (envPath) => {
   dotenv.config({ path: envPath });
-  const envConfig = {
+  return {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -46916,23 +46893,35 @@ var getConfig = ({
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH)
   };
+};
+var getGlobalConfig = (configPath) => {
   let globalConfig;
   const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
   if (!isGlobalConfigFileExist)
-    globalConfig = initGlobalConfig();
+    globalConfig = initGlobalConfig(configPath);
   else {
     const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
     globalConfig = (0, import_ini.parse)(configFile);
   }
-  const mergeObjects = (main, fallback) => Object.keys(CONFIG_KEYS).reduce((acc, key) => {
-    acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
-    return acc;
-  }, {});
-  const config6 = mergeObjects(envConfig, globalConfig);
+  return globalConfig;
+};
+var mergeConfigs = (main, fallback) => Object.keys(CONFIG_KEYS).reduce((acc, key) => {
+  acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
+  return acc;
+}, {});
+var getConfig = ({
+  envPath = defaultEnvPath,
+  globalPath = defaultConfigPath
+} = {}) => {
+  const envConfig = getEnvConfig(envPath);
+  const globalConfig = getGlobalConfig(globalPath);
+  const config6 = mergeConfigs(envConfig, globalConfig);
   return config6;
 };
-var setConfig = (keyValues, configPath = defaultConfigPath) => {
-  const config6 = getConfig();
+var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
+  const config6 = getConfig({
+    globalPath: globalConfigPath
+  });
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
       const supportedKeys = Object.keys(configValidators).join("\n");
@@ -46956,8 +46945,7 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
     );
     config6[key] = validValue;
   }
-  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config6), "utf8");
-  assertConfigsAreValid(config6);
+  (0, import_fs.writeFileSync)(globalConfigPath, (0, import_ini.stringify)(config6), "utf8");
   ce(`${source_default.green("\u2714")} config successfully set`);
 };
 var configCommand = G2(
@@ -61212,7 +61200,7 @@ var OpenAiEngine = class {
 function getEngine() {
   const config6 = getConfig();
   const provider = config6.OCO_AI_PROVIDER;
-  const DEFAULT_CONFIG = {
+  const DEFAULT_CONFIG2 = {
     model: config6.OCO_MODEL,
     maxTokensOutput: config6.OCO_TOKENS_MAX_OUTPUT,
     maxTokensInput: config6.OCO_TOKENS_MAX_INPUT,
@@ -61221,37 +61209,37 @@ function getEngine() {
   switch (provider) {
     case "ollama" /* OLLAMA */:
       return new OllamaAi({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: "",
         baseURL: config6.OCO_OLLAMA_API_URL
       });
     case "anthropic" /* ANTHROPIC */:
       return new AnthropicEngine({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config6.OCO_ANTHROPIC_API_KEY
       });
     case "test" /* TEST */:
       return new TestAi(config6.OCO_TEST_MOCK_TYPE);
     case "gemini" /* GEMINI */:
       return new Gemini({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config6.OCO_GEMINI_API_KEY,
         baseURL: config6.OCO_GEMINI_BASE_PATH
       });
     case "azure" /* AZURE */:
       return new AzureEngine({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config6.OCO_AZURE_API_KEY
       });
     case "flowise" /* FLOWISE */:
       return new FlowiseAi({
-        ...DEFAULT_CONFIG,
-        baseURL: config6.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG.baseURL,
+        ...DEFAULT_CONFIG2,
+        baseURL: config6.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG2.baseURL,
         apiKey: config6.OCO_FLOWISE_API_KEY
       });
     default:
       return new OpenAiEngine({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config6.OCO_OPENAI_API_KEY
       });
   }
