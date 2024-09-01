@@ -44,9 +44,10 @@ export const prepareCommitMessageHook = async (
       !config.OCO_ANTHROPIC_API_KEY &&
       !config.OCO_AZURE_API_KEY
     ) {
-      throw new Error(
-        'No OPEN_AI_API or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key in ~/.opencommit'
+      outro(
+        'No OCO_OPENAI_API_KEY or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key via `oco config set <key>=<value>, e.g. `oco config set OCO_OPENAI_API_KEY=<value>`. For more info see https://github.com/di-sukharev/opencommit'
       );
+      return;
     }
 
     const spin = spinner();

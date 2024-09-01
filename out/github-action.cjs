@@ -61400,12 +61400,23 @@ var commitlintPrompts = {
 // src/modules/commitlint/pwd-commitlint.ts
 var import_promises = __toESM(require("fs/promises"), 1);
 var import_path3 = __toESM(require("path"), 1);
+var findModulePath = (moduleName) => {
+  const searchPaths = [
+    import_path3.default.join("node_modules", moduleName),
+    import_path3.default.join("node_modules", ".pnpm")
+  ];
+  for (const basePath of searchPaths) {
+    try {
+      const resolvedPath = require.resolve(moduleName, { paths: [basePath] });
+      return resolvedPath;
+    } catch {
+    }
+  }
+  throw new Error(`Cannot find module ${moduleName}`);
+};
 var getCommitLintModuleType = async () => {
-  const packageFile = "node_modules/@commitlint/load/package.json";
-  const packageJsonPath = import_path3.default.join(
-    process.env.PWD || process.cwd(),
-    packageFile
-  );
+  const packageFile = "@commitlint/load/package.json";
+  const packageJsonPath = findModulePath(packageFile);
   const packageJson = JSON.parse(await import_promises.default.readFile(packageJsonPath, "utf8"));
   if (!packageJson) {
     throw new Error(`Failed to parse ${packageFile}`);
@@ -61413,21 +61424,15 @@ var getCommitLintModuleType = async () => {
   return packageJson.type === "module" ? "esm" : "cjs";
 };
 var getCommitLintPWDConfig = async () => {
-  let load, nodeModulesPath;
+  let load, modulePath;
   switch (await getCommitLintModuleType()) {
     case "cjs":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load"
-      );
-      load = require(nodeModulesPath).default;
+      modulePath = findModulePath("@commitlint/load");
+      load = require(modulePath).default;
       break;
     case "esm":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load/lib/load.js"
-      );
-      load = (await import(nodeModulesPath)).default;
+      modulePath = await findModulePath("@commitlint/load/lib/load.js");
+      load = (await import(modulePath)).default;
       break;
   }
   if (load && typeof load === "function") {

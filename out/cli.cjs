@@ -42588,12 +42588,23 @@ var commitlintPrompts = {
 // src/modules/commitlint/pwd-commitlint.ts
 var import_promises = __toESM(require("fs/promises"), 1);
 var import_path3 = __toESM(require("path"), 1);
+var findModulePath = (moduleName) => {
+  const searchPaths = [
+    import_path3.default.join("node_modules", moduleName),
+    import_path3.default.join("node_modules", ".pnpm")
+  ];
+  for (const basePath of searchPaths) {
+    try {
+      const resolvedPath = require.resolve(moduleName, { paths: [basePath] });
+      return resolvedPath;
+    } catch {
+    }
+  }
+  throw new Error(`Cannot find module ${moduleName}`);
+};
 var getCommitLintModuleType = async () => {
-  const packageFile = "node_modules/@commitlint/load/package.json";
-  const packageJsonPath = import_path3.default.join(
-    process.env.PWD || process.cwd(),
-    packageFile
-  );
+  const packageFile = "@commitlint/load/package.json";
+  const packageJsonPath = findModulePath(packageFile);
   const packageJson = JSON.parse(await import_promises.default.readFile(packageJsonPath, "utf8"));
   if (!packageJson) {
     throw new Error(`Failed to parse ${packageFile}`);
@@ -42601,21 +42612,15 @@ var getCommitLintModuleType = async () => {
   return packageJson.type === "module" ? "esm" : "cjs";
 };
 var getCommitLintPWDConfig = async () => {
-  let load, nodeModulesPath;
+  let load, modulePath;
   switch (await getCommitLintModuleType()) {
     case "cjs":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load"
-      );
-      load = require(nodeModulesPath).default;
+      modulePath = findModulePath("@commitlint/load");
+      load = require(modulePath).default;
       break;
     case "esm":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load/lib/load.js"
-      );
-      load = (await import(nodeModulesPath)).default;
+      modulePath = await findModulePath("@commitlint/load/lib/load.js");
+      load = (await import(modulePath)).default;
       break;
   }
   if (load && typeof load === "function") {
@@ -43350,7 +43355,7 @@ var commitlintConfigCommand = G3(
       const { mode } = argv._;
       if (mode === "get" /* get */) {
         const commitLintConfig = await getCommitlintLLMConfig();
-        ce(commitLintConfig.toString());
+        ce(JSON.stringify(commitLintConfig, null, 2));
         return;
       }
       if (mode === "force" /* force */) {
@@ -43476,9 +43481,10 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
     ae("opencommit");
     const config7 = getConfig();
     if (!config7.OCO_OPENAI_API_KEY && !config7.OCO_ANTHROPIC_API_KEY && !config7.OCO_AZURE_API_KEY) {
-      throw new Error(
-        "No OPEN_AI_API or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key in ~/.opencommit"
+      ce(
+        "No OCO_OPENAI_API_KEY or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key via `oco config set <key>=<value>, e.g. `oco config set OCO_OPENAI_API_KEY=<value>`. For more info see https://github.com/di-sukharev/opencommit"
       );
+      return;
     }
     const spin = le();
     spin.start("Generating commit message");
