@@ -46564,6 +46564,7 @@ var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
   CONFIG_KEYS2["OCO_EMOJI"] = "OCO_EMOJI";
   CONFIG_KEYS2["OCO_MODEL"] = "OCO_MODEL";
   CONFIG_KEYS2["OCO_LANGUAGE"] = "OCO_LANGUAGE";
+  CONFIG_KEYS2["OCO_WHY"] = "OCO_WHY";
   CONFIG_KEYS2["OCO_MESSAGE_TEMPLATE_PLACEHOLDER"] = "OCO_MESSAGE_TEMPLATE_PLACEHOLDER";
   CONFIG_KEYS2["OCO_PROMPT_MODULE"] = "OCO_PROMPT_MODULE";
   CONFIG_KEYS2["OCO_AI_PROVIDER"] = "OCO_AI_PROVIDER";
@@ -46854,6 +46855,7 @@ var DEFAULT_CONFIG = {
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: "commit-message",
   OCO_FLOWISE_ENDPOINT: ":",
+  OCO_WHY: false,
   OCO_GITPUSH: true
 };
 var initGlobalConfig = (configPath = defaultConfigPath) => {
@@ -61380,7 +61382,7 @@ Example Git Diff is to follow:`
 ];
 var INIT_MAIN_PROMPT = (language, prompts) => ({
   role: "system",
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes ${config2.OCO_WHY ? "and WHY the changes were done" : ""}. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
 ${config2.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
 ${config2.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Use ${language} to answer.
@@ -61400,12 +61402,23 @@ var commitlintPrompts = {
 // src/modules/commitlint/pwd-commitlint.ts
 var import_promises = __toESM(require("fs/promises"), 1);
 var import_path3 = __toESM(require("path"), 1);
+var findModulePath = (moduleName) => {
+  const searchPaths = [
+    import_path3.default.join("node_modules", moduleName),
+    import_path3.default.join("node_modules", ".pnpm")
+  ];
+  for (const basePath of searchPaths) {
+    try {
+      const resolvedPath = require.resolve(moduleName, { paths: [basePath] });
+      return resolvedPath;
+    } catch {
+    }
+  }
+  throw new Error(`Cannot find module ${moduleName}`);
+};
 var getCommitLintModuleType = async () => {
-  const packageFile = "node_modules/@commitlint/load/package.json";
-  const packageJsonPath = import_path3.default.join(
-    process.env.PWD || process.cwd(),
-    packageFile
-  );
+  const packageFile = "@commitlint/load/package.json";
+  const packageJsonPath = findModulePath(packageFile);
   const packageJson = JSON.parse(await import_promises.default.readFile(packageJsonPath, "utf8"));
   if (!packageJson) {
     throw new Error(`Failed to parse ${packageFile}`);
@@ -61413,21 +61426,15 @@ var getCommitLintModuleType = async () => {
   return packageJson.type === "module" ? "esm" : "cjs";
 };
 var getCommitLintPWDConfig = async () => {
-  let load, nodeModulesPath;
+  let load, modulePath;
   switch (await getCommitLintModuleType()) {
     case "cjs":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load"
-      );
-      load = require(nodeModulesPath).default;
+      modulePath = findModulePath("@commitlint/load");
+      load = require(modulePath).default;
       break;
     case "esm":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load/lib/load.js"
-      );
-      load = (await import(nodeModulesPath)).default;
+      modulePath = await findModulePath("@commitlint/load/lib/load.js");
+      load = (await import(modulePath)).default;
       break;
   }
   if (load && typeof load === "function") {

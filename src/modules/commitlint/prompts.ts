@@ -258,7 +258,9 @@ const INIT_MAIN_PROMPT = (
   prompts: string[]
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
   role: 'system',
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes ${
+    config.OCO_WHY ? 'and WHY the changes were done' : ''
+  }. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
 ${
   config.OCO_EMOJI
     ? 'Use GitMoji convention to preface the commit.'
