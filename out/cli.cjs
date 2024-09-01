@@ -25193,7 +25193,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.0.20",
+  version: "3.1.0",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -27752,6 +27752,7 @@ var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
   CONFIG_KEYS2["OCO_EMOJI"] = "OCO_EMOJI";
   CONFIG_KEYS2["OCO_MODEL"] = "OCO_MODEL";
   CONFIG_KEYS2["OCO_LANGUAGE"] = "OCO_LANGUAGE";
+  CONFIG_KEYS2["OCO_WHY"] = "OCO_WHY";
   CONFIG_KEYS2["OCO_MESSAGE_TEMPLATE_PLACEHOLDER"] = "OCO_MESSAGE_TEMPLATE_PLACEHOLDER";
   CONFIG_KEYS2["OCO_PROMPT_MODULE"] = "OCO_PROMPT_MODULE";
   CONFIG_KEYS2["OCO_AI_PROVIDER"] = "OCO_AI_PROVIDER";
@@ -28029,44 +28030,25 @@ var configValidators = {
 };
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var defaultEnvPath = (0, import_path.resolve)(process.cwd(), ".env");
-var assertConfigsAreValid = (config7) => {
-  for (const [key, value] of Object.entries(config7)) {
-    if (!value)
-      continue;
-    if (typeof value === "string" && ["null", "undefined"].includes(value)) {
-      config7[key] = void 0;
-      continue;
-    }
-    try {
-      const validate = configValidators[key];
-      validate(value, config7);
-    } catch (error) {
-      ce(`Unknown '${key}' config option or missing validator.`);
-      ce(
-        `Manually fix the '.env' file or global '~/.opencommit' config file.`
-      );
-      process.exit(1);
-    }
-  }
+var DEFAULT_CONFIG = {
+  OCO_TOKENS_MAX_INPUT: 40960 /* DEFAULT_MAX_TOKENS_INPUT */,
+  OCO_TOKENS_MAX_OUTPUT: 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */,
+  OCO_DESCRIPTION: false,
+  OCO_EMOJI: false,
+  OCO_MODEL: getDefaultModel("openai"),
+  OCO_LANGUAGE: "en",
+  OCO_MESSAGE_TEMPLATE_PLACEHOLDER: "$msg",
+  OCO_PROMPT_MODULE: "conventional-commit" /* CONVENTIONAL_COMMIT */,
+  OCO_AI_PROVIDER: "openai" /* OPENAI */,
+  OCO_ONE_LINE_COMMIT: false,
+  OCO_TEST_MOCK_TYPE: "commit-message",
+  OCO_FLOWISE_ENDPOINT: ":",
+  OCO_WHY: false,
+  OCO_GITPUSH: true
 };
-var initGlobalConfig = () => {
-  const defaultConfig = {
-    OCO_TOKENS_MAX_INPUT: 40960 /* DEFAULT_MAX_TOKENS_INPUT */,
-    OCO_TOKENS_MAX_OUTPUT: 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */,
-    OCO_DESCRIPTION: false,
-    OCO_EMOJI: false,
-    OCO_MODEL: getDefaultModel("openai"),
-    OCO_LANGUAGE: "en",
-    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: "$msg",
-    OCO_PROMPT_MODULE: "conventional-commit" /* CONVENTIONAL_COMMIT */,
-    OCO_AI_PROVIDER: "openai" /* OPENAI */,
-    OCO_ONE_LINE_COMMIT: false,
-    OCO_TEST_MOCK_TYPE: "commit-message",
-    OCO_FLOWISE_ENDPOINT: ":",
-    OCO_GITPUSH: true
-  };
-  (0, import_fs.writeFileSync)(defaultConfigPath, (0, import_ini.stringify)(defaultConfig), "utf8");
-  return defaultConfig;
+var initGlobalConfig = (configPath = defaultConfigPath) => {
+  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(DEFAULT_CONFIG), "utf8");
+  return DEFAULT_CONFIG;
 };
 var parseEnvVarValue = (value) => {
   try {
@@ -28075,12 +28057,9 @@ var parseEnvVarValue = (value) => {
     return value;
   }
 };
-var getConfig = ({
-  configPath = defaultConfigPath,
-  envPath = defaultEnvPath
-} = {}) => {
+var getEnvConfig = (envPath) => {
   dotenv.config({ path: envPath });
-  const envConfig = {
+  return {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
     OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
@@ -28104,23 +28083,35 @@ var getConfig = ({
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH)
   };
+};
+var getGlobalConfig = (configPath) => {
   let globalConfig;
   const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
   if (!isGlobalConfigFileExist)
-    globalConfig = initGlobalConfig();
+    globalConfig = initGlobalConfig(configPath);
   else {
     const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
     globalConfig = (0, import_ini.parse)(configFile);
   }
-  const mergeObjects = (main, fallback) => Object.keys(CONFIG_KEYS).reduce((acc, key) => {
-    acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
-    return acc;
-  }, {});
-  const config7 = mergeObjects(envConfig, globalConfig);
+  return globalConfig;
+};
+var mergeConfigs = (main, fallback) => Object.keys(CONFIG_KEYS).reduce((acc, key) => {
+  acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
+  return acc;
+}, {});
+var getConfig = ({
+  envPath = defaultEnvPath,
+  globalPath = defaultConfigPath
+} = {}) => {
+  const envConfig = getEnvConfig(envPath);
+  const globalConfig = getGlobalConfig(globalPath);
+  const config7 = mergeConfigs(envConfig, globalConfig);
   return config7;
 };
-var setConfig = (keyValues, configPath = defaultConfigPath) => {
-  const config7 = getConfig();
+var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
+  const config7 = getConfig({
+    globalPath: globalConfigPath
+  });
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
       const supportedKeys = Object.keys(configValidators).join("\n");
@@ -28144,8 +28135,7 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
     );
     config7[key] = validValue;
   }
-  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config7), "utf8");
-  assertConfigsAreValid(config7);
+  (0, import_fs.writeFileSync)(globalConfigPath, (0, import_ini.stringify)(config7), "utf8");
   ce(`${source_default.green("\u2714")} config successfully set`);
 };
 var configCommand = G3(
@@ -42400,7 +42390,7 @@ var OpenAiEngine = class {
 function getEngine() {
   const config7 = getConfig();
   const provider = config7.OCO_AI_PROVIDER;
-  const DEFAULT_CONFIG = {
+  const DEFAULT_CONFIG2 = {
     model: config7.OCO_MODEL,
     maxTokensOutput: config7.OCO_TOKENS_MAX_OUTPUT,
     maxTokensInput: config7.OCO_TOKENS_MAX_INPUT,
@@ -42409,37 +42399,37 @@ function getEngine() {
   switch (provider) {
     case "ollama" /* OLLAMA */:
       return new OllamaAi({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: "",
         baseURL: config7.OCO_OLLAMA_API_URL
       });
     case "anthropic" /* ANTHROPIC */:
       return new AnthropicEngine({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config7.OCO_ANTHROPIC_API_KEY
       });
     case "test" /* TEST */:
       return new TestAi(config7.OCO_TEST_MOCK_TYPE);
     case "gemini" /* GEMINI */:
       return new Gemini({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config7.OCO_GEMINI_API_KEY,
         baseURL: config7.OCO_GEMINI_BASE_PATH
       });
     case "azure" /* AZURE */:
       return new AzureEngine({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config7.OCO_AZURE_API_KEY
       });
     case "flowise" /* FLOWISE */:
       return new FlowiseAi({
-        ...DEFAULT_CONFIG,
-        baseURL: config7.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG.baseURL,
+        ...DEFAULT_CONFIG2,
+        baseURL: config7.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG2.baseURL,
         apiKey: config7.OCO_FLOWISE_API_KEY
       });
     default:
       return new OpenAiEngine({
-        ...DEFAULT_CONFIG,
+        ...DEFAULT_CONFIG2,
         apiKey: config7.OCO_OPENAI_API_KEY
       });
   }
@@ -42580,7 +42570,7 @@ Example Git Diff is to follow:`
 ];
 var INIT_MAIN_PROMPT = (language, prompts) => ({
   role: "system",
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes ${config2.OCO_WHY ? "and WHY the changes were done" : ""}. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
 ${config2.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
 ${config2.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Use ${language} to answer.
@@ -42600,12 +42590,23 @@ var commitlintPrompts = {
 // src/modules/commitlint/pwd-commitlint.ts
 var import_promises = __toESM(require("fs/promises"), 1);
 var import_path3 = __toESM(require("path"), 1);
+var findModulePath = (moduleName) => {
+  const searchPaths = [
+    import_path3.default.join("node_modules", moduleName),
+    import_path3.default.join("node_modules", ".pnpm")
+  ];
+  for (const basePath of searchPaths) {
+    try {
+      const resolvedPath = require.resolve(moduleName, { paths: [basePath] });
+      return resolvedPath;
+    } catch {
+    }
+  }
+  throw new Error(`Cannot find module ${moduleName}`);
+};
 var getCommitLintModuleType = async () => {
-  const packageFile = "node_modules/@commitlint/load/package.json";
-  const packageJsonPath = import_path3.default.join(
-    process.env.PWD || process.cwd(),
-    packageFile
-  );
+  const packageFile = "@commitlint/load/package.json";
+  const packageJsonPath = findModulePath(packageFile);
   const packageJson = JSON.parse(await import_promises.default.readFile(packageJsonPath, "utf8"));
   if (!packageJson) {
     throw new Error(`Failed to parse ${packageFile}`);
@@ -42613,21 +42614,15 @@ var getCommitLintModuleType = async () => {
   return packageJson.type === "module" ? "esm" : "cjs";
 };
 var getCommitLintPWDConfig = async () => {
-  let load, nodeModulesPath;
+  let load, modulePath;
   switch (await getCommitLintModuleType()) {
     case "cjs":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load"
-      );
-      load = require(nodeModulesPath).default;
+      modulePath = findModulePath("@commitlint/load");
+      load = require(modulePath).default;
       break;
     case "esm":
-      nodeModulesPath = import_path3.default.join(
-        process.env.PWD || process.cwd(),
-        "node_modules/@commitlint/load/lib/load.js"
-      );
-      load = (await import(nodeModulesPath)).default;
+      modulePath = await findModulePath("@commitlint/load/lib/load.js");
+      load = (await import(modulePath)).default;
       break;
   }
   if (load && typeof load === "function") {
@@ -43177,8 +43172,8 @@ var generateCommitMessageFromGitDiff = async ({
   skipCommitConfirmation = false
 }) => {
   await assertGitRepo();
-  const commitSpinner = le();
-  commitSpinner.start("Generating the commit message");
+  const commitGenerationSpinner = le();
+  commitGenerationSpinner.start("Generating the commit message");
   try {
     let commitMessage = await generateCommitMessageByDiff(
       diff,
@@ -43193,7 +43188,7 @@ var generateCommitMessageFromGitDiff = async ({
         commitMessage
       );
     }
-    commitSpinner.stop("\u{1F4DD} Commit message generated");
+    commitGenerationSpinner.stop("\u{1F4DD} Commit message generated");
     ce(
       `Generated commit message:
 ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014")}
@@ -43203,14 +43198,20 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
     const isCommitConfirmedByUser = skipCommitConfirmation || await Q3({
       message: "Confirm the commit message?"
     });
-    if (isCommitConfirmedByUser && !hD2(isCommitConfirmedByUser)) {
+    if (hD2(isCommitConfirmedByUser))
+      process.exit(1);
+    if (isCommitConfirmedByUser) {
+      const committingChangesSpinner = le();
+      committingChangesSpinner.start("Committing the changes");
       const { stdout } = await execa("git", [
         "commit",
         "-m",
         commitMessage,
         ...extraArgs2
       ]);
-      ce(`${source_default.green("\u2714")} Successfully committed`);
+      committingChangesSpinner.stop(
+        `${source_default.green("\u2714")} Successfully committed`
+      );
       ce(stdout);
       const remotes = await getGitRemotes();
       if (!remotes.length) {
@@ -43223,7 +43224,9 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
         const isPushConfirmedByUser = await Q3({
           message: "Do you want to run `git push`?"
         });
-        if (isPushConfirmedByUser && !hD2(isPushConfirmedByUser)) {
+        if (hD2(isPushConfirmedByUser))
+          process.exit(1);
+        if (isPushConfirmedByUser) {
           const pushSpinner = le();
           pushSpinner.start(`Running 'git push ${remotes[0]}'`);
           const { stdout: stdout2 } = await execa("git", [
@@ -43245,26 +43248,26 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
           message: "Choose a remote to push to",
           options: remotes.map((remote) => ({ value: remote, label: remote }))
         });
-        if (!hD2(selectedRemote)) {
-          const pushSpinner = le();
-          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
-          const { stdout: stdout2 } = await execa("git", ["push", selectedRemote]);
-          pushSpinner.stop(
-            `${source_default.green(
-              "\u2714"
-            )} Successfully pushed all commits to ${selectedRemote}`
-          );
-          if (stdout2)
-            ce(stdout2);
-        } else
-          ce(`${source_default.gray("\u2716")} process cancelled`);
+        if (hD2(selectedRemote))
+          process.exit(1);
+        const pushSpinner = le();
+        pushSpinner.start(`Running 'git push ${selectedRemote}'`);
+        const { stdout: stdout2 } = await execa("git", ["push", selectedRemote]);
+        pushSpinner.stop(
+          `${source_default.green(
+            "\u2714"
+          )} Successfully pushed all commits to ${selectedRemote}`
+        );
+        if (stdout2)
+          ce(stdout2);
       }
-    }
-    if (!isCommitConfirmedByUser && !hD2(isCommitConfirmedByUser)) {
+    } else {
       const regenerateMessage = await Q3({
         message: "Do you want to regenerate the message?"
       });
-      if (regenerateMessage && !hD2(isCommitConfirmedByUser)) {
+      if (hD2(regenerateMessage))
+        process.exit(1);
+      if (regenerateMessage) {
         await generateCommitMessageFromGitDiff({
           diff,
           extraArgs: extraArgs2,
@@ -43273,7 +43276,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
       }
     }
   } catch (error) {
-    commitSpinner.stop("\u{1F4DD} Commit message generated");
+    commitGenerationSpinner.stop("\u{1F4DD} Commit message generated");
     const err = error;
     ce(`${source_default.red("\u2716")} ${err?.message || err}`);
     process.exit(1);
@@ -43307,7 +43310,9 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec =
     const isStageAllAndCommitConfirmedByUser = await Q3({
       message: "Do you want to stage all files and generate commit message?"
     });
-    if (isStageAllAndCommitConfirmedByUser && !hD2(isStageAllAndCommitConfirmedByUser)) {
+    if (hD2(isStageAllAndCommitConfirmedByUser))
+      process.exit(1);
+    if (isStageAllAndCommitConfirmedByUser) {
       await commit(extraArgs2, true, fullGitMojiSpec);
       process.exit(1);
     }
@@ -43357,7 +43362,7 @@ var commitlintConfigCommand = G3(
       const { mode } = argv._;
       if (mode === "get" /* get */) {
         const commitLintConfig = await getCommitlintLLMConfig();
-        ce(commitLintConfig.toString());
+        ce(JSON.stringify(commitLintConfig, null, 2));
         return;
       }
       if (mode === "force" /* force */) {
