@@ -1,3 +1,4 @@
+import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
 import * as dotenv from 'dotenv';
@@ -5,12 +6,9 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { parse as iniParse, stringify as iniStringify } from 'ini';
 import { homedir } from 'os';
 import { join as pathJoin, resolve as pathResolve } from 'path';
-
-import { intro, outro } from '@clack/prompts';
-
-import { COMMANDS } from '../CommandsEnum';
-import { getI18nLocal } from '../i18n';
+import { COMMANDS } from './ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
+import { getI18nLocal, i18n } from '../i18n';
 
 export enum CONFIG_KEYS {
   OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
@@ -25,10 +23,11 @@ export enum CONFIG_KEYS {
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
+  OCO_WHY = 'OCO_WHY',
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
-  OCO_GITPUSH = 'OCO_GITPUSH',
+  OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
@@ -103,8 +102,8 @@ const getDefaultModel = (provider: string | undefined): string => {
 };
 
 export enum DEFAULT_TOKEN_LIMITS {
-  DEFAULT_MAX_TOKENS_INPUT = 4096,
-  DEFAULT_MAX_TOKENS_OUTPUT = 500
+  DEFAULT_MAX_TOKENS_INPUT = 40960,
+  DEFAULT_MAX_TOKENS_OUTPUT = 4096
 }
 
 const validateConfig = (
@@ -113,8 +112,10 @@ const validateConfig = (
   validationMessage: string
 ) => {
   if (!condition) {
+    outro(`${chalk.red('✖')} wrong value for ${key}: ${validationMessage}.`);
+
     outro(
-      `${chalk.red('✖')} Unsupported config key ${key}: ${validationMessage}`
+      'For more help refer to docs https://github.com/di-sukharev/opencommit'
     );
 
     process.exit(1);
@@ -123,65 +124,54 @@ const validateConfig = (
 
 export const configValidators = {
   [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
-    if (config.OCO_AI_PROVIDER == 'gemini') return value;
+    if (config.OCO_AI_PROVIDER !== 'openai') return value;
 
-    //need api key unless running locally with ollama
     validateConfig(
-      'OpenAI API_KEY',
-      value ||
-        config.OCO_ANTHROPIC_API_KEY ||
-        config.OCO_AI_PROVIDER.startsWith('ollama') ||
-        config.OCO_AZURE_API_KEY ||
-        config.OCO_AI_PROVIDER == 'test' ||
-        config.OCO_AI_PROVIDER == 'flowise',
-      'You need to provide an OpenAI/Anthropic/Azure or other provider API key via `oco config set OCO_OPENAI_API_KEY=your_key`, for help refer to docs https://github.com/di-sukharev/opencommit'
+      'OCO_OPENAI_API_KEY',
+      typeof value === 'string' && value.length > 0,
+      'Empty value is not allowed'
     );
+
     validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_API_KEY,
-      value.startsWith('sk-') || config.OCO_AI_PROVIDER != 'openai',
-      'Must start with "sk-" for openai provider'
+      'OCO_OPENAI_API_KEY',
+      value,
+      'You need to provide the OCO_OPENAI_API_KEY when OCO_AI_PROVIDER is set to "openai" (default). Run `oco config set OCO_OPENAI_API_KEY=your_key`'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_AZURE_API_KEY](value: any, config: any = {}) {
+    if (config.OCO_AI_PROVIDER !== 'azure') return value;
+
     validateConfig(
-      'ANTHROPIC_API_KEY',
-      value ||
-        config.OCO_OPENAI_API_KEY ||
-        config.OCO_AZURE_API_KEY ||
-        config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'test' ||
-        config.OCO_AI_PROVIDER == 'flowise',
-      'You need to provide an OpenAI/Anthropic/Azure API key'
+      'OCO_AZURE_API_KEY',
+      !!value,
+      'You need to provide the OCO_AZURE_API_KEY when OCO_AI_PROVIDER is set to "azure". Run: `oco config set OCO_AZURE_API_KEY=your_key`'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_GEMINI_API_KEY](value: any, config: any = {}) {
-    // only need to check for gemini api key if using gemini
-    if (config.OCO_AI_PROVIDER != 'gemini') return value;
+    if (config.OCO_AI_PROVIDER !== 'gemini') return value;
 
     validateConfig(
-      'Gemini API Key',
-      value || config.OCO_GEMINI_API_KEY || config.OCO_AI_PROVIDER == 'test',
-      'You need to provide an Gemini API key'
+      'OCO_GEMINI_API_KEY',
+      value || config.OCO_GEMINI_API_KEY || config.OCO_AI_PROVIDER === 'test',
+      'You need to provide the OCO_GEMINI_API_KEY when OCO_AI_PROVIDER is set to "gemini". Run: `oco config set OCO_GEMINI_API_KEY=your_key`'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
+    if (config.OCO_AI_PROVIDER !== 'anthropic') return value;
+
     validateConfig(
       'ANTHROPIC_API_KEY',
-      value ||
-        config.OCO_OPENAI_API_KEY ||
-        config.OCO_AI_PROVIDER == 'ollama' ||
-        config.OCO_AI_PROVIDER == 'test' ||
-        config.OCO_AI_PROVIDER == 'flowise',
-      'You need to provide an OpenAI/Anthropic API key'
+      !!value,
+      'You need to provide the OCO_ANTHROPIC_API_KEY key when OCO_AI_PROVIDER is set to "anthropic". Run: `oco config set OCO_ANTHROPIC_API_KEY=your_key`'
     );
 
     return value;
@@ -190,8 +180,8 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_FLOWISE_API_KEY](value: any, config: any = {}) {
     validateConfig(
       CONFIG_KEYS.OCO_FLOWISE_API_KEY,
-      value || config.OCO_AI_PROVIDER != 'flowise',
-      'You need to provide a flowise API key'
+      value || config.OCO_AI_PROVIDER !== 'flowise',
+      'You need to provide the OCO_FLOWISE_API_KEY when OCO_AI_PROVIDER is set to "flowise". Run: `oco config set OCO_FLOWISE_API_KEY=your_key`'
     );
 
     return value;
@@ -201,25 +191,17 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_DESCRIPTION,
       typeof value === 'boolean',
-      'Must be true or false'
+      'Must be boolean: true or false'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT](value: any) {
-    // If the value is a string, convert it to a number.
-    if (typeof value === 'string') {
-      value = parseInt(value);
-      validateConfig(
-        CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
-        !isNaN(value),
-        'Must be a number'
-      );
-    }
+    value = parseInt(value);
     validateConfig(
       CONFIG_KEYS.OCO_TOKENS_MAX_INPUT,
-      value ? typeof value === 'number' : undefined,
+      !isNaN(value),
       'Must be a number'
     );
 
@@ -227,18 +209,10 @@ export const configValidators = {
   },
 
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT](value: any) {
-    // If the value is a string, convert it to a number.
-    if (typeof value === 'string') {
-      value = parseInt(value);
-      validateConfig(
-        CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
-        !isNaN(value),
-        'Must be a number'
-      );
-    }
+    value = parseInt(value);
     validateConfig(
       CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT,
-      value ? typeof value === 'number' : undefined,
+      !isNaN(value),
       'Must be a number'
     );
 
@@ -249,18 +223,21 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_EMOJI,
       typeof value === 'boolean',
-      'Must be true or false'
+      'Must be boolean: true or false'
     );
 
     return value;
   },
 
   [CONFIG_KEYS.OCO_LANGUAGE](value: any) {
+    const supportedLanguages = Object.keys(i18n);
+
     validateConfig(
       CONFIG_KEYS.OCO_LANGUAGE,
       getI18nLocal(value),
-      `${value} is not supported yet`
+      `${value} is not supported yet. Supported languages: ${supportedLanguages}`
     );
+
     return getI18nLocal(value);
   },
 
@@ -304,6 +281,7 @@ export const configValidators = {
     return value;
   },
 
+  // todo: deprecate
   [CONFIG_KEYS.OCO_GITPUSH](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_GITPUSH,
@@ -314,19 +292,16 @@ export const configValidators = {
   },
 
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
+    if (!value) value = 'openai';
+
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      [
-        '',
-        'openai',
-        'anthropic',
-        'gemini',
-        'azure',
-        'test',
-        'flowise'
-      ].includes(value) || value.startsWith('ollama'),
+      ['openai', 'anthropic', 'gemini', 'azure', 'test', 'flowise'].includes(
+        value
+      ) || value.startsWith('ollama'),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
+
     return value;
   },
 
@@ -354,7 +329,7 @@ export const configValidators = {
     validateConfig(
       CONFIG_KEYS.OCO_FLOWISE_ENDPOINT,
       typeof value === 'string' && value.includes(':'),
-      'Value must be string and should include both I.P. and port number' // Considering the possibility of DNS lookup or feeding the I.P. explicitely, there is no pattern to verify, except a column for the port number
+      'Value must be string and should include both I.P. and port number' // Considering the possibility of DNS lookup or feeding the I.P. explicitly, there is no pattern to verify, except a column for the port number
     );
 
     return value;
@@ -372,82 +347,69 @@ export const configValidators = {
   },
 
   [CONFIG_KEYS.OCO_OLLAMA_API_URL](value: any) {
-    // add simple api validator
     validateConfig(
-      CONFIG_KEYS.OCO_API_URL,
+      CONFIG_KEYS.OCO_OLLAMA_API_URL,
       typeof value === 'string' && value.startsWith('http'),
-      `${value} is not a valid URL`
+      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
   }
 };
 
+export enum OCO_AI_PROVIDER_ENUM {
+  OLLAMA = 'ollama',
+  OPENAI = 'openai',
+  ANTHROPIC = 'anthropic',
+  GEMINI = 'gemini',
+  AZURE = 'azure',
+  TEST = 'test',
+  FLOWISE = 'flowise'
+}
+
 export type ConfigType = {
-  [key in CONFIG_KEYS]?: any;
+  [CONFIG_KEYS.OCO_OPENAI_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_AZURE_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_GEMINI_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_GEMINI_BASE_PATH]?: string;
+  [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
+  [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
+  [CONFIG_KEYS.OCO_OPENAI_BASE_PATH]?: string;
+  [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
+  [CONFIG_KEYS.OCO_EMOJI]: boolean;
+  [CONFIG_KEYS.OCO_WHY]: boolean;
+  [CONFIG_KEYS.OCO_MODEL]: string;
+  [CONFIG_KEYS.OCO_LANGUAGE]: string;
+  [CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER]: string;
+  [CONFIG_KEYS.OCO_PROMPT_MODULE]: OCO_PROMPT_MODULE_ENUM;
+  [CONFIG_KEYS.OCO_AI_PROVIDER]: OCO_AI_PROVIDER_ENUM;
+  [CONFIG_KEYS.OCO_GITPUSH]: boolean;
+  [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
+  [CONFIG_KEYS.OCO_AZURE_ENDPOINT]?: string;
+  [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
+  [CONFIG_KEYS.OCO_API_URL]?: string;
+  [CONFIG_KEYS.OCO_OLLAMA_API_URL]?: string;
+  [CONFIG_KEYS.OCO_FLOWISE_ENDPOINT]: string;
+  [CONFIG_KEYS.OCO_FLOWISE_API_KEY]?: string;
 };
 
 const defaultConfigPath = pathJoin(homedir(), '.opencommit');
 const defaultEnvPath = pathResolve(process.cwd(), '.env');
-export const getConfig = ({
-  configPath = defaultConfigPath,
-  envPath = defaultEnvPath
-}: {
-  configPath?: string;
-  envPath?: string;
-} = {}): ConfigType | null => {
-  dotenv.config({ path: envPath });
-  const configFromEnv = {
-    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
-    OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
-    OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
-    OCO_TOKENS_MAX_INPUT: process.env.OCO_TOKENS_MAX_INPUT
-      ? Number(process.env.OCO_TOKENS_MAX_INPUT)
-      : undefined,
-    OCO_TOKENS_MAX_OUTPUT: process.env.OCO_TOKENS_MAX_OUTPUT
-      ? Number(process.env.OCO_TOKENS_MAX_OUTPUT)
-      : undefined,
-    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
-    OCO_DESCRIPTION: process.env.OCO_DESCRIPTION === 'true' ? true : false,
-    OCO_EMOJI: process.env.OCO_EMOJI === 'true' ? true : false,
-    OCO_MODEL:
-      process.env.OCO_MODEL || getDefaultModel(process.env.OCO_AI_PROVIDER),
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE || 'en',
-    OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || '$msg',
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || 'conventional-commit',
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || 'openai',
-    OCO_GITPUSH: process.env.OCO_GITPUSH === 'false' ? false : true,
-    OCO_ONE_LINE_COMMIT:
-      process.env.OCO_ONE_LINE_COMMIT === 'true' ? true : false,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT || undefined,
-    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || 'commit-message',
-    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT || ':',
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY || undefined,
-    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL || undefined
-  };
-  const configExists = existsSync(configPath);
-  if (!configExists) return configFromEnv;
 
-  const configFile = readFileSync(configPath, 'utf8');
-  const config = iniParse(configFile);
+const assertConfigsAreValid = (config: Record<string, any>) => {
+  for (const [key, value] of Object.entries(config)) {
+    if (!value) continue;
 
-  for (const configKey of Object.keys(config)) {
-    if (['null', 'undefined'].includes(config[configKey])) {
-      config[configKey] = undefined;
+    if (typeof value === 'string' && ['null', 'undefined'].includes(value)) {
+      config[key] = undefined;
       continue;
     }
-    try {
-      const validator = configValidators[configKey as CONFIG_KEYS];
-      const validValue = validator(
-        config[configKey] ?? configFromEnv[configKey as CONFIG_KEYS],
-        config
-      );
 
-      config[configKey] = validValue;
+    try {
+      const validate = configValidators[key as CONFIG_KEYS];
+      validate(value, config);
     } catch (error) {
-      outro(`Unknown '${configKey}' config option or missing validator.`);
+      outro(`Unknown '${key}' config option or missing validator.`);
       outro(
         `Manually fix the '.env' file or global '~/.opencommit' config file.`
       );
@@ -455,37 +417,158 @@ export const getConfig = ({
       process.exit(1);
     }
   }
+};
+
+enum OCO_PROMPT_MODULE_ENUM {
+  CONVENTIONAL_COMMIT = 'conventional-commit',
+  COMMITLINT = '@commitlint'
+}
+
+export const DEFAULT_CONFIG = {
+  OCO_TOKENS_MAX_INPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
+  OCO_TOKENS_MAX_OUTPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
+  OCO_DESCRIPTION: false,
+  OCO_EMOJI: false,
+  OCO_MODEL: getDefaultModel('openai'),
+  OCO_LANGUAGE: 'en',
+  OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
+  OCO_PROMPT_MODULE: OCO_PROMPT_MODULE_ENUM.CONVENTIONAL_COMMIT,
+  OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.OPENAI,
+  OCO_ONE_LINE_COMMIT: false,
+  OCO_TEST_MOCK_TYPE: 'commit-message',
+  OCO_FLOWISE_ENDPOINT: ':',
+  OCO_WHY: false,
+  OCO_GITPUSH: true // todo: deprecate
+};
+
+const initGlobalConfig = (configPath: string = defaultConfigPath) => {
+  writeFileSync(configPath, iniStringify(DEFAULT_CONFIG), 'utf8');
+  return DEFAULT_CONFIG;
+};
+
+const parseEnvVarValue = (value?: any) => {
+  try {
+    return JSON.parse(value);
+  } catch (error) {
+    return value;
+  }
+};
+
+const getEnvConfig = (envPath: string) => {
+  dotenv.config({ path: envPath });
+
+  return {
+    OCO_MODEL: process.env.OCO_MODEL,
+
+    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
+    OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
+    OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
+    OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
+    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY,
+
+    OCO_TOKENS_MAX_INPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_OUTPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_OUTPUT),
+
+    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
+    OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
+
+    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT,
+    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT,
+    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL,
+
+    OCO_DESCRIPTION: parseEnvVarValue(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: parseEnvVarValue(process.env.OCO_EMOJI),
+    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
+      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
+    OCO_ONE_LINE_COMMIT: parseEnvVarValue(process.env.OCO_ONE_LINE_COMMIT),
+    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
+
+    OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH) // todo: deprecate
+  };
+};
+
+const getGlobalConfig = (configPath: string) => {
+  let globalConfig: ConfigType;
+
+  const isGlobalConfigFileExist = existsSync(configPath);
+  if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
+  else {
+    const configFile = readFileSync(configPath, 'utf8');
+    globalConfig = iniParse(configFile) as ConfigType;
+  }
+
+  return globalConfig;
+};
+
+/**
+ * Merges two configs.
+ * Env config takes precedence over global ~/.opencommit config file
+ * @param main - env config
+ * @param fallback - global ~/.opencommit config file
+ * @returns merged config
+ */
+const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) =>
+  Object.keys(CONFIG_KEYS).reduce((acc, key) => {
+    acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
+
+    return acc;
+  }, {} as ConfigType);
+
+interface GetConfigOptions {
+  globalPath?: string;
+  envPath?: string;
+}
+
+export const getConfig = ({
+  envPath = defaultEnvPath,
+  globalPath = defaultConfigPath
+}: GetConfigOptions = {}): ConfigType => {
+  const envConfig = getEnvConfig(envPath);
+  const globalConfig = getGlobalConfig(globalPath);
+
+  const config = mergeConfigs(envConfig, globalConfig);
 
   return config;
 };
 
 export const setConfig = (
   keyValues: [key: string, value: string][],
-  configPath: string = defaultConfigPath
+  globalConfigPath: string = defaultConfigPath
 ) => {
-  const config = getConfig() || {};
+  const config = getConfig({
+    globalPath: globalConfigPath
+  });
 
-  for (const [configKey, configValue] of keyValues) {
-    if (!configValidators.hasOwnProperty(configKey)) {
-      throw new Error(`Unsupported config key: ${configKey}`);
+  for (let [key, value] of keyValues) {
+    if (!configValidators.hasOwnProperty(key)) {
+      const supportedKeys = Object.keys(configValidators).join('\n');
+      throw new Error(
+        `Unsupported config key: ${key}. Expected keys are:\n\n${supportedKeys}.\n\nFor more help refer to our docs: https://github.com/di-sukharev/opencommit`
+      );
     }
 
     let parsedConfigValue;
 
     try {
-      parsedConfigValue = JSON.parse(configValue);
+      parsedConfigValue = JSON.parse(value);
     } catch (error) {
-      parsedConfigValue = configValue;
+      parsedConfigValue = value;
     }
 
-    const validValue =
-      configValidators[configKey as CONFIG_KEYS](parsedConfigValue);
-    config[configKey as CONFIG_KEYS] = validValue;
+    const validValue = configValidators[key as CONFIG_KEYS](
+      parsedConfigValue,
+      config
+    );
+
+    config[key] = validValue;
   }
 
-  writeFileSync(configPath, iniStringify(config), 'utf8');
+  writeFileSync(globalConfigPath, iniStringify(config), 'utf8');
 
-  outro(`${chalk.green('✔')} Config successfully set`);
+  outro(`${chalk.green('✔')} config successfully set`);
 };
 
 export const configCommand = command(
@@ -494,9 +577,9 @@ export const configCommand = command(
     parameters: ['<mode>', '<key=values...>']
   },
   async (argv) => {
-    intro('opencommit — config');
     try {
       const { mode, keyValues } = argv._;
+      intro(`COMMAND: config ${mode} ${keyValues}`);
 
       if (mode === CONFIG_MODES.get) {
         const config = getConfig() || {};
