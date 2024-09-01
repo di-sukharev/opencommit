@@ -162,6 +162,16 @@ oco config set OCO_EMOJI=false
 
 Other config options are behaving the same.
 
+### Output WHY the changes were done (WIP)
+
+You can set the `OCO_WHY` config to `true` to have OpenCommit output a short description of WHY the changes were done after the commit message. Default is `false`.
+
+To make this perform accurate we must store 'what files do' in some kind of an index or embedding and perform a lookup (kinda RAG) for the accurate git commit message. If you feel like building this comment on this ticket https://github.com/di-sukharev/opencommit/issues/398 and let's go from there together.
+
+```sh
+oco config set OCO_WHY=true
+```
+
 ### Switch to GPT-4 or other models
 
 By default, OpenCommit uses `gpt-4o-mini` model.
