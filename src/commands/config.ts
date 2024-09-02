@@ -430,8 +430,6 @@ export const getConfig = ({
 
   const config = mergeConfigs(envConfig, globalConfig);
 
-  console.log('123123123config', { config, envConfig, globalConfig });
-
   return config;
 };
 

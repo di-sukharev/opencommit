@@ -39,8 +39,6 @@ const migrate = async (): Promise<void> => {
     );
   }
 
-  console.log('TEST123123', { aiProvider, config, apiKey, apiUrl });
-
   if (apiKey && apiUrl) {
     setConfig([
       [CONFIG_KEYS.OCO_API_KEY, apiKey],
