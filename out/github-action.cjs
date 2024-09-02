@@ -56902,7 +56902,10 @@ var OllamaAi = class {
       stream: false
     };
     try {
-      const response = await this.client.post("", params);
+      const response = await this.client.post(
+        this.client.getUri(this.config),
+        params
+      );
       const message = response.data.message;
       return message?.content;
     } catch (err) {
