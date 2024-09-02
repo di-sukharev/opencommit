@@ -76,7 +76,8 @@ oco config set OCO_AI_PROVIDER='ollama'
 If you want to use a model other than mistral (default), you can do so by setting the `OCO_AI_PROVIDER` environment variable as follows:
 
 ```sh
-oco config set OCO_AI_PROVIDER='ollama/llama3:8b'
+oco config set OCO_AI_PROVIDER='ollama'
+oco config set OCO_MODEL='llama3:8b'
 ```
 
 If you have ollama that is set up in docker/ on another machine with GPUs (not locally), you can change the default endpoint url.
@@ -127,12 +128,12 @@ OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
-OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview' or any string basically, but it should be a valid model name>
+OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview' or any Anthropic or Ollama model or any string basically, but it should be a valid model name>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama or ollama/model>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama>
 ...
 ```
 
