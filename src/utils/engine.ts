@@ -2,9 +2,9 @@ import { getConfig, OCO_AI_PROVIDER_ENUM } from '../commands/config';
 import { AnthropicEngine } from '../engine/anthropic';
 import { AzureEngine } from '../engine/azure';
 import { AiEngine } from '../engine/Engine';
-import { FlowiseAi } from '../engine/flowise';
-import { Gemini } from '../engine/gemini';
-import { OllamaAi } from '../engine/ollama';
+import { FlowiseEngine } from '../engine/flowise';
+import { GeminiEngine } from '../engine/gemini';
+import { OllamaEngine } from '../engine/ollama';
 import { OpenAiEngine } from '../engine/openAi';
 import { TestAi, TestMockType } from '../engine/testAi';
 
@@ -21,7 +21,7 @@ export function getEngine(): AiEngine {
 
   switch (provider) {
     case OCO_AI_PROVIDER_ENUM.OLLAMA:
-      return new OllamaAi({
+      return new OllamaEngine({
         ...DEFAULT_CONFIG,
         apiKey: '',
         baseURL: config.OCO_OLLAMA_API_URL!
@@ -37,7 +37,7 @@ export function getEngine(): AiEngine {
       return new TestAi(config.OCO_TEST_MOCK_TYPE as TestMockType);
 
     case OCO_AI_PROVIDER_ENUM.GEMINI:
-      return new Gemini({
+      return new GeminiEngine({
         ...DEFAULT_CONFIG,
         apiKey: config.OCO_GEMINI_API_KEY!,
         baseURL: config.OCO_GEMINI_BASE_PATH!
@@ -50,7 +50,7 @@ export function getEngine(): AiEngine {
       });
 
     case OCO_AI_PROVIDER_ENUM.FLOWISE:
-      return new FlowiseAi({
+      return new FlowiseEngine({
         ...DEFAULT_CONFIG,
         baseURL: config.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG.baseURL,
         apiKey: config.OCO_FLOWISE_API_KEY!

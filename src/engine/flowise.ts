@@ -4,7 +4,7 @@ import { AiEngine, AiEngineConfig } from './Engine';
 
 interface FlowiseAiConfig extends AiEngineConfig {}
 
-export class FlowiseAi implements AiEngine {
+export class FlowiseEngine implements AiEngine {
   config: FlowiseAiConfig;
   client: AxiosInstance;
 

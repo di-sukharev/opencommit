@@ -4,7 +4,7 @@ import { AiEngine, AiEngineConfig } from './Engine';
 
 interface OllamaConfig extends AiEngineConfig {}
 
-export class OllamaAi implements AiEngine {
+export class OllamaEngine implements AiEngine {
   config: OllamaConfig;
   client: AxiosInstance;
 
