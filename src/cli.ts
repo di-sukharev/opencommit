@@ -9,6 +9,7 @@ import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
+import { runMigrations } from './migrations/_run.js';
 
 const extraArgs = process.argv.slice(2);
 
@@ -31,6 +32,7 @@ cli(
   },
   async ({ flags }) => {
     await checkIsLatestVersion();
+    await runMigrations();
 
     if (await isHookCalled()) {
       prepareCommitMessageHook();

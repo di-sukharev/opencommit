@@ -28,30 +28,19 @@ You can use OpenCommit by simply running it via the CLI like this `oco`. 2 secon
    npm install -g opencommit
    ```
 
-   Alternatively run it via `npx opencommit` or `bunx opencommit`
-
-   MacOS may ask to run the command with `sudo` when installing a package globally.
-
-2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys). Make sure that you add your payment details, so the API works.
+2. Get your API key from [OpenAI](https://platform.openai.com/account/api-keys) or other supported LLM providers (we support them all). Make sure that you add your OpenAI payment details to your account, so the API works.
 
 3. Set the key to OpenCommit config:
 
    ```sh
-   oco config set OCO_OPENAI_API_KEY=<your_api_key>
+   oco config set OCO_API_KEY=<your_api_key>
    ```
 
    Your API key is stored locally in the `~/.opencommit` config file.
 
 ## Usage
 
-You can call OpenCommit directly to generate a commit message for your staged changes:
-
-```sh
-git add <files...>
-opencommit
-```
-
-You can also use the `oco` shortcut:
+You can call OpenCommit with `oco` command to generate a commit message for your staged changes:
 
 ```sh
 git add <files...>
@@ -70,22 +59,17 @@ You can also run it with local model through ollama:
 
 ```sh
 git add <files...>
-oco config set OCO_AI_PROVIDER='ollama'
+oco config set OCO_AI_PROVIDER='ollama' OCO_MODEL='llama3:8b'
 ```
 
-If you want to use a model other than mistral (default), you can do so by setting the `OCO_AI_PROVIDER` environment variable as follows:
-
-```sh
-oco config set OCO_AI_PROVIDER='ollama'
-oco config set OCO_MODEL='llama3:8b'
-```
+Default model is `mistral`.
 
 If you have ollama that is set up in docker/ on another machine with GPUs (not locally), you can change the default endpoint url.
 
-You can do so by setting the `OCO_OLLAMA_API_URL` environment variable as follows:
+You can do so by setting the `OCO_API_URL` environment variable as follows:
 
 ```sh
-oco config set OCO_OLLAMA_API_URL='http://192.168.1.10:11434/api/chat'
+oco config set OCO_API_URL='http://192.168.1.10:11434/api/chat'
 ```
 
 where 192.168.1.10 is example of endpoint URL, where you have ollama set up.
@@ -122,10 +106,11 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_OPENAI_API_KEY=<your OpenAI API token>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, gemini, flowise>
+OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
+OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_TOKENS_MAX_INPUT=<max model token limit (default: 4096)>
 OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
-OCO_OPENAI_BASE_PATH=<may be used to set proxy path to OpenAI api>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
 OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview' or any Anthropic or Ollama model or any string basically, but it should be a valid model name>
@@ -133,11 +118,9 @@ OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama>
-...
 ```
 
-This are not all the config options, but you get the point.
+Global configs are same as local configs, but they are stored in the global `~/.opencommit` config file and set with `oco config set` command, e.g. `oco config set OCO_MODEL=gpt-4o`.
 
 ### Global config for all repos
 
@@ -189,26 +172,26 @@ or for as a cheaper option:
 oco config set OCO_MODEL=gpt-3.5-turbo
 ```
 
-### Switch to Azure OpenAI
+### Switch to other LLM providers with a custom URL
 
 By default OpenCommit uses [OpenAI](https://openai.com).
 
-You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cognitive-services/openai/)🚀
+You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cognitive-services/openai/) or Flowise or Ollama.
 
 ```sh
-opencommit config set OCO_AI_PROVIDER=azure
-```
+oco config set OCO_AI_PROVIDER=azure OCO_API_KEY=<your_azure_api_key> OCO_API_URL=<your_azure_endpoint>
 
-Of course need to set 'OCO_OPENAI_API_KEY'. And also need to set the
-'OPENAI_BASE_PATH' for the endpoint and set the deployment name to
-'model'.
+oco config set OCO_AI_PROVIDER=flowise OCO_API_KEY=<your_flowise_api_key> OCO_API_URL=<your_flowise_endpoint>
+
+oco config set OCO_AI_PROVIDER=ollama OCO_API_KEY=<your_ollama_api_key> OCO_API_URL=<your_ollama_endpoint>
+```
 
 ### Locale configuration
 
 To globally specify the language used to generate commit messages:
 
 ```sh
-# de, German ,Deutsch
+# de, German, Deutsch
 oco config set OCO_LANGUAGE=de
 oco config set OCO_LANGUAGE=German
 oco config set OCO_LANGUAGE=Deutsch
@@ -224,7 +207,7 @@ All available languages are currently listed in the [i18n](https://github.com/di
 
 ### Push to git (gonna be deprecated)
 
-A prompt to ushing to git is on by default but if you would like to turn it off just use:
+A prompt to push to git is on by default but if you would like to turn it off just use:
 
 ```sh
 oco config set OCO_GITPUSH=false

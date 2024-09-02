@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
 import {
+  CONFIG_KEYS,
   DEFAULT_CONFIG,
   getConfig,
   setConfig
@@ -50,14 +51,13 @@ describe('config', () => {
   describe('getConfig', () => {
     it('should prioritize local .env over global .opencommit config', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
-        OCO_OPENAI_API_KEY: 'global-key',
+        OCO_API_KEY: 'global-key',
         OCO_MODEL: 'gpt-3.5-turbo',
         OCO_LANGUAGE: 'en'
       });
 
       envConfigFile = await generateConfig('.env', {
-        OCO_OPENAI_API_KEY: 'local-key',
-        OCO_ANTHROPIC_API_KEY: 'local-anthropic-key',
+        OCO_API_KEY: 'local-key',
         OCO_LANGUAGE: 'fr'
       });
 
@@ -67,22 +67,21 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_OPENAI_API_KEY).toEqual('local-key');
+      expect(config.OCO_API_KEY).toEqual('local-key');
       expect(config.OCO_MODEL).toEqual('gpt-3.5-turbo');
       expect(config.OCO_LANGUAGE).toEqual('fr');
-      expect(config.OCO_ANTHROPIC_API_KEY).toEqual('local-anthropic-key');
     });
 
     it('should fallback to global config when local config is not set', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
-        OCO_OPENAI_API_KEY: 'global-key',
+        OCO_API_KEY: 'global-key',
         OCO_MODEL: 'gpt-4',
         OCO_LANGUAGE: 'de',
         OCO_DESCRIPTION: 'true'
       });
 
       envConfigFile = await generateConfig('.env', {
-        OCO_ANTHROPIC_API_KEY: 'local-anthropic-key'
+        OCO_API_URL: 'local-api-url'
       });
 
       const config = getConfig({
@@ -91,8 +90,8 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_OPENAI_API_KEY).toEqual('global-key');
-      expect(config.OCO_ANTHROPIC_API_KEY).toEqual('local-anthropic-key');
+      expect(config.OCO_API_KEY).toEqual('global-key');
+      expect(config.OCO_API_URL).toEqual('local-api-url');
       expect(config.OCO_MODEL).toEqual('gpt-4');
       expect(config.OCO_LANGUAGE).toEqual('de');
       expect(config.OCO_DESCRIPTION).toEqual(true);
@@ -124,7 +123,7 @@ describe('config', () => {
 
     it('should handle empty local config correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
-        OCO_OPENAI_API_KEY: 'global-key',
+        OCO_API_KEY: 'global-key',
         OCO_MODEL: 'gpt-4',
         OCO_LANGUAGE: 'es'
       });
@@ -137,20 +136,20 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_OPENAI_API_KEY).toEqual('global-key');
+      expect(config.OCO_API_KEY).toEqual('global-key');
       expect(config.OCO_MODEL).toEqual('gpt-4');
       expect(config.OCO_LANGUAGE).toEqual('es');
     });
 
     it('should override global config with null values in local .env', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
-        OCO_OPENAI_API_KEY: 'global-key',
+        OCO_API_KEY: 'global-key',
         OCO_MODEL: 'gpt-4',
         OCO_LANGUAGE: 'es'
       });
 
       envConfigFile = await generateConfig('.env', {
-        OCO_OPENAI_API_KEY: 'null'
+        OCO_API_KEY: 'null'
       });
 
       const config = getConfig({
@@ -159,7 +158,7 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_OPENAI_API_KEY).toEqual(null);
+      expect(config.OCO_API_KEY).toEqual(null);
     });
 
     it('should handle empty global config', async () => {
@@ -172,7 +171,7 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_OPENAI_API_KEY).toEqual(undefined);
+      expect(config.OCO_API_KEY).toEqual(undefined);
     });
   });
 
@@ -188,12 +187,12 @@ describe('config', () => {
       expect(isGlobalConfigFileExist).toBe(false);
 
       await setConfig(
-        [['OCO_OPENAI_API_KEY', 'persisted-key_1']],
+        [[CONFIG_KEYS.OCO_API_KEY, 'persisted-key_1']],
         globalConfigFile.filePath
       );
 
       const fileContent = readFileSync(globalConfigFile.filePath, 'utf8');
-      expect(fileContent).toContain('OCO_OPENAI_API_KEY=persisted-key_1');
+      expect(fileContent).toContain('OCO_API_KEY=persisted-key_1');
       Object.entries(DEFAULT_CONFIG).forEach(([key, value]) => {
         expect(fileContent).toContain(`${key}=${value}`);
       });
@@ -203,37 +202,37 @@ describe('config', () => {
       globalConfigFile = await generateConfig('.opencommit', {});
       await setConfig(
         [
-          ['OCO_OPENAI_API_KEY', 'new-key'],
-          ['OCO_MODEL', 'gpt-4']
+          [CONFIG_KEYS.OCO_API_KEY, 'new-key'],
+          [CONFIG_KEYS.OCO_MODEL, 'gpt-4']
         ],
         globalConfigFile.filePath
       );
 
       const config = getConfig({ globalPath: globalConfigFile.filePath });
-      expect(config.OCO_OPENAI_API_KEY).toEqual('new-key');
+      expect(config.OCO_API_KEY).toEqual('new-key');
       expect(config.OCO_MODEL).toEqual('gpt-4');
     });
 
     it('should update existing config values', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
-        OCO_OPENAI_API_KEY: 'initial-key'
+        OCO_API_KEY: 'initial-key'
       });
       await setConfig(
-        [['OCO_OPENAI_API_KEY', 'updated-key']],
+        [[CONFIG_KEYS.OCO_API_KEY, 'updated-key']],
         globalConfigFile.filePath
       );
 
       const config = getConfig({ globalPath: globalConfigFile.filePath });
-      expect(config.OCO_OPENAI_API_KEY).toEqual('updated-key');
+      expect(config.OCO_API_KEY).toEqual('updated-key');
     });
 
     it('should handle boolean and numeric values correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {});
       await setConfig(
         [
-          ['OCO_TOKENS_MAX_INPUT', '8192'],
-          ['OCO_DESCRIPTION', 'true'],
-          ['OCO_ONE_LINE_COMMIT', 'false']
+          [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT, '8192'],
+          [CONFIG_KEYS.OCO_DESCRIPTION, 'true'],
+          [CONFIG_KEYS.OCO_ONE_LINE_COMMIT, 'false']
         ],
         globalConfigFile.filePath
       );
@@ -266,12 +265,12 @@ describe('config', () => {
       expect(isGlobalConfigFileExist).toBe(false);
 
       await setConfig(
-        [['OCO_OPENAI_API_KEY', 'persisted-key']],
+        [[CONFIG_KEYS.OCO_API_KEY, 'persisted-key']],
         globalConfigFile.filePath
       );
 
       const fileContent = readFileSync(globalConfigFile.filePath, 'utf8');
-      expect(fileContent).toContain('OCO_OPENAI_API_KEY=persisted-key');
+      expect(fileContent).toContain('OCO_API_KEY=persisted-key');
     });
 
     it('should set multiple configs in a row and keep the changes', async () => {
@@ -279,14 +278,17 @@ describe('config', () => {
       expect(isGlobalConfigFileExist).toBe(false);
 
       await setConfig(
-        [['OCO_OPENAI_API_KEY', 'persisted-key']],
+        [[CONFIG_KEYS.OCO_API_KEY, 'persisted-key']],
         globalConfigFile.filePath
       );
 
       const fileContent1 = readFileSync(globalConfigFile.filePath, 'utf8');
-      expect(fileContent1).toContain('OCO_OPENAI_API_KEY=persisted-key');
+      expect(fileContent1).toContain('OCO_API_KEY=persisted-key');
 
-      await setConfig([['OCO_MODEL', 'gpt-4']], globalConfigFile.filePath);
+      await setConfig(
+        [[CONFIG_KEYS.OCO_MODEL, 'gpt-4']],
+        globalConfigFile.filePath
+      );
 
       const fileContent2 = readFileSync(globalConfigFile.filePath, 'utf8');
       expect(fileContent2).toContain('OCO_MODEL=gpt-4');

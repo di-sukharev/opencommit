@@ -46551,33 +46551,6 @@ function getI18nLocal(value) {
 }
 
 // src/commands/config.ts
-var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
-  CONFIG_KEYS2["OCO_OPENAI_API_KEY"] = "OCO_OPENAI_API_KEY";
-  CONFIG_KEYS2["OCO_ANTHROPIC_API_KEY"] = "OCO_ANTHROPIC_API_KEY";
-  CONFIG_KEYS2["OCO_AZURE_API_KEY"] = "OCO_AZURE_API_KEY";
-  CONFIG_KEYS2["OCO_GEMINI_API_KEY"] = "OCO_GEMINI_API_KEY";
-  CONFIG_KEYS2["OCO_GEMINI_BASE_PATH"] = "OCO_GEMINI_BASE_PATH";
-  CONFIG_KEYS2["OCO_TOKENS_MAX_INPUT"] = "OCO_TOKENS_MAX_INPUT";
-  CONFIG_KEYS2["OCO_TOKENS_MAX_OUTPUT"] = "OCO_TOKENS_MAX_OUTPUT";
-  CONFIG_KEYS2["OCO_OPENAI_BASE_PATH"] = "OCO_OPENAI_BASE_PATH";
-  CONFIG_KEYS2["OCO_DESCRIPTION"] = "OCO_DESCRIPTION";
-  CONFIG_KEYS2["OCO_EMOJI"] = "OCO_EMOJI";
-  CONFIG_KEYS2["OCO_MODEL"] = "OCO_MODEL";
-  CONFIG_KEYS2["OCO_LANGUAGE"] = "OCO_LANGUAGE";
-  CONFIG_KEYS2["OCO_WHY"] = "OCO_WHY";
-  CONFIG_KEYS2["OCO_MESSAGE_TEMPLATE_PLACEHOLDER"] = "OCO_MESSAGE_TEMPLATE_PLACEHOLDER";
-  CONFIG_KEYS2["OCO_PROMPT_MODULE"] = "OCO_PROMPT_MODULE";
-  CONFIG_KEYS2["OCO_AI_PROVIDER"] = "OCO_AI_PROVIDER";
-  CONFIG_KEYS2["OCO_GITPUSH"] = "OCO_GITPUSH";
-  CONFIG_KEYS2["OCO_ONE_LINE_COMMIT"] = "OCO_ONE_LINE_COMMIT";
-  CONFIG_KEYS2["OCO_AZURE_ENDPOINT"] = "OCO_AZURE_ENDPOINT";
-  CONFIG_KEYS2["OCO_TEST_MOCK_TYPE"] = "OCO_TEST_MOCK_TYPE";
-  CONFIG_KEYS2["OCO_API_URL"] = "OCO_API_URL";
-  CONFIG_KEYS2["OCO_OLLAMA_API_URL"] = "OCO_OLLAMA_API_URL";
-  CONFIG_KEYS2["OCO_FLOWISE_ENDPOINT"] = "OCO_FLOWISE_ENDPOINT";
-  CONFIG_KEYS2["OCO_FLOWISE_API_KEY"] = "OCO_FLOWISE_API_KEY";
-  return CONFIG_KEYS2;
-})(CONFIG_KEYS || {});
 var MODEL_LIST = {
   openai: [
     "gpt-4o-mini",
@@ -46643,56 +46616,18 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config6 = {}) {
+  ["OCO_API_KEY" /* OCO_API_KEY */](value, config6 = {}) {
     if (config6.OCO_AI_PROVIDER !== "openai")
       return value;
     validateConfig(
-      "OCO_OPENAI_API_KEY",
+      "OCO_API_KEY",
       typeof value === "string" && value.length > 0,
       "Empty value is not allowed"
     );
     validateConfig(
-      "OCO_OPENAI_API_KEY",
+      "OCO_API_KEY",
       value,
-      'You need to provide the OCO_OPENAI_API_KEY when OCO_AI_PROVIDER is set to "openai" (default). Run `oco config set OCO_OPENAI_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_AZURE_API_KEY" /* OCO_AZURE_API_KEY */](value, config6 = {}) {
-    if (config6.OCO_AI_PROVIDER !== "azure")
-      return value;
-    validateConfig(
-      "OCO_AZURE_API_KEY",
-      !!value,
-      'You need to provide the OCO_AZURE_API_KEY when OCO_AI_PROVIDER is set to "azure". Run: `oco config set OCO_AZURE_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_GEMINI_API_KEY" /* OCO_GEMINI_API_KEY */](value, config6 = {}) {
-    if (config6.OCO_AI_PROVIDER !== "gemini")
-      return value;
-    validateConfig(
-      "OCO_GEMINI_API_KEY",
-      value || config6.OCO_GEMINI_API_KEY || config6.OCO_AI_PROVIDER === "test",
-      'You need to provide the OCO_GEMINI_API_KEY when OCO_AI_PROVIDER is set to "gemini". Run: `oco config set OCO_GEMINI_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config6 = {}) {
-    if (config6.OCO_AI_PROVIDER !== "anthropic")
-      return value;
-    validateConfig(
-      "ANTHROPIC_API_KEY",
-      !!value,
-      'You need to provide the OCO_ANTHROPIC_API_KEY key when OCO_AI_PROVIDER is set to "anthropic". Run: `oco config set OCO_ANTHROPIC_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_FLOWISE_API_KEY" /* OCO_FLOWISE_API_KEY */](value, config6 = {}) {
-    validateConfig(
-      "OCO_FLOWISE_API_KEY" /* OCO_FLOWISE_API_KEY */,
-      value || config6.OCO_AI_PROVIDER !== "flowise",
-      'You need to provide the OCO_FLOWISE_API_KEY when OCO_AI_PROVIDER is set to "flowise". Run: `oco config set OCO_FLOWISE_API_KEY=your_key`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -46739,11 +46674,11 @@ var configValidators = {
     );
     return getI18nLocal(value);
   },
-  ["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */](value) {
+  ["OCO_API_URL" /* OCO_API_URL */](value) {
     validateConfig(
-      "OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */,
+      "OCO_API_URL" /* OCO_API_URL */,
       typeof value === "string",
-      "Must be string"
+      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
   },
@@ -46805,22 +46740,6 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_AZURE_ENDPOINT" /* OCO_AZURE_ENDPOINT */](value) {
-    validateConfig(
-      "OCO_AZURE_ENDPOINT" /* OCO_AZURE_ENDPOINT */,
-      value.includes("openai.azure.com"),
-      'Must be in format "https://<resource name>.openai.azure.com/"'
-    );
-    return value;
-  },
-  ["OCO_FLOWISE_ENDPOINT" /* OCO_FLOWISE_ENDPOINT */](value) {
-    validateConfig(
-      "OCO_FLOWISE_ENDPOINT" /* OCO_FLOWISE_ENDPOINT */,
-      typeof value === "string" && value.includes(":"),
-      "Value must be string and should include both I.P. and port number"
-    );
-    return value;
-  },
   ["OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */](value) {
     validateConfig(
       "OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */,
@@ -46828,14 +46747,6 @@ var configValidators = {
       `${value} is not supported yet, use ${TEST_MOCK_TYPES.map(
         (t2) => `'${t2}'`
       ).join(", ")}`
-    );
-    return value;
-  },
-  ["OCO_OLLAMA_API_URL" /* OCO_OLLAMA_API_URL */](value) {
-    validateConfig(
-      "OCO_OLLAMA_API_URL" /* OCO_OLLAMA_API_URL */,
-      typeof value === "string" && value.startsWith("http"),
-      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
   }
@@ -46862,7 +46773,7 @@ var initGlobalConfig = (configPath = defaultConfigPath) => {
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(DEFAULT_CONFIG), "utf8");
   return DEFAULT_CONFIG;
 };
-var parseEnvVarValue = (value) => {
+var parseConfigVarValue = (value) => {
   try {
     return JSON.parse(value);
   } catch (error) {
@@ -46873,27 +46784,21 @@ var getEnvConfig = (envPath) => {
   dotenv.config({ path: envPath });
   return {
     OCO_MODEL: process.env.OCO_MODEL,
-    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
-    OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
-    OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY,
-    OCO_TOKENS_MAX_INPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_INPUT),
-    OCO_TOKENS_MAX_OUTPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_OUTPUT),
-    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT,
-    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT,
-    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL,
-    OCO_DESCRIPTION: parseEnvVarValue(process.env.OCO_DESCRIPTION),
-    OCO_EMOJI: parseEnvVarValue(process.env.OCO_EMOJI),
+    OCO_API_URL: process.env.OCO_API_URL,
+    OCO_API_KEY: process.env.OCO_API_KEY,
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
+      process.env.OCO_TOKENS_MAX_OUTPUT
+    ),
+    OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE,
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
-    OCO_ONE_LINE_COMMIT: parseEnvVarValue(process.env.OCO_ONE_LINE_COMMIT),
+    OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
-    OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH)
+    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
   };
 };
 var getGlobalConfig = (configPath) => {
@@ -46907,10 +46812,13 @@ var getGlobalConfig = (configPath) => {
   }
   return globalConfig;
 };
-var mergeConfigs = (main, fallback) => Object.keys(CONFIG_KEYS).reduce((acc, key) => {
-  acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
-  return acc;
-}, {});
+var mergeConfigs = (main, fallback) => {
+  const allKeys = /* @__PURE__ */ new Set([...Object.keys(main), ...Object.keys(fallback)]);
+  return Array.from(allKeys).reduce((acc, key) => {
+    acc[key] = parseConfigVarValue(main[key] ?? fallback[key]);
+    return acc;
+  }, {});
+};
 var getConfig = ({
   envPath = defaultEnvPath,
   globalPath = defaultConfigPath
@@ -46918,6 +46826,7 @@ var getConfig = ({
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
   const config6 = mergeConfigs(envConfig, globalConfig);
+  console.log("123123123config", { config: config6, envConfig, globalConfig });
   return config6;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
@@ -56033,7 +55942,7 @@ var AzureEngine = class {
 };
 
 // src/engine/flowise.ts
-var FlowiseAi = class {
+var FlowiseEngine = class {
   constructor(config6) {
     this.config = config6;
     this.client = axios_default.create({
@@ -56828,7 +56737,7 @@ var GoogleGenerativeAI = class {
 };
 
 // src/engine/gemini.ts
-var Gemini = class {
+var GeminiEngine = class {
   constructor(config6) {
     this.client = new GoogleGenerativeAI(config6.apiKey);
     this.config = config6;
@@ -56886,7 +56795,7 @@ var Gemini = class {
 };
 
 // src/engine/ollama.ts
-var OllamaAi = class {
+var OllamaEngine = class {
   constructor(config6) {
     this.config = config6;
     this.client = axios_default.create({
@@ -61209,44 +61118,24 @@ function getEngine() {
     model: config6.OCO_MODEL,
     maxTokensOutput: config6.OCO_TOKENS_MAX_OUTPUT,
     maxTokensInput: config6.OCO_TOKENS_MAX_INPUT,
-    baseURL: config6.OCO_OPENAI_BASE_PATH
+    baseURL: config6.OCO_API_URL,
+    apiKey: config6.OCO_API_KEY
   };
   switch (provider) {
     case "ollama" /* OLLAMA */:
-      return new OllamaAi({
-        ...DEFAULT_CONFIG2,
-        apiKey: "",
-        baseURL: config6.OCO_OLLAMA_API_URL
-      });
+      return new OllamaEngine(DEFAULT_CONFIG2);
     case "anthropic" /* ANTHROPIC */:
-      return new AnthropicEngine({
-        ...DEFAULT_CONFIG2,
-        apiKey: config6.OCO_ANTHROPIC_API_KEY
-      });
+      return new AnthropicEngine(DEFAULT_CONFIG2);
     case "test" /* TEST */:
       return new TestAi(config6.OCO_TEST_MOCK_TYPE);
     case "gemini" /* GEMINI */:
-      return new Gemini({
-        ...DEFAULT_CONFIG2,
-        apiKey: config6.OCO_GEMINI_API_KEY,
-        baseURL: config6.OCO_GEMINI_BASE_PATH
-      });
+      return new GeminiEngine(DEFAULT_CONFIG2);
     case "azure" /* AZURE */:
-      return new AzureEngine({
-        ...DEFAULT_CONFIG2,
-        apiKey: config6.OCO_AZURE_API_KEY
-      });
+      return new AzureEngine(DEFAULT_CONFIG2);
     case "flowise" /* FLOWISE */:
-      return new FlowiseAi({
-        ...DEFAULT_CONFIG2,
-        baseURL: config6.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG2.baseURL,
-        apiKey: config6.OCO_FLOWISE_API_KEY
-      });
+      return new FlowiseEngine(DEFAULT_CONFIG2);
     default:
-      return new OpenAiEngine({
-        ...DEFAULT_CONFIG2,
-        apiKey: config6.OCO_OPENAI_API_KEY
-      });
+      return new OpenAiEngine(DEFAULT_CONFIG2);
   }
 }
 
