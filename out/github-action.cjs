@@ -46564,6 +46564,7 @@ var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
   CONFIG_KEYS2["OCO_EMOJI"] = "OCO_EMOJI";
   CONFIG_KEYS2["OCO_MODEL"] = "OCO_MODEL";
   CONFIG_KEYS2["OCO_LANGUAGE"] = "OCO_LANGUAGE";
+  CONFIG_KEYS2["OCO_WHY"] = "OCO_WHY";
   CONFIG_KEYS2["OCO_MESSAGE_TEMPLATE_PLACEHOLDER"] = "OCO_MESSAGE_TEMPLATE_PLACEHOLDER";
   CONFIG_KEYS2["OCO_PROMPT_MODULE"] = "OCO_PROMPT_MODULE";
   CONFIG_KEYS2["OCO_AI_PROVIDER"] = "OCO_AI_PROVIDER";
@@ -46854,6 +46855,7 @@ var DEFAULT_CONFIG = {
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: "commit-message",
   OCO_FLOWISE_ENDPOINT: ":",
+  OCO_WHY: false,
   OCO_GITPUSH: true
 };
 var initGlobalConfig = (configPath = defaultConfigPath) => {
@@ -56900,7 +56902,10 @@ var OllamaAi = class {
       stream: false
     };
     try {
-      const response = await this.client.post("", params);
+      const response = await this.client.post(
+        this.client.getUri(this.config),
+        params
+      );
       const message = response.data.message;
       return message?.content;
     } catch (err) {
@@ -61380,7 +61385,7 @@ Example Git Diff is to follow:`
 ];
 var INIT_MAIN_PROMPT = (language, prompts) => ({
   role: "system",
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes and WHY the changes were done. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes ${config2.OCO_WHY ? "and WHY the changes were done" : ""}. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
 ${config2.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not preface the commit with anything."}
 ${config2.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Use ${language} to answer.

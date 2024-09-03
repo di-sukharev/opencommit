@@ -28,7 +28,10 @@ export class OllamaAi implements AiEngine {
       stream: false
     };
     try {
-      const response = await this.client.post('', params);
+      const response = await this.client.post(
+        this.client.getUri(this.config),
+        params
+      );
 
       const message = response.data.message;
 
