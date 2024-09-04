@@ -370,9 +370,13 @@ const getEnvConfig = (envPath: string) => {
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
 
-    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(
+      process.env.OCO_TOKENS_MAX_INPUT ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT
+    ),
     OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_OUTPUT
+      process.env.OCO_TOKENS_MAX_OUTPUT ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT
     ),
 
     OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),

@@ -30122,9 +30122,11 @@ var getEnvConfig = (envPath) => {
     OCO_API_URL: process.env.OCO_API_URL,
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
-    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(
+      process.env.OCO_TOKENS_MAX_INPUT ?? 40960 /* DEFAULT_MAX_TOKENS_INPUT */
+    ),
     OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_OUTPUT
+      process.env.OCO_TOKENS_MAX_OUTPUT ?? 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */
     ),
     OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
     OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
@@ -44965,8 +44967,8 @@ function mergeDiffs(arr, maxStringLength) {
 
 // src/generateCommitMessageFromGitDiff.ts
 var config5 = getConfig();
-var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT || 40960 /* DEFAULT_MAX_TOKENS_INPUT */;
-var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT || 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT;
+var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT;
 var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
