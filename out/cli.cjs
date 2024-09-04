@@ -30151,7 +30151,8 @@ var setDefaultConfigValues = (config7) => {
     if (config7[key] === "undefined")
       entriesToSet.push(entry);
   }
-  setConfig(entriesToSet);
+  if (entriesToSet.length > 0)
+    setConfig(entriesToSet);
 };
 var setGlobalConfig = (config7, configPath = defaultConfigPath) => {
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config7), "utf8");
@@ -45731,7 +45732,11 @@ var runMigrations = async () => {
     }
   }
   if (isMigrated) {
-    ce("Migrations to your config were applied successfully. Please rerun.");
+    ce(
+      `${source_default.green(
+        "\u2714"
+      )} Migrations to your config were applied successfully. Please rerun.`
+    );
     process.exit(0);
   }
 };

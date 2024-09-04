@@ -404,7 +404,7 @@ const setDefaultConfigValues = (config: ConfigType) => {
     if (config[key] === 'undefined') entriesToSet.push(entry);
   }
 
-  setConfig(entriesToSet);
+  if (entriesToSet.length > 0) setConfig(entriesToSet);
 };
 
 export const setGlobalConfig = (

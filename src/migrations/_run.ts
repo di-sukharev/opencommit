@@ -4,6 +4,7 @@ import { join as pathJoin } from 'path';
 import { migrations } from './_migrations';
 import { outro } from '@clack/prompts';
 import chalk from 'chalk';
+import { getConfig, OCO_AI_PROVIDER_ENUM } from '../commands/config';
 
 const migrationsFile = pathJoin(homedir(), '.opencommit_migrations');
 
@@ -25,6 +26,9 @@ const saveCompletedMigration = (migrationName: string) => {
 };
 
 export const runMigrations = async () => {
+  const config = getConfig();
+  if (config.OCO_AI_PROVIDER === OCO_AI_PROVIDER_ENUM.TEST) return;
+
   const completedMigrations = getCompletedMigrations();
 
   let isMigrated = false;

@@ -48954,7 +48954,8 @@ var setDefaultConfigValues = (config6) => {
     if (config6[key] === "undefined")
       entriesToSet.push(entry);
   }
-  setConfig(entriesToSet);
+  if (entriesToSet.length > 0)
+    setConfig(entriesToSet);
 };
 var setGlobalConfig = (config6, configPath = defaultConfigPath) => {
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config6), "utf8");
