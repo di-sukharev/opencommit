@@ -209,7 +209,7 @@ describe('cli flow to generate commit message using @commitlint prompt-module', 
     oco.userEvent.keyboard('[Enter]');
 
     expect(
-      await oco.findByText('Choose a remote to push to')
+      await oco.findByText('Do you want to run `git push`?')
     ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 

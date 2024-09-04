@@ -107,13 +107,16 @@ ${chalk.grey('——————————————————')}`
 
       const remotes = await getGitRemotes();
 
+      // user isn't pushing, return early
+      if (config.OCO_GITPUSH === false) return;
+
       if (!remotes.length) {
         const { stdout } = await execa('git', ['push']);
         if (stdout) outro(stdout);
         process.exit(0);
       }
 
-      if (remotes.length === 1 && config.OCO_GITPUSH !== true) {
+      if (remotes.length === 1) {
         const isPushConfirmedByUser = await confirm({
           message: 'Do you want to run `git push`?'
         });
