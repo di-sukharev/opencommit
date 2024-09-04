@@ -30074,6 +30074,14 @@ var configValidators = {
       ).join(", ")}`
     );
     return value;
+  },
+  ["OCO_WHY" /* OCO_WHY */](value) {
+    validateConfig(
+      "OCO_WHY" /* OCO_WHY */,
+      typeof value === "boolean",
+      "Must be true or false"
+    );
+    return value;
   }
 };
 var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
@@ -30122,11 +30130,9 @@ var getEnvConfig = (envPath) => {
     OCO_API_URL: process.env.OCO_API_URL,
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
-    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_INPUT ?? 40960 /* DEFAULT_MAX_TOKENS_INPUT */
-    ),
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
     OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_OUTPUT ?? 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */
+      process.env.OCO_TOKENS_MAX_OUTPUT
     ),
     OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
     OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
@@ -30138,7 +30144,19 @@ var getEnvConfig = (envPath) => {
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
   };
 };
-var getGlobalConfig = (configPath) => {
+var setDefaultConfigValues = (config7) => {
+  const entriesToSet = [];
+  for (const entry of Object.entries(DEFAULT_CONFIG)) {
+    const [key, _value] = entry;
+    if (config7[key] === "undefined")
+      entriesToSet.push(entry);
+  }
+  setConfig(entriesToSet);
+};
+var setGlobalConfig = (config7, configPath = defaultConfigPath) => {
+  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config7), "utf8");
+};
+var getGlobalConfig = (configPath = defaultConfigPath) => {
   let globalConfig;
   const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
   if (!isGlobalConfigFileExist)
@@ -30156,19 +30174,27 @@ var mergeConfigs = (main, fallback) => {
     return acc;
   }, {});
 };
+var _config = null;
 var getConfig = ({
   envPath = defaultEnvPath,
-  globalPath = defaultConfigPath
+  globalPath = defaultConfigPath,
+  cache = true,
+  setDefaultValues = true
 } = {}) => {
+  if (_config && cache)
+    return _config;
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
-  const config7 = mergeConfigs(envConfig, globalConfig);
-  return config7;
+  _config = mergeConfigs(envConfig, globalConfig);
+  if (setDefaultValues)
+    setDefaultConfigValues(_config);
+  return _config;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config7 = getConfig({
     globalPath: globalConfigPath
   });
+  const configToSet = {};
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
       const supportedKeys = Object.keys(configValidators).join("\n");
@@ -30182,7 +30208,10 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
     }
     let parsedConfigValue;
     try {
-      parsedConfigValue = JSON.parse(value);
+      if (typeof value === "string")
+        parsedConfigValue = JSON.parse(value);
+      else
+        parsedConfigValue = value;
     } catch (error) {
       parsedConfigValue = value;
     }
@@ -30190,9 +30219,9 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
       parsedConfigValue,
       config7
     );
-    config7[key] = validValue;
+    configToSet[key] = validValue;
   }
-  (0, import_fs.writeFileSync)(globalConfigPath, (0, import_ini.stringify)(config7), "utf8");
+  setGlobalConfig(mergeConfigs(configToSet, config7), globalConfigPath);
   ce(`${source_default.green("\u2714")} config successfully set`);
 };
 var configCommand = G3(
@@ -34617,22 +34646,22 @@ var resolveConfig_default = (config7) => {
 var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
 var xhr_default = isXHRAdapterSupported && function(config7) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    const _config = resolveConfig_default(config7);
-    let requestData = _config.data;
-    const requestHeaders = AxiosHeaders_default.from(_config.headers).normalize();
-    let { responseType, onUploadProgress, onDownloadProgress } = _config;
+    const _config2 = resolveConfig_default(config7);
+    let requestData = _config2.data;
+    const requestHeaders = AxiosHeaders_default.from(_config2.headers).normalize();
+    let { responseType, onUploadProgress, onDownloadProgress } = _config2;
     let onCanceled;
     let uploadThrottled, downloadThrottled;
     let flushUpload, flushDownload;
     function done() {
       flushUpload && flushUpload();
       flushDownload && flushDownload();
-      _config.cancelToken && _config.cancelToken.unsubscribe(onCanceled);
-      _config.signal && _config.signal.removeEventListener("abort", onCanceled);
+      _config2.cancelToken && _config2.cancelToken.unsubscribe(onCanceled);
+      _config2.signal && _config2.signal.removeEventListener("abort", onCanceled);
     }
     let request3 = new XMLHttpRequest();
-    request3.open(_config.method.toUpperCase(), _config.url, true);
-    request3.timeout = _config.timeout;
+    request3.open(_config2.method.toUpperCase(), _config2.url, true);
+    request3.timeout = _config2.timeout;
     function onloadend() {
       if (!request3) {
         return;
@@ -34683,10 +34712,10 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
       request3 = null;
     };
     request3.ontimeout = function handleTimeout() {
-      let timeoutErrorMessage = _config.timeout ? "timeout of " + _config.timeout + "ms exceeded" : "timeout exceeded";
-      const transitional2 = _config.transitional || transitional_default;
-      if (_config.timeoutErrorMessage) {
-        timeoutErrorMessage = _config.timeoutErrorMessage;
+      let timeoutErrorMessage = _config2.timeout ? "timeout of " + _config2.timeout + "ms exceeded" : "timeout exceeded";
+      const transitional2 = _config2.transitional || transitional_default;
+      if (_config2.timeoutErrorMessage) {
+        timeoutErrorMessage = _config2.timeoutErrorMessage;
       }
       reject(new AxiosError_default(
         timeoutErrorMessage,
@@ -34702,11 +34731,11 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
         request3.setRequestHeader(key, val);
       });
     }
-    if (!utils_default.isUndefined(_config.withCredentials)) {
-      request3.withCredentials = !!_config.withCredentials;
+    if (!utils_default.isUndefined(_config2.withCredentials)) {
+      request3.withCredentials = !!_config2.withCredentials;
     }
     if (responseType && responseType !== "json") {
-      request3.responseType = _config.responseType;
+      request3.responseType = _config2.responseType;
     }
     if (onDownloadProgress) {
       [downloadThrottled, flushDownload] = progressEventReducer(onDownloadProgress, true);
@@ -34717,7 +34746,7 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
       request3.upload.addEventListener("progress", uploadThrottled);
       request3.upload.addEventListener("loadend", flushUpload);
     }
-    if (_config.cancelToken || _config.signal) {
+    if (_config2.cancelToken || _config2.signal) {
       onCanceled = (cancel) => {
         if (!request3) {
           return;
@@ -34726,12 +34755,12 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
         request3.abort();
         request3 = null;
       };
-      _config.cancelToken && _config.cancelToken.subscribe(onCanceled);
-      if (_config.signal) {
-        _config.signal.aborted ? onCanceled() : _config.signal.addEventListener("abort", onCanceled);
+      _config2.cancelToken && _config2.cancelToken.subscribe(onCanceled);
+      if (_config2.signal) {
+        _config2.signal.aborted ? onCanceled() : _config2.signal.addEventListener("abort", onCanceled);
       }
     }
-    const protocol = parseProtocol(_config.url);
+    const protocol = parseProtocol(_config2.url);
     if (protocol && platform_default.protocols.indexOf(protocol) === -1) {
       reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config7));
       return;
@@ -45534,9 +45563,9 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
       return;
     ae("opencommit");
     const config7 = getConfig();
-    if (!config7.OCO_OPENAI_API_KEY && !config7.OCO_ANTHROPIC_API_KEY && !config7.OCO_AZURE_API_KEY) {
+    if (!config7.OCO_API_KEY) {
       ce(
-        "No OCO_OPENAI_API_KEY or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key via `oco config set <key>=<value>, e.g. `oco config set OCO_OPENAI_API_KEY=<value>`. For more info see https://github.com/di-sukharev/opencommit"
+        "No OCO_API_KEY is set. Set your key via `oco config set OCO_API_KEY=<value>. For more info see https://github.com/di-sukharev/opencommit"
       );
       return;
     }
@@ -45594,7 +45623,7 @@ var import_path5 = require("path");
 
 // src/migrations/00_use_single_api_key_and_url.ts
 var migrate = async () => {
-  const config7 = getConfig();
+  const config7 = getConfig({ cache: false, setDefaultValues: false });
   const aiProvider = config7.OCO_AI_PROVIDER;
   let apiKey;
   let apiUrl;
@@ -45648,8 +45677,11 @@ function remove_obsolete_config_keys_from_global_file_default() {
     "OCO_FLOWISE_API_KEY",
     "OCO_FLOWISE_ENDPOINT"
   ];
-  obsoleteKeys.forEach((key) => {
-  });
+  const globalConfig = getGlobalConfig();
+  const configToOverride = { ...globalConfig };
+  for (const key of obsoleteKeys)
+    delete configToOverride[key];
+  setGlobalConfig(configToOverride);
 }
 
 // src/migrations/_migrations.ts
@@ -45683,18 +45715,24 @@ var saveCompletedMigration = (migrationName) => {
 };
 var runMigrations = async () => {
   const completedMigrations = getCompletedMigrations();
-  console.log("Completed migrations:", completedMigrations);
-  console.log("Migration files:", migrations);
+  let isMigrated = false;
   for (const migration of migrations) {
     if (!completedMigrations.includes(migration.name)) {
       try {
         await migration.run();
         saveCompletedMigration(migration.name);
-        console.log(`Migration ${migration.name} applied successfully.`);
+        ce(`Migration ${migration.name} applied successfully.`);
       } catch (error) {
-        console.error(`Failed to apply migration ${migration.name}:`, error);
+        ce(
+          `${source_default.red("Failed to apply migration")} ${migration.name}: ${error}`
+        );
       }
+      isMigrated = true;
     }
+  }
+  if (isMigrated) {
+    ce("Migrations to your config were applied successfully. Please rerun.");
+    process.exit(0);
   }
 };
 
@@ -45718,8 +45756,8 @@ Z2(
     help: { description: package_default.description }
   },
   async ({ flags }) => {
-    await checkIsLatestVersion();
     await runMigrations();
+    await checkIsLatestVersion();
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {

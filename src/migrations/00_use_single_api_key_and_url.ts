@@ -6,7 +6,7 @@ import {
 } from '../commands/config';
 
 const migrate = async (): Promise<void> => {
-  const config = getConfig();
+  const config = getConfig({ cache: false, setDefaultValues: false });
 
   const aiProvider = config.OCO_AI_PROVIDER;
 

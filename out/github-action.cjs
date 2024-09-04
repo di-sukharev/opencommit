@@ -48887,6 +48887,14 @@ var configValidators = {
       ).join(", ")}`
     );
     return value;
+  },
+  ["OCO_WHY" /* OCO_WHY */](value) {
+    validateConfig(
+      "OCO_WHY" /* OCO_WHY */,
+      typeof value === "boolean",
+      "Must be true or false"
+    );
+    return value;
   }
 };
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -48925,11 +48933,9 @@ var getEnvConfig = (envPath) => {
     OCO_API_URL: process.env.OCO_API_URL,
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
-    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_INPUT ?? 40960 /* DEFAULT_MAX_TOKENS_INPUT */
-    ),
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
     OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_OUTPUT ?? 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */
+      process.env.OCO_TOKENS_MAX_OUTPUT
     ),
     OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
     OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
@@ -48941,7 +48947,19 @@ var getEnvConfig = (envPath) => {
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
   };
 };
-var getGlobalConfig = (configPath) => {
+var setDefaultConfigValues = (config6) => {
+  const entriesToSet = [];
+  for (const entry of Object.entries(DEFAULT_CONFIG)) {
+    const [key, _value] = entry;
+    if (config6[key] === "undefined")
+      entriesToSet.push(entry);
+  }
+  setConfig(entriesToSet);
+};
+var setGlobalConfig = (config6, configPath = defaultConfigPath) => {
+  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config6), "utf8");
+};
+var getGlobalConfig = (configPath = defaultConfigPath) => {
   let globalConfig;
   const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
   if (!isGlobalConfigFileExist)
@@ -48959,19 +48977,27 @@ var mergeConfigs = (main, fallback) => {
     return acc;
   }, {});
 };
+var _config = null;
 var getConfig = ({
   envPath = defaultEnvPath,
-  globalPath = defaultConfigPath
+  globalPath = defaultConfigPath,
+  cache = true,
+  setDefaultValues = true
 } = {}) => {
+  if (_config && cache)
+    return _config;
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
-  const config6 = mergeConfigs(envConfig, globalConfig);
-  return config6;
+  _config = mergeConfigs(envConfig, globalConfig);
+  if (setDefaultValues)
+    setDefaultConfigValues(_config);
+  return _config;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config6 = getConfig({
     globalPath: globalConfigPath
   });
+  const configToSet = {};
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
       const supportedKeys = Object.keys(configValidators).join("\n");
@@ -48985,7 +49011,10 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
     }
     let parsedConfigValue;
     try {
-      parsedConfigValue = JSON.parse(value);
+      if (typeof value === "string")
+        parsedConfigValue = JSON.parse(value);
+      else
+        parsedConfigValue = value;
     } catch (error) {
       parsedConfigValue = value;
     }
@@ -48993,9 +49022,9 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
       parsedConfigValue,
       config6
     );
-    config6[key] = validValue;
+    configToSet[key] = validValue;
   }
-  (0, import_fs.writeFileSync)(globalConfigPath, (0, import_ini.stringify)(config6), "utf8");
+  setGlobalConfig(mergeConfigs(configToSet, config6), globalConfigPath);
   ce(`${source_default.green("\u2714")} config successfully set`);
 };
 var configCommand = G2(
@@ -53420,22 +53449,22 @@ var resolveConfig_default = (config6) => {
 var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
 var xhr_default = isXHRAdapterSupported && function(config6) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    const _config = resolveConfig_default(config6);
-    let requestData = _config.data;
-    const requestHeaders = AxiosHeaders_default.from(_config.headers).normalize();
-    let { responseType, onUploadProgress, onDownloadProgress } = _config;
+    const _config2 = resolveConfig_default(config6);
+    let requestData = _config2.data;
+    const requestHeaders = AxiosHeaders_default.from(_config2.headers).normalize();
+    let { responseType, onUploadProgress, onDownloadProgress } = _config2;
     let onCanceled;
     let uploadThrottled, downloadThrottled;
     let flushUpload, flushDownload;
     function done() {
       flushUpload && flushUpload();
       flushDownload && flushDownload();
-      _config.cancelToken && _config.cancelToken.unsubscribe(onCanceled);
-      _config.signal && _config.signal.removeEventListener("abort", onCanceled);
+      _config2.cancelToken && _config2.cancelToken.unsubscribe(onCanceled);
+      _config2.signal && _config2.signal.removeEventListener("abort", onCanceled);
     }
     let request3 = new XMLHttpRequest();
-    request3.open(_config.method.toUpperCase(), _config.url, true);
-    request3.timeout = _config.timeout;
+    request3.open(_config2.method.toUpperCase(), _config2.url, true);
+    request3.timeout = _config2.timeout;
     function onloadend() {
       if (!request3) {
         return;
@@ -53486,10 +53515,10 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
       request3 = null;
     };
     request3.ontimeout = function handleTimeout() {
-      let timeoutErrorMessage = _config.timeout ? "timeout of " + _config.timeout + "ms exceeded" : "timeout exceeded";
-      const transitional2 = _config.transitional || transitional_default;
-      if (_config.timeoutErrorMessage) {
-        timeoutErrorMessage = _config.timeoutErrorMessage;
+      let timeoutErrorMessage = _config2.timeout ? "timeout of " + _config2.timeout + "ms exceeded" : "timeout exceeded";
+      const transitional2 = _config2.transitional || transitional_default;
+      if (_config2.timeoutErrorMessage) {
+        timeoutErrorMessage = _config2.timeoutErrorMessage;
       }
       reject(new AxiosError_default(
         timeoutErrorMessage,
@@ -53505,11 +53534,11 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
         request3.setRequestHeader(key, val);
       });
     }
-    if (!utils_default.isUndefined(_config.withCredentials)) {
-      request3.withCredentials = !!_config.withCredentials;
+    if (!utils_default.isUndefined(_config2.withCredentials)) {
+      request3.withCredentials = !!_config2.withCredentials;
     }
     if (responseType && responseType !== "json") {
-      request3.responseType = _config.responseType;
+      request3.responseType = _config2.responseType;
     }
     if (onDownloadProgress) {
       [downloadThrottled, flushDownload] = progressEventReducer(onDownloadProgress, true);
@@ -53520,7 +53549,7 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
       request3.upload.addEventListener("progress", uploadThrottled);
       request3.upload.addEventListener("loadend", flushUpload);
     }
-    if (_config.cancelToken || _config.signal) {
+    if (_config2.cancelToken || _config2.signal) {
       onCanceled = (cancel) => {
         if (!request3) {
           return;
@@ -53529,12 +53558,12 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
         request3.abort();
         request3 = null;
       };
-      _config.cancelToken && _config.cancelToken.subscribe(onCanceled);
-      if (_config.signal) {
-        _config.signal.aborted ? onCanceled() : _config.signal.addEventListener("abort", onCanceled);
+      _config2.cancelToken && _config2.cancelToken.subscribe(onCanceled);
+      if (_config2.signal) {
+        _config2.signal.aborted ? onCanceled() : _config2.signal.addEventListener("abort", onCanceled);
       }
     }
-    const protocol = parseProtocol(_config.url);
+    const protocol = parseProtocol(_config2.url);
     if (protocol && platform_default.protocols.indexOf(protocol) === -1) {
       reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config6));
       return;

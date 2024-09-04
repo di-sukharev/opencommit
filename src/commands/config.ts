@@ -269,6 +269,15 @@ export const configValidators = {
       ).join(', ')}`
     );
     return value;
+  },
+
+  [CONFIG_KEYS.OCO_WHY](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_WHY,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+    return value;
   }
 };
 
@@ -300,8 +309,8 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
 };
 
-const defaultConfigPath = pathJoin(homedir(), '.opencommit');
-const defaultEnvPath = pathResolve(process.cwd(), '.env');
+export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
+export const defaultEnvPath = pathResolve(process.cwd(), '.env');
 
 const assertConfigsAreValid = (config: Record<string, any>) => {
   for (const [key, value] of Object.entries(config)) {
@@ -370,13 +379,9 @@ const getEnvConfig = (envPath: string) => {
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
 
-    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_INPUT ??
-        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT
-    ),
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
     OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_OUTPUT ??
-        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT
+      process.env.OCO_TOKENS_MAX_OUTPUT
     ),
 
     OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
@@ -392,7 +397,24 @@ const getEnvConfig = (envPath: string) => {
   };
 };
 
-const getGlobalConfig = (configPath: string) => {
+const setDefaultConfigValues = (config: ConfigType) => {
+  const entriesToSet: [key: string, value: string | boolean | number][] = [];
+  for (const entry of Object.entries(DEFAULT_CONFIG)) {
+    const [key, _value] = entry;
+    if (config[key] === 'undefined') entriesToSet.push(entry);
+  }
+
+  setConfig(entriesToSet);
+};
+
+export const setGlobalConfig = (
+  config: ConfigType,
+  configPath: string = defaultConfigPath
+) => {
+  writeFileSync(configPath, iniStringify(config), 'utf8');
+};
+
+export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
   let globalConfig: ConfigType;
 
   const isGlobalConfigFileExist = existsSync(configPath);
@@ -423,27 +445,39 @@ const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) => {
 interface GetConfigOptions {
   globalPath?: string;
   envPath?: string;
+  cache?: boolean;
+  setDefaultValues?: boolean;
 }
+
+let _config: ConfigType | null = null;
 
 export const getConfig = ({
   envPath = defaultEnvPath,
-  globalPath = defaultConfigPath
+  globalPath = defaultConfigPath,
+  cache = true,
+  setDefaultValues = true
 }: GetConfigOptions = {}): ConfigType => {
+  if (_config && cache) return _config;
+
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
 
-  const config = mergeConfigs(envConfig, globalConfig);
+  _config = mergeConfigs(envConfig, globalConfig);
 
-  return config;
+  if (setDefaultValues) setDefaultConfigValues(_config);
+
+  return _config;
 };
 
 export const setConfig = (
-  keyValues: [key: string, value: string][],
+  keyValues: [key: string, value: string | boolean | number][],
   globalConfigPath: string = defaultConfigPath
 ) => {
   const config = getConfig({
     globalPath: globalConfigPath
   });
+
+  const configToSet = {};
 
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
@@ -456,7 +490,8 @@ export const setConfig = (
     let parsedConfigValue;
 
     try {
-      parsedConfigValue = JSON.parse(value);
+      if (typeof value === 'string') parsedConfigValue = JSON.parse(value);
+      else parsedConfigValue = value;
     } catch (error) {
       parsedConfigValue = value;
     }
@@ -466,10 +501,10 @@ export const setConfig = (
       config
     );
 
-    config[key] = validValue;
+    configToSet[key] = validValue;
   }
 
-  writeFileSync(globalConfigPath, iniStringify(config), 'utf8');
+  setGlobalConfig(mergeConfigs(configToSet, config), globalConfigPath);
 
   outro(`${chalk.green('✔')} config successfully set`);
 };

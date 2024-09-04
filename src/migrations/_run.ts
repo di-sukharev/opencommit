@@ -2,6 +2,8 @@ import fs from 'fs';
 import { homedir } from 'os';
 import { join as pathJoin } from 'path';
 import { migrations } from './_migrations';
+import { outro } from '@clack/prompts';
+import chalk from 'chalk';
 
 const migrationsFile = pathJoin(homedir(), '.opencommit_migrations');
 
@@ -25,18 +27,32 @@ const saveCompletedMigration = (migrationName: string) => {
 export const runMigrations = async () => {
   const completedMigrations = getCompletedMigrations();
 
-  console.log('Completed migrations:', completedMigrations);
-  console.log('Migration files:', migrations);
+  let isMigrated = false;
 
   for (const migration of migrations) {
     if (!completedMigrations.includes(migration.name)) {
       try {
         await migration.run();
         saveCompletedMigration(migration.name);
-        console.log(`Migration ${migration.name} applied successfully.`);
+        outro(`Migration ${migration.name} applied successfully.`);
       } catch (error) {
-        console.error(`Failed to apply migration ${migration.name}:`, error);
+        outro(
+          `${chalk.red('Failed to apply migration')} ${
+            migration.name
+          }: ${error}`
+        );
       }
+
+      isMigrated = true;
     }
+  }
+
+  if (isMigrated) {
+    outro(
+      `${chalk.green(
+        '✔'
+      )} Migrations to your config were applied successfully. Please rerun.`
+    );
+    process.exit(0);
   }
 };

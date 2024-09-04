@@ -387,7 +387,7 @@ jobs:
           # set openAI api key in repo actions secrets,
           # for openAI keys go to: https://platform.openai.com/account/api-keys
           # for repo secret go to: <your_repo_url>/settings/secrets/actions
-          OCO_OPENAI_API_KEY: ${{ secrets.OCO_OPENAI_API_KEY }}
+          OCO_API_KEY: ${{ secrets.OCO_API_KEY }}
 
           # customization
           OCO_TOKENS_MAX_INPUT: 4096

@@ -1,3 +1,10 @@
+import { writeFileSync } from 'fs';
+import {
+  defaultConfigPath,
+  getGlobalConfig,
+  setGlobalConfig
+} from '../commands/config';
+
 export default function () {
   const obsoleteKeys = [
     'OCO_OLLAMA_API_KEY',
@@ -14,9 +21,11 @@ export default function () {
     'OCO_FLOWISE_ENDPOINT'
   ];
 
-  obsoleteKeys.forEach((key) => {
-    // if (config[key]) {
-    //   setConfig([[key, undefined]]);
-    // }
-  });
+  const globalConfig = getGlobalConfig();
+
+  const configToOverride = { ...globalConfig };
+
+  for (const key of obsoleteKeys) delete configToOverride[key];
+
+  setGlobalConfig(configToOverride);
 }

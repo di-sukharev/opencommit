@@ -31,8 +31,8 @@ cli(
     help: { description: packageJSON.description }
   },
   async ({ flags }) => {
-    await checkIsLatestVersion();
     await runMigrations();
+    await checkIsLatestVersion();
 
     if (await isHookCalled()) {
       prepareCommitMessageHook();
