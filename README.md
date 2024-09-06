@@ -207,11 +207,13 @@ All available languages are currently listed in the [i18n](https://github.com/di
 
 ### Push to git (gonna be deprecated)
 
-A prompt to push to git is on by default but if you would like to turn it off just use:
+A prompt for pushing to git is on by default but if you would like to turn it off just use:
 
 ```sh
 oco config set OCO_GITPUSH=false
 ```
+
+and it will exit right after commit is confirmed without asking if you would like to push to remote.
 
 ### Switch to `@commitlint`
 
