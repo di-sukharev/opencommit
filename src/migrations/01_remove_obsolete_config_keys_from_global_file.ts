@@ -1,9 +1,4 @@
-import { writeFileSync } from 'fs';
-import {
-  defaultConfigPath,
-  getGlobalConfig,
-  setGlobalConfig
-} from '../commands/config';
+import { getGlobalConfig, setGlobalConfig } from '../commands/config';
 
 export default function () {
   const obsoleteKeys = [

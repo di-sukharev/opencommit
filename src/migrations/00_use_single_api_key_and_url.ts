@@ -5,8 +5,8 @@ import {
   setConfig
 } from '../commands/config';
 
-const migrate = async (): Promise<void> => {
-  const config = getConfig({ cache: false, setDefaultValues: false });
+export default function () {
+  const config = getConfig({ setDefaultValues: false });
 
   const aiProvider = config.OCO_AI_PROVIDER;
 
@@ -39,12 +39,7 @@ const migrate = async (): Promise<void> => {
     );
   }
 
-  if (apiKey && apiUrl) {
-    setConfig([
-      [CONFIG_KEYS.OCO_API_KEY, apiKey],
-      [CONFIG_KEYS.OCO_API_URL, apiUrl]
-    ]);
-  }
-};
+  if (apiKey) setConfig([[CONFIG_KEYS.OCO_API_KEY, apiKey]]);
 
-export default migrate;
+  if (apiUrl) setConfig([[CONFIG_KEYS.OCO_API_URL, apiUrl]]);
+}

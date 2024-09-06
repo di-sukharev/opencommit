@@ -4,7 +4,11 @@ import { join as pathJoin } from 'path';
 import { migrations } from './_migrations';
 import { outro } from '@clack/prompts';
 import chalk from 'chalk';
-import { getConfig, OCO_AI_PROVIDER_ENUM } from '../commands/config';
+import {
+  getConfig,
+  getIsGlobalConfigFileExist,
+  OCO_AI_PROVIDER_ENUM
+} from '../commands/config';
 
 const migrationsFile = pathJoin(homedir(), '.opencommit_migrations');
 
@@ -26,6 +30,9 @@ const saveCompletedMigration = (migrationName: string) => {
 };
 
 export const runMigrations = async () => {
+  // if no config file, we assume it's a new installation and no migrations are needed
+  if (!getIsGlobalConfigFileExist()) return;
+
   const config = getConfig();
   if (config.OCO_AI_PROVIDER === OCO_AI_PROVIDER_ENUM.TEST) return;
 
@@ -36,9 +43,10 @@ export const runMigrations = async () => {
   for (const migration of migrations) {
     if (!completedMigrations.includes(migration.name)) {
       try {
-        await migration.run();
+        console.log('Applying migration', migration.name);
+        migration.run();
+        console.log('Migration applied successfully', migration.name);
         saveCompletedMigration(migration.name);
-        outro(`Migration ${migration.name} applied successfully.`);
       } catch (error) {
         outro(
           `${chalk.red('Failed to apply migration')} ${

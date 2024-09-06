@@ -397,16 +397,6 @@ const getEnvConfig = (envPath: string) => {
   };
 };
 
-const setDefaultConfigValues = (config: ConfigType) => {
-  const entriesToSet: [key: string, value: string | boolean | number][] = [];
-  for (const entry of Object.entries(DEFAULT_CONFIG)) {
-    const [key, _value] = entry;
-    if (config[key] === 'undefined') entriesToSet.push(entry);
-  }
-
-  if (entriesToSet.length > 0) setConfig(entriesToSet);
-};
-
 export const setGlobalConfig = (
   config: ConfigType,
   configPath: string = defaultConfigPath
@@ -414,10 +404,16 @@ export const setGlobalConfig = (
   writeFileSync(configPath, iniStringify(config), 'utf8');
 };
 
+export const getIsGlobalConfigFileExist = (
+  configPath: string = defaultConfigPath
+) => {
+  return existsSync(configPath);
+};
+
 export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
   let globalConfig: ConfigType;
 
-  const isGlobalConfigFileExist = existsSync(configPath);
+  const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
   else {
     const configFile = readFileSync(configPath, 'utf8');
@@ -445,32 +441,23 @@ const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) => {
 interface GetConfigOptions {
   globalPath?: string;
   envPath?: string;
-  cache?: boolean;
   setDefaultValues?: boolean;
 }
 
-let _config: ConfigType | null = null;
-
 export const getConfig = ({
   envPath = defaultEnvPath,
-  globalPath = defaultConfigPath,
-  cache = true,
-  setDefaultValues = true
+  globalPath = defaultConfigPath
 }: GetConfigOptions = {}): ConfigType => {
-  if (_config && cache) return _config;
-
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
 
-  _config = mergeConfigs(envConfig, globalConfig);
+  const config = mergeConfigs(envConfig, globalConfig);
 
-  if (setDefaultValues) setDefaultConfigValues(_config);
-
-  return _config;
+  return config;
 };
 
 export const setConfig = (
-  keyValues: [key: string, value: string | boolean | number][],
+  keyValues: [key: string, value: string | boolean | number | null][],
   globalConfigPath: string = defaultConfigPath
 ) => {
   const config = getConfig({

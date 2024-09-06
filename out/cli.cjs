@@ -30144,22 +30144,15 @@ var getEnvConfig = (envPath) => {
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
   };
 };
-var setDefaultConfigValues = (config7) => {
-  const entriesToSet = [];
-  for (const entry of Object.entries(DEFAULT_CONFIG)) {
-    const [key, _value] = entry;
-    if (config7[key] === "undefined")
-      entriesToSet.push(entry);
-  }
-  if (entriesToSet.length > 0)
-    setConfig(entriesToSet);
-};
 var setGlobalConfig = (config7, configPath = defaultConfigPath) => {
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config7), "utf8");
 };
+var getIsGlobalConfigFileExist = (configPath = defaultConfigPath) => {
+  return (0, import_fs.existsSync)(configPath);
+};
 var getGlobalConfig = (configPath = defaultConfigPath) => {
   let globalConfig;
-  const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
+  const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist)
     globalConfig = initGlobalConfig(configPath);
   else {
@@ -30175,21 +30168,14 @@ var mergeConfigs = (main, fallback) => {
     return acc;
   }, {});
 };
-var _config = null;
 var getConfig = ({
   envPath = defaultEnvPath,
-  globalPath = defaultConfigPath,
-  cache = true,
-  setDefaultValues = true
+  globalPath = defaultConfigPath
 } = {}) => {
-  if (_config && cache)
-    return _config;
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
-  _config = mergeConfigs(envConfig, globalConfig);
-  if (setDefaultValues)
-    setDefaultConfigValues(_config);
-  return _config;
+  const config7 = mergeConfigs(envConfig, globalConfig);
+  return config7;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config7 = getConfig({
@@ -34647,22 +34633,22 @@ var resolveConfig_default = (config7) => {
 var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
 var xhr_default = isXHRAdapterSupported && function(config7) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    const _config2 = resolveConfig_default(config7);
-    let requestData = _config2.data;
-    const requestHeaders = AxiosHeaders_default.from(_config2.headers).normalize();
-    let { responseType, onUploadProgress, onDownloadProgress } = _config2;
+    const _config = resolveConfig_default(config7);
+    let requestData = _config.data;
+    const requestHeaders = AxiosHeaders_default.from(_config.headers).normalize();
+    let { responseType, onUploadProgress, onDownloadProgress } = _config;
     let onCanceled;
     let uploadThrottled, downloadThrottled;
     let flushUpload, flushDownload;
     function done() {
       flushUpload && flushUpload();
       flushDownload && flushDownload();
-      _config2.cancelToken && _config2.cancelToken.unsubscribe(onCanceled);
-      _config2.signal && _config2.signal.removeEventListener("abort", onCanceled);
+      _config.cancelToken && _config.cancelToken.unsubscribe(onCanceled);
+      _config.signal && _config.signal.removeEventListener("abort", onCanceled);
     }
     let request3 = new XMLHttpRequest();
-    request3.open(_config2.method.toUpperCase(), _config2.url, true);
-    request3.timeout = _config2.timeout;
+    request3.open(_config.method.toUpperCase(), _config.url, true);
+    request3.timeout = _config.timeout;
     function onloadend() {
       if (!request3) {
         return;
@@ -34713,10 +34699,10 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
       request3 = null;
     };
     request3.ontimeout = function handleTimeout() {
-      let timeoutErrorMessage = _config2.timeout ? "timeout of " + _config2.timeout + "ms exceeded" : "timeout exceeded";
-      const transitional2 = _config2.transitional || transitional_default;
-      if (_config2.timeoutErrorMessage) {
-        timeoutErrorMessage = _config2.timeoutErrorMessage;
+      let timeoutErrorMessage = _config.timeout ? "timeout of " + _config.timeout + "ms exceeded" : "timeout exceeded";
+      const transitional2 = _config.transitional || transitional_default;
+      if (_config.timeoutErrorMessage) {
+        timeoutErrorMessage = _config.timeoutErrorMessage;
       }
       reject(new AxiosError_default(
         timeoutErrorMessage,
@@ -34732,11 +34718,11 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
         request3.setRequestHeader(key, val);
       });
     }
-    if (!utils_default.isUndefined(_config2.withCredentials)) {
-      request3.withCredentials = !!_config2.withCredentials;
+    if (!utils_default.isUndefined(_config.withCredentials)) {
+      request3.withCredentials = !!_config.withCredentials;
     }
     if (responseType && responseType !== "json") {
-      request3.responseType = _config2.responseType;
+      request3.responseType = _config.responseType;
     }
     if (onDownloadProgress) {
       [downloadThrottled, flushDownload] = progressEventReducer(onDownloadProgress, true);
@@ -34747,7 +34733,7 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
       request3.upload.addEventListener("progress", uploadThrottled);
       request3.upload.addEventListener("loadend", flushUpload);
     }
-    if (_config2.cancelToken || _config2.signal) {
+    if (_config.cancelToken || _config.signal) {
       onCanceled = (cancel) => {
         if (!request3) {
           return;
@@ -34756,12 +34742,12 @@ var xhr_default = isXHRAdapterSupported && function(config7) {
         request3.abort();
         request3 = null;
       };
-      _config2.cancelToken && _config2.cancelToken.subscribe(onCanceled);
-      if (_config2.signal) {
-        _config2.signal.aborted ? onCanceled() : _config2.signal.addEventListener("abort", onCanceled);
+      _config.cancelToken && _config.cancelToken.subscribe(onCanceled);
+      if (_config.signal) {
+        _config.signal.aborted ? onCanceled() : _config.signal.addEventListener("abort", onCanceled);
       }
     }
-    const protocol = parseProtocol(_config2.url);
+    const protocol = parseProtocol(_config.url);
     if (protocol && platform_default.protocols.indexOf(protocol) === -1) {
       reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config7));
       return;
@@ -45623,8 +45609,8 @@ var import_os2 = require("os");
 var import_path5 = require("path");
 
 // src/migrations/00_use_single_api_key_and_url.ts
-var migrate = async () => {
-  const config7 = getConfig({ cache: false, setDefaultValues: false });
+function use_single_api_key_and_url_default() {
+  const config7 = getConfig({ setDefaultValues: false });
   const aiProvider = config7.OCO_AI_PROVIDER;
   let apiKey;
   let apiUrl;
@@ -45653,14 +45639,11 @@ var migrate = async () => {
       ).join(", ")}`
     );
   }
-  if (apiKey && apiUrl) {
-    setConfig([
-      ["OCO_API_KEY" /* OCO_API_KEY */, apiKey],
-      ["OCO_API_URL" /* OCO_API_URL */, apiUrl]
-    ]);
-  }
-};
-var use_single_api_key_and_url_default = migrate;
+  if (apiKey)
+    setConfig([["OCO_API_KEY" /* OCO_API_KEY */, apiKey]]);
+  if (apiUrl)
+    setConfig([["OCO_API_URL" /* OCO_API_URL */, apiUrl]]);
+}
 
 // src/migrations/01_remove_obsolete_config_keys_from_global_file.ts
 function remove_obsolete_config_keys_from_global_file_default() {
@@ -45685,6 +45668,21 @@ function remove_obsolete_config_keys_from_global_file_default() {
   setGlobalConfig(configToOverride);
 }
 
+// src/migrations/02_set_missing_default_values.ts
+function set_missing_default_values_default() {
+  const setDefaultConfigValues = (config7) => {
+    const entriesToSet = [];
+    for (const entry of Object.entries(DEFAULT_CONFIG)) {
+      const [key, _value] = entry;
+      if (config7[key] === "undefined")
+        entriesToSet.push(entry);
+    }
+    if (entriesToSet.length > 0)
+      setConfig(entriesToSet);
+  };
+  setDefaultConfigValues(getGlobalConfig());
+}
+
 // src/migrations/_migrations.ts
 var migrations = [
   {
@@ -45694,6 +45692,10 @@ var migrations = [
   {
     name: "01_remove_obsolete_config_keys_from_global_file",
     run: remove_obsolete_config_keys_from_global_file_default
+  },
+  {
+    name: "02_set_missing_default_values",
+    run: set_missing_default_values_default
   }
 ];
 
@@ -45715,14 +45717,20 @@ var saveCompletedMigration = (migrationName) => {
   );
 };
 var runMigrations = async () => {
+  if (!getIsGlobalConfigFileExist())
+    return;
+  const config7 = getConfig();
+  if (config7.OCO_AI_PROVIDER === "test" /* TEST */)
+    return;
   const completedMigrations = getCompletedMigrations();
   let isMigrated = false;
   for (const migration of migrations) {
     if (!completedMigrations.includes(migration.name)) {
       try {
-        await migration.run();
+        console.log("Applying migration", migration.name);
+        migration.run();
+        console.log("Migration applied successfully", migration.name);
         saveCompletedMigration(migration.name);
-        ce(`Migration ${migration.name} applied successfully.`);
       } catch (error) {
         ce(
           `${source_default.red("Failed to apply migration")} ${migration.name}: ${error}`

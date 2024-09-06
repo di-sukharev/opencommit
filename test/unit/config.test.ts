@@ -208,7 +208,9 @@ describe('config', () => {
         globalConfigFile.filePath
       );
 
-      const config = getConfig({ globalPath: globalConfigFile.filePath });
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
       expect(config.OCO_API_KEY).toEqual('new-key');
       expect(config.OCO_MODEL).toEqual('gpt-4');
     });
@@ -222,7 +224,9 @@ describe('config', () => {
         globalConfigFile.filePath
       );
 
-      const config = getConfig({ globalPath: globalConfigFile.filePath });
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
       expect(config.OCO_API_KEY).toEqual('updated-key');
     });
 
@@ -237,7 +241,9 @@ describe('config', () => {
         globalConfigFile.filePath
       );
 
-      const config = getConfig({ globalPath: globalConfigFile.filePath });
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
       expect(config.OCO_TOKENS_MAX_INPUT).toEqual(8192);
       expect(config.OCO_DESCRIPTION).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);

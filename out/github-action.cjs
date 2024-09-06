@@ -48947,22 +48947,15 @@ var getEnvConfig = (envPath) => {
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
   };
 };
-var setDefaultConfigValues = (config6) => {
-  const entriesToSet = [];
-  for (const entry of Object.entries(DEFAULT_CONFIG)) {
-    const [key, _value] = entry;
-    if (config6[key] === "undefined")
-      entriesToSet.push(entry);
-  }
-  if (entriesToSet.length > 0)
-    setConfig(entriesToSet);
-};
 var setGlobalConfig = (config6, configPath = defaultConfigPath) => {
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config6), "utf8");
 };
+var getIsGlobalConfigFileExist = (configPath = defaultConfigPath) => {
+  return (0, import_fs.existsSync)(configPath);
+};
 var getGlobalConfig = (configPath = defaultConfigPath) => {
   let globalConfig;
-  const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
+  const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist)
     globalConfig = initGlobalConfig(configPath);
   else {
@@ -48978,21 +48971,14 @@ var mergeConfigs = (main, fallback) => {
     return acc;
   }, {});
 };
-var _config = null;
 var getConfig = ({
   envPath = defaultEnvPath,
-  globalPath = defaultConfigPath,
-  cache = true,
-  setDefaultValues = true
+  globalPath = defaultConfigPath
 } = {}) => {
-  if (_config && cache)
-    return _config;
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
-  _config = mergeConfigs(envConfig, globalConfig);
-  if (setDefaultValues)
-    setDefaultConfigValues(_config);
-  return _config;
+  const config6 = mergeConfigs(envConfig, globalConfig);
+  return config6;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config6 = getConfig({
@@ -53450,22 +53436,22 @@ var resolveConfig_default = (config6) => {
 var isXHRAdapterSupported = typeof XMLHttpRequest !== "undefined";
 var xhr_default = isXHRAdapterSupported && function(config6) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
-    const _config2 = resolveConfig_default(config6);
-    let requestData = _config2.data;
-    const requestHeaders = AxiosHeaders_default.from(_config2.headers).normalize();
-    let { responseType, onUploadProgress, onDownloadProgress } = _config2;
+    const _config = resolveConfig_default(config6);
+    let requestData = _config.data;
+    const requestHeaders = AxiosHeaders_default.from(_config.headers).normalize();
+    let { responseType, onUploadProgress, onDownloadProgress } = _config;
     let onCanceled;
     let uploadThrottled, downloadThrottled;
     let flushUpload, flushDownload;
     function done() {
       flushUpload && flushUpload();
       flushDownload && flushDownload();
-      _config2.cancelToken && _config2.cancelToken.unsubscribe(onCanceled);
-      _config2.signal && _config2.signal.removeEventListener("abort", onCanceled);
+      _config.cancelToken && _config.cancelToken.unsubscribe(onCanceled);
+      _config.signal && _config.signal.removeEventListener("abort", onCanceled);
     }
     let request3 = new XMLHttpRequest();
-    request3.open(_config2.method.toUpperCase(), _config2.url, true);
-    request3.timeout = _config2.timeout;
+    request3.open(_config.method.toUpperCase(), _config.url, true);
+    request3.timeout = _config.timeout;
     function onloadend() {
       if (!request3) {
         return;
@@ -53516,10 +53502,10 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
       request3 = null;
     };
     request3.ontimeout = function handleTimeout() {
-      let timeoutErrorMessage = _config2.timeout ? "timeout of " + _config2.timeout + "ms exceeded" : "timeout exceeded";
-      const transitional2 = _config2.transitional || transitional_default;
-      if (_config2.timeoutErrorMessage) {
-        timeoutErrorMessage = _config2.timeoutErrorMessage;
+      let timeoutErrorMessage = _config.timeout ? "timeout of " + _config.timeout + "ms exceeded" : "timeout exceeded";
+      const transitional2 = _config.transitional || transitional_default;
+      if (_config.timeoutErrorMessage) {
+        timeoutErrorMessage = _config.timeoutErrorMessage;
       }
       reject(new AxiosError_default(
         timeoutErrorMessage,
@@ -53535,11 +53521,11 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
         request3.setRequestHeader(key, val);
       });
     }
-    if (!utils_default.isUndefined(_config2.withCredentials)) {
-      request3.withCredentials = !!_config2.withCredentials;
+    if (!utils_default.isUndefined(_config.withCredentials)) {
+      request3.withCredentials = !!_config.withCredentials;
     }
     if (responseType && responseType !== "json") {
-      request3.responseType = _config2.responseType;
+      request3.responseType = _config.responseType;
     }
     if (onDownloadProgress) {
       [downloadThrottled, flushDownload] = progressEventReducer(onDownloadProgress, true);
@@ -53550,7 +53536,7 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
       request3.upload.addEventListener("progress", uploadThrottled);
       request3.upload.addEventListener("loadend", flushUpload);
     }
-    if (_config2.cancelToken || _config2.signal) {
+    if (_config.cancelToken || _config.signal) {
       onCanceled = (cancel) => {
         if (!request3) {
           return;
@@ -53559,12 +53545,12 @@ var xhr_default = isXHRAdapterSupported && function(config6) {
         request3.abort();
         request3 = null;
       };
-      _config2.cancelToken && _config2.cancelToken.subscribe(onCanceled);
-      if (_config2.signal) {
-        _config2.signal.aborted ? onCanceled() : _config2.signal.addEventListener("abort", onCanceled);
+      _config.cancelToken && _config.cancelToken.subscribe(onCanceled);
+      if (_config.signal) {
+        _config.signal.aborted ? onCanceled() : _config.signal.addEventListener("abort", onCanceled);
       }
     }
-    const protocol = parseProtocol(_config2.url);
+    const protocol = parseProtocol(_config.url);
     if (protocol && platform_default.protocols.indexOf(protocol) === -1) {
       reject(new AxiosError_default("Unsupported protocol " + protocol + ":", AxiosError_default.ERR_BAD_REQUEST, config6));
       return;
