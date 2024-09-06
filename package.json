@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "description": "Auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
