@@ -1,4 +1,4 @@
-import { Gemini } from '../../src/engine/gemini';
+import { GeminiEngine } from '../../src/engine/gemini';
 
 import { GenerativeModel, GoogleGenerativeAI } from '@google/generative-ai';
 import {
@@ -9,7 +9,7 @@ import {
 import { OpenAI } from 'openai';
 
 describe('Gemini', () => {
-  let gemini: Gemini;
+  let gemini: GeminiEngine;
   let mockConfig: ConfigType;
   let mockGoogleGenerativeAi: GoogleGenerativeAI;
   let mockGenerativeModel: GenerativeModel;
@@ -20,8 +20,8 @@ describe('Gemini', () => {
   const mockGemini = () => {
     mockConfig = getConfig() as ConfigType;
 
-    gemini = new Gemini({
-      apiKey: mockConfig.OCO_GEMINI_API_KEY,
+    gemini = new GeminiEngine({
+      apiKey: mockConfig.OCO_API_KEY,
       model: mockConfig.OCO_MODEL
     });
   };
@@ -45,12 +45,10 @@ describe('Gemini', () => {
     mockConfig = getConfig() as ConfigType;
 
     mockConfig.OCO_AI_PROVIDER = OCO_AI_PROVIDER_ENUM.GEMINI;
-    mockConfig.OCO_GEMINI_API_KEY = 'mock-api-key';
+    mockConfig.OCO_API_KEY = 'mock-api-key';
     mockConfig.OCO_MODEL = 'gemini-1.5-flash';
 
-    mockGoogleGenerativeAi = new GoogleGenerativeAI(
-      mockConfig.OCO_GEMINI_API_KEY
-    );
+    mockGoogleGenerativeAi = new GoogleGenerativeAI(mockConfig.OCO_API_KEY);
     mockGenerativeModel = mockGoogleGenerativeAi.getGenerativeModel({
       model: mockConfig.OCO_MODEL
     });

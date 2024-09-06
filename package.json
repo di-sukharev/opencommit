@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "3.1.2",
+  "version": "3.2.0",
   "description": "Auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
@@ -46,8 +46,9 @@
     "dev:gemini": "OCO_AI_PROVIDER='gemini' ts-node ./src/cli.ts",
     "build": "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
-    "deploy": "npm run build:push && git push --tags && npm publish --tag latest",
-    "deploy:patch": "npm version patch && npm run deploy",
+    "deploy": "npm publish --tag latest",
+    "deploy:build": "npm run build:push && git push --tags && npm run deploy",
+    "deploy:patch": "npm version patch && npm run deploy:build",
     "lint": "eslint src --ext ts && tsc --noEmit",
     "format": "prettier --write src",
     "test": "node --no-warnings --experimental-vm-modules $( [ -f ./node_modules/.bin/jest ] && echo ./node_modules/.bin/jest || which jest ) test/unit",
@@ -88,7 +89,6 @@
     "@google/generative-ai": "^0.11.4",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
-    "ai": "^2.2.14",
     "axios": "^1.3.4",
     "chalk": "^5.2.0",
     "cleye": "^1.3.2",
@@ -97,6 +97,6 @@
     "ignore": "^5.2.4",
     "ini": "^3.0.1",
     "inquirer": "^9.1.4",
-    "openai": "^4.56.0"
+    "openai": "^4.57.0"
   }
 }
