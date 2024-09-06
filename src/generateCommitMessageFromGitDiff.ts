@@ -6,11 +6,8 @@ import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
 
 const config = getConfig();
-const MAX_TOKENS_INPUT =
-  config.OCO_TOKENS_MAX_INPUT || DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
-const MAX_TOKENS_OUTPUT =
-  config.OCO_TOKENS_MAX_OUTPUT ||
-  DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
+const MAX_TOKENS_INPUT = config.OCO_TOKENS_MAX_INPUT;
+const MAX_TOKENS_OUTPUT = config.OCO_TOKENS_MAX_OUTPUT;
 
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string,

@@ -11,7 +11,7 @@ import { AiEngine, AiEngineConfig } from './Engine';
 
 interface GeminiConfig extends AiEngineConfig {}
 
-export class Gemini implements AiEngine {
+export class GeminiEngine implements AiEngine {
   config: GeminiConfig;
   client: GoogleGenerativeAI;
 

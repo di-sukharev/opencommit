@@ -144,7 +144,7 @@ var require_windows = __commonJS({
   "node_modules/isexe/windows.js"(exports, module2) {
     module2.exports = isexe;
     isexe.sync = sync;
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     function checkPathExt(path5, options) {
       var pathext = options.pathExt !== void 0 ? options.pathExt : process.env.PATHEXT;
       if (!pathext) {
@@ -169,12 +169,12 @@ var require_windows = __commonJS({
       return checkPathExt(path5, options);
     }
     function isexe(path5, options, cb) {
-      fs6.stat(path5, function(er2, stat) {
+      fs7.stat(path5, function(er2, stat) {
         cb(er2, er2 ? false : checkStat(stat, path5, options));
       });
     }
     function sync(path5, options) {
-      return checkStat(fs6.statSync(path5), path5, options);
+      return checkStat(fs7.statSync(path5), path5, options);
     }
   }
 });
@@ -184,14 +184,14 @@ var require_mode = __commonJS({
   "node_modules/isexe/mode.js"(exports, module2) {
     module2.exports = isexe;
     isexe.sync = sync;
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     function isexe(path5, options, cb) {
-      fs6.stat(path5, function(er2, stat) {
+      fs7.stat(path5, function(er2, stat) {
         cb(er2, er2 ? false : checkStat(stat, options));
       });
     }
     function sync(path5, options) {
-      return checkStat(fs6.statSync(path5), options);
+      return checkStat(fs7.statSync(path5), options);
     }
     function checkStat(stat, options) {
       return stat.isFile() && checkMode(stat, options);
@@ -215,7 +215,7 @@ var require_mode = __commonJS({
 // node_modules/isexe/index.js
 var require_isexe = __commonJS({
   "node_modules/isexe/index.js"(exports, module2) {
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var core;
     if (process.platform === "win32" || global.TESTING_WINDOWS) {
       core = require_windows();
@@ -477,16 +477,16 @@ var require_shebang_command = __commonJS({
 var require_readShebang = __commonJS({
   "node_modules/cross-spawn/lib/util/readShebang.js"(exports, module2) {
     "use strict";
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var shebangCommand = require_shebang_command();
     function readShebang(command) {
       const size = 150;
       const buffer = Buffer.alloc(size);
       let fd;
       try {
-        fd = fs6.openSync(command, "r");
-        fs6.readSync(fd, buffer, 0, size, 0);
-        fs6.closeSync(fd);
+        fd = fs7.openSync(command, "r");
+        fs7.readSync(fd, buffer, 0, size, 0);
+        fs7.closeSync(fd);
       } catch (e3) {
       }
       return shebangCommand(buffer.toString());
@@ -1040,7 +1040,7 @@ var require_package = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports, module2) {
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var path5 = require("path");
     var os4 = require("os");
     var crypto2 = require("crypto");
@@ -1147,7 +1147,7 @@ var require_main = __commonJS({
       if (options && options.path && options.path.length > 0) {
         if (Array.isArray(options.path)) {
           for (const filepath of options.path) {
-            if (fs6.existsSync(filepath)) {
+            if (fs7.existsSync(filepath)) {
               possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
             }
           }
@@ -1157,7 +1157,7 @@ var require_main = __commonJS({
       } else {
         possibleVaultPath = path5.resolve(process.cwd(), ".env.vault");
       }
-      if (fs6.existsSync(possibleVaultPath)) {
+      if (fs7.existsSync(possibleVaultPath)) {
         return possibleVaultPath;
       }
       return null;
@@ -1201,7 +1201,7 @@ var require_main = __commonJS({
       const parsedAll = {};
       for (const path6 of optionPaths) {
         try {
-          const parsed = DotenvModule.parse(fs6.readFileSync(path6, { encoding }));
+          const parsed = DotenvModule.parse(fs7.readFileSync(path6, { encoding }));
           DotenvModule.populate(parsedAll, parsed, options);
         } catch (e3) {
           if (debug3) {
@@ -21024,7 +21024,7 @@ var require_form_data = __commonJS({
     var http3 = require("http");
     var https3 = require("https");
     var parseUrl = require("url").parse;
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var Stream3 = require("stream").Stream;
     var mime = require_mime_types();
     var asynckit = require_asynckit();
@@ -21089,7 +21089,7 @@ var require_form_data = __commonJS({
         if (value.end != void 0 && value.end != Infinity && value.start != void 0) {
           callback(null, value.end + 1 - (value.start ? value.start : 0));
         } else {
-          fs6.stat(value.path, function(err, stat) {
+          fs7.stat(value.path, function(err, stat) {
             var fileSize;
             if (err) {
               callback(err);
@@ -22849,7 +22849,7 @@ var require_tiktoken = __commonJS({
     var imports = {};
     imports["./tiktoken_bg.js"] = wasm;
     var path5 = require("path");
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var candidates = __dirname.split(path5.sep).reduce((memo, _7, index, array) => {
       const prefix = array.slice(0, index + 1).join(path5.sep) + path5.sep;
       if (!prefix.includes("node_modules" + path5.sep)) {
@@ -22869,7 +22869,7 @@ var require_tiktoken = __commonJS({
     var bytes = null;
     for (const candidate of candidates) {
       try {
-        bytes = fs6.readFileSync(candidate);
+        bytes = fs7.readFileSync(candidate);
         break;
       } catch {
       }
@@ -27419,7 +27419,6 @@ var package_default = {
     "@google/generative-ai": "^0.11.4",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
-    ai: "^2.2.14",
     axios: "^1.3.4",
     chalk: "^5.2.0",
     cleye: "^1.3.2",
@@ -27428,7 +27427,7 @@ var package_default = {
     ignore: "^5.2.4",
     ini: "^3.0.1",
     inquirer: "^9.1.4",
-    openai: "^4.56.0"
+    openai: "^4.57.0"
   }
 };
 
@@ -29877,33 +29876,6 @@ function getI18nLocal(value) {
 }
 
 // src/commands/config.ts
-var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
-  CONFIG_KEYS2["OCO_OPENAI_API_KEY"] = "OCO_OPENAI_API_KEY";
-  CONFIG_KEYS2["OCO_ANTHROPIC_API_KEY"] = "OCO_ANTHROPIC_API_KEY";
-  CONFIG_KEYS2["OCO_AZURE_API_KEY"] = "OCO_AZURE_API_KEY";
-  CONFIG_KEYS2["OCO_GEMINI_API_KEY"] = "OCO_GEMINI_API_KEY";
-  CONFIG_KEYS2["OCO_GEMINI_BASE_PATH"] = "OCO_GEMINI_BASE_PATH";
-  CONFIG_KEYS2["OCO_TOKENS_MAX_INPUT"] = "OCO_TOKENS_MAX_INPUT";
-  CONFIG_KEYS2["OCO_TOKENS_MAX_OUTPUT"] = "OCO_TOKENS_MAX_OUTPUT";
-  CONFIG_KEYS2["OCO_OPENAI_BASE_PATH"] = "OCO_OPENAI_BASE_PATH";
-  CONFIG_KEYS2["OCO_DESCRIPTION"] = "OCO_DESCRIPTION";
-  CONFIG_KEYS2["OCO_EMOJI"] = "OCO_EMOJI";
-  CONFIG_KEYS2["OCO_MODEL"] = "OCO_MODEL";
-  CONFIG_KEYS2["OCO_LANGUAGE"] = "OCO_LANGUAGE";
-  CONFIG_KEYS2["OCO_WHY"] = "OCO_WHY";
-  CONFIG_KEYS2["OCO_MESSAGE_TEMPLATE_PLACEHOLDER"] = "OCO_MESSAGE_TEMPLATE_PLACEHOLDER";
-  CONFIG_KEYS2["OCO_PROMPT_MODULE"] = "OCO_PROMPT_MODULE";
-  CONFIG_KEYS2["OCO_AI_PROVIDER"] = "OCO_AI_PROVIDER";
-  CONFIG_KEYS2["OCO_GITPUSH"] = "OCO_GITPUSH";
-  CONFIG_KEYS2["OCO_ONE_LINE_COMMIT"] = "OCO_ONE_LINE_COMMIT";
-  CONFIG_KEYS2["OCO_AZURE_ENDPOINT"] = "OCO_AZURE_ENDPOINT";
-  CONFIG_KEYS2["OCO_TEST_MOCK_TYPE"] = "OCO_TEST_MOCK_TYPE";
-  CONFIG_KEYS2["OCO_API_URL"] = "OCO_API_URL";
-  CONFIG_KEYS2["OCO_OLLAMA_API_URL"] = "OCO_OLLAMA_API_URL";
-  CONFIG_KEYS2["OCO_FLOWISE_ENDPOINT"] = "OCO_FLOWISE_ENDPOINT";
-  CONFIG_KEYS2["OCO_FLOWISE_API_KEY"] = "OCO_FLOWISE_API_KEY";
-  return CONFIG_KEYS2;
-})(CONFIG_KEYS || {});
 var MODEL_LIST = {
   openai: [
     "gpt-4o-mini",
@@ -29969,56 +29941,18 @@ var validateConfig = (key, condition, validationMessage) => {
   }
 };
 var configValidators = {
-  ["OCO_OPENAI_API_KEY" /* OCO_OPENAI_API_KEY */](value, config7 = {}) {
+  ["OCO_API_KEY" /* OCO_API_KEY */](value, config7 = {}) {
     if (config7.OCO_AI_PROVIDER !== "openai")
       return value;
     validateConfig(
-      "OCO_OPENAI_API_KEY",
+      "OCO_API_KEY",
       typeof value === "string" && value.length > 0,
       "Empty value is not allowed"
     );
     validateConfig(
-      "OCO_OPENAI_API_KEY",
+      "OCO_API_KEY",
       value,
-      'You need to provide the OCO_OPENAI_API_KEY when OCO_AI_PROVIDER is set to "openai" (default). Run `oco config set OCO_OPENAI_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_AZURE_API_KEY" /* OCO_AZURE_API_KEY */](value, config7 = {}) {
-    if (config7.OCO_AI_PROVIDER !== "azure")
-      return value;
-    validateConfig(
-      "OCO_AZURE_API_KEY",
-      !!value,
-      'You need to provide the OCO_AZURE_API_KEY when OCO_AI_PROVIDER is set to "azure". Run: `oco config set OCO_AZURE_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_GEMINI_API_KEY" /* OCO_GEMINI_API_KEY */](value, config7 = {}) {
-    if (config7.OCO_AI_PROVIDER !== "gemini")
-      return value;
-    validateConfig(
-      "OCO_GEMINI_API_KEY",
-      value || config7.OCO_GEMINI_API_KEY || config7.OCO_AI_PROVIDER === "test",
-      'You need to provide the OCO_GEMINI_API_KEY when OCO_AI_PROVIDER is set to "gemini". Run: `oco config set OCO_GEMINI_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_ANTHROPIC_API_KEY" /* OCO_ANTHROPIC_API_KEY */](value, config7 = {}) {
-    if (config7.OCO_AI_PROVIDER !== "anthropic")
-      return value;
-    validateConfig(
-      "ANTHROPIC_API_KEY",
-      !!value,
-      'You need to provide the OCO_ANTHROPIC_API_KEY key when OCO_AI_PROVIDER is set to "anthropic". Run: `oco config set OCO_ANTHROPIC_API_KEY=your_key`'
-    );
-    return value;
-  },
-  ["OCO_FLOWISE_API_KEY" /* OCO_FLOWISE_API_KEY */](value, config7 = {}) {
-    validateConfig(
-      "OCO_FLOWISE_API_KEY" /* OCO_FLOWISE_API_KEY */,
-      value || config7.OCO_AI_PROVIDER !== "flowise",
-      'You need to provide the OCO_FLOWISE_API_KEY when OCO_AI_PROVIDER is set to "flowise". Run: `oco config set OCO_FLOWISE_API_KEY=your_key`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -30065,11 +29999,11 @@ var configValidators = {
     );
     return getI18nLocal(value);
   },
-  ["OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */](value) {
+  ["OCO_API_URL" /* OCO_API_URL */](value) {
     validateConfig(
-      "OCO_OPENAI_BASE_PATH" /* OCO_OPENAI_BASE_PATH */,
+      "OCO_API_URL" /* OCO_API_URL */,
       typeof value === "string",
-      "Must be string"
+      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
   },
@@ -30131,22 +30065,6 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_AZURE_ENDPOINT" /* OCO_AZURE_ENDPOINT */](value) {
-    validateConfig(
-      "OCO_AZURE_ENDPOINT" /* OCO_AZURE_ENDPOINT */,
-      value.includes("openai.azure.com"),
-      'Must be in format "https://<resource name>.openai.azure.com/"'
-    );
-    return value;
-  },
-  ["OCO_FLOWISE_ENDPOINT" /* OCO_FLOWISE_ENDPOINT */](value) {
-    validateConfig(
-      "OCO_FLOWISE_ENDPOINT" /* OCO_FLOWISE_ENDPOINT */,
-      typeof value === "string" && value.includes(":"),
-      "Value must be string and should include both I.P. and port number"
-    );
-    return value;
-  },
   ["OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */](value) {
     validateConfig(
       "OCO_TEST_MOCK_TYPE" /* OCO_TEST_MOCK_TYPE */,
@@ -30157,15 +30075,25 @@ var configValidators = {
     );
     return value;
   },
-  ["OCO_OLLAMA_API_URL" /* OCO_OLLAMA_API_URL */](value) {
+  ["OCO_WHY" /* OCO_WHY */](value) {
     validateConfig(
-      "OCO_OLLAMA_API_URL" /* OCO_OLLAMA_API_URL */,
-      typeof value === "string" && value.startsWith("http"),
-      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
+      "OCO_WHY" /* OCO_WHY */,
+      typeof value === "boolean",
+      "Must be true or false"
     );
     return value;
   }
 };
+var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
+  OCO_AI_PROVIDER_ENUM2["OLLAMA"] = "ollama";
+  OCO_AI_PROVIDER_ENUM2["OPENAI"] = "openai";
+  OCO_AI_PROVIDER_ENUM2["ANTHROPIC"] = "anthropic";
+  OCO_AI_PROVIDER_ENUM2["GEMINI"] = "gemini";
+  OCO_AI_PROVIDER_ENUM2["AZURE"] = "azure";
+  OCO_AI_PROVIDER_ENUM2["TEST"] = "test";
+  OCO_AI_PROVIDER_ENUM2["FLOWISE"] = "flowise";
+  return OCO_AI_PROVIDER_ENUM2;
+})(OCO_AI_PROVIDER_ENUM || {});
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
 var defaultEnvPath = (0, import_path.resolve)(process.cwd(), ".env");
 var DEFAULT_CONFIG = {
@@ -30188,7 +30116,7 @@ var initGlobalConfig = (configPath = defaultConfigPath) => {
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(DEFAULT_CONFIG), "utf8");
   return DEFAULT_CONFIG;
 };
-var parseEnvVarValue = (value) => {
+var parseConfigVarValue = (value) => {
   try {
     return JSON.parse(value);
   } catch (error) {
@@ -30199,32 +30127,32 @@ var getEnvConfig = (envPath) => {
   dotenv.config({ path: envPath });
   return {
     OCO_MODEL: process.env.OCO_MODEL,
-    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
-    OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
-    OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY,
-    OCO_TOKENS_MAX_INPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_INPUT),
-    OCO_TOKENS_MAX_OUTPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_OUTPUT),
-    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT,
-    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT,
-    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL,
-    OCO_DESCRIPTION: parseEnvVarValue(process.env.OCO_DESCRIPTION),
-    OCO_EMOJI: parseEnvVarValue(process.env.OCO_EMOJI),
+    OCO_API_URL: process.env.OCO_API_URL,
+    OCO_API_KEY: process.env.OCO_API_KEY,
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
+      process.env.OCO_TOKENS_MAX_OUTPUT
+    ),
+    OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE,
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER,
-    OCO_ONE_LINE_COMMIT: parseEnvVarValue(process.env.OCO_ONE_LINE_COMMIT),
+    OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
-    OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH)
+    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
   };
 };
-var getGlobalConfig = (configPath) => {
+var setGlobalConfig = (config7, configPath = defaultConfigPath) => {
+  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config7), "utf8");
+};
+var getIsGlobalConfigFileExist = (configPath = defaultConfigPath) => {
+  return (0, import_fs.existsSync)(configPath);
+};
+var getGlobalConfig = (configPath = defaultConfigPath) => {
   let globalConfig;
-  const isGlobalConfigFileExist = (0, import_fs.existsSync)(configPath);
+  const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist)
     globalConfig = initGlobalConfig(configPath);
   else {
@@ -30233,10 +30161,13 @@ var getGlobalConfig = (configPath) => {
   }
   return globalConfig;
 };
-var mergeConfigs = (main, fallback) => Object.keys(CONFIG_KEYS).reduce((acc, key) => {
-  acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
-  return acc;
-}, {});
+var mergeConfigs = (main, fallback) => {
+  const allKeys = /* @__PURE__ */ new Set([...Object.keys(main), ...Object.keys(fallback)]);
+  return Array.from(allKeys).reduce((acc, key) => {
+    acc[key] = parseConfigVarValue(main[key] ?? fallback[key]);
+    return acc;
+  }, {});
+};
 var getConfig = ({
   envPath = defaultEnvPath,
   globalPath = defaultConfigPath
@@ -30250,6 +30181,7 @@ var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config7 = getConfig({
     globalPath: globalConfigPath
   });
+  const configToSet = {};
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
       const supportedKeys = Object.keys(configValidators).join("\n");
@@ -30263,7 +30195,10 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
     }
     let parsedConfigValue;
     try {
-      parsedConfigValue = JSON.parse(value);
+      if (typeof value === "string")
+        parsedConfigValue = JSON.parse(value);
+      else
+        parsedConfigValue = value;
     } catch (error) {
       parsedConfigValue = value;
     }
@@ -30271,9 +30206,9 @@ For more help refer to our docs: https://github.com/di-sukharev/opencommit`
       parsedConfigValue,
       config7
     );
-    config7[key] = validValue;
+    configToSet[key] = validValue;
   }
-  (0, import_fs.writeFileSync)(globalConfigPath, (0, import_ini.stringify)(config7), "utf8");
+  setGlobalConfig(mergeConfigs(configToSet, config7), globalConfigPath);
   ce(`${source_default.green("\u2714")} config successfully set`);
 };
 var configCommand = G3(
@@ -39359,7 +39294,7 @@ var AzureEngine = class {
 };
 
 // src/engine/flowise.ts
-var FlowiseAi = class {
+var FlowiseEngine = class {
   constructor(config7) {
     this.config = config7;
     this.client = axios_default.create({
@@ -40154,7 +40089,7 @@ var GoogleGenerativeAI = class {
 };
 
 // src/engine/gemini.ts
-var Gemini = class {
+var GeminiEngine = class {
   constructor(config7) {
     this.client = new GoogleGenerativeAI(config7.apiKey);
     this.config = config7;
@@ -40212,7 +40147,7 @@ var Gemini = class {
 };
 
 // src/engine/ollama.ts
-var OllamaAi = class {
+var OllamaEngine = class {
   constructor(config7) {
     this.config = config7;
     this.client = axios_default.create({
@@ -44547,44 +44482,24 @@ function getEngine() {
     model: config7.OCO_MODEL,
     maxTokensOutput: config7.OCO_TOKENS_MAX_OUTPUT,
     maxTokensInput: config7.OCO_TOKENS_MAX_INPUT,
-    baseURL: config7.OCO_OPENAI_BASE_PATH
+    baseURL: config7.OCO_API_URL,
+    apiKey: config7.OCO_API_KEY
   };
   switch (provider) {
     case "ollama" /* OLLAMA */:
-      return new OllamaAi({
-        ...DEFAULT_CONFIG2,
-        apiKey: "",
-        baseURL: config7.OCO_OLLAMA_API_URL
-      });
+      return new OllamaEngine(DEFAULT_CONFIG2);
     case "anthropic" /* ANTHROPIC */:
-      return new AnthropicEngine({
-        ...DEFAULT_CONFIG2,
-        apiKey: config7.OCO_ANTHROPIC_API_KEY
-      });
+      return new AnthropicEngine(DEFAULT_CONFIG2);
     case "test" /* TEST */:
       return new TestAi(config7.OCO_TEST_MOCK_TYPE);
     case "gemini" /* GEMINI */:
-      return new Gemini({
-        ...DEFAULT_CONFIG2,
-        apiKey: config7.OCO_GEMINI_API_KEY,
-        baseURL: config7.OCO_GEMINI_BASE_PATH
-      });
+      return new GeminiEngine(DEFAULT_CONFIG2);
     case "azure" /* AZURE */:
-      return new AzureEngine({
-        ...DEFAULT_CONFIG2,
-        apiKey: config7.OCO_AZURE_API_KEY
-      });
+      return new AzureEngine(DEFAULT_CONFIG2);
     case "flowise" /* FLOWISE */:
-      return new FlowiseAi({
-        ...DEFAULT_CONFIG2,
-        baseURL: config7.OCO_FLOWISE_ENDPOINT || DEFAULT_CONFIG2.baseURL,
-        apiKey: config7.OCO_FLOWISE_API_KEY
-      });
+      return new FlowiseEngine(DEFAULT_CONFIG2);
     default:
-      return new OpenAiEngine({
-        ...DEFAULT_CONFIG2,
-        apiKey: config7.OCO_OPENAI_API_KEY
-      });
+      return new OpenAiEngine(DEFAULT_CONFIG2);
   }
 }
 
@@ -45068,8 +44983,8 @@ function mergeDiffs(arr, maxStringLength) {
 
 // src/generateCommitMessageFromGitDiff.ts
 var config5 = getConfig();
-var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT || 40960 /* DEFAULT_MAX_TOKENS_INPUT */;
-var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT || 4096 /* DEFAULT_MAX_TOKENS_OUTPUT */;
+var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT;
+var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT;
 var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
   const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
@@ -45401,13 +45316,13 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
         const pushSpinner = le();
         pushSpinner.start(`Running 'git push ${selectedRemote}'`);
         const { stdout: stdout2 } = await execa("git", ["push", selectedRemote]);
+        if (stdout2)
+          ce(stdout2);
         pushSpinner.stop(
           `${source_default.green(
             "\u2714"
-          )} Successfully pushed all commits to ${selectedRemote}`
+          )} successfully pushed all commits to ${selectedRemote}`
         );
-        if (stdout2)
-          ce(stdout2);
       }
     } else {
       const regenerateMessage = await Q3({
@@ -45635,9 +45550,9 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
       return;
     ae("opencommit");
     const config7 = getConfig();
-    if (!config7.OCO_OPENAI_API_KEY && !config7.OCO_ANTHROPIC_API_KEY && !config7.OCO_AZURE_API_KEY) {
+    if (!config7.OCO_API_KEY) {
       ce(
-        "No OCO_OPENAI_API_KEY or OCO_ANTHROPIC_API_KEY or OCO_AZURE_API_KEY exists. Set your key via `oco config set <key>=<value>, e.g. `oco config set OCO_OPENAI_API_KEY=<value>`. For more info see https://github.com/di-sukharev/opencommit"
+        "No OCO_API_KEY is set. Set your key via `oco config set OCO_API_KEY=<value>. For more info see https://github.com/di-sukharev/opencommit"
       );
       return;
     }
@@ -45688,6 +45603,152 @@ Current version: ${currentVersion}. Latest version: ${latestVersion}.
   }
 };
 
+// src/migrations/_run.ts
+var import_fs5 = __toESM(require("fs"), 1);
+var import_os2 = require("os");
+var import_path5 = require("path");
+
+// src/migrations/00_use_single_api_key_and_url.ts
+function use_single_api_key_and_url_default() {
+  const config7 = getConfig({ setDefaultValues: false });
+  const aiProvider = config7.OCO_AI_PROVIDER;
+  let apiKey;
+  let apiUrl;
+  if (aiProvider === "ollama" /* OLLAMA */) {
+    apiKey = config7["OCO_OLLAMA_API_KEY"];
+    apiUrl = config7["OCO_OLLAMA_API_URL"];
+  } else if (aiProvider === "anthropic" /* ANTHROPIC */) {
+    apiKey = config7["OCO_ANTHROPIC_API_KEY"];
+    apiUrl = config7["OCO_ANTHROPIC_BASE_PATH"];
+  } else if (aiProvider === "openai" /* OPENAI */) {
+    apiKey = config7["OCO_OPENAI_API_KEY"];
+    apiUrl = config7["OCO_OPENAI_BASE_PATH"];
+  } else if (aiProvider === "azure" /* AZURE */) {
+    apiKey = config7["OCO_AZURE_API_KEY"];
+    apiUrl = config7["OCO_AZURE_ENDPOINT"];
+  } else if (aiProvider === "gemini" /* GEMINI */) {
+    apiKey = config7["OCO_GEMINI_API_KEY"];
+    apiUrl = config7["OCO_GEMINI_BASE_PATH"];
+  } else if (aiProvider === "flowise" /* FLOWISE */) {
+    apiKey = config7["OCO_FLOWISE_API_KEY"];
+    apiUrl = config7["OCO_FLOWISE_ENDPOINT"];
+  } else {
+    throw new Error(
+      `Migration failed, set AI provider first. Run "oco config set OCO_AI_PROVIDER=<provider>", where <provider> is one of: ${Object.values(
+        OCO_AI_PROVIDER_ENUM
+      ).join(", ")}`
+    );
+  }
+  if (apiKey)
+    setConfig([["OCO_API_KEY" /* OCO_API_KEY */, apiKey]]);
+  if (apiUrl)
+    setConfig([["OCO_API_URL" /* OCO_API_URL */, apiUrl]]);
+}
+
+// src/migrations/01_remove_obsolete_config_keys_from_global_file.ts
+function remove_obsolete_config_keys_from_global_file_default() {
+  const obsoleteKeys = [
+    "OCO_OLLAMA_API_KEY",
+    "OCO_OLLAMA_API_URL",
+    "OCO_ANTHROPIC_API_KEY",
+    "OCO_ANTHROPIC_BASE_PATH",
+    "OCO_OPENAI_API_KEY",
+    "OCO_OPENAI_BASE_PATH",
+    "OCO_AZURE_API_KEY",
+    "OCO_AZURE_ENDPOINT",
+    "OCO_GEMINI_API_KEY",
+    "OCO_GEMINI_BASE_PATH",
+    "OCO_FLOWISE_API_KEY",
+    "OCO_FLOWISE_ENDPOINT"
+  ];
+  const globalConfig = getGlobalConfig();
+  const configToOverride = { ...globalConfig };
+  for (const key of obsoleteKeys)
+    delete configToOverride[key];
+  setGlobalConfig(configToOverride);
+}
+
+// src/migrations/02_set_missing_default_values.ts
+function set_missing_default_values_default() {
+  const setDefaultConfigValues = (config7) => {
+    const entriesToSet = [];
+    for (const entry of Object.entries(DEFAULT_CONFIG)) {
+      const [key, _value] = entry;
+      if (config7[key] === "undefined")
+        entriesToSet.push(entry);
+    }
+    if (entriesToSet.length > 0)
+      setConfig(entriesToSet);
+  };
+  setDefaultConfigValues(getGlobalConfig());
+}
+
+// src/migrations/_migrations.ts
+var migrations = [
+  {
+    name: "00_use_single_api_key_and_url",
+    run: use_single_api_key_and_url_default
+  },
+  {
+    name: "01_remove_obsolete_config_keys_from_global_file",
+    run: remove_obsolete_config_keys_from_global_file_default
+  },
+  {
+    name: "02_set_missing_default_values",
+    run: set_missing_default_values_default
+  }
+];
+
+// src/migrations/_run.ts
+var migrationsFile = (0, import_path5.join)((0, import_os2.homedir)(), ".opencommit_migrations");
+var getCompletedMigrations = () => {
+  if (!import_fs5.default.existsSync(migrationsFile)) {
+    return [];
+  }
+  const data = import_fs5.default.readFileSync(migrationsFile, "utf-8");
+  return data ? JSON.parse(data) : [];
+};
+var saveCompletedMigration = (migrationName) => {
+  const completedMigrations = getCompletedMigrations();
+  completedMigrations.push(migrationName);
+  import_fs5.default.writeFileSync(
+    migrationsFile,
+    JSON.stringify(completedMigrations, null, 2)
+  );
+};
+var runMigrations = async () => {
+  if (!getIsGlobalConfigFileExist())
+    return;
+  const config7 = getConfig();
+  if (config7.OCO_AI_PROVIDER === "test" /* TEST */)
+    return;
+  const completedMigrations = getCompletedMigrations();
+  let isMigrated = false;
+  for (const migration of migrations) {
+    if (!completedMigrations.includes(migration.name)) {
+      try {
+        console.log("Applying migration", migration.name);
+        migration.run();
+        console.log("Migration applied successfully", migration.name);
+        saveCompletedMigration(migration.name);
+      } catch (error) {
+        ce(
+          `${source_default.red("Failed to apply migration")} ${migration.name}: ${error}`
+        );
+      }
+      isMigrated = true;
+    }
+  }
+  if (isMigrated) {
+    ce(
+      `${source_default.green(
+        "\u2714"
+      )} Migrations to your config were applied successfully. Please rerun.`
+    );
+    process.exit(0);
+  }
+};
+
 // src/cli.ts
 var extraArgs = process.argv.slice(2);
 Z2(
@@ -45708,6 +45769,7 @@ Z2(
     help: { description: package_default.description }
   },
   async ({ flags }) => {
+    await runMigrations();
     await checkIsLatestVersion();
     if (await isHookCalled()) {
       prepareCommitMessageHook();

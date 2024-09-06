@@ -11,14 +11,9 @@ import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
 
 export enum CONFIG_KEYS {
-  OCO_OPENAI_API_KEY = 'OCO_OPENAI_API_KEY',
-  OCO_ANTHROPIC_API_KEY = 'OCO_ANTHROPIC_API_KEY',
-  OCO_AZURE_API_KEY = 'OCO_AZURE_API_KEY',
-  OCO_GEMINI_API_KEY = 'OCO_GEMINI_API_KEY',
-  OCO_GEMINI_BASE_PATH = 'OCO_GEMINI_BASE_PATH',
+  OCO_API_KEY = 'OCO_API_KEY',
   OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
   OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
-  OCO_OPENAI_BASE_PATH = 'OCO_OPENAI_BASE_PATH',
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_MODEL = 'OCO_MODEL',
@@ -27,14 +22,10 @@ export enum CONFIG_KEYS {
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER = 'OCO_MESSAGE_TEMPLATE_PLACEHOLDER',
   OCO_PROMPT_MODULE = 'OCO_PROMPT_MODULE',
   OCO_AI_PROVIDER = 'OCO_AI_PROVIDER',
-  OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
-  OCO_AZURE_ENDPOINT = 'OCO_AZURE_ENDPOINT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
-  OCO_OLLAMA_API_URL = 'OCO_OLLAMA_API_URL',
-  OCO_FLOWISE_ENDPOINT = 'OCO_FLOWISE_ENDPOINT',
-  OCO_FLOWISE_API_KEY = 'OCO_FLOWISE_API_KEY'
+  OCO_GITPUSH = 'OCO_GITPUSH' // todo: deprecate
 }
 
 export enum CONFIG_MODES {
@@ -123,65 +114,19 @@ const validateConfig = (
 };
 
 export const configValidators = {
-  [CONFIG_KEYS.OCO_OPENAI_API_KEY](value: any, config: any = {}) {
+  [CONFIG_KEYS.OCO_API_KEY](value: any, config: any = {}) {
     if (config.OCO_AI_PROVIDER !== 'openai') return value;
 
     validateConfig(
-      'OCO_OPENAI_API_KEY',
+      'OCO_API_KEY',
       typeof value === 'string' && value.length > 0,
       'Empty value is not allowed'
     );
 
     validateConfig(
-      'OCO_OPENAI_API_KEY',
+      'OCO_API_KEY',
       value,
-      'You need to provide the OCO_OPENAI_API_KEY when OCO_AI_PROVIDER is set to "openai" (default). Run `oco config set OCO_OPENAI_API_KEY=your_key`'
-    );
-
-    return value;
-  },
-
-  [CONFIG_KEYS.OCO_AZURE_API_KEY](value: any, config: any = {}) {
-    if (config.OCO_AI_PROVIDER !== 'azure') return value;
-
-    validateConfig(
-      'OCO_AZURE_API_KEY',
-      !!value,
-      'You need to provide the OCO_AZURE_API_KEY when OCO_AI_PROVIDER is set to "azure". Run: `oco config set OCO_AZURE_API_KEY=your_key`'
-    );
-
-    return value;
-  },
-
-  [CONFIG_KEYS.OCO_GEMINI_API_KEY](value: any, config: any = {}) {
-    if (config.OCO_AI_PROVIDER !== 'gemini') return value;
-
-    validateConfig(
-      'OCO_GEMINI_API_KEY',
-      value || config.OCO_GEMINI_API_KEY || config.OCO_AI_PROVIDER === 'test',
-      'You need to provide the OCO_GEMINI_API_KEY when OCO_AI_PROVIDER is set to "gemini". Run: `oco config set OCO_GEMINI_API_KEY=your_key`'
-    );
-
-    return value;
-  },
-
-  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY](value: any, config: any = {}) {
-    if (config.OCO_AI_PROVIDER !== 'anthropic') return value;
-
-    validateConfig(
-      'ANTHROPIC_API_KEY',
-      !!value,
-      'You need to provide the OCO_ANTHROPIC_API_KEY key when OCO_AI_PROVIDER is set to "anthropic". Run: `oco config set OCO_ANTHROPIC_API_KEY=your_key`'
-    );
-
-    return value;
-  },
-
-  [CONFIG_KEYS.OCO_FLOWISE_API_KEY](value: any, config: any = {}) {
-    validateConfig(
-      CONFIG_KEYS.OCO_FLOWISE_API_KEY,
-      value || config.OCO_AI_PROVIDER !== 'flowise',
-      'You need to provide the OCO_FLOWISE_API_KEY when OCO_AI_PROVIDER is set to "flowise". Run: `oco config set OCO_FLOWISE_API_KEY=your_key`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -241,11 +186,11 @@ export const configValidators = {
     return getI18nLocal(value);
   },
 
-  [CONFIG_KEYS.OCO_OPENAI_BASE_PATH](value: any) {
+  [CONFIG_KEYS.OCO_API_URL](value: any) {
     validateConfig(
-      CONFIG_KEYS.OCO_OPENAI_BASE_PATH,
+      CONFIG_KEYS.OCO_API_URL,
       typeof value === 'string',
-      'Must be string'
+      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
   },
@@ -315,26 +260,6 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OCO_AZURE_ENDPOINT](value: any) {
-    validateConfig(
-      CONFIG_KEYS.OCO_AZURE_ENDPOINT,
-      value.includes('openai.azure.com'),
-      'Must be in format "https://<resource name>.openai.azure.com/"'
-    );
-
-    return value;
-  },
-
-  [CONFIG_KEYS.OCO_FLOWISE_ENDPOINT](value: any) {
-    validateConfig(
-      CONFIG_KEYS.OCO_FLOWISE_ENDPOINT,
-      typeof value === 'string' && value.includes(':'),
-      'Value must be string and should include both I.P. and port number' // Considering the possibility of DNS lookup or feeding the I.P. explicitly, there is no pattern to verify, except a column for the port number
-    );
-
-    return value;
-  },
-
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_TEST_MOCK_TYPE,
@@ -346,11 +271,11 @@ export const configValidators = {
     return value;
   },
 
-  [CONFIG_KEYS.OCO_OLLAMA_API_URL](value: any) {
+  [CONFIG_KEYS.OCO_WHY](value: any) {
     validateConfig(
-      CONFIG_KEYS.OCO_OLLAMA_API_URL,
-      typeof value === 'string' && value.startsWith('http'),
-      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
+      CONFIG_KEYS.OCO_WHY,
+      typeof value === 'boolean',
+      'Must be true or false'
     );
     return value;
   }
@@ -367,14 +292,10 @@ export enum OCO_AI_PROVIDER_ENUM {
 }
 
 export type ConfigType = {
-  [CONFIG_KEYS.OCO_OPENAI_API_KEY]?: string;
-  [CONFIG_KEYS.OCO_ANTHROPIC_API_KEY]?: string;
-  [CONFIG_KEYS.OCO_AZURE_API_KEY]?: string;
-  [CONFIG_KEYS.OCO_GEMINI_API_KEY]?: string;
-  [CONFIG_KEYS.OCO_GEMINI_BASE_PATH]?: string;
+  [CONFIG_KEYS.OCO_API_KEY]?: string;
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
-  [CONFIG_KEYS.OCO_OPENAI_BASE_PATH]?: string;
+  [CONFIG_KEYS.OCO_API_URL]?: string;
   [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
   [CONFIG_KEYS.OCO_WHY]: boolean;
@@ -385,16 +306,11 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_AI_PROVIDER]: OCO_AI_PROVIDER_ENUM;
   [CONFIG_KEYS.OCO_GITPUSH]: boolean;
   [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
-  [CONFIG_KEYS.OCO_AZURE_ENDPOINT]?: string;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
-  [CONFIG_KEYS.OCO_API_URL]?: string;
-  [CONFIG_KEYS.OCO_OLLAMA_API_URL]?: string;
-  [CONFIG_KEYS.OCO_FLOWISE_ENDPOINT]: string;
-  [CONFIG_KEYS.OCO_FLOWISE_API_KEY]?: string;
 };
 
-const defaultConfigPath = pathJoin(homedir(), '.opencommit');
-const defaultEnvPath = pathResolve(process.cwd(), '.env');
+export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
+export const defaultEnvPath = pathResolve(process.cwd(), '.env');
 
 const assertConfigsAreValid = (config: Record<string, any>) => {
   for (const [key, value] of Object.entries(config)) {
@@ -446,7 +362,7 @@ const initGlobalConfig = (configPath: string = defaultConfigPath) => {
   return DEFAULT_CONFIG;
 };
 
-const parseEnvVarValue = (value?: any) => {
+const parseConfigVarValue = (value?: any) => {
   try {
     return JSON.parse(value);
   } catch (error) {
@@ -459,41 +375,45 @@ const getEnvConfig = (envPath: string) => {
 
   return {
     OCO_MODEL: process.env.OCO_MODEL,
+    OCO_API_URL: process.env.OCO_API_URL,
+    OCO_API_KEY: process.env.OCO_API_KEY,
+    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
 
-    OCO_OPENAI_API_KEY: process.env.OCO_OPENAI_API_KEY,
-    OCO_ANTHROPIC_API_KEY: process.env.OCO_ANTHROPIC_API_KEY,
-    OCO_AZURE_API_KEY: process.env.OCO_AZURE_API_KEY,
-    OCO_GEMINI_API_KEY: process.env.OCO_GEMINI_API_KEY,
-    OCO_FLOWISE_API_KEY: process.env.OCO_FLOWISE_API_KEY,
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
+      process.env.OCO_TOKENS_MAX_OUTPUT
+    ),
 
-    OCO_TOKENS_MAX_INPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_INPUT),
-    OCO_TOKENS_MAX_OUTPUT: parseEnvVarValue(process.env.OCO_TOKENS_MAX_OUTPUT),
-
-    OCO_OPENAI_BASE_PATH: process.env.OCO_OPENAI_BASE_PATH,
-    OCO_GEMINI_BASE_PATH: process.env.OCO_GEMINI_BASE_PATH,
-
-    OCO_AZURE_ENDPOINT: process.env.OCO_AZURE_ENDPOINT,
-    OCO_FLOWISE_ENDPOINT: process.env.OCO_FLOWISE_ENDPOINT,
-    OCO_OLLAMA_API_URL: process.env.OCO_OLLAMA_API_URL,
-
-    OCO_DESCRIPTION: parseEnvVarValue(process.env.OCO_DESCRIPTION),
-    OCO_EMOJI: parseEnvVarValue(process.env.OCO_EMOJI),
+    OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
+    OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
-    OCO_ONE_LINE_COMMIT: parseEnvVarValue(process.env.OCO_ONE_LINE_COMMIT),
+    OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
 
-    OCO_GITPUSH: parseEnvVarValue(process.env.OCO_GITPUSH) // todo: deprecate
+    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
 };
 
-const getGlobalConfig = (configPath: string) => {
+export const setGlobalConfig = (
+  config: ConfigType,
+  configPath: string = defaultConfigPath
+) => {
+  writeFileSync(configPath, iniStringify(config), 'utf8');
+};
+
+export const getIsGlobalConfigFileExist = (
+  configPath: string = defaultConfigPath
+) => {
+  return existsSync(configPath);
+};
+
+export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
   let globalConfig: ConfigType;
 
-  const isGlobalConfigFileExist = existsSync(configPath);
+  const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
   else {
     const configFile = readFileSync(configPath, 'utf8');
@@ -510,16 +430,18 @@ const getGlobalConfig = (configPath: string) => {
  * @param fallback - global ~/.opencommit config file
  * @returns merged config
  */
-const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) =>
-  Object.keys(CONFIG_KEYS).reduce((acc, key) => {
-    acc[key] = parseEnvVarValue(main[key] ?? fallback[key]);
-
+const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) => {
+  const allKeys = new Set([...Object.keys(main), ...Object.keys(fallback)]);
+  return Array.from(allKeys).reduce((acc, key) => {
+    acc[key] = parseConfigVarValue(main[key] ?? fallback[key]);
     return acc;
   }, {} as ConfigType);
+};
 
 interface GetConfigOptions {
   globalPath?: string;
   envPath?: string;
+  setDefaultValues?: boolean;
 }
 
 export const getConfig = ({
@@ -535,12 +457,14 @@ export const getConfig = ({
 };
 
 export const setConfig = (
-  keyValues: [key: string, value: string][],
+  keyValues: [key: string, value: string | boolean | number | null][],
   globalConfigPath: string = defaultConfigPath
 ) => {
   const config = getConfig({
     globalPath: globalConfigPath
   });
+
+  const configToSet = {};
 
   for (let [key, value] of keyValues) {
     if (!configValidators.hasOwnProperty(key)) {
@@ -553,7 +477,8 @@ export const setConfig = (
     let parsedConfigValue;
 
     try {
-      parsedConfigValue = JSON.parse(value);
+      if (typeof value === 'string') parsedConfigValue = JSON.parse(value);
+      else parsedConfigValue = value;
     } catch (error) {
       parsedConfigValue = value;
     }
@@ -563,10 +488,10 @@ export const setConfig = (
       config
     );
 
-    config[key] = validValue;
+    configToSet[key] = validValue;
   }
 
-  writeFileSync(globalConfigPath, iniStringify(config), 'utf8');
+  setGlobalConfig(mergeConfigs(configToSet, config), globalConfigPath);
 
   outro(`${chalk.green('✔')} config successfully set`);
 };
