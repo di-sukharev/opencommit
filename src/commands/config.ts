@@ -79,13 +79,13 @@ export const MODEL_LIST = {
   ],
 
   groq: [
-    'llama3-70b-8192',            // Meta Llama 3 70B (default one, no daily token limit and 14 400 reqs/day)
-    'llama3-8b-8192',             // Meta Llama 3 8B
-    'llama-guard-3-8b',           // Llama Guard 3 8B
-    'llama-3.1-8b-instant',       // Llama 3.1 8B (Preview)
-    'llama-3.1-70b-versatile',    // Llama 3.1 70B (Preview)
-    'gemma-7b-it',                // Gemma 7B
-    'gemma2-9b-it'               // Gemma 2 9B
+    'llama3-70b-8192', // Meta Llama 3 70B (default one, no daily token limit and 14 400 reqs/day)
+    'llama3-8b-8192', // Meta Llama 3 8B
+    'llama-guard-3-8b', // Llama Guard 3 8B
+    'llama-3.1-8b-instant', // Llama 3.1 8B (Preview)
+    'llama-3.1-70b-versatile', // Llama 3.1 70B (Preview)
+    'gemma-7b-it', // Gemma 7B
+    'gemma2-9b-it' // Gemma 2 9B
   ]
 };
 
@@ -253,9 +253,15 @@ export const configValidators = {
 
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      ['openai', 'anthropic', 'gemini', 'azure', 'test', 'flowise', 'groq'].includes(
-        value
-      ) || value.startsWith('ollama'),
+      [
+        'openai',
+        'anthropic',
+        'gemini',
+        'azure',
+        'test',
+        'flowise',
+        'groq'
+      ].includes(value) || value.startsWith('ollama'),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
 
@@ -301,7 +307,7 @@ export enum OCO_AI_PROVIDER_ENUM {
   AZURE = 'azure',
   TEST = 'test',
   FLOWISE = 'flowise',
-  GROQ = 'groq',
+  GROQ = 'groq'
 }
 
 export type ConfigType = {
@@ -365,7 +371,6 @@ export const DEFAULT_CONFIG = {
   OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.OPENAI,
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: 'commit-message',
-  OCO_FLOWISE_ENDPOINT: ':',
   OCO_WHY: false,
   OCO_GITPUSH: true // todo: deprecate
 };
@@ -401,7 +406,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-    process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
@@ -457,16 +462,37 @@ interface GetConfigOptions {
   setDefaultValues?: boolean;
 }
 
+const cleanUndefinedValues = (config: ConfigType) => {
+  return Object.fromEntries(
+    Object.entries(config).map(([_, v]) => {
+      try {
+        if (typeof v === 'string') {
+          if (v === 'undefined') return [_, undefined];
+          if (v === 'null') return [_, null];
+
+          const parsedValue = JSON.parse(v);
+          return [_, parsedValue];
+        }
+        return [_, v];
+      } catch (error) {
+        return [_, v];
+      }
+    })
+  );
+};
+
 export const getConfig = ({
-                            envPath = defaultEnvPath,
-                            globalPath = defaultConfigPath
-                          }: GetConfigOptions = {}): ConfigType => {
+  envPath = defaultEnvPath,
+  globalPath = defaultConfigPath
+}: GetConfigOptions = {}): ConfigType => {
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
 
   const config = mergeConfigs(envConfig, globalConfig);
 
-  return config;
+  const cleanConfig = cleanUndefinedValues(config);
+
+  return cleanConfig as ConfigType;
 };
 
 export const setConfig = (

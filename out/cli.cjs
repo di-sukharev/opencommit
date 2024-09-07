@@ -27331,7 +27331,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.2.1",
+  version: "3.2.2",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -29918,6 +29918,15 @@ var MODEL_LIST = {
     "gemini-1.0-pro",
     "gemini-pro-vision",
     "text-embedding-004"
+  ],
+  groq: [
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "llama-guard-3-8b",
+    "llama-3.1-8b-instant",
+    "llama-3.1-70b-versatile",
+    "gemma-7b-it",
+    "gemma2-9b-it"
   ]
 };
 var getDefaultModel = (provider) => {
@@ -29928,6 +29937,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.anthropic[0];
     case "gemini":
       return MODEL_LIST.gemini[0];
+    case "groq":
+      return MODEL_LIST.groq[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -30051,9 +30062,15 @@ var configValidators = {
       value = "openai";
     validateConfig(
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
-      ["openai", "anthropic", "gemini", "azure", "test", "flowise"].includes(
-        value
-      ) || value.startsWith("ollama"),
+      [
+        "openai",
+        "anthropic",
+        "gemini",
+        "azure",
+        "test",
+        "flowise",
+        "groq"
+      ].includes(value) || value.startsWith("ollama"),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
     return value;
@@ -30093,6 +30110,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["AZURE"] = "azure";
   OCO_AI_PROVIDER_ENUM2["TEST"] = "test";
   OCO_AI_PROVIDER_ENUM2["FLOWISE"] = "flowise";
+  OCO_AI_PROVIDER_ENUM2["GROQ"] = "groq";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -30109,7 +30127,6 @@ var DEFAULT_CONFIG = {
   OCO_AI_PROVIDER: "openai" /* OPENAI */,
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: "commit-message",
-  OCO_FLOWISE_ENDPOINT: ":",
   OCO_WHY: false,
   OCO_GITPUSH: true
 };
@@ -30169,6 +30186,25 @@ var mergeConfigs = (main, fallback) => {
     return acc;
   }, {});
 };
+var cleanUndefinedValues = (config7) => {
+  return Object.fromEntries(
+    Object.entries(config7).map(([_7, v5]) => {
+      try {
+        if (typeof v5 === "string") {
+          if (v5 === "undefined")
+            return [_7, void 0];
+          if (v5 === "null")
+            return [_7, null];
+          const parsedValue = JSON.parse(v5);
+          return [_7, parsedValue];
+        }
+        return [_7, v5];
+      } catch (error) {
+        return [_7, v5];
+      }
+    })
+  );
+};
 var getConfig = ({
   envPath = defaultEnvPath,
   globalPath = defaultConfigPath
@@ -30176,7 +30212,8 @@ var getConfig = ({
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
   const config7 = mergeConfigs(envConfig, globalConfig);
-  return config7;
+  const cleanConfig = cleanUndefinedValues(config7);
+  return cleanConfig;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config7 = getConfig({
@@ -44471,7 +44508,19 @@ var OpenAiEngine = class {
       }
     };
     this.config = config7;
-    this.client = new OpenAI({ apiKey: config7.apiKey });
+    if (!config7.baseURL) {
+      this.client = new OpenAI({ apiKey: config7.apiKey });
+    } else {
+      this.client = new OpenAI({ apiKey: config7.apiKey, baseURL: config7.baseURL });
+    }
+  }
+};
+
+// src/engine/groq.ts
+var GroqEngine = class extends OpenAiEngine {
+  constructor(config7) {
+    config7.baseURL = "https://api.groq.com/openai/v1";
+    super(config7);
   }
 };
 
@@ -44499,6 +44548,8 @@ function getEngine() {
       return new AzureEngine(DEFAULT_CONFIG2);
     case "flowise" /* FLOWISE */:
       return new FlowiseEngine(DEFAULT_CONFIG2);
+    case "groq" /* GROQ */:
+      return new GroqEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
@@ -45342,7 +45393,10 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
       }
     }
   } catch (error) {
-    commitGenerationSpinner.stop("\u{1F4DD} Commit message generated");
+    commitGenerationSpinner.stop(
+      `${source_default.red("\u2716")} Failed to generate the commit message`
+    );
+    console.log(error);
     const err = error;
     ce(`${source_default.red("\u2716")} ${err?.message || err}`);
     process.exit(1);
@@ -45677,11 +45731,12 @@ function set_missing_default_values_default() {
     const entriesToSet = [];
     for (const entry of Object.entries(DEFAULT_CONFIG)) {
       const [key, _value] = entry;
-      if (config7[key] === "undefined")
+      if (config7[key] === "undefined" || config7[key] === void 0)
         entriesToSet.push(entry);
     }
     if (entriesToSet.length > 0)
       setConfig(entriesToSet);
+    console.log(entriesToSet);
   };
   setDefaultConfigValues(getGlobalConfig());
 }
@@ -45738,6 +45793,7 @@ var runMigrations = async () => {
         ce(
           `${source_default.red("Failed to apply migration")} ${migration.name}: ${error}`
         );
+        process.exit(1);
       }
       isMigrated = true;
     }
