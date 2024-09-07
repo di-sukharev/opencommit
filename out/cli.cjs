@@ -44528,7 +44528,6 @@ var GroqEngine = class extends OpenAiEngine {
 function getEngine() {
   const config7 = getConfig();
   const provider = config7.OCO_AI_PROVIDER;
-  console.log(123123, { config: config7 });
   const DEFAULT_CONFIG2 = {
     model: config7.OCO_MODEL,
     maxTokensOutput: config7.OCO_TOKENS_MAX_OUTPUT,
