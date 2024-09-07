@@ -48987,6 +48987,25 @@ var mergeConfigs = (main, fallback) => {
     return acc;
   }, {});
 };
+var cleanUndefinedValues = (config6) => {
+  return Object.fromEntries(
+    Object.entries(config6).map(([_3, v2]) => {
+      try {
+        if (typeof v2 === "string") {
+          if (v2 === "undefined")
+            return [_3, void 0];
+          if (v2 === "null")
+            return [_3, null];
+          const parsedValue = JSON.parse(v2);
+          return [_3, parsedValue];
+        }
+        return [_3, v2];
+      } catch (error) {
+        return [_3, v2];
+      }
+    })
+  );
+};
 var getConfig = ({
   envPath = defaultEnvPath,
   globalPath = defaultConfigPath
@@ -48994,7 +49013,8 @@ var getConfig = ({
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
   const config6 = mergeConfigs(envConfig, globalConfig);
-  return config6;
+  const cleanConfig = cleanUndefinedValues(config6);
+  return cleanConfig;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config6 = getConfig({
@@ -63309,6 +63329,7 @@ var GroqEngine = class extends OpenAiEngine {
 function getEngine() {
   const config6 = getConfig();
   const provider = config6.OCO_AI_PROVIDER;
+  console.log(123123, { config: config6 });
   const DEFAULT_CONFIG2 = {
     model: config6.OCO_MODEL,
     maxTokensOutput: config6.OCO_TOKENS_MAX_OUTPUT,

@@ -30186,6 +30186,25 @@ var mergeConfigs = (main, fallback) => {
     return acc;
   }, {});
 };
+var cleanUndefinedValues = (config7) => {
+  return Object.fromEntries(
+    Object.entries(config7).map(([_7, v5]) => {
+      try {
+        if (typeof v5 === "string") {
+          if (v5 === "undefined")
+            return [_7, void 0];
+          if (v5 === "null")
+            return [_7, null];
+          const parsedValue = JSON.parse(v5);
+          return [_7, parsedValue];
+        }
+        return [_7, v5];
+      } catch (error) {
+        return [_7, v5];
+      }
+    })
+  );
+};
 var getConfig = ({
   envPath = defaultEnvPath,
   globalPath = defaultConfigPath
@@ -30193,7 +30212,8 @@ var getConfig = ({
   const envConfig = getEnvConfig(envPath);
   const globalConfig = getGlobalConfig(globalPath);
   const config7 = mergeConfigs(envConfig, globalConfig);
-  return config7;
+  const cleanConfig = cleanUndefinedValues(config7);
+  return cleanConfig;
 };
 var setConfig = (keyValues, globalConfigPath = defaultConfigPath) => {
   const config7 = getConfig({
@@ -44508,6 +44528,7 @@ var GroqEngine = class extends OpenAiEngine {
 function getEngine() {
   const config7 = getConfig();
   const provider = config7.OCO_AI_PROVIDER;
+  console.log(123123, { config: config7 });
   const DEFAULT_CONFIG2 = {
     model: config7.OCO_MODEL,
     maxTokensOutput: config7.OCO_TOKENS_MAX_OUTPUT,
@@ -45373,7 +45394,10 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
       }
     }
   } catch (error) {
-    commitGenerationSpinner.stop("\u{1F4DD} Commit message generated");
+    commitGenerationSpinner.stop(
+      `${source_default.red("\u2716")} Failed to generate the commit message`
+    );
+    console.log(error);
     const err = error;
     ce(`${source_default.red("\u2716")} ${err?.message || err}`);
     process.exit(1);
@@ -45713,6 +45737,7 @@ function set_missing_default_values_default() {
     }
     if (entriesToSet.length > 0)
       setConfig(entriesToSet);
+    console.log(entriesToSet);
   };
   setDefaultConfigValues(getGlobalConfig());
 }
