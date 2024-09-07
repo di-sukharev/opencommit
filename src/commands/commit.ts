@@ -183,7 +183,11 @@ ${chalk.grey('——————————————————')}`
       }
     }
   } catch (error) {
-    commitGenerationSpinner.stop('📝 Commit message generated');
+    commitGenerationSpinner.stop(
+      `${chalk.red('✖')} Failed to generate the commit message`
+    );
+
+    console.log(error);
 
     const err = error as Error;
     outro(`${chalk.red('✖')} ${err?.message || err}`);

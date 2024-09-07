@@ -76,6 +76,16 @@ export const MODEL_LIST = {
     'gemini-1.0-pro',
     'gemini-pro-vision',
     'text-embedding-004'
+  ],
+
+  groq: [
+    'llama3-70b-8192', // Meta Llama 3 70B (default one, no daily token limit and 14 400 reqs/day)
+    'llama3-8b-8192', // Meta Llama 3 8B
+    'llama-guard-3-8b', // Llama Guard 3 8B
+    'llama-3.1-8b-instant', // Llama 3.1 8B (Preview)
+    'llama-3.1-70b-versatile', // Llama 3.1 70B (Preview)
+    'gemma-7b-it', // Gemma 7B
+    'gemma2-9b-it' // Gemma 2 9B
   ]
 };
 
@@ -87,6 +97,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.anthropic[0];
     case 'gemini':
       return MODEL_LIST.gemini[0];
+    case 'groq':
+      return MODEL_LIST.groq[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -241,9 +253,15 @@ export const configValidators = {
 
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      ['openai', 'anthropic', 'gemini', 'azure', 'test', 'flowise'].includes(
-        value
-      ) || value.startsWith('ollama'),
+      [
+        'openai',
+        'anthropic',
+        'gemini',
+        'azure',
+        'test',
+        'flowise',
+        'groq'
+      ].includes(value) || value.startsWith('ollama'),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
 
@@ -288,7 +306,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   GEMINI = 'gemini',
   AZURE = 'azure',
   TEST = 'test',
-  FLOWISE = 'flowise'
+  FLOWISE = 'flowise',
+  GROQ = 'groq'
 }
 
 export type ConfigType = {
@@ -352,7 +371,6 @@ export const DEFAULT_CONFIG = {
   OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.OPENAI,
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: 'commit-message',
-  OCO_FLOWISE_ENDPOINT: ':',
   OCO_WHY: false,
   OCO_GITPUSH: true // todo: deprecate
 };
@@ -444,6 +462,25 @@ interface GetConfigOptions {
   setDefaultValues?: boolean;
 }
 
+const cleanUndefinedValues = (config: ConfigType) => {
+  return Object.fromEntries(
+    Object.entries(config).map(([_, v]) => {
+      try {
+        if (typeof v === 'string') {
+          if (v === 'undefined') return [_, undefined];
+          if (v === 'null') return [_, null];
+
+          const parsedValue = JSON.parse(v);
+          return [_, parsedValue];
+        }
+        return [_, v];
+      } catch (error) {
+        return [_, v];
+      }
+    })
+  );
+};
+
 export const getConfig = ({
   envPath = defaultEnvPath,
   globalPath = defaultConfigPath
@@ -453,7 +490,9 @@ export const getConfig = ({
 
   const config = mergeConfigs(envConfig, globalConfig);
 
-  return config;
+  const cleanConfig = cleanUndefinedValues(config);
+
+  return cleanConfig as ConfigType;
 };
 
 export const setConfig = (
