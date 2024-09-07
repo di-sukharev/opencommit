@@ -48730,6 +48730,15 @@ var MODEL_LIST = {
     "gemini-1.0-pro",
     "gemini-pro-vision",
     "text-embedding-004"
+  ],
+  groq: [
+    "llama3-70b-8192",
+    "llama3-8b-8192",
+    "llama-guard-3-8b",
+    "llama-3.1-8b-instant",
+    "llama-3.1-70b-versatile",
+    "gemma-7b-it",
+    "gemma2-9b-it"
   ]
 };
 var getDefaultModel = (provider) => {
@@ -48740,6 +48749,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.anthropic[0];
     case "gemini":
       return MODEL_LIST.gemini[0];
+    case "groq":
+      return MODEL_LIST.groq[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -48863,9 +48874,15 @@ var configValidators = {
       value = "openai";
     validateConfig(
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
-      ["openai", "anthropic", "gemini", "azure", "test", "flowise"].includes(
-        value
-      ) || value.startsWith("ollama"),
+      [
+        "openai",
+        "anthropic",
+        "gemini",
+        "azure",
+        "test",
+        "flowise",
+        "groq"
+      ].includes(value) || value.startsWith("ollama"),
       `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
     return value;
@@ -48911,7 +48928,6 @@ var DEFAULT_CONFIG = {
   OCO_AI_PROVIDER: "openai" /* OPENAI */,
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: "commit-message",
-  OCO_FLOWISE_ENDPOINT: ":",
   OCO_WHY: false,
   OCO_GITPUSH: true
 };
@@ -63273,7 +63289,19 @@ var OpenAiEngine = class {
       }
     };
     this.config = config6;
-    this.client = new OpenAI({ apiKey: config6.apiKey });
+    if (!config6.baseURL) {
+      this.client = new OpenAI({ apiKey: config6.apiKey });
+    } else {
+      this.client = new OpenAI({ apiKey: config6.apiKey, baseURL: config6.baseURL });
+    }
+  }
+};
+
+// src/engine/groq.ts
+var GroqEngine = class extends OpenAiEngine {
+  constructor(config6) {
+    config6.baseURL = "https://api.groq.com/openai/v1";
+    super(config6);
   }
 };
 
@@ -63301,6 +63329,8 @@ function getEngine() {
       return new AzureEngine(DEFAULT_CONFIG2);
     case "flowise" /* FLOWISE */:
       return new FlowiseEngine(DEFAULT_CONFIG2);
+    case "groq" /* GROQ */:
+      return new GroqEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }

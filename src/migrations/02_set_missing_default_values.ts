@@ -10,7 +10,8 @@ export default function () {
     const entriesToSet: [key: string, value: string | boolean | number][] = [];
     for (const entry of Object.entries(DEFAULT_CONFIG)) {
       const [key, _value] = entry;
-      if (config[key] === 'undefined') entriesToSet.push(entry);
+      if (config[key] === 'undefined' || config[key] === undefined)
+        entriesToSet.push(entry);
     }
 
     if (entriesToSet.length > 0) setConfig(entriesToSet);

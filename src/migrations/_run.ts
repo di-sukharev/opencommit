@@ -53,6 +53,7 @@ export const runMigrations = async () => {
             migration.name
           }: ${error}`
         );
+        process.exit(1);
       }
 
       isMigrated = true;
