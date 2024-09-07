@@ -7,6 +7,7 @@ import { GeminiEngine } from '../engine/gemini';
 import { OllamaEngine } from '../engine/ollama';
 import { OpenAiEngine } from '../engine/openAi';
 import { TestAi, TestMockType } from '../engine/testAi';
+import { GroqEngine } from '../engine/groq';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
@@ -38,6 +39,9 @@ export function getEngine(): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.FLOWISE:
       return new FlowiseEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.GROQ:
+      return new GroqEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);

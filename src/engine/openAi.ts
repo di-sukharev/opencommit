@@ -4,7 +4,7 @@ import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitD
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
 
-interface OpenAiConfig extends AiEngineConfig {}
+export interface OpenAiConfig extends AiEngineConfig {}
 
 export class OpenAiEngine implements AiEngine {
   config: OpenAiConfig;
@@ -12,7 +12,12 @@ export class OpenAiEngine implements AiEngine {
 
   constructor(config: OpenAiConfig) {
     this.config = config;
-    this.client = new OpenAI({ apiKey: config.apiKey });
+
+    if (!config.baseURL) {
+      this.client = new OpenAI({ apiKey: config.apiKey });
+    } else {
+      this.client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+    }
   }
 
   public generateCommitMessage = async (
