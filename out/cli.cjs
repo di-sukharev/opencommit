@@ -27331,7 +27331,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.1.2",
+  version: "3.2.1",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -27377,8 +27377,9 @@ var package_default = {
     "dev:gemini": "OCO_AI_PROVIDER='gemini' ts-node ./src/cli.ts",
     build: "rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
-    deploy: "npm run build:push && git push --tags && npm publish --tag latest",
-    "deploy:patch": "npm version patch && npm run deploy",
+    deploy: "npm publish --tag latest",
+    "deploy:build": "npm run build:push && git push --tags && npm run deploy",
+    "deploy:patch": "npm version patch && npm run deploy:build",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src",
     test: "node --no-warnings --experimental-vm-modules $( [ -f ./node_modules/.bin/jest ] && echo ./node_modules/.bin/jest || which jest ) test/unit",
@@ -45277,13 +45278,15 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
       );
       ce(stdout);
       const remotes = await getGitRemotes();
+      if (config6.OCO_GITPUSH === false)
+        return;
       if (!remotes.length) {
         const { stdout: stdout2 } = await execa("git", ["push"]);
         if (stdout2)
           ce(stdout2);
         process.exit(0);
       }
-      if (remotes.length === 1 && config6.OCO_GITPUSH !== true) {
+      if (remotes.length === 1) {
         const isPushConfirmedByUser = await Q3({
           message: "Do you want to run `git push`?"
         });
