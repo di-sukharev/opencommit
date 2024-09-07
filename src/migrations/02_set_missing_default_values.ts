@@ -15,6 +15,7 @@ export default function () {
     }
 
     if (entriesToSet.length > 0) setConfig(entriesToSet);
+    console.log(entriesToSet);
   };
 
   setDefaultConfigValues(getGlobalConfig());

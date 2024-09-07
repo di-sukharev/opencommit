@@ -462,6 +462,25 @@ interface GetConfigOptions {
   setDefaultValues?: boolean;
 }
 
+const cleanUndefinedValues = (config: ConfigType) => {
+  return Object.fromEntries(
+    Object.entries(config).map(([_, v]) => {
+      try {
+        if (typeof v === 'string') {
+          if (v === 'undefined') return [_, undefined];
+          if (v === 'null') return [_, null];
+
+          const parsedValue = JSON.parse(v);
+          return [_, parsedValue];
+        }
+        return [_, v];
+      } catch (error) {
+        return [_, v];
+      }
+    })
+  );
+};
+
 export const getConfig = ({
   envPath = defaultEnvPath,
   globalPath = defaultConfigPath
@@ -471,7 +490,9 @@ export const getConfig = ({
 
   const config = mergeConfigs(envConfig, globalConfig);
 
-  return config;
+  const cleanConfig = cleanUndefinedValues(config);
+
+  return cleanConfig as ConfigType;
 };
 
 export const setConfig = (
