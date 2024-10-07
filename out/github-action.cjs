@@ -63732,6 +63732,19 @@ var CONVENTIONAL_COMMIT_KEYWORDS = "Do not preface the commit with anything, exc
 var getCommitConvention = (fullGitMojiSpec) => config4.OCO_EMOJI ? fullGitMojiSpec ? FULL_GITMOJI_SPEC : GITMOJI_HELP : CONVENTIONAL_COMMIT_KEYWORDS;
 var getDescriptionInstruction = () => config4.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message.";
 var getOneLineCommitInstruction = () => config4.OCO_ONE_LINE_COMMIT ? "Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change." : "";
+var userInputCodeContext = () => {
+  const args = process.argv;
+  const dashIndex = args.indexOf("--");
+  if (dashIndex !== -1) {
+    const context2 = args.slice(dashIndex + 1).join(" ");
+    if (context2 !== "" && context2 !== " ") {
+      return `Additional context provided by the user: ${context2}
+
+Consider this context when generating the commit message, incorporating relevant information when appropriate.`;
+    }
+  }
+  return "";
+};
 var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
   role: "system",
   content: (() => {
@@ -63742,12 +63755,14 @@ var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
     const descriptionGuideline = getDescriptionInstruction();
     const oneLineCommitGuideline = getOneLineCommitInstruction();
     const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
+    const userInputContext = userInputCodeContext();
     return `${missionStatement}
 ${diffInstruction}
 ${conventionGuidelines}
 ${descriptionGuideline}
 ${oneLineCommitGuideline}
-${generalGuidelines}`;
+${generalGuidelines}
+${userInputContext}`;
   })()
 });
 var INIT_DIFF_PROMPT = {
