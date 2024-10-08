@@ -45295,6 +45295,13 @@ var checkMessageTemplate = (extraArgs2) => {
   }
   return false;
 };
+var cleanupContext = (extraArgs2) => {
+  const index = extraArgs2.indexOf("--");
+  if (index !== -1) {
+    extraArgs2 = extraArgs2.slice(0, index);
+  }
+  return extraArgs2;
+};
 var generateCommitMessageFromGitDiff = async ({
   diff,
   extraArgs: extraArgs2,
@@ -45337,7 +45344,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
         "commit",
         "-m",
         commitMessage,
-        ...extraArgs2
+        ...cleanupContext(extraArgs2)
       ]);
       committingChangesSpinner.stop(
         `${source_default.green("\u2714")} Successfully committed`
@@ -45837,6 +45844,12 @@ Z2(
         alias: "y",
         description: "Skip commit confirmation prompt",
         default: false
+      },
+      context: {
+        type: String,
+        alias: "c",
+        description: "Context used to generate the commit message",
+        default: ""
       }
     },
     ignoreArgv: (type2) => type2 === "unknown-flag" || type2 === "argument",
