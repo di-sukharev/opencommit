@@ -36,6 +36,16 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
   return false;
 };
 
+// remove all args after '--'
+const cleanupContext = (extraArgs: string[]): string[] => {
+  // remove all args after '--'
+  const index = extraArgs.indexOf('--');
+  if (index !== -1) {
+    extraArgs = extraArgs.slice(0, index);
+  }
+  return extraArgs;
+};
+
 interface GenerateCommitMessageFromGitDiffParams {
   diff: string;
   extraArgs: string[];
@@ -97,7 +107,7 @@ ${chalk.grey('——————————————————')}`
         'commit',
         '-m',
         commitMessage,
-        ...extraArgs
+        ...cleanupContext(extraArgs)
       ]);
       committingChangesSpinner.stop(
         `${chalk.green('✔')} Successfully committed`
