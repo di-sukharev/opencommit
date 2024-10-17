@@ -39543,8 +39543,6 @@ function getHttpAgent(url_) {
   }
   const ca = Array.from(/* @__PURE__ */ new Set([...import_node_tls.default.rootCertificates, ...globalCerts]));
   const customCerts = config7.OCO_HTTP_CA_BUNDLE;
-  console.error(customCerts);
-  console.error("AAAA");
   if (isDefinedAndNotEmpty(customCerts)) {
     ca.push(
       ...customCerts.split(",").map((customCert) => fs2.readFileSync(customCert, "utf8"))
@@ -39559,7 +39557,6 @@ function getHttpAgent(url_) {
     keepAlive: true,
     keepAliveMsecs: timeout
   };
-  console.log(config7);
   if (isDefinedAndNotEmpty(config7.OCO_HTTP_CLIENT_CERTIFICATE_CERT) && isDefinedAndNotEmpty(config7.OCO_HTTP_CLIENT_CERTIFICATE_KEY)) {
     agentOptions.cert = fs2.readFileSync(
       config7.OCO_HTTP_CLIENT_CERTIFICATE_CERT,

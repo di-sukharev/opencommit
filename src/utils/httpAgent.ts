@@ -36,7 +36,9 @@ export function getHttpAgent(url_: URL | string): Agent {
   const customCerts = config.OCO_HTTP_CA_BUNDLE;
   if (isDefinedAndNotEmpty(customCerts)) {
     ca.push(
-      ...customCerts.split(",").map((customCert) => fs.readFileSync(customCert, 'utf8'))
+      ...customCerts
+        .split(',')
+        .map((customCert) => fs.readFileSync(customCert, 'utf8'))
     );
   }
 
@@ -73,12 +75,11 @@ export function getHttpAgent(url_: URL | string): Agent {
   const proxy = config.OCO_HTTP_PROXY;
   // Create agent
   const protocol = url.protocol === 'https:' ? https : http;
-  const agent =
-    isDefinedAndNotEmpty(proxy)
-      ? protocol === https
-        ? new HttpsProxyAgent(proxy, agentOptions)
-        : new HttpProxyAgent(proxy, agentOptions)
-      : new protocol.Agent(agentOptions);
+  const agent = isDefinedAndNotEmpty(proxy)
+    ? protocol === https
+      ? new HttpsProxyAgent(proxy, agentOptions)
+      : new HttpProxyAgent(proxy, agentOptions)
+    : new protocol.Agent(agentOptions);
 
   return agent;
 }
