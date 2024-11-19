@@ -11,9 +11,10 @@ const MAX_TOKENS_OUTPUT = config.OCO_TOKENS_MAX_OUTPUT;
 
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string,
-  fullGitMojiSpec: boolean
+  fullGitMojiSpec: boolean,
+  context: string
 ): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> => {
-  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
+  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec, context);
 
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
 
@@ -36,10 +37,14 @@ const ADJUSTMENT_FACTOR = 20;
 
 export const generateCommitMessageByDiff = async (
   diff: string,
-  fullGitMojiSpec: boolean = false
+  fullGitMojiSpec: boolean = false,
+  context: string = ""
 ): Promise<string> => {
   try {
-    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
+    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(
+      fullGitMojiSpec,
+      context
+    );
 
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
       (msg) => tokenCount(msg.content as string) + 4
@@ -69,7 +74,8 @@ export const generateCommitMessageByDiff = async (
 
     const messages = await generateCommitMessageChatCompletionPrompt(
       diff,
-      fullGitMojiSpec
+      fullGitMojiSpec,
+      context,
     );
 
     const engine = getEngine();

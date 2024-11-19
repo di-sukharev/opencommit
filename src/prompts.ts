@@ -118,22 +118,17 @@ const getOneLineCommitInstruction = () =>
  *  $ oco -- This is a context used to generate the commit message
  * @returns - The context of the user input
  */
-const userInputCodeContext = () => {
-  const args = process.argv;
-  // Find all arguments after '--'
-  const dashIndex = args.indexOf('--');
-  if (dashIndex !== -1) {
-    const context = args.slice(dashIndex + 1).join(' ');
-    if (context !== '' && context !== ' ') {
-      return `Additional context provided by the user: ${context}\n\nConsider this context when generating the commit message, incorporating relevant information when appropriate.`;
-    }
+const userInputCodeContext = (context: string) => {
+  if (context !== '' && context !== ' ') {
+    return `Additional context provided by the user: <context>${context}</context>\nConsider this context when generating the commit message, incorporating relevant information when appropriate.`;
   }
   return '';
 };
 
 const INIT_MAIN_PROMPT = (
   language: string,
-  fullGitMojiSpec: boolean
+  fullGitMojiSpec: boolean,
+  context: string
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
   role: 'system',
   content: (() => {
@@ -147,16 +142,16 @@ const INIT_MAIN_PROMPT = (
     const descriptionGuideline = getDescriptionInstruction();
     const oneLineCommitGuideline = getOneLineCommitInstruction();
     const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
-    const userInputContext = userInputCodeContext();
+    const userInputContext = userInputCodeContext(context);
 
     return `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${generalGuidelines}\n${userInputContext}`;
   })()
 });
 
 export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessageParam =
-  {
-    role: 'user',
-    content: `diff --git a/src/server.ts b/src/server.ts
+{
+  role: 'user',
+  content: `diff --git a/src/server.ts b/src/server.ts
     index ad4db42..f3b18a9 100644
     --- a/src/server.ts
     +++ b/src/server.ts
@@ -180,7 +175,7 @@ export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessagePara
                 +app.listen(process.env.PORT || PORT, () => {
                     +  console.log(\`Server listening on port \${PORT}\`);
                 });`
-  };
+};
 
 const getContent = (translation: ConsistencyPrompt) => {
   const fix = config.OCO_EMOJI
@@ -206,7 +201,8 @@ const INIT_CONSISTENCY_PROMPT = (
 });
 
 export const getMainCommitPrompt = async (
-  fullGitMojiSpec: boolean
+  fullGitMojiSpec: boolean,
+  context: string
 ): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> => {
   switch (config.OCO_PROMPT_MODULE) {
     case '@commitlint':
@@ -228,14 +224,14 @@ export const getMainCommitPrompt = async (
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(
           commitLintConfig.consistency[
-            translation.localLanguage
+          translation.localLanguage
           ] as ConsistencyPrompt
         )
       ];
 
     default:
       return [
-        INIT_MAIN_PROMPT(translation.localLanguage, fullGitMojiSpec),
+        INIT_MAIN_PROMPT(translation.localLanguage, fullGitMojiSpec, context),
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(translation)
       ];
