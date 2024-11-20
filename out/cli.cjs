@@ -44931,7 +44931,14 @@ var CONVENTIONAL_COMMIT_KEYWORDS = "Do not preface the commit with anything, exc
 var getCommitConvention = (fullGitMojiSpec) => config4.OCO_EMOJI ? fullGitMojiSpec ? FULL_GITMOJI_SPEC : GITMOJI_HELP : CONVENTIONAL_COMMIT_KEYWORDS;
 var getDescriptionInstruction = () => config4.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message.";
 var getOneLineCommitInstruction = () => config4.OCO_ONE_LINE_COMMIT ? "Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change." : "";
-var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
+var userInputCodeContext = (context) => {
+  if (context !== "" && context !== " ") {
+    return `Additional context provided by the user: <context>${context}</context>
+Consider this context when generating the commit message, incorporating relevant information when appropriate.`;
+  }
+  return "";
+};
+var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec, context) => ({
   role: "system",
   content: (() => {
     const commitConvention = fullGitMojiSpec ? "GitMoji specification" : "Conventional Commit Convention";
@@ -44941,12 +44948,14 @@ var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
     const descriptionGuideline = getDescriptionInstruction();
     const oneLineCommitGuideline = getOneLineCommitInstruction();
     const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
+    const userInputContext = userInputCodeContext(context);
     return `${missionStatement}
 ${diffInstruction}
 ${conventionGuidelines}
 ${descriptionGuideline}
 ${oneLineCommitGuideline}
-${generalGuidelines}`;
+${generalGuidelines}
+${userInputContext}`;
   })()
 });
 var INIT_DIFF_PROMPT = {
@@ -44988,7 +44997,7 @@ var INIT_CONSISTENCY_PROMPT = (translation4) => ({
   role: "assistant",
   content: getContent(translation4)
 });
-var getMainCommitPrompt = async (fullGitMojiSpec) => {
+var getMainCommitPrompt = async (fullGitMojiSpec, context) => {
   switch (config4.OCO_PROMPT_MODULE) {
     case "@commitlint":
       if (!await commitlintLLMConfigExists()) {
@@ -45010,7 +45019,7 @@ var getMainCommitPrompt = async (fullGitMojiSpec) => {
       ];
     default:
       return [
-        INIT_MAIN_PROMPT2(translation3.localLanguage, fullGitMojiSpec),
+        INIT_MAIN_PROMPT2(translation3.localLanguage, fullGitMojiSpec, context),
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(translation3)
       ];
@@ -45037,8 +45046,8 @@ function mergeDiffs(arr, maxStringLength) {
 var config5 = getConfig();
 var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT;
 var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT;
-var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
-  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
+var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec, context) => {
+  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec, context);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
   chatContextAsCompletionRequest.push({
     role: "user",
@@ -45054,9 +45063,12 @@ var GenerateCommitMessageErrorEnum = ((GenerateCommitMessageErrorEnum2) => {
   return GenerateCommitMessageErrorEnum2;
 })(GenerateCommitMessageErrorEnum || {});
 var ADJUSTMENT_FACTOR = 20;
-var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false) => {
+var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false, context = "") => {
   try {
-    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
+    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(
+      fullGitMojiSpec,
+      context
+    );
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
       (msg) => tokenCount(msg.content) + 4
     ).reduce((a4, b7) => a4 + b7, 0);
@@ -45076,7 +45088,8 @@ var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false) => {
     }
     const messages = await generateCommitMessageChatCompletionPrompt(
       diff,
-      fullGitMojiSpec
+      fullGitMojiSpec,
+      context
     );
     const engine = getEngine();
     const commitMessage = await engine.generateCommitMessage(messages);
@@ -45283,6 +45296,7 @@ var checkMessageTemplate = (extraArgs2) => {
 var generateCommitMessageFromGitDiff = async ({
   diff,
   extraArgs: extraArgs2,
+  context = "",
   fullGitMojiSpec = false,
   skipCommitConfirmation = false
 }) => {
@@ -45292,7 +45306,8 @@ var generateCommitMessageFromGitDiff = async ({
   try {
     let commitMessage = await generateCommitMessageByDiff(
       diff,
-      fullGitMojiSpec
+      fullGitMojiSpec,
+      context
     );
     const messageTemplate = checkMessageTemplate(extraArgs2);
     if (config6.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === "string") {
@@ -45402,7 +45417,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
     process.exit(1);
   }
 };
-async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec = false, skipCommitConfirmation = false) {
+async function commit(extraArgs2 = [], context = "", isStageAllFlag = false, fullGitMojiSpec = false, skipCommitConfirmation = false) {
   if (isStageAllFlag) {
     const changedFiles2 = await getChangedFiles();
     if (changedFiles2)
@@ -45433,7 +45448,7 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec =
     if (hD2(isStageAllAndCommitConfirmedByUser))
       process.exit(1);
     if (isStageAllAndCommitConfirmedByUser) {
-      await commit(extraArgs2, true, fullGitMojiSpec);
+      await commit(extraArgs2, context, true, fullGitMojiSpec);
       process.exit(1);
     }
     if (stagedFiles.length === 0 && changedFiles.length > 0) {
@@ -45448,7 +45463,7 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec =
         process.exit(1);
       await gitAdd({ files });
     }
-    await commit(extraArgs2, false, fullGitMojiSpec);
+    await commit(extraArgs2, context, false, fullGitMojiSpec);
     process.exit(1);
   }
   stagedFilesSpinner.stop(
@@ -45459,6 +45474,7 @@ ${stagedFiles.map((file) => `  ${file}`).join("\n")}`
     generateCommitMessageFromGitDiff({
       diff: await getDiff({ files: stagedFiles }),
       extraArgs: extraArgs2,
+      context,
       fullGitMojiSpec,
       skipCommitConfirmation
     })
@@ -45817,6 +45833,12 @@ Z2(
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {
       fgm: Boolean,
+      context: {
+        type: String,
+        alias: "c",
+        description: "Additional user input context for the commit message",
+        default: ""
+      },
       yes: {
         type: Boolean,
         alias: "y",
@@ -45833,7 +45855,7 @@ Z2(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, false, flags.fgm, flags.yes);
+      commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
     }
   },
   extraArgs
