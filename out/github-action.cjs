@@ -20487,7 +20487,7 @@ var require_mappingTable = __commonJS({
 var require_tr46 = __commonJS({
   "node_modules/node-fetch/node_modules/tr46/index.js"(exports, module2) {
     "use strict";
-    var punycode = require("punycode");
+    const punycode = require('punycode/');
     var mappingTable = require_mappingTable();
     var PROCESSING_OPTIONS = {
       TRANSITIONAL: 0,
@@ -20649,7 +20649,7 @@ var require_tr46 = __commonJS({
 var require_url_state_machine = __commonJS({
   "node_modules/node-fetch/node_modules/whatwg-url/lib/url-state-machine.js"(exports, module2) {
     "use strict";
-    var punycode = require("punycode");
+    const punycode = require('punycode/');
     var tr46 = require_tr46();
     var specialSchemes = {
       ftp: 21,
