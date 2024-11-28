@@ -148,26 +148,29 @@ ${chalk.grey('——————————————————')}`
           process.exit(0);
         }
       } else {
+        const skipOption = `Don't push`
         const selectedRemote = (await select({
           message: 'Choose a remote to push to',
-          options: remotes.map((remote) => ({ value: remote, label: remote }))
+          options: [...remotes, skipOption].map((remote) => ({ value: remote, label: remote })),
         })) as string;
 
         if (isCancel(selectedRemote)) process.exit(1);
 
-        const pushSpinner = spinner();
-
-        pushSpinner.start(`Running 'git push ${selectedRemote}'`);
-
-        const { stdout } = await execa('git', ['push', selectedRemote]);
-
-        if (stdout) outro(stdout);
-
-        pushSpinner.stop(
-          `${chalk.green(
-            '✔'
-          )} successfully pushed all commits to ${selectedRemote}`
-        );
+        if (selectedRemote !== skipOption) {
+          const pushSpinner = spinner();
+  
+          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
+  
+          const { stdout } = await execa('git', ['push', selectedRemote]);
+  
+          if (stdout) outro(stdout);
+  
+          pushSpinner.stop(
+            `${chalk.green(
+              '✔'
+            )} successfully pushed all commits to ${selectedRemote}`
+          );
+        }
       }
     } else {
       const regenerateMessage = await confirm({
