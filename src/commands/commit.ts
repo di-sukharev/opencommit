@@ -148,7 +148,7 @@ ${chalk.grey('——————————————————')}`
           process.exit(0);
         }
       } else {
-        const skipOption = `Don't push`
+        const skipOption = `don't push`
         const selectedRemote = (await select({
           message: 'Choose a remote to push to',
           options: [...remotes, skipOption].map((remote) => ({ value: remote, label: remote })),
