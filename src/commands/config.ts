@@ -86,6 +86,48 @@ export const MODEL_LIST = {
     'llama-3.1-70b-versatile', // Llama 3.1 70B (Preview)
     'gemma-7b-it', // Gemma 7B
     'gemma2-9b-it' // Gemma 2 9B
+  ],
+
+  mistral: [
+    'ministral-3b-2410',
+    'ministral-3b-latest',
+    'ministral-8b-2410',
+    'ministral-8b-latest',
+    'open-mistral-7b',
+    'mistral-tiny',
+    'mistral-tiny-2312',
+    'open-mistral-nemo',
+    'open-mistral-nemo-2407',
+    'mistral-tiny-2407',
+    'mistral-tiny-latest',
+    'open-mixtral-8x7b',
+    'mistral-small',
+    'mistral-small-2312',
+    'open-mixtral-8x22b',
+    'open-mixtral-8x22b-2404',
+    'mistral-small-2402',
+    'mistral-small-2409',
+    'mistral-small-latest',
+    'mistral-medium-2312',
+    'mistral-medium',
+    'mistral-medium-latest',
+    'mistral-large-2402',
+    'mistral-large-2407',
+    'mistral-large-2411',
+    'mistral-large-latest',
+    'pixtral-large-2411',
+    'pixtral-large-latest',
+    'codestral-2405',
+    'codestral-latest',
+    'codestral-mamba-2407',
+    'open-codestral-mamba',
+    'codestral-mamba-latest',
+    'pixtral-12b-2409',
+    'pixtral-12b',
+    'pixtral-12b-latest',
+    'mistral-embed',
+    'mistral-moderation-2411',
+    'mistral-moderation-latest',
   ]
 };
 
@@ -99,6 +141,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.gemini[0];
     case 'groq':
       return MODEL_LIST.groq[0];
+    case 'mistral':
+      return MODEL_LIST.mistral[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -255,6 +299,7 @@ export const configValidators = {
       CONFIG_KEYS.OCO_AI_PROVIDER,
       [
         'openai',
+        'mistral',
         'anthropic',
         'gemini',
         'azure',
@@ -262,7 +307,7 @@ export const configValidators = {
         'flowise',
         'groq'
       ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral' or 'openai' (default)`
     );
 
     return value;
@@ -307,7 +352,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   AZURE = 'azure',
   TEST = 'test',
   FLOWISE = 'flowise',
-  GROQ = 'groq'
+  GROQ = 'groq',
+  MISTRAL = 'mistral',
 }
 
 export type ConfigType = {

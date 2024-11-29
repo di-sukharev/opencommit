@@ -6,6 +6,7 @@ import { FlowiseEngine } from '../engine/flowise';
 import { GeminiEngine } from '../engine/gemini';
 import { OllamaEngine } from '../engine/ollama';
 import { OpenAiEngine } from '../engine/openAi';
+import { MistralAiEngine } from '../engine/mistral';
 import { TestAi, TestMockType } from '../engine/testAi';
 import { GroqEngine } from '../engine/groq';
 
@@ -42,6 +43,9 @@ export function getEngine(): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.GROQ:
       return new GroqEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.MISTRAL:
+      return new MistralAiEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);
