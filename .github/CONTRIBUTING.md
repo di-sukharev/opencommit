@@ -18,7 +18,7 @@ To get started, follow these steps:
 1. Clone the project repository locally.
 2. Install dependencies with `npm install`.
 3. Run the project with `npm run dev`.
-4. See [issues](https://github.com/di-sukharev/opencommit/issues) or [TODO.md](../TODO.md) to help the project.
+4. See [issues](https://github.com/di-sukharev/opencommit/issues) or [TODO.md](TODO.md) to help the project.
 
 ## Commit message guidelines
 
