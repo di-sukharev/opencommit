@@ -93,6 +93,8 @@ const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
     case 'ollama':
       return '';
+    case 'mlx':
+      return '';
     case 'anthropic':
       return MODEL_LIST.anthropic[0];
     case 'gemini':
@@ -138,7 +140,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -261,8 +263,8 @@ export const configValidators = {
         'test',
         'flowise',
         'groq'
-      ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
+      ].includes(value) || value.startsWith('ollama') || value.startsWith('mlx'),
+      `${value} is not supported yet, use 'ollama', 'mlx', anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
 
     return value;
@@ -307,7 +309,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   AZURE = 'azure',
   TEST = 'test',
   FLOWISE = 'flowise',
-  GROQ = 'groq'
+  GROQ = 'groq',
+  MLX = 'mlx'
 }
 
 export type ConfigType = {
