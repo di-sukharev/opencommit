@@ -63341,6 +63341,7 @@ var MLXEngine = class {
       messages,
       temperature: 0,
       top_p: 0.1,
+      repetition_penalty: 1.5,
       stream: false
     };
     try {

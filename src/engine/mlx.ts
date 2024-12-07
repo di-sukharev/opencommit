@@ -18,7 +18,7 @@ export class MLXEngine implements AiEngine {
             headers: { 'Content-Type': 'application/json' }
         });
     }
-    
+
     async generateCommitMessage(
         messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>): 
         Promise<string | undefined> {
@@ -26,6 +26,7 @@ export class MLXEngine implements AiEngine {
                 messages,
                 temperature: 0, 
                 top_p: 0.1,
+                repetition_penalty: 1.5,
                 stream: false
             };
             try {
