@@ -58,7 +58,8 @@
     "test:unit:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:unit",
     "test:e2e": "npm run test:e2e:setup && jest test/e2e",
     "test:e2e:setup": "sh test/e2e/setup.sh",
-    "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e"
+    "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e",
+    "mlx:start": "OCO_AI_PROVIDER='mlx' node ./out/cli.cjs"
   },
   "devDependencies": {
     "@commitlint/types": "^17.4.4",

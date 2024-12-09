@@ -48745,6 +48745,8 @@ var getDefaultModel = (provider) => {
   switch (provider) {
     case "ollama":
       return "";
+    case "mlx":
+      return "";
     case "anthropic":
       return MODEL_LIST.anthropic[0];
     case "gemini":
@@ -48776,7 +48778,7 @@ var configValidators = {
     validateConfig(
       "OCO_API_KEY",
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -48882,8 +48884,8 @@ var configValidators = {
         "test",
         "flowise",
         "groq"
-      ].includes(value) || value.startsWith("ollama"),
-      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
+      ].includes(value) || value.startsWith("ollama") || value.startsWith("mlx"),
+      `${value} is not supported yet, use 'ollama', 'mlx', anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
     return value;
   },
@@ -63325,6 +63327,38 @@ var GroqEngine = class extends OpenAiEngine {
   }
 };
 
+// src/engine/mlx.ts
+var MLXEngine = class {
+  constructor(config6) {
+    this.config = config6;
+    this.client = axios_default.create({
+      url: config6.baseURL ? `${config6.baseURL}/${config6.apiKey}` : "http://localhost:8080/v1/chat/completions",
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  async generateCommitMessage(messages) {
+    const params = {
+      messages,
+      temperature: 0,
+      top_p: 0.1,
+      repetition_penalty: 1.5,
+      stream: false
+    };
+    try {
+      const response = await this.client.post(
+        this.client.getUri(this.config),
+        params
+      );
+      const choices = response.data.choices;
+      const message = choices[0].message;
+      return message?.content;
+    } catch (err) {
+      const message = err.response?.data?.error ?? err.message;
+      throw new Error(`MLX provider error: ${message}`);
+    }
+  }
+};
+
 // src/utils/engine.ts
 function getEngine() {
   const config6 = getConfig();
@@ -63351,6 +63385,8 @@ function getEngine() {
       return new FlowiseEngine(DEFAULT_CONFIG2);
     case "groq" /* GROQ */:
       return new GroqEngine(DEFAULT_CONFIG2);
+    case "mlx" /* MLX */:
+      return new MLXEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
