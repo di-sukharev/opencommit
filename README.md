@@ -179,7 +179,7 @@ By default OpenCommit uses [OpenAI](https://openai.com).
 You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cognitive-services/openai/) or Flowise or Ollama.
 
 ```sh
-oco config set OCO_AI_PROVIDER=azure OCO_API_KEY=<your_azure_api_key> OCO_API_URL=<your_azure_endpoint>
+oco config set OCO_AI_PROVIDER=azure OCO_API_KEY=<your_azure_api_key> OCO_API_URL=<your_azure_endpoint> OCO_API_VERSION=<your_azure_api_version>
 
 oco config set OCO_AI_PROVIDER=flowise OCO_API_KEY=<your_flowise_api_key> OCO_API_URL=<your_flowise_endpoint>
 
@@ -226,6 +226,22 @@ oco config set OCO_PROMPT_MODULE=<module>
 ```
 
 Replace `<module>` with either `conventional-commit` or `@commitlint`.
+
+### Configure PROXY
+
+**Works only from openAi and azure provider**
+
+```sh
+oco config set OCO_HTTP_PROXY=http://127.0.0.1:9090
+# or with user na password
+oco config set OCO_HTTP_PROXY=http://user:pass@127.0.0.1:9090
+```
+
+### Configure extra CA for http agent
+
+```sh
+oco config set OCO_HTTP_CA_BUNDLE='/tmp/test.pom,/tmp/test2.pom'
+```
 
 #### Example:
 

@@ -1,7 +1,4 @@
-import {
-  AzureKeyCredential,
-  OpenAIClient as AzureOpenAIClient
-} from '@azure/openai';
+import { AzureOpenAI } from 'openai';
 import { outro } from '@clack/prompts';
 import axios from 'axios';
 import chalk from 'chalk';
@@ -9,22 +6,27 @@ import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
+import { getHttpAgent } from '../utils/httpAgent';
 
 interface AzureAiEngineConfig extends AiEngineConfig {
   baseURL: string;
   apiKey: string;
+  apiVersion: string;
 }
 
 export class AzureEngine implements AiEngine {
   config: AzureAiEngineConfig;
-  client: AzureOpenAIClient;
+  client: OpenAI;
 
   constructor(config: AzureAiEngineConfig) {
     this.config = config;
-    this.client = new AzureOpenAIClient(
-      this.config.baseURL,
-      new AzureKeyCredential(this.config.apiKey)
-    );
+    const options = {
+      endpoint: this.config.baseURL,
+      apiKey: this.config.apiKey,
+      apiVersion: this.config.apiVersion,
+      httpAgent: getHttpAgent(this.config.baseURL)
+    };
+    this.client = new AzureOpenAI(options);
   }
 
   generateCommitMessage = async (
@@ -41,11 +43,10 @@ export class AzureEngine implements AiEngine {
       ) {
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
       }
-
-      const data = await this.client.getChatCompletions(
-        this.config.model,
-        messages
-      );
+      const data = await this.client.chat.completions.create({
+        messages,
+        model: this.config.model
+      });
 
       const message = data.choices[0].message;
 
