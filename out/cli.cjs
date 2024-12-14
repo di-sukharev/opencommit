@@ -46512,7 +46512,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.2.4",
+  version: "3.2.3",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -46529,11 +46529,11 @@ var package_default = {
   ],
   main: "cli.js",
   bin: {
-    opencommit: "./out/cli.cjs",
-    oco: "./out/cli.cjs"
+    opencommit: "out/cli.cjs",
+    oco: "out/cli.cjs"
   },
   repository: {
-    url: "https://github.com/di-sukharev/opencommit"
+    url: "git+https://github.com/di-sukharev/opencommit.git"
   },
   type: "module",
   author: "https://github.com/di-sukharev",
