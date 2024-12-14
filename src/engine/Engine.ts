@@ -3,6 +3,7 @@ import { OpenAIClient as AzureOpenAIClient } from '@azure/openai';
 import { GoogleGenerativeAI as GeminiClient } from '@google/generative-ai';
 import { AxiosInstance as RawAxiosClient } from 'axios';
 import { OpenAI as OpenAIClient } from 'openai';
+import { Mistral as MistralClient } from '@mistralai/mistralai';
 
 export interface AiEngineConfig {
   apiKey: string;
@@ -17,7 +18,8 @@ type Client =
   | AzureOpenAIClient
   | AnthropicClient
   | RawAxiosClient
-  | GeminiClient;
+  | GeminiClient
+  | MistralClient;
 
 export interface AiEngine {
   config: AiEngineConfig;

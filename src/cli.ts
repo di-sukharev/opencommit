@@ -20,6 +20,12 @@ cli(
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {
       fgm: Boolean,
+      context: {
+        type: String,
+        alias: 'c',
+        description: 'Additional user input context for the commit message',
+        default: ''
+      },
       yes: {
         type: Boolean,
         alias: 'y',
@@ -37,7 +43,7 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, false, flags.fgm, flags.yes);
+      commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
     }
   },
   extraArgs

@@ -39,6 +39,7 @@ const checkMessageTemplate = (extraArgs: string[]): string | false => {
 interface GenerateCommitMessageFromGitDiffParams {
   diff: string;
   extraArgs: string[];
+  context?: string;
   fullGitMojiSpec?: boolean;
   skipCommitConfirmation?: boolean;
 }
@@ -46,6 +47,7 @@ interface GenerateCommitMessageFromGitDiffParams {
 const generateCommitMessageFromGitDiff = async ({
   diff,
   extraArgs,
+  context = '',
   fullGitMojiSpec = false,
   skipCommitConfirmation = false
 }: GenerateCommitMessageFromGitDiffParams): Promise<void> => {
@@ -56,7 +58,8 @@ const generateCommitMessageFromGitDiff = async ({
   try {
     let commitMessage = await generateCommitMessageByDiff(
       diff,
-      fullGitMojiSpec
+      fullGitMojiSpec,
+      context
     );
 
     const messageTemplate = checkMessageTemplate(extraArgs);
@@ -135,8 +138,7 @@ ${chalk.grey('——————————————————')}`
           ]);
 
           pushSpinner.stop(
-            `${chalk.green('✔')} Successfully pushed all commits to ${
-              remotes[0]
+            `${chalk.green('✔')} Successfully pushed all commits to ${remotes[0]
             }`
           );
 
@@ -146,26 +148,29 @@ ${chalk.grey('——————————————————')}`
           process.exit(0);
         }
       } else {
+        const skipOption = `don't push`
         const selectedRemote = (await select({
           message: 'Choose a remote to push to',
-          options: remotes.map((remote) => ({ value: remote, label: remote }))
+          options: [...remotes, skipOption].map((remote) => ({ value: remote, label: remote })),
         })) as string;
 
         if (isCancel(selectedRemote)) process.exit(1);
 
-        const pushSpinner = spinner();
-
-        pushSpinner.start(`Running 'git push ${selectedRemote}'`);
-
-        const { stdout } = await execa('git', ['push', selectedRemote]);
-
-        if (stdout) outro(stdout);
-
-        pushSpinner.stop(
-          `${chalk.green(
-            '✔'
-          )} successfully pushed all commits to ${selectedRemote}`
-        );
+        if (selectedRemote !== skipOption) {
+          const pushSpinner = spinner();
+  
+          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
+  
+          const { stdout } = await execa('git', ['push', selectedRemote]);
+  
+          if (stdout) outro(stdout);
+  
+          pushSpinner.stop(
+            `${chalk.green(
+              '✔'
+            )} successfully pushed all commits to ${selectedRemote}`
+          );
+        }
       }
     } else {
       const regenerateMessage = await confirm({
@@ -197,6 +202,7 @@ ${chalk.grey('——————————————————')}`
 
 export async function commit(
   extraArgs: string[] = [],
+  context: string = '',
   isStageAllFlag: Boolean = false,
   fullGitMojiSpec: boolean = false,
   skipCommitConfirmation: boolean = false
@@ -238,7 +244,7 @@ export async function commit(
     if (isCancel(isStageAllAndCommitConfirmedByUser)) process.exit(1);
 
     if (isStageAllAndCommitConfirmedByUser) {
-      await commit(extraArgs, true, fullGitMojiSpec);
+      await commit(extraArgs, context, true, fullGitMojiSpec);
       process.exit(1);
     }
 
@@ -256,7 +262,7 @@ export async function commit(
       await gitAdd({ files });
     }
 
-    await commit(extraArgs, false, fullGitMojiSpec);
+    await commit(extraArgs, context, false, fullGitMojiSpec);
     process.exit(1);
   }
 
@@ -270,6 +276,7 @@ export async function commit(
     generateCommitMessageFromGitDiff({
       diff: await getDiff({ files: stagedFiles }),
       extraArgs,
+      context,
       fullGitMojiSpec,
       skipCommitConfirmation
     })

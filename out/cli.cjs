@@ -431,8 +431,8 @@ var require_escape = __commonJS({
     }
     function escapeArgument(arg, doubleEscapeMetaChars) {
       arg = `${arg}`;
-      arg = arg.replace(/(\\*)"/g, '$1$1\\"');
-      arg = arg.replace(/(\\*)$/, "$1$1");
+      arg = arg.replace(/(?=(\\+?)?)\1"/g, '$1$1\\"');
+      arg = arg.replace(/(?=(\\+?)?)\1$/, "$1$1");
       arg = `"${arg}"`;
       arg = arg.replace(metaCharsRegExp, "^$1");
       if (doubleEscapeMetaChars) {
@@ -578,7 +578,7 @@ var require_enoent = __commonJS({
       const originalEmit = cp.emit;
       cp.emit = function(name, arg1) {
         if (name === "exit") {
-          const err = verifyENOENT(arg1, parsed, "spawn");
+          const err = verifyENOENT(arg1, parsed);
           if (err) {
             return originalEmit.call(cp, "error", err);
           }
@@ -1672,7 +1672,7 @@ var require_mappingTable = __commonJS({
 var require_tr46 = __commonJS({
   "node_modules/node-fetch/node_modules/tr46/index.js"(exports, module2) {
     "use strict";
-    var punycode = require("punycode");
+    const punycode = require('punycode/');
     var mappingTable = require_mappingTable();
     var PROCESSING_OPTIONS = {
       TRANSITIONAL: 0,
@@ -1834,7 +1834,7 @@ var require_tr46 = __commonJS({
 var require_url_state_machine = __commonJS({
   "node_modules/node-fetch/node_modules/whatwg-url/lib/url-state-machine.js"(exports, module2) {
     "use strict";
-    var punycode = require("punycode");
+    const punycode = require('punycode/');
     var tr46 = require_tr46();
     var specialSchemes = {
       ftp: 21,
@@ -27389,7 +27389,8 @@ var package_default = {
     "test:unit:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:unit",
     "test:e2e": "npm run test:e2e:setup && jest test/e2e",
     "test:e2e:setup": "sh test/e2e/setup.sh",
-    "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e"
+    "test:e2e:docker": "npm run test:docker-build && DOCKER_CONTENT_TRUST=0 docker run --rm oco-test npm run test:e2e",
+    "mlx:start": "OCO_AI_PROVIDER='mlx' node ./out/cli.cjs"
   },
   devDependencies: {
     "@commitlint/types": "^17.4.4",
@@ -29933,6 +29934,8 @@ var getDefaultModel = (provider) => {
   switch (provider) {
     case "ollama":
       return "";
+    case "mlx":
+      return "";
     case "anthropic":
       return MODEL_LIST.anthropic[0];
     case "gemini":
@@ -29964,7 +29967,7 @@ var configValidators = {
     validateConfig(
       "OCO_API_KEY",
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -30070,8 +30073,8 @@ var configValidators = {
         "test",
         "flowise",
         "groq"
-      ].includes(value) || value.startsWith("ollama"),
-      `${value} is not supported yet, use 'ollama', 'anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
+      ].includes(value) || value.startsWith("ollama") || value.startsWith("mlx"),
+      `${value} is not supported yet, use 'ollama', 'mlx', anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
     );
     return value;
   },
@@ -30111,6 +30114,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["TEST"] = "test";
   OCO_AI_PROVIDER_ENUM2["FLOWISE"] = "flowise";
   OCO_AI_PROVIDER_ENUM2["GROQ"] = "groq";
+  OCO_AI_PROVIDER_ENUM2["MLX"] = "mlx";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -44524,6 +44528,38 @@ var GroqEngine = class extends OpenAiEngine {
   }
 };
 
+// src/engine/mlx.ts
+var MLXEngine = class {
+  constructor(config7) {
+    this.config = config7;
+    this.client = axios_default.create({
+      url: config7.baseURL ? `${config7.baseURL}/${config7.apiKey}` : "http://localhost:8080/v1/chat/completions",
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  async generateCommitMessage(messages) {
+    const params = {
+      messages,
+      temperature: 0,
+      top_p: 0.1,
+      repetition_penalty: 1.5,
+      stream: false
+    };
+    try {
+      const response = await this.client.post(
+        this.client.getUri(this.config),
+        params
+      );
+      const choices = response.data.choices;
+      const message = choices[0].message;
+      return message?.content;
+    } catch (err) {
+      const message = err.response?.data?.error ?? err.message;
+      throw new Error(`MLX provider error: ${message}`);
+    }
+  }
+};
+
 // src/utils/engine.ts
 function getEngine() {
   const config7 = getConfig();
@@ -44550,6 +44586,8 @@ function getEngine() {
       return new FlowiseEngine(DEFAULT_CONFIG2);
     case "groq" /* GROQ */:
       return new GroqEngine(DEFAULT_CONFIG2);
+    case "mlx" /* MLX */:
+      return new MLXEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
@@ -44931,7 +44969,14 @@ var CONVENTIONAL_COMMIT_KEYWORDS = "Do not preface the commit with anything, exc
 var getCommitConvention = (fullGitMojiSpec) => config4.OCO_EMOJI ? fullGitMojiSpec ? FULL_GITMOJI_SPEC : GITMOJI_HELP : CONVENTIONAL_COMMIT_KEYWORDS;
 var getDescriptionInstruction = () => config4.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message.";
 var getOneLineCommitInstruction = () => config4.OCO_ONE_LINE_COMMIT ? "Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change." : "";
-var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
+var userInputCodeContext = (context) => {
+  if (context !== "" && context !== " ") {
+    return `Additional context provided by the user: <context>${context}</context>
+Consider this context when generating the commit message, incorporating relevant information when appropriate.`;
+  }
+  return "";
+};
+var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec, context) => ({
   role: "system",
   content: (() => {
     const commitConvention = fullGitMojiSpec ? "GitMoji specification" : "Conventional Commit Convention";
@@ -44941,12 +44986,14 @@ var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec) => ({
     const descriptionGuideline = getDescriptionInstruction();
     const oneLineCommitGuideline = getOneLineCommitInstruction();
     const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
+    const userInputContext = userInputCodeContext(context);
     return `${missionStatement}
 ${diffInstruction}
 ${conventionGuidelines}
 ${descriptionGuideline}
 ${oneLineCommitGuideline}
-${generalGuidelines}`;
+${generalGuidelines}
+${userInputContext}`;
   })()
 });
 var INIT_DIFF_PROMPT = {
@@ -44988,7 +45035,7 @@ var INIT_CONSISTENCY_PROMPT = (translation4) => ({
   role: "assistant",
   content: getContent(translation4)
 });
-var getMainCommitPrompt = async (fullGitMojiSpec) => {
+var getMainCommitPrompt = async (fullGitMojiSpec, context) => {
   switch (config4.OCO_PROMPT_MODULE) {
     case "@commitlint":
       if (!await commitlintLLMConfigExists()) {
@@ -45010,7 +45057,7 @@ var getMainCommitPrompt = async (fullGitMojiSpec) => {
       ];
     default:
       return [
-        INIT_MAIN_PROMPT2(translation3.localLanguage, fullGitMojiSpec),
+        INIT_MAIN_PROMPT2(translation3.localLanguage, fullGitMojiSpec, context),
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(translation3)
       ];
@@ -45037,8 +45084,8 @@ function mergeDiffs(arr, maxStringLength) {
 var config5 = getConfig();
 var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT;
 var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT;
-var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec) => {
-  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
+var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec, context) => {
+  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec, context);
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
   chatContextAsCompletionRequest.push({
     role: "user",
@@ -45054,9 +45101,12 @@ var GenerateCommitMessageErrorEnum = ((GenerateCommitMessageErrorEnum2) => {
   return GenerateCommitMessageErrorEnum2;
 })(GenerateCommitMessageErrorEnum || {});
 var ADJUSTMENT_FACTOR = 20;
-var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false) => {
+var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false, context = "") => {
   try {
-    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec);
+    const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(
+      fullGitMojiSpec,
+      context
+    );
     const INIT_MESSAGES_PROMPT_LENGTH = INIT_MESSAGES_PROMPT.map(
       (msg) => tokenCount(msg.content) + 4
     ).reduce((a4, b7) => a4 + b7, 0);
@@ -45076,7 +45126,8 @@ var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false) => {
     }
     const messages = await generateCommitMessageChatCompletionPrompt(
       diff,
-      fullGitMojiSpec
+      fullGitMojiSpec,
+      context
     );
     const engine = getEngine();
     const commitMessage = await engine.generateCommitMessage(messages);
@@ -45283,6 +45334,7 @@ var checkMessageTemplate = (extraArgs2) => {
 var generateCommitMessageFromGitDiff = async ({
   diff,
   extraArgs: extraArgs2,
+  context = "",
   fullGitMojiSpec = false,
   skipCommitConfirmation = false
 }) => {
@@ -45292,7 +45344,8 @@ var generateCommitMessageFromGitDiff = async ({
   try {
     let commitMessage = await generateCommitMessageByDiff(
       diff,
-      fullGitMojiSpec
+      fullGitMojiSpec,
+      context
     );
     const messageTemplate = checkMessageTemplate(extraArgs2);
     if (config6.OCO_MESSAGE_TEMPLATE_PLACEHOLDER && typeof messageTemplate === "string") {
@@ -45402,7 +45455,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
     process.exit(1);
   }
 };
-async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec = false, skipCommitConfirmation = false) {
+async function commit(extraArgs2 = [], context = "", isStageAllFlag = false, fullGitMojiSpec = false, skipCommitConfirmation = false) {
   if (isStageAllFlag) {
     const changedFiles2 = await getChangedFiles();
     if (changedFiles2)
@@ -45433,7 +45486,7 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec =
     if (hD2(isStageAllAndCommitConfirmedByUser))
       process.exit(1);
     if (isStageAllAndCommitConfirmedByUser) {
-      await commit(extraArgs2, true, fullGitMojiSpec);
+      await commit(extraArgs2, context, true, fullGitMojiSpec);
       process.exit(1);
     }
     if (stagedFiles.length === 0 && changedFiles.length > 0) {
@@ -45448,7 +45501,7 @@ async function commit(extraArgs2 = [], isStageAllFlag = false, fullGitMojiSpec =
         process.exit(1);
       await gitAdd({ files });
     }
-    await commit(extraArgs2, false, fullGitMojiSpec);
+    await commit(extraArgs2, context, false, fullGitMojiSpec);
     process.exit(1);
   }
   stagedFilesSpinner.stop(
@@ -45459,6 +45512,7 @@ ${stagedFiles.map((file) => `  ${file}`).join("\n")}`
     generateCommitMessageFromGitDiff({
       diff: await getDiff({ files: stagedFiles }),
       extraArgs: extraArgs2,
+      context,
       fullGitMojiSpec,
       skipCommitConfirmation
     })
@@ -45817,6 +45871,12 @@ Z2(
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {
       fgm: Boolean,
+      context: {
+        type: String,
+        alias: "c",
+        description: "Additional user input context for the commit message",
+        default: ""
+      },
       yes: {
         type: Boolean,
         alias: "y",
@@ -45833,7 +45893,7 @@ Z2(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, false, flags.fgm, flags.yes);
+      commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
     }
   },
   extraArgs
