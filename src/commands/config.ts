@@ -12,6 +12,7 @@ import { getI18nLocal, i18n } from '../i18n';
 
 export enum CONFIG_KEYS {
   OCO_API_KEY = 'OCO_API_KEY',
+  OCO_API_VERSION = 'OCO_API_VERSION',
   OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
   OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
@@ -25,6 +26,13 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
+  OCO_HTTP_CA_BUNDLE = 'OCO_HTTP_CA_BUNDLE',
+  OCO_HTTP_TIMEOUT = 'OCO_HTTP_TIMEOUT',
+  OCO_HTTP_VERIFY_SSL = 'OCO_HTTP_VERIFY_SSL',
+  OCO_HTTP_CLIENT_CERTIFICATE_CERT = 'OCO_HTTP_CLIENT_CERTIFICATE_CERT',
+  OCO_HTTP_CLIENT_CERTIFICATE_KEY = 'OCO_HTTP_CLIENT_CERTIFICATE_KEY',
+  OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE = 'OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE',
+  OCO_HTTP_PROXY = 'OCO_HTTP_PROXY',
   OCO_GITPUSH = 'OCO_GITPUSH' // todo: deprecate
 }
 
@@ -343,6 +351,80 @@ export const configValidators = {
       'Must be true or false'
     );
     return value;
+  },
+
+  [CONFIG_KEYS.OCO_HTTP_CA_BUNDLE](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_HTTP_CA_BUNDLE,
+      typeof value === 'string',
+      'Must be string with file list, example file1,file2'
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_HTTP_TIMEOUT](value: any) {
+    value = parseInt(value);
+    validateConfig(
+      CONFIG_KEYS.OCO_HTTP_TIMEOUT,
+      !isNaN(value),
+      'Must be a number'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_HTTP_VERIFY_SSL](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_HTTP_VERIFY_SSL,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_CERT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_CERT,
+      typeof value === 'string',
+      'Must be string'
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_KEY](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_KEY,
+      typeof value === 'string',
+      'Must be string'
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE,
+      typeof value === 'string',
+      'Must be string'
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_HTTP_PROXY](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_HTTP_PROXY,
+      typeof value === 'string',
+      'Must be string'
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_API_VERSION](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_API_VERSION,
+      typeof value === 'string',
+      'Must be string'
+    );
+    return value;
   }
 };
 
@@ -361,6 +443,7 @@ export enum OCO_AI_PROVIDER_ENUM {
 
 export type ConfigType = {
   [CONFIG_KEYS.OCO_API_KEY]?: string;
+  [CONFIG_KEYS.OCO_API_VERSION]?: string;
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
   [CONFIG_KEYS.OCO_API_URL]?: string;
@@ -375,6 +458,13 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_GITPUSH]: boolean;
   [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
+  [CONFIG_KEYS.OCO_HTTP_CA_BUNDLE]?: string;
+  [CONFIG_KEYS.OCO_HTTP_TIMEOUT]?: number;
+  [CONFIG_KEYS.OCO_HTTP_VERIFY_SSL]?: boolean;
+  [CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_CERT]?: string;
+  [CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_KEY]?: string;
+  [CONFIG_KEYS.OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE]?: string;
+  [CONFIG_KEYS.OCO_HTTP_PROXY]?: string;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -421,6 +511,13 @@ export const DEFAULT_CONFIG = {
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: 'commit-message',
   OCO_WHY: false,
+  OCO_HTTP_CA_BUNDLE: '',
+  OCO_HTTP_TIMEOUT: 7200,
+  OCO_HTTP_VERIFY_SSL: true,
+  OCO_HTTP_CLIENT_CERTIFICATE_CERT: '',
+  OCO_HTTP_CLIENT_CERTIFICATE_KEY: '',
+  OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE: '',
+  OCO_HTTP_PROXY: '',
   OCO_GITPUSH: true // todo: deprecate
 };
 
@@ -444,6 +541,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_API_URL: process.env.OCO_API_URL,
     OCO_API_KEY: process.env.OCO_API_KEY,
+    OCO_API_VERSION: process.env.OCO_API_VERSION,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
 
     OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
@@ -459,6 +557,19 @@ const getEnvConfig = (envPath: string) => {
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
+
+    OCO_HTTP_CA_BUNDLE: parseConfigVarValue(process.env.OCO_HTTP_CA_BUNDLE),
+    OCO_HTTP_TIMEOUT: parseConfigVarValue(process.env.OCO_HTTP_TIMEOUT),
+    OCO_HTTP_CLIENT_CERTIFICATE_CERT: parseConfigVarValue(
+      process.env.OCO_HTTP_CLIENT_CERTIFICATE_CERT
+    ),
+    OCO_HTTP_CLIENT_CERTIFICATE_KEY: parseConfigVarValue(
+      process.env.OCO_HTTP_CLIENT_CERTIFICATE_KEY
+    ),
+    OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE: parseConfigVarValue(
+      process.env.OCO_HTTP_CLIENT_CERTIFICATE_PASSPHRASE
+    ),
+    OCO_HTTP_PROXY: parseConfigVarValue(process.env.OCO_HTTP_PROXY),
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };

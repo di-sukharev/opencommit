@@ -3,6 +3,7 @@ import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
+import { getHttpAgent } from '../utils/httpAgent';
 
 export interface OpenAiConfig extends AiEngineConfig {}
 
@@ -16,7 +17,11 @@ export class OpenAiEngine implements AiEngine {
     if (!config.baseURL) {
       this.client = new OpenAI({ apiKey: config.apiKey });
     } else {
-      this.client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+      this.client = new OpenAI({
+        apiKey: config.apiKey,
+        baseURL: config.baseURL,
+        httpAgent: getHttpAgent(config.apiKey)
+      });
     }
   }
 

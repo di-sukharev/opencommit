@@ -20,7 +20,8 @@ export function getEngine(): AiEngine {
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
     baseURL: config.OCO_API_URL!,
-    apiKey: config.OCO_API_KEY!
+    apiKey: config.OCO_API_KEY!,
+    apiVersion: config.OCO_API_VERSION!
   };
 
   switch (provider) {
