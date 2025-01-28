@@ -58583,10 +58583,7 @@ var FlowiseEngine = class {
       history: messages.slice(1, -1)
     };
     try {
-      const response = await this.client.post(
-        this.client.defaults.url,
-         payload
-        );
+      const response = await this.client.post("", payload);
       const message = response.data;
       return message?.text;
     } catch (err) {
