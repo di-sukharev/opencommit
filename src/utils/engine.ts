@@ -10,6 +10,7 @@ import { MistralAiEngine } from '../engine/mistral';
 import { TestAi, TestMockType } from '../engine/testAi';
 import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
+import { DeepseekEngine } from '../engine/deepseek';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
@@ -50,6 +51,9 @@ export function getEngine(): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.MLX:
       return new MLXEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
+      return new DeepseekEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);
