@@ -3,6 +3,7 @@ import { join } from 'path';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, readdirSync } from 'fs';
 import { execa } from 'execa';
 import { createHash } from 'crypto';
+import { getConfig } from '../commands/config';
 
 export interface CommitCacheData {
   message: string;
@@ -12,8 +13,18 @@ export interface CommitCacheData {
 }
 
 export class CommitCache {
-  private static readonly XDG_CACHE_HOME = process.env.XDG_CACHE_HOME || join(homedir(), '.cache');
-  private static readonly CACHE_DIR = join(CommitCache.XDG_CACHE_HOME, 'opencommit');
+  private static readonly DEFAULT_CACHE_HOME = process.env.XDG_CACHE_HOME || join(homedir(), '.cache');
+  private static readonly DEFAULT_CACHE_DIR = join(CommitCache.DEFAULT_CACHE_HOME, 'opencommit');
+
+  private static getCacheDir(): string {
+    const config = getConfig();
+    return config.OCO_CACHE_DIR || CommitCache.DEFAULT_CACHE_DIR;
+  }
+
+  private static isCacheEnabled(): boolean {
+    const config = getConfig();
+    return config.OCO_ENABLE_CACHE !== false;
+  }
 
   private static async getRepoRoot(): Promise<string> {
     try {
@@ -26,12 +37,15 @@ export class CommitCache {
 
   private static getCacheFilePath(repoPath: string): string {
     const repoHash = createHash('md5').update(repoPath).digest('hex');
-    return join(this.CACHE_DIR, `${repoHash}_commit_cache.json`);
+    return join(this.getCacheDir(), `${repoHash}_commit_cache.json`);
   }
 
   private static ensureCacheDir() {
-    if (!existsSync(this.CACHE_DIR)) {
-      mkdirSync(this.CACHE_DIR, { recursive: true });
+    if (!this.isCacheEnabled()) return;
+
+    const cacheDir = this.getCacheDir();
+    if (!existsSync(cacheDir)) {
+      mkdirSync(cacheDir, { recursive: true });
     }
   }
 
@@ -46,6 +60,8 @@ export class CommitCache {
   }
 
   static async saveCommitMessage(message: string) {
+    if (!this.isCacheEnabled()) return;
+
     this.ensureCacheDir();
     const repoPath = await this.getRepoRoot();
     const files = await this.getStagedFiles();
@@ -60,6 +76,8 @@ export class CommitCache {
   }
 
   static async getLastCommitMessage(): Promise<CommitCacheData | null> {
+    if (!this.isCacheEnabled()) return null;
+
     try {
       const repoPath = await this.getRepoRoot();
       const cacheFilePath = this.getCacheFilePath(repoPath);
@@ -75,19 +93,14 @@ export class CommitCache {
 
       const cacheData = JSON.parse(cacheContent) as CommitCacheData;
 
-      // Verify if the cache is for the current repository
       if (cacheData.repoPath !== repoPath) {
         return null;
       }
 
-      // Get current staged files
       const currentFiles = await this.getStagedFiles();
-      
-      // Compare file lists (order doesn't matter)
       const cachedFileSet = new Set(cacheData.files);
       const currentFileSet = new Set(currentFiles);
       
-      // Check if the file sets are equal
       if (cachedFileSet.size !== currentFileSet.size) {
         return null;
       }
@@ -106,6 +119,8 @@ export class CommitCache {
   }
 
   static async clearCache() {
+    if (!this.isCacheEnabled()) return;
+
     try {
       const repoPath = await this.getRepoRoot();
       const cacheFilePath = this.getCacheFilePath(repoPath);
@@ -118,19 +133,22 @@ export class CommitCache {
   }
 
   static async cleanupOldCaches() {
+    if (!this.isCacheEnabled()) return;
+
     try {
-      if (!existsSync(this.CACHE_DIR)) {
+      const cacheDir = this.getCacheDir();
+      if (!existsSync(cacheDir)) {
         return;
       }
 
-      const files = readdirSync(this.CACHE_DIR);
+      const files = readdirSync(cacheDir);
       const now = Date.now();
       const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
 
       for (const file of files) {
         if (!file.endsWith('_commit_cache.json')) continue;
 
-        const filePath = join(this.CACHE_DIR, file);
+        const filePath = join(cacheDir, file);
         try {
           const content = readFileSync(filePath, 'utf-8');
           if (!content.trim()) continue;

@@ -3,14 +3,32 @@ import { join } from 'path';
 import { existsSync, mkdirSync, appendFileSync } from 'fs';
 import { format } from 'util';
 import chalk from 'chalk';
+import { getConfig } from '../commands/config';
 
 export class Logger {
-  private static readonly LOG_DIR = join(homedir(), '.cache', 'opencommit', 'logs');
-  private static readonly LOG_FILE = join(Logger.LOG_DIR, 'opencommit.log');
+  private static readonly DEFAULT_LOG_DIR = join(homedir(), '.cache', 'opencommit', 'logs');
+  private static readonly DEFAULT_LOG_FILE = join(Logger.DEFAULT_LOG_DIR, 'opencommit.log');
+
+  private static getLogDir(): string {
+    const config = getConfig();
+    return config.OCO_LOG_DIR || Logger.DEFAULT_LOG_DIR;
+  }
+
+  private static getLogFile(): string {
+    return join(this.getLogDir(), 'opencommit.log');
+  }
+
+  private static isLoggingEnabled(): boolean {
+    const config = getConfig();
+    return config.OCO_ENABLE_LOGGING !== false;
+  }
 
   private static ensureLogDir() {
-    if (!existsSync(Logger.LOG_DIR)) {
-      mkdirSync(Logger.LOG_DIR, { recursive: true });
+    if (!this.isLoggingEnabled()) return;
+    
+    const logDir = this.getLogDir();
+    if (!existsSync(logDir)) {
+      mkdirSync(logDir, { recursive: true });
     }
   }
 
@@ -24,11 +42,13 @@ export class Logger {
   }
 
   private static writeToLog(level: string, message: string) {
+    if (!this.isLoggingEnabled()) return;
+    
     this.ensureLogDir();
     const timestamp = this.getTimestamp();
     const cleanMessage = this.stripAnsi(message);
     const logEntry = `[${timestamp}] [${level}] ${cleanMessage}\n`;
-    appendFileSync(this.LOG_FILE, logEntry);
+    appendFileSync(this.getLogFile(), logEntry);
   }
 
   private static formatMultilineMessage(message: string): string {
@@ -94,6 +114,6 @@ export class Logger {
   }
 
   static getLogPath(): string {
-    return this.LOG_FILE;
+    return this.isLoggingEnabled() ? this.getLogFile() : 'Logging is disabled';
   }
 } 
