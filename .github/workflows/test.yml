@@ -44,3 +44,6 @@ jobs:
       run: npm run build
     - name: Run E2E Tests
       run: npm run test:e2e
+              - name: OpenCommit — improve commits with AI 🧙
+                uses: di-sukharev/opencommit@github-action-v1.0.2
+                
