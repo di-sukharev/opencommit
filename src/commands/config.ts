@@ -25,6 +25,7 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
+  OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH' // todo: deprecate
 }
 
@@ -232,6 +233,16 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_OMIT_SCOPE](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_OMIT_SCOPE,
+      typeof value === 'boolean',
+      'Must be boolean: true or false'
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_LANGUAGE](value: any) {
     const supportedLanguages = Object.keys(i18n);
 
@@ -374,6 +385,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_AI_PROVIDER]: OCO_AI_PROVIDER_ENUM;
   [CONFIG_KEYS.OCO_GITPUSH]: boolean;
   [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
+  [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
 };
 
@@ -421,6 +433,7 @@ export const DEFAULT_CONFIG = {
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: 'commit-message',
   OCO_WHY: false,
+  OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true // todo: deprecate
 };
 
@@ -459,6 +472,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
+    OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
