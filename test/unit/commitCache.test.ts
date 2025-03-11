@@ -22,6 +22,9 @@ describe('CommitCache', () => {
       echo "test" > test.txt
       git add test.txt
     `);
+
+    // Ensure cache is enabled for tests
+    process.env.OCO_ENABLE_CACHE = 'true';
   });
 
   beforeEach(() => {
@@ -37,6 +40,7 @@ describe('CommitCache', () => {
   afterAll(() => {
     // Clean up test repositories
     execSync(`rm -rf "${TEST_DIR}"`);
+    delete process.env.OCO_ENABLE_CACHE;
   });
 
   it('should save and retrieve commit message', async () => {

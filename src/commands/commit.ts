@@ -84,7 +84,7 @@ const generateCommitMessageFromGitDiff = async ({
     commitGenerationSpinner.stop('📝 Commit message generated');
     Logger.spinnerSuccess('Commit message generated');
 
-    const separator = '——————————————————';
+    const separator = '─'.repeat(50);
     const messageBox = `Generated commit message:\n│ ${chalk.grey(separator)}\n│ ${commitMessage}\n│ ${chalk.grey(separator)}`;
     outro(messageBox);
     // Remove duplicate logging
@@ -125,8 +125,8 @@ const generateCommitMessageFromGitDiff = async ({
         await CommitCache.clearCache();
         Logger.debug('Cleared commit cache');
         
-        outro(stdout);
-        Logger.info(stdout);
+        // Only output git commit result once
+        outro(`│ ${stdout}`);
 
         const remotes = await getGitRemotes();
 
@@ -354,7 +354,7 @@ export async function commit(
       Logger.spinner('Files counted');
 
       Logger.info('Found cached commit message');
-      const separator = '——————————————————';
+      const separator = '─'.repeat(50);
       const useCachedMessage = await confirm({
         message: `Found cached commit message for the same files. Use it?\n│ ${chalk.grey(separator)}\n│ ${cachedCommit.message}\n│ ${chalk.grey(separator)}`
       });
@@ -387,15 +387,8 @@ export async function commit(
           await CommitCache.clearCache();
           Logger.debug('Cleared commit cache');
 
-          // Combine the output into a single message
-          const commitOutput = [
-            stdout,
-            `Logs: ${Logger.getLogPath()}`
-          ].join('\n│ ');
-          outro(commitOutput);
-
-          // Remove duplicate logging
-          Logger.debug('Commit output:', stdout);
+          // Only output git commit result once
+          outro(`│ ${stdout}`);
           
           process.exit(0);
         } catch (error: any) {
