@@ -1,6 +1,6 @@
 {
   "name": "opencommit",
-  "version": "3.2.2",
+  "version": "3.2.5",
   "description": "Auto-generate impressive commits in 1 second. Killing lame commits with AI 🤯🔫",
   "keywords": [
     "git",
@@ -17,11 +17,11 @@
   ],
   "main": "cli.js",
   "bin": {
-    "opencommit": "./out/cli.cjs",
-    "oco": "./out/cli.cjs"
+    "opencommit": "out/cli.cjs",
+    "oco": "out/cli.cjs"
   },
   "repository": {
-    "url": "https://github.com/di-sukharev/opencommit"
+    "url": "git+https://github.com/di-sukharev/opencommit.git"
   },
   "type": "module",
   "author": "https://github.com/di-sukharev",

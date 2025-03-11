@@ -7656,7 +7656,7 @@ var require_abort_controller = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var eventTargetShim = require_event_target_shim();
-    var AbortSignal = class extends eventTargetShim.EventTarget {
+    var AbortSignal2 = class extends eventTargetShim.EventTarget {
       constructor() {
         super();
         throw new TypeError("AbortSignal cannot be constructed directly");
@@ -7669,9 +7669,9 @@ var require_abort_controller = __commonJS({
         return aborted;
       }
     };
-    eventTargetShim.defineEventAttribute(AbortSignal.prototype, "abort");
+    eventTargetShim.defineEventAttribute(AbortSignal2.prototype, "abort");
     function createAbortSignal() {
-      const signal = Object.create(AbortSignal.prototype);
+      const signal = Object.create(AbortSignal2.prototype);
       eventTargetShim.EventTarget.call(signal);
       abortedFlags.set(signal, false);
       return signal;
@@ -7684,11 +7684,11 @@ var require_abort_controller = __commonJS({
       signal.dispatchEvent({ type: "abort" });
     }
     var abortedFlags = /* @__PURE__ */ new WeakMap();
-    Object.defineProperties(AbortSignal.prototype, {
+    Object.defineProperties(AbortSignal2.prototype, {
       aborted: { enumerable: true }
     });
     if (typeof Symbol === "function" && typeof Symbol.toStringTag === "symbol") {
-      Object.defineProperty(AbortSignal.prototype, Symbol.toStringTag, {
+      Object.defineProperty(AbortSignal2.prototype, Symbol.toStringTag, {
         configurable: true,
         value: "AbortSignal"
       });
@@ -7723,11 +7723,11 @@ var require_abort_controller = __commonJS({
       });
     }
     exports.AbortController = AbortController2;
-    exports.AbortSignal = AbortSignal;
+    exports.AbortSignal = AbortSignal2;
     exports.default = AbortController2;
     module2.exports = AbortController2;
     module2.exports.AbortController = module2.exports["default"] = AbortController2;
-    module2.exports.AbortSignal = AbortSignal;
+    module2.exports.AbortSignal = AbortSignal2;
   }
 });
 
@@ -26196,6 +26196,19187 @@ var require_lib3 = __commonJS({
   }
 });
 
+// node_modules/@mistralai/mistralai/lib/url.js
+var require_url = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/url.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.pathToFunc = pathToFunc;
+    var hasOwn3 = Object.prototype.hasOwnProperty;
+    function pathToFunc(pathPattern, options) {
+      const paramRE = /\{([a-zA-Z0-9_]+?)\}/g;
+      return function buildURLPath(params = {}) {
+        return pathPattern.replace(paramRE, function(_7, placeholder) {
+          if (!hasOwn3.call(params, placeholder)) {
+            throw new Error(`Parameter '${placeholder}' is required`);
+          }
+          const value = params[placeholder];
+          if (typeof value !== "string" && typeof value !== "number") {
+            throw new Error(`Parameter '${placeholder}' must be a string or number`);
+          }
+          return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(`${value}`) : `${value}`;
+        });
+      };
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/config.js
+var require_config = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/config.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SDK_METADATA = exports.ServerList = exports.ServerEu = void 0;
+    exports.serverURLFromOptions = serverURLFromOptions;
+    var url_js_1 = require_url();
+    exports.ServerEu = "eu";
+    exports.ServerList = {
+      [exports.ServerEu]: "https://api.mistral.ai"
+    };
+    function serverURLFromOptions(options) {
+      var _a5;
+      let serverURL = options.serverURL;
+      const params = {};
+      if (!serverURL) {
+        const server = (_a5 = options.server) !== null && _a5 !== void 0 ? _a5 : exports.ServerEu;
+        serverURL = exports.ServerList[server] || "";
+      }
+      const u3 = (0, url_js_1.pathToFunc)(serverURL)(params);
+      return new URL(u3);
+    }
+    exports.SDK_METADATA = {
+      language: "typescript",
+      openapiDocVersion: "0.0.2",
+      sdkVersion: "1.3.5",
+      genVersion: "2.470.1",
+      userAgent: "speakeasy-sdk/typescript 1.3.5 2.470.1 0.0.2 @mistralai/mistralai"
+    };
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/files.js
+var require_files = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/files.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.readableStreamToArrayBuffer = readableStreamToArrayBuffer;
+    async function readableStreamToArrayBuffer(readable) {
+      const reader = readable.getReader();
+      const chunks = [];
+      let totalLength = 0;
+      let done = false;
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        if (doneReading) {
+          done = true;
+        } else {
+          chunks.push(value);
+          totalLength += value.length;
+        }
+      }
+      const concatenatedChunks = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        concatenatedChunks.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return concatenatedChunks.buffer;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/hooks/custom_user_agent.js
+var require_custom_user_agent = __commonJS({
+  "node_modules/@mistralai/mistralai/hooks/custom_user_agent.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.CustomUserAgentHook = void 0;
+    var config_1 = require_config();
+    var CustomUserAgentHook = class {
+      beforeRequest(_7, request3) {
+        const version = config_1.SDK_METADATA.sdkVersion;
+        const ua = `mistral-client-typescript/${version}`;
+        request3.headers.set("user-agent", ua);
+        if (!request3.headers.get("user-agent")) {
+          request3.headers.set("x-mistral-user-agent", ua);
+        }
+        return request3;
+      }
+    };
+    exports.CustomUserAgentHook = CustomUserAgentHook;
+  }
+});
+
+// node_modules/@mistralai/mistralai/hooks/deprecation_warning.js
+var require_deprecation_warning = __commonJS({
+  "node_modules/@mistralai/mistralai/hooks/deprecation_warning.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DeprecationWarningHook = void 0;
+    var HEADER_MODEL_DEPRECATION_TIMESTAMP = "x-model-deprecation-timestamp";
+    var DeprecationWarningHook = class {
+      afterSuccess(_7, response) {
+        if (response.headers.has(HEADER_MODEL_DEPRECATION_TIMESTAMP)) {
+          response.clone().json().then((body) => {
+            const model = body.model;
+            console.warn(`WARNING: The model ${model} is deprecated and will be removed on ${response.headers.get(HEADER_MODEL_DEPRECATION_TIMESTAMP)}. Please refer to https://docs.mistral.ai/getting-started/models/#api-versioning for more information.`);
+          });
+        }
+        return response;
+      }
+    };
+    exports.DeprecationWarningHook = DeprecationWarningHook;
+  }
+});
+
+// node_modules/@mistralai/mistralai/hooks/registration.js
+var require_registration = __commonJS({
+  "node_modules/@mistralai/mistralai/hooks/registration.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.initHooks = initHooks;
+    var custom_user_agent_1 = require_custom_user_agent();
+    var deprecation_warning_1 = require_deprecation_warning();
+    function initHooks(hooks) {
+      const customUserAgentHook = new custom_user_agent_1.CustomUserAgentHook();
+      hooks.registerBeforeRequestHook(customUserAgentHook);
+      const deprecationWarningHook = new deprecation_warning_1.DeprecationWarningHook();
+      hooks.registerAfterSuccessHook(deprecationWarningHook);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/hooks/hooks.js
+var require_hooks = __commonJS({
+  "node_modules/@mistralai/mistralai/hooks/hooks.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SDKHooks = void 0;
+    var registration_js_1 = require_registration();
+    var SDKHooks = class {
+      constructor() {
+        this.sdkInitHooks = [];
+        this.beforeCreateRequestHooks = [];
+        this.beforeRequestHooks = [];
+        this.afterSuccessHooks = [];
+        this.afterErrorHooks = [];
+        (0, registration_js_1.initHooks)(this);
+      }
+      registerSDKInitHook(hook) {
+        this.sdkInitHooks.push(hook);
+      }
+      registerBeforeCreateRequestHook(hook) {
+        this.beforeCreateRequestHooks.push(hook);
+      }
+      registerBeforeRequestHook(hook) {
+        this.beforeRequestHooks.push(hook);
+      }
+      registerAfterSuccessHook(hook) {
+        this.afterSuccessHooks.push(hook);
+      }
+      registerAfterErrorHook(hook) {
+        this.afterErrorHooks.push(hook);
+      }
+      sdkInit(opts) {
+        return this.sdkInitHooks.reduce((opts2, hook) => hook.sdkInit(opts2), opts);
+      }
+      beforeCreateRequest(hookCtx, input) {
+        let inp = input;
+        for (const hook of this.beforeCreateRequestHooks) {
+          inp = hook.beforeCreateRequest(hookCtx, inp);
+        }
+        return inp;
+      }
+      async beforeRequest(hookCtx, request3) {
+        let req = request3;
+        for (const hook of this.beforeRequestHooks) {
+          req = await hook.beforeRequest(hookCtx, req);
+        }
+        return req;
+      }
+      async afterSuccess(hookCtx, response) {
+        let res = response;
+        for (const hook of this.afterSuccessHooks) {
+          res = await hook.afterSuccess(hookCtx, res);
+        }
+        return res;
+      }
+      async afterError(hookCtx, response, error) {
+        let res = response;
+        let err = error;
+        for (const hook of this.afterErrorHooks) {
+          const result = await hook.afterError(hookCtx, res, err);
+          res = result.response;
+          err = result.error;
+        }
+        return { response: res, error: err };
+      }
+    };
+    exports.SDKHooks = SDKHooks;
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/errors/httpclienterrors.js
+var require_httpclienterrors = __commonJS({
+  "node_modules/@mistralai/mistralai/models/errors/httpclienterrors.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ConnectionError = exports.RequestTimeoutError = exports.RequestAbortedError = exports.InvalidRequestError = exports.UnexpectedClientError = exports.HTTPClientError = void 0;
+    var HTTPClientError = class extends Error {
+      constructor(message, opts) {
+        let msg = message;
+        if (opts === null || opts === void 0 ? void 0 : opts.cause) {
+          msg += `: ${opts.cause}`;
+        }
+        super(msg, opts);
+        this.name = "HTTPClientError";
+        if (typeof this.cause === "undefined") {
+          this.cause = opts === null || opts === void 0 ? void 0 : opts.cause;
+        }
+      }
+    };
+    exports.HTTPClientError = HTTPClientError;
+    var UnexpectedClientError = class extends HTTPClientError {
+      constructor() {
+        super(...arguments);
+        this.name = "UnexpectedClientError";
+      }
+    };
+    exports.UnexpectedClientError = UnexpectedClientError;
+    var InvalidRequestError = class extends HTTPClientError {
+      constructor() {
+        super(...arguments);
+        this.name = "InvalidRequestError";
+      }
+    };
+    exports.InvalidRequestError = InvalidRequestError;
+    var RequestAbortedError = class extends HTTPClientError {
+      constructor() {
+        super(...arguments);
+        this.name = "RequestAbortedError";
+      }
+    };
+    exports.RequestAbortedError = RequestAbortedError;
+    var RequestTimeoutError = class extends HTTPClientError {
+      constructor() {
+        super(...arguments);
+        this.name = "RequestTimeoutError";
+      }
+    };
+    exports.RequestTimeoutError = RequestTimeoutError;
+    var ConnectionError = class extends HTTPClientError {
+      constructor() {
+        super(...arguments);
+        this.name = "ConnectionError";
+      }
+    };
+    exports.ConnectionError = ConnectionError;
+  }
+});
+
+// node_modules/@mistralai/mistralai/types/fp.js
+var require_fp = __commonJS({
+  "node_modules/@mistralai/mistralai/types/fp.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.OK = OK;
+    exports.ERR = ERR;
+    exports.unwrap = unwrap;
+    exports.unwrapAsync = unwrapAsync;
+    function OK(value) {
+      return { ok: true, value };
+    }
+    function ERR(error) {
+      return { ok: false, error };
+    }
+    function unwrap(r3) {
+      if (!r3.ok) {
+        throw r3.error;
+      }
+      return r3.value;
+    }
+    async function unwrapAsync(pr2) {
+      const r3 = await pr2;
+      if (!r3.ok) {
+        throw r3.error;
+      }
+      return r3.value;
+    }
+  }
+});
+
+// node_modules/zod/lib/helpers/util.js
+var require_util = __commonJS({
+  "node_modules/zod/lib/helpers/util.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getParsedType = exports.ZodParsedType = exports.objectUtil = exports.util = void 0;
+    var util3;
+    (function(util4) {
+      util4.assertEqual = (val) => val;
+      function assertIs(_arg) {
+      }
+      util4.assertIs = assertIs;
+      function assertNever2(_x) {
+        throw new Error();
+      }
+      util4.assertNever = assertNever2;
+      util4.arrayToEnum = (items) => {
+        const obj = {};
+        for (const item of items) {
+          obj[item] = item;
+        }
+        return obj;
+      };
+      util4.getValidEnumValues = (obj) => {
+        const validKeys = util4.objectKeys(obj).filter((k7) => typeof obj[obj[k7]] !== "number");
+        const filtered = {};
+        for (const k7 of validKeys) {
+          filtered[k7] = obj[k7];
+        }
+        return util4.objectValues(filtered);
+      };
+      util4.objectValues = (obj) => {
+        return util4.objectKeys(obj).map(function(e3) {
+          return obj[e3];
+        });
+      };
+      util4.objectKeys = typeof Object.keys === "function" ? (obj) => Object.keys(obj) : (object) => {
+        const keys = [];
+        for (const key in object) {
+          if (Object.prototype.hasOwnProperty.call(object, key)) {
+            keys.push(key);
+          }
+        }
+        return keys;
+      };
+      util4.find = (arr, checker) => {
+        for (const item of arr) {
+          if (checker(item))
+            return item;
+        }
+        return void 0;
+      };
+      util4.isInteger = typeof Number.isInteger === "function" ? (val) => Number.isInteger(val) : (val) => typeof val === "number" && isFinite(val) && Math.floor(val) === val;
+      function joinValues(array, separator = " | ") {
+        return array.map((val) => typeof val === "string" ? `'${val}'` : val).join(separator);
+      }
+      util4.joinValues = joinValues;
+      util4.jsonStringifyReplacer = (_7, value) => {
+        if (typeof value === "bigint") {
+          return value.toString();
+        }
+        return value;
+      };
+    })(util3 = exports.util || (exports.util = {}));
+    var objectUtil;
+    (function(objectUtil2) {
+      objectUtil2.mergeShapes = (first, second) => {
+        return {
+          ...first,
+          ...second
+        };
+      };
+    })(objectUtil = exports.objectUtil || (exports.objectUtil = {}));
+    exports.ZodParsedType = util3.arrayToEnum([
+      "string",
+      "nan",
+      "number",
+      "integer",
+      "float",
+      "boolean",
+      "date",
+      "bigint",
+      "symbol",
+      "function",
+      "undefined",
+      "null",
+      "array",
+      "object",
+      "unknown",
+      "promise",
+      "void",
+      "never",
+      "map",
+      "set"
+    ]);
+    var getParsedType = (data) => {
+      const t2 = typeof data;
+      switch (t2) {
+        case "undefined":
+          return exports.ZodParsedType.undefined;
+        case "string":
+          return exports.ZodParsedType.string;
+        case "number":
+          return isNaN(data) ? exports.ZodParsedType.nan : exports.ZodParsedType.number;
+        case "boolean":
+          return exports.ZodParsedType.boolean;
+        case "function":
+          return exports.ZodParsedType.function;
+        case "bigint":
+          return exports.ZodParsedType.bigint;
+        case "symbol":
+          return exports.ZodParsedType.symbol;
+        case "object":
+          if (Array.isArray(data)) {
+            return exports.ZodParsedType.array;
+          }
+          if (data === null) {
+            return exports.ZodParsedType.null;
+          }
+          if (data.then && typeof data.then === "function" && data.catch && typeof data.catch === "function") {
+            return exports.ZodParsedType.promise;
+          }
+          if (typeof Map !== "undefined" && data instanceof Map) {
+            return exports.ZodParsedType.map;
+          }
+          if (typeof Set !== "undefined" && data instanceof Set) {
+            return exports.ZodParsedType.set;
+          }
+          if (typeof Date !== "undefined" && data instanceof Date) {
+            return exports.ZodParsedType.date;
+          }
+          return exports.ZodParsedType.object;
+        default:
+          return exports.ZodParsedType.unknown;
+      }
+    };
+    exports.getParsedType = getParsedType;
+  }
+});
+
+// node_modules/zod/lib/ZodError.js
+var require_ZodError = __commonJS({
+  "node_modules/zod/lib/ZodError.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ZodError = exports.quotelessJson = exports.ZodIssueCode = void 0;
+    var util_1 = require_util();
+    exports.ZodIssueCode = util_1.util.arrayToEnum([
+      "invalid_type",
+      "invalid_literal",
+      "custom",
+      "invalid_union",
+      "invalid_union_discriminator",
+      "invalid_enum_value",
+      "unrecognized_keys",
+      "invalid_arguments",
+      "invalid_return_type",
+      "invalid_date",
+      "invalid_string",
+      "too_small",
+      "too_big",
+      "invalid_intersection_types",
+      "not_multiple_of",
+      "not_finite"
+    ]);
+    var quotelessJson = (obj) => {
+      const json = JSON.stringify(obj, null, 2);
+      return json.replace(/"([^"]+)":/g, "$1:");
+    };
+    exports.quotelessJson = quotelessJson;
+    var ZodError = class extends Error {
+      constructor(issues) {
+        super();
+        this.issues = [];
+        this.addIssue = (sub) => {
+          this.issues = [...this.issues, sub];
+        };
+        this.addIssues = (subs = []) => {
+          this.issues = [...this.issues, ...subs];
+        };
+        const actualProto = new.target.prototype;
+        if (Object.setPrototypeOf) {
+          Object.setPrototypeOf(this, actualProto);
+        } else {
+          this.__proto__ = actualProto;
+        }
+        this.name = "ZodError";
+        this.issues = issues;
+      }
+      get errors() {
+        return this.issues;
+      }
+      format(_mapper) {
+        const mapper = _mapper || function(issue) {
+          return issue.message;
+        };
+        const fieldErrors = { _errors: [] };
+        const processError = (error) => {
+          for (const issue of error.issues) {
+            if (issue.code === "invalid_union") {
+              issue.unionErrors.map(processError);
+            } else if (issue.code === "invalid_return_type") {
+              processError(issue.returnTypeError);
+            } else if (issue.code === "invalid_arguments") {
+              processError(issue.argumentsError);
+            } else if (issue.path.length === 0) {
+              fieldErrors._errors.push(mapper(issue));
+            } else {
+              let curr = fieldErrors;
+              let i3 = 0;
+              while (i3 < issue.path.length) {
+                const el = issue.path[i3];
+                const terminal = i3 === issue.path.length - 1;
+                if (!terminal) {
+                  curr[el] = curr[el] || { _errors: [] };
+                } else {
+                  curr[el] = curr[el] || { _errors: [] };
+                  curr[el]._errors.push(mapper(issue));
+                }
+                curr = curr[el];
+                i3++;
+              }
+            }
+          }
+        };
+        processError(this);
+        return fieldErrors;
+      }
+      static assert(value) {
+        if (!(value instanceof ZodError)) {
+          throw new Error(`Not a ZodError: ${value}`);
+        }
+      }
+      toString() {
+        return this.message;
+      }
+      get message() {
+        return JSON.stringify(this.issues, util_1.util.jsonStringifyReplacer, 2);
+      }
+      get isEmpty() {
+        return this.issues.length === 0;
+      }
+      flatten(mapper = (issue) => issue.message) {
+        const fieldErrors = {};
+        const formErrors = [];
+        for (const sub of this.issues) {
+          if (sub.path.length > 0) {
+            fieldErrors[sub.path[0]] = fieldErrors[sub.path[0]] || [];
+            fieldErrors[sub.path[0]].push(mapper(sub));
+          } else {
+            formErrors.push(mapper(sub));
+          }
+        }
+        return { formErrors, fieldErrors };
+      }
+      get formErrors() {
+        return this.flatten();
+      }
+    };
+    exports.ZodError = ZodError;
+    ZodError.create = (issues) => {
+      const error = new ZodError(issues);
+      return error;
+    };
+  }
+});
+
+// node_modules/zod/lib/locales/en.js
+var require_en = __commonJS({
+  "node_modules/zod/lib/locales/en.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var util_1 = require_util();
+    var ZodError_1 = require_ZodError();
+    var errorMap = (issue, _ctx) => {
+      let message;
+      switch (issue.code) {
+        case ZodError_1.ZodIssueCode.invalid_type:
+          if (issue.received === util_1.ZodParsedType.undefined) {
+            message = "Required";
+          } else {
+            message = `Expected ${issue.expected}, received ${issue.received}`;
+          }
+          break;
+        case ZodError_1.ZodIssueCode.invalid_literal:
+          message = `Invalid literal value, expected ${JSON.stringify(issue.expected, util_1.util.jsonStringifyReplacer)}`;
+          break;
+        case ZodError_1.ZodIssueCode.unrecognized_keys:
+          message = `Unrecognized key(s) in object: ${util_1.util.joinValues(issue.keys, ", ")}`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_union:
+          message = `Invalid input`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_union_discriminator:
+          message = `Invalid discriminator value. Expected ${util_1.util.joinValues(issue.options)}`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_enum_value:
+          message = `Invalid enum value. Expected ${util_1.util.joinValues(issue.options)}, received '${issue.received}'`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_arguments:
+          message = `Invalid function arguments`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_return_type:
+          message = `Invalid function return type`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_date:
+          message = `Invalid date`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_string:
+          if (typeof issue.validation === "object") {
+            if ("includes" in issue.validation) {
+              message = `Invalid input: must include "${issue.validation.includes}"`;
+              if (typeof issue.validation.position === "number") {
+                message = `${message} at one or more positions greater than or equal to ${issue.validation.position}`;
+              }
+            } else if ("startsWith" in issue.validation) {
+              message = `Invalid input: must start with "${issue.validation.startsWith}"`;
+            } else if ("endsWith" in issue.validation) {
+              message = `Invalid input: must end with "${issue.validation.endsWith}"`;
+            } else {
+              util_1.util.assertNever(issue.validation);
+            }
+          } else if (issue.validation !== "regex") {
+            message = `Invalid ${issue.validation}`;
+          } else {
+            message = "Invalid";
+          }
+          break;
+        case ZodError_1.ZodIssueCode.too_small:
+          if (issue.type === "array")
+            message = `Array must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `more than`} ${issue.minimum} element(s)`;
+          else if (issue.type === "string")
+            message = `String must contain ${issue.exact ? "exactly" : issue.inclusive ? `at least` : `over`} ${issue.minimum} character(s)`;
+          else if (issue.type === "number")
+            message = `Number must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${issue.minimum}`;
+          else if (issue.type === "date")
+            message = `Date must be ${issue.exact ? `exactly equal to ` : issue.inclusive ? `greater than or equal to ` : `greater than `}${new Date(Number(issue.minimum))}`;
+          else
+            message = "Invalid input";
+          break;
+        case ZodError_1.ZodIssueCode.too_big:
+          if (issue.type === "array")
+            message = `Array must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `less than`} ${issue.maximum} element(s)`;
+          else if (issue.type === "string")
+            message = `String must contain ${issue.exact ? `exactly` : issue.inclusive ? `at most` : `under`} ${issue.maximum} character(s)`;
+          else if (issue.type === "number")
+            message = `Number must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+          else if (issue.type === "bigint")
+            message = `BigInt must be ${issue.exact ? `exactly` : issue.inclusive ? `less than or equal to` : `less than`} ${issue.maximum}`;
+          else if (issue.type === "date")
+            message = `Date must be ${issue.exact ? `exactly` : issue.inclusive ? `smaller than or equal to` : `smaller than`} ${new Date(Number(issue.maximum))}`;
+          else
+            message = "Invalid input";
+          break;
+        case ZodError_1.ZodIssueCode.custom:
+          message = `Invalid input`;
+          break;
+        case ZodError_1.ZodIssueCode.invalid_intersection_types:
+          message = `Intersection results could not be merged`;
+          break;
+        case ZodError_1.ZodIssueCode.not_multiple_of:
+          message = `Number must be a multiple of ${issue.multipleOf}`;
+          break;
+        case ZodError_1.ZodIssueCode.not_finite:
+          message = "Number must be finite";
+          break;
+        default:
+          message = _ctx.defaultError;
+          util_1.util.assertNever(issue);
+      }
+      return { message };
+    };
+    exports.default = errorMap;
+  }
+});
+
+// node_modules/zod/lib/errors.js
+var require_errors = __commonJS({
+  "node_modules/zod/lib/errors.js"(exports) {
+    "use strict";
+    var __importDefault2 = exports && exports.__importDefault || function(mod) {
+      return mod && mod.__esModule ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.getErrorMap = exports.setErrorMap = exports.defaultErrorMap = void 0;
+    var en_1 = __importDefault2(require_en());
+    exports.defaultErrorMap = en_1.default;
+    var overrideErrorMap = en_1.default;
+    function setErrorMap(map) {
+      overrideErrorMap = map;
+    }
+    exports.setErrorMap = setErrorMap;
+    function getErrorMap() {
+      return overrideErrorMap;
+    }
+    exports.getErrorMap = getErrorMap;
+  }
+});
+
+// node_modules/zod/lib/helpers/parseUtil.js
+var require_parseUtil = __commonJS({
+  "node_modules/zod/lib/helpers/parseUtil.js"(exports) {
+    "use strict";
+    var __importDefault2 = exports && exports.__importDefault || function(mod) {
+      return mod && mod.__esModule ? mod : { "default": mod };
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.isAsync = exports.isValid = exports.isDirty = exports.isAborted = exports.OK = exports.DIRTY = exports.INVALID = exports.ParseStatus = exports.addIssueToContext = exports.EMPTY_PATH = exports.makeIssue = void 0;
+    var errors_1 = require_errors();
+    var en_1 = __importDefault2(require_en());
+    var makeIssue = (params) => {
+      const { data, path: path5, errorMaps, issueData } = params;
+      const fullPath = [...path5, ...issueData.path || []];
+      const fullIssue = {
+        ...issueData,
+        path: fullPath
+      };
+      if (issueData.message !== void 0) {
+        return {
+          ...issueData,
+          path: fullPath,
+          message: issueData.message
+        };
+      }
+      let errorMessage = "";
+      const maps = errorMaps.filter((m5) => !!m5).slice().reverse();
+      for (const map of maps) {
+        errorMessage = map(fullIssue, { data, defaultError: errorMessage }).message;
+      }
+      return {
+        ...issueData,
+        path: fullPath,
+        message: errorMessage
+      };
+    };
+    exports.makeIssue = makeIssue;
+    exports.EMPTY_PATH = [];
+    function addIssueToContext(ctx, issueData) {
+      const overrideMap = (0, errors_1.getErrorMap)();
+      const issue = (0, exports.makeIssue)({
+        issueData,
+        data: ctx.data,
+        path: ctx.path,
+        errorMaps: [
+          ctx.common.contextualErrorMap,
+          ctx.schemaErrorMap,
+          overrideMap,
+          overrideMap === en_1.default ? void 0 : en_1.default
+        ].filter((x5) => !!x5)
+      });
+      ctx.common.issues.push(issue);
+    }
+    exports.addIssueToContext = addIssueToContext;
+    var ParseStatus = class {
+      constructor() {
+        this.value = "valid";
+      }
+      dirty() {
+        if (this.value === "valid")
+          this.value = "dirty";
+      }
+      abort() {
+        if (this.value !== "aborted")
+          this.value = "aborted";
+      }
+      static mergeArray(status, results) {
+        const arrayValue = [];
+        for (const s2 of results) {
+          if (s2.status === "aborted")
+            return exports.INVALID;
+          if (s2.status === "dirty")
+            status.dirty();
+          arrayValue.push(s2.value);
+        }
+        return { status: status.value, value: arrayValue };
+      }
+      static async mergeObjectAsync(status, pairs) {
+        const syncPairs = [];
+        for (const pair of pairs) {
+          const key = await pair.key;
+          const value = await pair.value;
+          syncPairs.push({
+            key,
+            value
+          });
+        }
+        return ParseStatus.mergeObjectSync(status, syncPairs);
+      }
+      static mergeObjectSync(status, pairs) {
+        const finalObject = {};
+        for (const pair of pairs) {
+          const { key, value } = pair;
+          if (key.status === "aborted")
+            return exports.INVALID;
+          if (value.status === "aborted")
+            return exports.INVALID;
+          if (key.status === "dirty")
+            status.dirty();
+          if (value.status === "dirty")
+            status.dirty();
+          if (key.value !== "__proto__" && (typeof value.value !== "undefined" || pair.alwaysSet)) {
+            finalObject[key.value] = value.value;
+          }
+        }
+        return { status: status.value, value: finalObject };
+      }
+    };
+    exports.ParseStatus = ParseStatus;
+    exports.INVALID = Object.freeze({
+      status: "aborted"
+    });
+    var DIRTY = (value) => ({ status: "dirty", value });
+    exports.DIRTY = DIRTY;
+    var OK = (value) => ({ status: "valid", value });
+    exports.OK = OK;
+    var isAborted = (x5) => x5.status === "aborted";
+    exports.isAborted = isAborted;
+    var isDirty = (x5) => x5.status === "dirty";
+    exports.isDirty = isDirty;
+    var isValid = (x5) => x5.status === "valid";
+    exports.isValid = isValid;
+    var isAsync = (x5) => typeof Promise !== "undefined" && x5 instanceof Promise;
+    exports.isAsync = isAsync;
+  }
+});
+
+// node_modules/zod/lib/helpers/typeAliases.js
+var require_typeAliases = __commonJS({
+  "node_modules/zod/lib/helpers/typeAliases.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+  }
+});
+
+// node_modules/zod/lib/helpers/errorUtil.js
+var require_errorUtil = __commonJS({
+  "node_modules/zod/lib/helpers/errorUtil.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.errorUtil = void 0;
+    var errorUtil;
+    (function(errorUtil2) {
+      errorUtil2.errToObj = (message) => typeof message === "string" ? { message } : message || {};
+      errorUtil2.toString = (message) => typeof message === "string" ? message : message === null || message === void 0 ? void 0 : message.message;
+    })(errorUtil = exports.errorUtil || (exports.errorUtil = {}));
+  }
+});
+
+// node_modules/zod/lib/types.js
+var require_types = __commonJS({
+  "node_modules/zod/lib/types.js"(exports) {
+    "use strict";
+    var __classPrivateFieldGet14 = exports && exports.__classPrivateFieldGet || function(receiver, state2, kind3, f4) {
+      if (kind3 === "a" && !f4)
+        throw new TypeError("Private accessor was defined without a getter");
+      if (typeof state2 === "function" ? receiver !== state2 || !f4 : !state2.has(receiver))
+        throw new TypeError("Cannot read private member from an object whose class did not declare it");
+      return kind3 === "m" ? f4 : kind3 === "a" ? f4.call(receiver) : f4 ? f4.value : state2.get(receiver);
+    };
+    var __classPrivateFieldSet12 = exports && exports.__classPrivateFieldSet || function(receiver, state2, value, kind3, f4) {
+      if (kind3 === "m")
+        throw new TypeError("Private method is not writable");
+      if (kind3 === "a" && !f4)
+        throw new TypeError("Private accessor was defined without a setter");
+      if (typeof state2 === "function" ? receiver !== state2 || !f4 : !state2.has(receiver))
+        throw new TypeError("Cannot write private member to an object whose class did not declare it");
+      return kind3 === "a" ? f4.call(receiver, value) : f4 ? f4.value = value : state2.set(receiver, value), value;
+    };
+    var _ZodEnum_cache;
+    var _ZodNativeEnum_cache;
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.boolean = exports.bigint = exports.array = exports.any = exports.coerce = exports.ZodFirstPartyTypeKind = exports.late = exports.ZodSchema = exports.Schema = exports.custom = exports.ZodReadonly = exports.ZodPipeline = exports.ZodBranded = exports.BRAND = exports.ZodNaN = exports.ZodCatch = exports.ZodDefault = exports.ZodNullable = exports.ZodOptional = exports.ZodTransformer = exports.ZodEffects = exports.ZodPromise = exports.ZodNativeEnum = exports.ZodEnum = exports.ZodLiteral = exports.ZodLazy = exports.ZodFunction = exports.ZodSet = exports.ZodMap = exports.ZodRecord = exports.ZodTuple = exports.ZodIntersection = exports.ZodDiscriminatedUnion = exports.ZodUnion = exports.ZodObject = exports.ZodArray = exports.ZodVoid = exports.ZodNever = exports.ZodUnknown = exports.ZodAny = exports.ZodNull = exports.ZodUndefined = exports.ZodSymbol = exports.ZodDate = exports.ZodBoolean = exports.ZodBigInt = exports.ZodNumber = exports.ZodString = exports.datetimeRegex = exports.ZodType = void 0;
+    exports.NEVER = exports.void = exports.unknown = exports.union = exports.undefined = exports.tuple = exports.transformer = exports.symbol = exports.string = exports.strictObject = exports.set = exports.record = exports.promise = exports.preprocess = exports.pipeline = exports.ostring = exports.optional = exports.onumber = exports.oboolean = exports.object = exports.number = exports.nullable = exports.null = exports.never = exports.nativeEnum = exports.nan = exports.map = exports.literal = exports.lazy = exports.intersection = exports.instanceof = exports.function = exports.enum = exports.effect = exports.discriminatedUnion = exports.date = void 0;
+    var errors_1 = require_errors();
+    var errorUtil_1 = require_errorUtil();
+    var parseUtil_1 = require_parseUtil();
+    var util_1 = require_util();
+    var ZodError_1 = require_ZodError();
+    var ParseInputLazyPath = class {
+      constructor(parent, value, path5, key) {
+        this._cachedPath = [];
+        this.parent = parent;
+        this.data = value;
+        this._path = path5;
+        this._key = key;
+      }
+      get path() {
+        if (!this._cachedPath.length) {
+          if (this._key instanceof Array) {
+            this._cachedPath.push(...this._path, ...this._key);
+          } else {
+            this._cachedPath.push(...this._path, this._key);
+          }
+        }
+        return this._cachedPath;
+      }
+    };
+    var handleResult = (ctx, result) => {
+      if ((0, parseUtil_1.isValid)(result)) {
+        return { success: true, data: result.value };
+      } else {
+        if (!ctx.common.issues.length) {
+          throw new Error("Validation failed but no issues detected.");
+        }
+        return {
+          success: false,
+          get error() {
+            if (this._error)
+              return this._error;
+            const error = new ZodError_1.ZodError(ctx.common.issues);
+            this._error = error;
+            return this._error;
+          }
+        };
+      }
+    };
+    function processCreateParams(params) {
+      if (!params)
+        return {};
+      const { errorMap, invalid_type_error, required_error, description } = params;
+      if (errorMap && (invalid_type_error || required_error)) {
+        throw new Error(`Can't use "invalid_type_error" or "required_error" in conjunction with custom error map.`);
+      }
+      if (errorMap)
+        return { errorMap, description };
+      const customMap = (iss, ctx) => {
+        var _a5, _b2;
+        const { message } = params;
+        if (iss.code === "invalid_enum_value") {
+          return { message: message !== null && message !== void 0 ? message : ctx.defaultError };
+        }
+        if (typeof ctx.data === "undefined") {
+          return { message: (_a5 = message !== null && message !== void 0 ? message : required_error) !== null && _a5 !== void 0 ? _a5 : ctx.defaultError };
+        }
+        if (iss.code !== "invalid_type")
+          return { message: ctx.defaultError };
+        return { message: (_b2 = message !== null && message !== void 0 ? message : invalid_type_error) !== null && _b2 !== void 0 ? _b2 : ctx.defaultError };
+      };
+      return { errorMap: customMap, description };
+    }
+    var ZodType = class {
+      constructor(def) {
+        this.spa = this.safeParseAsync;
+        this._def = def;
+        this.parse = this.parse.bind(this);
+        this.safeParse = this.safeParse.bind(this);
+        this.parseAsync = this.parseAsync.bind(this);
+        this.safeParseAsync = this.safeParseAsync.bind(this);
+        this.spa = this.spa.bind(this);
+        this.refine = this.refine.bind(this);
+        this.refinement = this.refinement.bind(this);
+        this.superRefine = this.superRefine.bind(this);
+        this.optional = this.optional.bind(this);
+        this.nullable = this.nullable.bind(this);
+        this.nullish = this.nullish.bind(this);
+        this.array = this.array.bind(this);
+        this.promise = this.promise.bind(this);
+        this.or = this.or.bind(this);
+        this.and = this.and.bind(this);
+        this.transform = this.transform.bind(this);
+        this.brand = this.brand.bind(this);
+        this.default = this.default.bind(this);
+        this.catch = this.catch.bind(this);
+        this.describe = this.describe.bind(this);
+        this.pipe = this.pipe.bind(this);
+        this.readonly = this.readonly.bind(this);
+        this.isNullable = this.isNullable.bind(this);
+        this.isOptional = this.isOptional.bind(this);
+      }
+      get description() {
+        return this._def.description;
+      }
+      _getType(input) {
+        return (0, util_1.getParsedType)(input.data);
+      }
+      _getOrReturnCtx(input, ctx) {
+        return ctx || {
+          common: input.parent.common,
+          data: input.data,
+          parsedType: (0, util_1.getParsedType)(input.data),
+          schemaErrorMap: this._def.errorMap,
+          path: input.path,
+          parent: input.parent
+        };
+      }
+      _processInputParams(input) {
+        return {
+          status: new parseUtil_1.ParseStatus(),
+          ctx: {
+            common: input.parent.common,
+            data: input.data,
+            parsedType: (0, util_1.getParsedType)(input.data),
+            schemaErrorMap: this._def.errorMap,
+            path: input.path,
+            parent: input.parent
+          }
+        };
+      }
+      _parseSync(input) {
+        const result = this._parse(input);
+        if ((0, parseUtil_1.isAsync)(result)) {
+          throw new Error("Synchronous parse encountered promise.");
+        }
+        return result;
+      }
+      _parseAsync(input) {
+        const result = this._parse(input);
+        return Promise.resolve(result);
+      }
+      parse(data, params) {
+        const result = this.safeParse(data, params);
+        if (result.success)
+          return result.data;
+        throw result.error;
+      }
+      safeParse(data, params) {
+        var _a5;
+        const ctx = {
+          common: {
+            issues: [],
+            async: (_a5 = params === null || params === void 0 ? void 0 : params.async) !== null && _a5 !== void 0 ? _a5 : false,
+            contextualErrorMap: params === null || params === void 0 ? void 0 : params.errorMap
+          },
+          path: (params === null || params === void 0 ? void 0 : params.path) || [],
+          schemaErrorMap: this._def.errorMap,
+          parent: null,
+          data,
+          parsedType: (0, util_1.getParsedType)(data)
+        };
+        const result = this._parseSync({ data, path: ctx.path, parent: ctx });
+        return handleResult(ctx, result);
+      }
+      async parseAsync(data, params) {
+        const result = await this.safeParseAsync(data, params);
+        if (result.success)
+          return result.data;
+        throw result.error;
+      }
+      async safeParseAsync(data, params) {
+        const ctx = {
+          common: {
+            issues: [],
+            contextualErrorMap: params === null || params === void 0 ? void 0 : params.errorMap,
+            async: true
+          },
+          path: (params === null || params === void 0 ? void 0 : params.path) || [],
+          schemaErrorMap: this._def.errorMap,
+          parent: null,
+          data,
+          parsedType: (0, util_1.getParsedType)(data)
+        };
+        const maybeAsyncResult = this._parse({ data, path: ctx.path, parent: ctx });
+        const result = await ((0, parseUtil_1.isAsync)(maybeAsyncResult) ? maybeAsyncResult : Promise.resolve(maybeAsyncResult));
+        return handleResult(ctx, result);
+      }
+      refine(check, message) {
+        const getIssueProperties = (val) => {
+          if (typeof message === "string" || typeof message === "undefined") {
+            return { message };
+          } else if (typeof message === "function") {
+            return message(val);
+          } else {
+            return message;
+          }
+        };
+        return this._refinement((val, ctx) => {
+          const result = check(val);
+          const setError = () => ctx.addIssue({
+            code: ZodError_1.ZodIssueCode.custom,
+            ...getIssueProperties(val)
+          });
+          if (typeof Promise !== "undefined" && result instanceof Promise) {
+            return result.then((data) => {
+              if (!data) {
+                setError();
+                return false;
+              } else {
+                return true;
+              }
+            });
+          }
+          if (!result) {
+            setError();
+            return false;
+          } else {
+            return true;
+          }
+        });
+      }
+      refinement(check, refinementData) {
+        return this._refinement((val, ctx) => {
+          if (!check(val)) {
+            ctx.addIssue(typeof refinementData === "function" ? refinementData(val, ctx) : refinementData);
+            return false;
+          } else {
+            return true;
+          }
+        });
+      }
+      _refinement(refinement) {
+        return new ZodEffects({
+          schema: this,
+          typeName: ZodFirstPartyTypeKind.ZodEffects,
+          effect: { type: "refinement", refinement }
+        });
+      }
+      superRefine(refinement) {
+        return this._refinement(refinement);
+      }
+      optional() {
+        return ZodOptional.create(this, this._def);
+      }
+      nullable() {
+        return ZodNullable.create(this, this._def);
+      }
+      nullish() {
+        return this.nullable().optional();
+      }
+      array() {
+        return ZodArray.create(this, this._def);
+      }
+      promise() {
+        return ZodPromise.create(this, this._def);
+      }
+      or(option) {
+        return ZodUnion.create([this, option], this._def);
+      }
+      and(incoming) {
+        return ZodIntersection.create(this, incoming, this._def);
+      }
+      transform(transform) {
+        return new ZodEffects({
+          ...processCreateParams(this._def),
+          schema: this,
+          typeName: ZodFirstPartyTypeKind.ZodEffects,
+          effect: { type: "transform", transform }
+        });
+      }
+      default(def) {
+        const defaultValueFunc = typeof def === "function" ? def : () => def;
+        return new ZodDefault({
+          ...processCreateParams(this._def),
+          innerType: this,
+          defaultValue: defaultValueFunc,
+          typeName: ZodFirstPartyTypeKind.ZodDefault
+        });
+      }
+      brand() {
+        return new ZodBranded({
+          typeName: ZodFirstPartyTypeKind.ZodBranded,
+          type: this,
+          ...processCreateParams(this._def)
+        });
+      }
+      catch(def) {
+        const catchValueFunc = typeof def === "function" ? def : () => def;
+        return new ZodCatch({
+          ...processCreateParams(this._def),
+          innerType: this,
+          catchValue: catchValueFunc,
+          typeName: ZodFirstPartyTypeKind.ZodCatch
+        });
+      }
+      describe(description) {
+        const This = this.constructor;
+        return new This({
+          ...this._def,
+          description
+        });
+      }
+      pipe(target) {
+        return ZodPipeline.create(this, target);
+      }
+      readonly() {
+        return ZodReadonly.create(this);
+      }
+      isOptional() {
+        return this.safeParse(void 0).success;
+      }
+      isNullable() {
+        return this.safeParse(null).success;
+      }
+    };
+    exports.ZodType = ZodType;
+    exports.Schema = ZodType;
+    exports.ZodSchema = ZodType;
+    var cuidRegex = /^c[^\s-]{8,}$/i;
+    var cuid2Regex = /^[0-9a-z]+$/;
+    var ulidRegex = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+    var uuidRegex = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/i;
+    var nanoidRegex = /^[a-z0-9_-]{21}$/i;
+    var durationRegex = /^[-+]?P(?!$)(?:(?:[-+]?\d+Y)|(?:[-+]?\d+[.,]\d+Y$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:(?:[-+]?\d+W)|(?:[-+]?\d+[.,]\d+W$))?(?:(?:[-+]?\d+D)|(?:[-+]?\d+[.,]\d+D$))?(?:T(?=[\d+-])(?:(?:[-+]?\d+H)|(?:[-+]?\d+[.,]\d+H$))?(?:(?:[-+]?\d+M)|(?:[-+]?\d+[.,]\d+M$))?(?:[-+]?\d+(?:[.,]\d+)?S)?)??$/;
+    var emailRegex = /^(?!\.)(?!.*\.\.)([A-Z0-9_'+\-\.]*)[A-Z0-9_+-]@([A-Z0-9][A-Z0-9\-]*\.)+[A-Z]{2,}$/i;
+    var _emojiRegex = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
+    var emojiRegex;
+    var ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
+    var ipv6Regex = /^(([a-f0-9]{1,4}:){7}|::([a-f0-9]{1,4}:){0,6}|([a-f0-9]{1,4}:){1}:([a-f0-9]{1,4}:){0,5}|([a-f0-9]{1,4}:){2}:([a-f0-9]{1,4}:){0,4}|([a-f0-9]{1,4}:){3}:([a-f0-9]{1,4}:){0,3}|([a-f0-9]{1,4}:){4}:([a-f0-9]{1,4}:){0,2}|([a-f0-9]{1,4}:){5}:([a-f0-9]{1,4}:){0,1})([a-f0-9]{1,4}|(((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2}))\.){3}((25[0-5])|(2[0-4][0-9])|(1[0-9]{2})|([0-9]{1,2})))$/;
+    var base64Regex = /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/;
+    var dateRegexSource = `((\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-((0[13578]|1[02])-(0[1-9]|[12]\\d|3[01])|(0[469]|11)-(0[1-9]|[12]\\d|30)|(02)-(0[1-9]|1\\d|2[0-8])))`;
+    var dateRegex = new RegExp(`^${dateRegexSource}$`);
+    function timeRegexSource(args) {
+      let regex = `([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d`;
+      if (args.precision) {
+        regex = `${regex}\\.\\d{${args.precision}}`;
+      } else if (args.precision == null) {
+        regex = `${regex}(\\.\\d+)?`;
+      }
+      return regex;
+    }
+    function timeRegex(args) {
+      return new RegExp(`^${timeRegexSource(args)}$`);
+    }
+    function datetimeRegex(args) {
+      let regex = `${dateRegexSource}T${timeRegexSource(args)}`;
+      const opts = [];
+      opts.push(args.local ? `Z?` : `Z`);
+      if (args.offset)
+        opts.push(`([+-]\\d{2}:?\\d{2})`);
+      regex = `${regex}(${opts.join("|")})`;
+      return new RegExp(`^${regex}$`);
+    }
+    exports.datetimeRegex = datetimeRegex;
+    function isValidIP(ip, version) {
+      if ((version === "v4" || !version) && ipv4Regex.test(ip)) {
+        return true;
+      }
+      if ((version === "v6" || !version) && ipv6Regex.test(ip)) {
+        return true;
+      }
+      return false;
+    }
+    var ZodString = class extends ZodType {
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = String(input.data);
+        }
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.string) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx2, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.string,
+            received: ctx2.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        const status = new parseUtil_1.ParseStatus();
+        let ctx = void 0;
+        for (const check of this._def.checks) {
+          if (check.kind === "min") {
+            if (input.data.length < check.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_small,
+                minimum: check.value,
+                type: "string",
+                inclusive: true,
+                exact: false,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "max") {
+            if (input.data.length > check.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_big,
+                maximum: check.value,
+                type: "string",
+                inclusive: true,
+                exact: false,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "length") {
+            const tooBig = input.data.length > check.value;
+            const tooSmall = input.data.length < check.value;
+            if (tooBig || tooSmall) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              if (tooBig) {
+                (0, parseUtil_1.addIssueToContext)(ctx, {
+                  code: ZodError_1.ZodIssueCode.too_big,
+                  maximum: check.value,
+                  type: "string",
+                  inclusive: true,
+                  exact: true,
+                  message: check.message
+                });
+              } else if (tooSmall) {
+                (0, parseUtil_1.addIssueToContext)(ctx, {
+                  code: ZodError_1.ZodIssueCode.too_small,
+                  minimum: check.value,
+                  type: "string",
+                  inclusive: true,
+                  exact: true,
+                  message: check.message
+                });
+              }
+              status.dirty();
+            }
+          } else if (check.kind === "email") {
+            if (!emailRegex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "email",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "emoji") {
+            if (!emojiRegex) {
+              emojiRegex = new RegExp(_emojiRegex, "u");
+            }
+            if (!emojiRegex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "emoji",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "uuid") {
+            if (!uuidRegex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "uuid",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "nanoid") {
+            if (!nanoidRegex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "nanoid",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "cuid") {
+            if (!cuidRegex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "cuid",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "cuid2") {
+            if (!cuid2Regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "cuid2",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "ulid") {
+            if (!ulidRegex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "ulid",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "url") {
+            try {
+              new URL(input.data);
+            } catch (_a5) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "url",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "regex") {
+            check.regex.lastIndex = 0;
+            const testResult = check.regex.test(input.data);
+            if (!testResult) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "regex",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "trim") {
+            input.data = input.data.trim();
+          } else if (check.kind === "includes") {
+            if (!input.data.includes(check.value, check.position)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                validation: { includes: check.value, position: check.position },
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "toLowerCase") {
+            input.data = input.data.toLowerCase();
+          } else if (check.kind === "toUpperCase") {
+            input.data = input.data.toUpperCase();
+          } else if (check.kind === "startsWith") {
+            if (!input.data.startsWith(check.value)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                validation: { startsWith: check.value },
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "endsWith") {
+            if (!input.data.endsWith(check.value)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                validation: { endsWith: check.value },
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "datetime") {
+            const regex = datetimeRegex(check);
+            if (!regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                validation: "datetime",
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "date") {
+            const regex = dateRegex;
+            if (!regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                validation: "date",
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "time") {
+            const regex = timeRegex(check);
+            if (!regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                validation: "time",
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "duration") {
+            if (!durationRegex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "duration",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "ip") {
+            if (!isValidIP(input.data, check.version)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "ip",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "base64") {
+            if (!base64Regex.test(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                validation: "base64",
+                code: ZodError_1.ZodIssueCode.invalid_string,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else {
+            util_1.util.assertNever(check);
+          }
+        }
+        return { status: status.value, value: input.data };
+      }
+      _regex(regex, validation, message) {
+        return this.refinement((data) => regex.test(data), {
+          validation,
+          code: ZodError_1.ZodIssueCode.invalid_string,
+          ...errorUtil_1.errorUtil.errToObj(message)
+        });
+      }
+      _addCheck(check) {
+        return new ZodString({
+          ...this._def,
+          checks: [...this._def.checks, check]
+        });
+      }
+      email(message) {
+        return this._addCheck({ kind: "email", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      url(message) {
+        return this._addCheck({ kind: "url", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      emoji(message) {
+        return this._addCheck({ kind: "emoji", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      uuid(message) {
+        return this._addCheck({ kind: "uuid", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      nanoid(message) {
+        return this._addCheck({ kind: "nanoid", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      cuid(message) {
+        return this._addCheck({ kind: "cuid", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      cuid2(message) {
+        return this._addCheck({ kind: "cuid2", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      ulid(message) {
+        return this._addCheck({ kind: "ulid", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      base64(message) {
+        return this._addCheck({ kind: "base64", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      ip(options) {
+        return this._addCheck({ kind: "ip", ...errorUtil_1.errorUtil.errToObj(options) });
+      }
+      datetime(options) {
+        var _a5, _b2;
+        if (typeof options === "string") {
+          return this._addCheck({
+            kind: "datetime",
+            precision: null,
+            offset: false,
+            local: false,
+            message: options
+          });
+        }
+        return this._addCheck({
+          kind: "datetime",
+          precision: typeof (options === null || options === void 0 ? void 0 : options.precision) === "undefined" ? null : options === null || options === void 0 ? void 0 : options.precision,
+          offset: (_a5 = options === null || options === void 0 ? void 0 : options.offset) !== null && _a5 !== void 0 ? _a5 : false,
+          local: (_b2 = options === null || options === void 0 ? void 0 : options.local) !== null && _b2 !== void 0 ? _b2 : false,
+          ...errorUtil_1.errorUtil.errToObj(options === null || options === void 0 ? void 0 : options.message)
+        });
+      }
+      date(message) {
+        return this._addCheck({ kind: "date", message });
+      }
+      time(options) {
+        if (typeof options === "string") {
+          return this._addCheck({
+            kind: "time",
+            precision: null,
+            message: options
+          });
+        }
+        return this._addCheck({
+          kind: "time",
+          precision: typeof (options === null || options === void 0 ? void 0 : options.precision) === "undefined" ? null : options === null || options === void 0 ? void 0 : options.precision,
+          ...errorUtil_1.errorUtil.errToObj(options === null || options === void 0 ? void 0 : options.message)
+        });
+      }
+      duration(message) {
+        return this._addCheck({ kind: "duration", ...errorUtil_1.errorUtil.errToObj(message) });
+      }
+      regex(regex, message) {
+        return this._addCheck({
+          kind: "regex",
+          regex,
+          ...errorUtil_1.errorUtil.errToObj(message)
+        });
+      }
+      includes(value, options) {
+        return this._addCheck({
+          kind: "includes",
+          value,
+          position: options === null || options === void 0 ? void 0 : options.position,
+          ...errorUtil_1.errorUtil.errToObj(options === null || options === void 0 ? void 0 : options.message)
+        });
+      }
+      startsWith(value, message) {
+        return this._addCheck({
+          kind: "startsWith",
+          value,
+          ...errorUtil_1.errorUtil.errToObj(message)
+        });
+      }
+      endsWith(value, message) {
+        return this._addCheck({
+          kind: "endsWith",
+          value,
+          ...errorUtil_1.errorUtil.errToObj(message)
+        });
+      }
+      min(minLength, message) {
+        return this._addCheck({
+          kind: "min",
+          value: minLength,
+          ...errorUtil_1.errorUtil.errToObj(message)
+        });
+      }
+      max(maxLength, message) {
+        return this._addCheck({
+          kind: "max",
+          value: maxLength,
+          ...errorUtil_1.errorUtil.errToObj(message)
+        });
+      }
+      length(len, message) {
+        return this._addCheck({
+          kind: "length",
+          value: len,
+          ...errorUtil_1.errorUtil.errToObj(message)
+        });
+      }
+      nonempty(message) {
+        return this.min(1, errorUtil_1.errorUtil.errToObj(message));
+      }
+      trim() {
+        return new ZodString({
+          ...this._def,
+          checks: [...this._def.checks, { kind: "trim" }]
+        });
+      }
+      toLowerCase() {
+        return new ZodString({
+          ...this._def,
+          checks: [...this._def.checks, { kind: "toLowerCase" }]
+        });
+      }
+      toUpperCase() {
+        return new ZodString({
+          ...this._def,
+          checks: [...this._def.checks, { kind: "toUpperCase" }]
+        });
+      }
+      get isDatetime() {
+        return !!this._def.checks.find((ch) => ch.kind === "datetime");
+      }
+      get isDate() {
+        return !!this._def.checks.find((ch) => ch.kind === "date");
+      }
+      get isTime() {
+        return !!this._def.checks.find((ch) => ch.kind === "time");
+      }
+      get isDuration() {
+        return !!this._def.checks.find((ch) => ch.kind === "duration");
+      }
+      get isEmail() {
+        return !!this._def.checks.find((ch) => ch.kind === "email");
+      }
+      get isURL() {
+        return !!this._def.checks.find((ch) => ch.kind === "url");
+      }
+      get isEmoji() {
+        return !!this._def.checks.find((ch) => ch.kind === "emoji");
+      }
+      get isUUID() {
+        return !!this._def.checks.find((ch) => ch.kind === "uuid");
+      }
+      get isNANOID() {
+        return !!this._def.checks.find((ch) => ch.kind === "nanoid");
+      }
+      get isCUID() {
+        return !!this._def.checks.find((ch) => ch.kind === "cuid");
+      }
+      get isCUID2() {
+        return !!this._def.checks.find((ch) => ch.kind === "cuid2");
+      }
+      get isULID() {
+        return !!this._def.checks.find((ch) => ch.kind === "ulid");
+      }
+      get isIP() {
+        return !!this._def.checks.find((ch) => ch.kind === "ip");
+      }
+      get isBase64() {
+        return !!this._def.checks.find((ch) => ch.kind === "base64");
+      }
+      get minLength() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          }
+        }
+        return min;
+      }
+      get maxLength() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max;
+      }
+    };
+    exports.ZodString = ZodString;
+    ZodString.create = (params) => {
+      var _a5;
+      return new ZodString({
+        checks: [],
+        typeName: ZodFirstPartyTypeKind.ZodString,
+        coerce: (_a5 = params === null || params === void 0 ? void 0 : params.coerce) !== null && _a5 !== void 0 ? _a5 : false,
+        ...processCreateParams(params)
+      });
+    };
+    function floatSafeRemainder(val, step) {
+      const valDecCount = (val.toString().split(".")[1] || "").length;
+      const stepDecCount = (step.toString().split(".")[1] || "").length;
+      const decCount = valDecCount > stepDecCount ? valDecCount : stepDecCount;
+      const valInt = parseInt(val.toFixed(decCount).replace(".", ""));
+      const stepInt = parseInt(step.toFixed(decCount).replace(".", ""));
+      return valInt % stepInt / Math.pow(10, decCount);
+    }
+    var ZodNumber = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        this.min = this.gte;
+        this.max = this.lte;
+        this.step = this.multipleOf;
+      }
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = Number(input.data);
+        }
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.number) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx2, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.number,
+            received: ctx2.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        let ctx = void 0;
+        const status = new parseUtil_1.ParseStatus();
+        for (const check of this._def.checks) {
+          if (check.kind === "int") {
+            if (!util_1.util.isInteger(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.invalid_type,
+                expected: "integer",
+                received: "float",
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "min") {
+            const tooSmall = check.inclusive ? input.data < check.value : input.data <= check.value;
+            if (tooSmall) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_small,
+                minimum: check.value,
+                type: "number",
+                inclusive: check.inclusive,
+                exact: false,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "max") {
+            const tooBig = check.inclusive ? input.data > check.value : input.data >= check.value;
+            if (tooBig) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_big,
+                maximum: check.value,
+                type: "number",
+                inclusive: check.inclusive,
+                exact: false,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "multipleOf") {
+            if (floatSafeRemainder(input.data, check.value) !== 0) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.not_multiple_of,
+                multipleOf: check.value,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "finite") {
+            if (!Number.isFinite(input.data)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.not_finite,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else {
+            util_1.util.assertNever(check);
+          }
+        }
+        return { status: status.value, value: input.data };
+      }
+      gte(value, message) {
+        return this.setLimit("min", value, true, errorUtil_1.errorUtil.toString(message));
+      }
+      gt(value, message) {
+        return this.setLimit("min", value, false, errorUtil_1.errorUtil.toString(message));
+      }
+      lte(value, message) {
+        return this.setLimit("max", value, true, errorUtil_1.errorUtil.toString(message));
+      }
+      lt(value, message) {
+        return this.setLimit("max", value, false, errorUtil_1.errorUtil.toString(message));
+      }
+      setLimit(kind3, value, inclusive, message) {
+        return new ZodNumber({
+          ...this._def,
+          checks: [
+            ...this._def.checks,
+            {
+              kind: kind3,
+              value,
+              inclusive,
+              message: errorUtil_1.errorUtil.toString(message)
+            }
+          ]
+        });
+      }
+      _addCheck(check) {
+        return new ZodNumber({
+          ...this._def,
+          checks: [...this._def.checks, check]
+        });
+      }
+      int(message) {
+        return this._addCheck({
+          kind: "int",
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      positive(message) {
+        return this._addCheck({
+          kind: "min",
+          value: 0,
+          inclusive: false,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      negative(message) {
+        return this._addCheck({
+          kind: "max",
+          value: 0,
+          inclusive: false,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      nonpositive(message) {
+        return this._addCheck({
+          kind: "max",
+          value: 0,
+          inclusive: true,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      nonnegative(message) {
+        return this._addCheck({
+          kind: "min",
+          value: 0,
+          inclusive: true,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      multipleOf(value, message) {
+        return this._addCheck({
+          kind: "multipleOf",
+          value,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      finite(message) {
+        return this._addCheck({
+          kind: "finite",
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      safe(message) {
+        return this._addCheck({
+          kind: "min",
+          inclusive: true,
+          value: Number.MIN_SAFE_INTEGER,
+          message: errorUtil_1.errorUtil.toString(message)
+        })._addCheck({
+          kind: "max",
+          inclusive: true,
+          value: Number.MAX_SAFE_INTEGER,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      get minValue() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          }
+        }
+        return min;
+      }
+      get maxValue() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max;
+      }
+      get isInt() {
+        return !!this._def.checks.find((ch) => ch.kind === "int" || ch.kind === "multipleOf" && util_1.util.isInteger(ch.value));
+      }
+      get isFinite() {
+        let max = null, min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "finite" || ch.kind === "int" || ch.kind === "multipleOf") {
+            return true;
+          } else if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          } else if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return Number.isFinite(min) && Number.isFinite(max);
+      }
+    };
+    exports.ZodNumber = ZodNumber;
+    ZodNumber.create = (params) => {
+      return new ZodNumber({
+        checks: [],
+        typeName: ZodFirstPartyTypeKind.ZodNumber,
+        coerce: (params === null || params === void 0 ? void 0 : params.coerce) || false,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodBigInt = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        this.min = this.gte;
+        this.max = this.lte;
+      }
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = BigInt(input.data);
+        }
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.bigint) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx2, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.bigint,
+            received: ctx2.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        let ctx = void 0;
+        const status = new parseUtil_1.ParseStatus();
+        for (const check of this._def.checks) {
+          if (check.kind === "min") {
+            const tooSmall = check.inclusive ? input.data < check.value : input.data <= check.value;
+            if (tooSmall) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_small,
+                type: "bigint",
+                minimum: check.value,
+                inclusive: check.inclusive,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "max") {
+            const tooBig = check.inclusive ? input.data > check.value : input.data >= check.value;
+            if (tooBig) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_big,
+                type: "bigint",
+                maximum: check.value,
+                inclusive: check.inclusive,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "multipleOf") {
+            if (input.data % check.value !== BigInt(0)) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.not_multiple_of,
+                multipleOf: check.value,
+                message: check.message
+              });
+              status.dirty();
+            }
+          } else {
+            util_1.util.assertNever(check);
+          }
+        }
+        return { status: status.value, value: input.data };
+      }
+      gte(value, message) {
+        return this.setLimit("min", value, true, errorUtil_1.errorUtil.toString(message));
+      }
+      gt(value, message) {
+        return this.setLimit("min", value, false, errorUtil_1.errorUtil.toString(message));
+      }
+      lte(value, message) {
+        return this.setLimit("max", value, true, errorUtil_1.errorUtil.toString(message));
+      }
+      lt(value, message) {
+        return this.setLimit("max", value, false, errorUtil_1.errorUtil.toString(message));
+      }
+      setLimit(kind3, value, inclusive, message) {
+        return new ZodBigInt({
+          ...this._def,
+          checks: [
+            ...this._def.checks,
+            {
+              kind: kind3,
+              value,
+              inclusive,
+              message: errorUtil_1.errorUtil.toString(message)
+            }
+          ]
+        });
+      }
+      _addCheck(check) {
+        return new ZodBigInt({
+          ...this._def,
+          checks: [...this._def.checks, check]
+        });
+      }
+      positive(message) {
+        return this._addCheck({
+          kind: "min",
+          value: BigInt(0),
+          inclusive: false,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      negative(message) {
+        return this._addCheck({
+          kind: "max",
+          value: BigInt(0),
+          inclusive: false,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      nonpositive(message) {
+        return this._addCheck({
+          kind: "max",
+          value: BigInt(0),
+          inclusive: true,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      nonnegative(message) {
+        return this._addCheck({
+          kind: "min",
+          value: BigInt(0),
+          inclusive: true,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      multipleOf(value, message) {
+        return this._addCheck({
+          kind: "multipleOf",
+          value,
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      get minValue() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          }
+        }
+        return min;
+      }
+      get maxValue() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max;
+      }
+    };
+    exports.ZodBigInt = ZodBigInt;
+    ZodBigInt.create = (params) => {
+      var _a5;
+      return new ZodBigInt({
+        checks: [],
+        typeName: ZodFirstPartyTypeKind.ZodBigInt,
+        coerce: (_a5 = params === null || params === void 0 ? void 0 : params.coerce) !== null && _a5 !== void 0 ? _a5 : false,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodBoolean = class extends ZodType {
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = Boolean(input.data);
+        }
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.boolean) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.boolean,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        return (0, parseUtil_1.OK)(input.data);
+      }
+    };
+    exports.ZodBoolean = ZodBoolean;
+    ZodBoolean.create = (params) => {
+      return new ZodBoolean({
+        typeName: ZodFirstPartyTypeKind.ZodBoolean,
+        coerce: (params === null || params === void 0 ? void 0 : params.coerce) || false,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodDate = class extends ZodType {
+      _parse(input) {
+        if (this._def.coerce) {
+          input.data = new Date(input.data);
+        }
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.date) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx2, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.date,
+            received: ctx2.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        if (isNaN(input.data.getTime())) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx2, {
+            code: ZodError_1.ZodIssueCode.invalid_date
+          });
+          return parseUtil_1.INVALID;
+        }
+        const status = new parseUtil_1.ParseStatus();
+        let ctx = void 0;
+        for (const check of this._def.checks) {
+          if (check.kind === "min") {
+            if (input.data.getTime() < check.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_small,
+                message: check.message,
+                inclusive: true,
+                exact: false,
+                minimum: check.value,
+                type: "date"
+              });
+              status.dirty();
+            }
+          } else if (check.kind === "max") {
+            if (input.data.getTime() > check.value) {
+              ctx = this._getOrReturnCtx(input, ctx);
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.too_big,
+                message: check.message,
+                inclusive: true,
+                exact: false,
+                maximum: check.value,
+                type: "date"
+              });
+              status.dirty();
+            }
+          } else {
+            util_1.util.assertNever(check);
+          }
+        }
+        return {
+          status: status.value,
+          value: new Date(input.data.getTime())
+        };
+      }
+      _addCheck(check) {
+        return new ZodDate({
+          ...this._def,
+          checks: [...this._def.checks, check]
+        });
+      }
+      min(minDate, message) {
+        return this._addCheck({
+          kind: "min",
+          value: minDate.getTime(),
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      max(maxDate, message) {
+        return this._addCheck({
+          kind: "max",
+          value: maxDate.getTime(),
+          message: errorUtil_1.errorUtil.toString(message)
+        });
+      }
+      get minDate() {
+        let min = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "min") {
+            if (min === null || ch.value > min)
+              min = ch.value;
+          }
+        }
+        return min != null ? new Date(min) : null;
+      }
+      get maxDate() {
+        let max = null;
+        for (const ch of this._def.checks) {
+          if (ch.kind === "max") {
+            if (max === null || ch.value < max)
+              max = ch.value;
+          }
+        }
+        return max != null ? new Date(max) : null;
+      }
+    };
+    exports.ZodDate = ZodDate;
+    ZodDate.create = (params) => {
+      return new ZodDate({
+        checks: [],
+        coerce: (params === null || params === void 0 ? void 0 : params.coerce) || false,
+        typeName: ZodFirstPartyTypeKind.ZodDate,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodSymbol = class extends ZodType {
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.symbol) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.symbol,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        return (0, parseUtil_1.OK)(input.data);
+      }
+    };
+    exports.ZodSymbol = ZodSymbol;
+    ZodSymbol.create = (params) => {
+      return new ZodSymbol({
+        typeName: ZodFirstPartyTypeKind.ZodSymbol,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodUndefined = class extends ZodType {
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.undefined) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.undefined,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        return (0, parseUtil_1.OK)(input.data);
+      }
+    };
+    exports.ZodUndefined = ZodUndefined;
+    ZodUndefined.create = (params) => {
+      return new ZodUndefined({
+        typeName: ZodFirstPartyTypeKind.ZodUndefined,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodNull = class extends ZodType {
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.null) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.null,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        return (0, parseUtil_1.OK)(input.data);
+      }
+    };
+    exports.ZodNull = ZodNull;
+    ZodNull.create = (params) => {
+      return new ZodNull({
+        typeName: ZodFirstPartyTypeKind.ZodNull,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodAny = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        this._any = true;
+      }
+      _parse(input) {
+        return (0, parseUtil_1.OK)(input.data);
+      }
+    };
+    exports.ZodAny = ZodAny;
+    ZodAny.create = (params) => {
+      return new ZodAny({
+        typeName: ZodFirstPartyTypeKind.ZodAny,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodUnknown = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        this._unknown = true;
+      }
+      _parse(input) {
+        return (0, parseUtil_1.OK)(input.data);
+      }
+    };
+    exports.ZodUnknown = ZodUnknown;
+    ZodUnknown.create = (params) => {
+      return new ZodUnknown({
+        typeName: ZodFirstPartyTypeKind.ZodUnknown,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodNever = class extends ZodType {
+      _parse(input) {
+        const ctx = this._getOrReturnCtx(input);
+        (0, parseUtil_1.addIssueToContext)(ctx, {
+          code: ZodError_1.ZodIssueCode.invalid_type,
+          expected: util_1.ZodParsedType.never,
+          received: ctx.parsedType
+        });
+        return parseUtil_1.INVALID;
+      }
+    };
+    exports.ZodNever = ZodNever;
+    ZodNever.create = (params) => {
+      return new ZodNever({
+        typeName: ZodFirstPartyTypeKind.ZodNever,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodVoid = class extends ZodType {
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.undefined) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.void,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        return (0, parseUtil_1.OK)(input.data);
+      }
+    };
+    exports.ZodVoid = ZodVoid;
+    ZodVoid.create = (params) => {
+      return new ZodVoid({
+        typeName: ZodFirstPartyTypeKind.ZodVoid,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodArray = class extends ZodType {
+      _parse(input) {
+        const { ctx, status } = this._processInputParams(input);
+        const def = this._def;
+        if (ctx.parsedType !== util_1.ZodParsedType.array) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.array,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        if (def.exactLength !== null) {
+          const tooBig = ctx.data.length > def.exactLength.value;
+          const tooSmall = ctx.data.length < def.exactLength.value;
+          if (tooBig || tooSmall) {
+            (0, parseUtil_1.addIssueToContext)(ctx, {
+              code: tooBig ? ZodError_1.ZodIssueCode.too_big : ZodError_1.ZodIssueCode.too_small,
+              minimum: tooSmall ? def.exactLength.value : void 0,
+              maximum: tooBig ? def.exactLength.value : void 0,
+              type: "array",
+              inclusive: true,
+              exact: true,
+              message: def.exactLength.message
+            });
+            status.dirty();
+          }
+        }
+        if (def.minLength !== null) {
+          if (ctx.data.length < def.minLength.value) {
+            (0, parseUtil_1.addIssueToContext)(ctx, {
+              code: ZodError_1.ZodIssueCode.too_small,
+              minimum: def.minLength.value,
+              type: "array",
+              inclusive: true,
+              exact: false,
+              message: def.minLength.message
+            });
+            status.dirty();
+          }
+        }
+        if (def.maxLength !== null) {
+          if (ctx.data.length > def.maxLength.value) {
+            (0, parseUtil_1.addIssueToContext)(ctx, {
+              code: ZodError_1.ZodIssueCode.too_big,
+              maximum: def.maxLength.value,
+              type: "array",
+              inclusive: true,
+              exact: false,
+              message: def.maxLength.message
+            });
+            status.dirty();
+          }
+        }
+        if (ctx.common.async) {
+          return Promise.all([...ctx.data].map((item, i3) => {
+            return def.type._parseAsync(new ParseInputLazyPath(ctx, item, ctx.path, i3));
+          })).then((result2) => {
+            return parseUtil_1.ParseStatus.mergeArray(status, result2);
+          });
+        }
+        const result = [...ctx.data].map((item, i3) => {
+          return def.type._parseSync(new ParseInputLazyPath(ctx, item, ctx.path, i3));
+        });
+        return parseUtil_1.ParseStatus.mergeArray(status, result);
+      }
+      get element() {
+        return this._def.type;
+      }
+      min(minLength, message) {
+        return new ZodArray({
+          ...this._def,
+          minLength: { value: minLength, message: errorUtil_1.errorUtil.toString(message) }
+        });
+      }
+      max(maxLength, message) {
+        return new ZodArray({
+          ...this._def,
+          maxLength: { value: maxLength, message: errorUtil_1.errorUtil.toString(message) }
+        });
+      }
+      length(len, message) {
+        return new ZodArray({
+          ...this._def,
+          exactLength: { value: len, message: errorUtil_1.errorUtil.toString(message) }
+        });
+      }
+      nonempty(message) {
+        return this.min(1, message);
+      }
+    };
+    exports.ZodArray = ZodArray;
+    ZodArray.create = (schema, params) => {
+      return new ZodArray({
+        type: schema,
+        minLength: null,
+        maxLength: null,
+        exactLength: null,
+        typeName: ZodFirstPartyTypeKind.ZodArray,
+        ...processCreateParams(params)
+      });
+    };
+    function deepPartialify(schema) {
+      if (schema instanceof ZodObject) {
+        const newShape = {};
+        for (const key in schema.shape) {
+          const fieldSchema = schema.shape[key];
+          newShape[key] = ZodOptional.create(deepPartialify(fieldSchema));
+        }
+        return new ZodObject({
+          ...schema._def,
+          shape: () => newShape
+        });
+      } else if (schema instanceof ZodArray) {
+        return new ZodArray({
+          ...schema._def,
+          type: deepPartialify(schema.element)
+        });
+      } else if (schema instanceof ZodOptional) {
+        return ZodOptional.create(deepPartialify(schema.unwrap()));
+      } else if (schema instanceof ZodNullable) {
+        return ZodNullable.create(deepPartialify(schema.unwrap()));
+      } else if (schema instanceof ZodTuple) {
+        return ZodTuple.create(schema.items.map((item) => deepPartialify(item)));
+      } else {
+        return schema;
+      }
+    }
+    var ZodObject = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        this._cached = null;
+        this.nonstrict = this.passthrough;
+        this.augment = this.extend;
+      }
+      _getCached() {
+        if (this._cached !== null)
+          return this._cached;
+        const shape = this._def.shape();
+        const keys = util_1.util.objectKeys(shape);
+        return this._cached = { shape, keys };
+      }
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.object) {
+          const ctx2 = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx2, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.object,
+            received: ctx2.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        const { status, ctx } = this._processInputParams(input);
+        const { shape, keys: shapeKeys } = this._getCached();
+        const extraKeys = [];
+        if (!(this._def.catchall instanceof ZodNever && this._def.unknownKeys === "strip")) {
+          for (const key in ctx.data) {
+            if (!shapeKeys.includes(key)) {
+              extraKeys.push(key);
+            }
+          }
+        }
+        const pairs = [];
+        for (const key of shapeKeys) {
+          const keyValidator = shape[key];
+          const value = ctx.data[key];
+          pairs.push({
+            key: { status: "valid", value: key },
+            value: keyValidator._parse(new ParseInputLazyPath(ctx, value, ctx.path, key)),
+            alwaysSet: key in ctx.data
+          });
+        }
+        if (this._def.catchall instanceof ZodNever) {
+          const unknownKeys = this._def.unknownKeys;
+          if (unknownKeys === "passthrough") {
+            for (const key of extraKeys) {
+              pairs.push({
+                key: { status: "valid", value: key },
+                value: { status: "valid", value: ctx.data[key] }
+              });
+            }
+          } else if (unknownKeys === "strict") {
+            if (extraKeys.length > 0) {
+              (0, parseUtil_1.addIssueToContext)(ctx, {
+                code: ZodError_1.ZodIssueCode.unrecognized_keys,
+                keys: extraKeys
+              });
+              status.dirty();
+            }
+          } else if (unknownKeys === "strip") {
+          } else {
+            throw new Error(`Internal ZodObject error: invalid unknownKeys value.`);
+          }
+        } else {
+          const catchall = this._def.catchall;
+          for (const key of extraKeys) {
+            const value = ctx.data[key];
+            pairs.push({
+              key: { status: "valid", value: key },
+              value: catchall._parse(
+                new ParseInputLazyPath(ctx, value, ctx.path, key)
+              ),
+              alwaysSet: key in ctx.data
+            });
+          }
+        }
+        if (ctx.common.async) {
+          return Promise.resolve().then(async () => {
+            const syncPairs = [];
+            for (const pair of pairs) {
+              const key = await pair.key;
+              const value = await pair.value;
+              syncPairs.push({
+                key,
+                value,
+                alwaysSet: pair.alwaysSet
+              });
+            }
+            return syncPairs;
+          }).then((syncPairs) => {
+            return parseUtil_1.ParseStatus.mergeObjectSync(status, syncPairs);
+          });
+        } else {
+          return parseUtil_1.ParseStatus.mergeObjectSync(status, pairs);
+        }
+      }
+      get shape() {
+        return this._def.shape();
+      }
+      strict(message) {
+        errorUtil_1.errorUtil.errToObj;
+        return new ZodObject({
+          ...this._def,
+          unknownKeys: "strict",
+          ...message !== void 0 ? {
+            errorMap: (issue, ctx) => {
+              var _a5, _b2, _c2, _d2;
+              const defaultError = (_c2 = (_b2 = (_a5 = this._def).errorMap) === null || _b2 === void 0 ? void 0 : _b2.call(_a5, issue, ctx).message) !== null && _c2 !== void 0 ? _c2 : ctx.defaultError;
+              if (issue.code === "unrecognized_keys")
+                return {
+                  message: (_d2 = errorUtil_1.errorUtil.errToObj(message).message) !== null && _d2 !== void 0 ? _d2 : defaultError
+                };
+              return {
+                message: defaultError
+              };
+            }
+          } : {}
+        });
+      }
+      strip() {
+        return new ZodObject({
+          ...this._def,
+          unknownKeys: "strip"
+        });
+      }
+      passthrough() {
+        return new ZodObject({
+          ...this._def,
+          unknownKeys: "passthrough"
+        });
+      }
+      extend(augmentation) {
+        return new ZodObject({
+          ...this._def,
+          shape: () => ({
+            ...this._def.shape(),
+            ...augmentation
+          })
+        });
+      }
+      merge(merging) {
+        const merged = new ZodObject({
+          unknownKeys: merging._def.unknownKeys,
+          catchall: merging._def.catchall,
+          shape: () => ({
+            ...this._def.shape(),
+            ...merging._def.shape()
+          }),
+          typeName: ZodFirstPartyTypeKind.ZodObject
+        });
+        return merged;
+      }
+      setKey(key, schema) {
+        return this.augment({ [key]: schema });
+      }
+      catchall(index) {
+        return new ZodObject({
+          ...this._def,
+          catchall: index
+        });
+      }
+      pick(mask) {
+        const shape = {};
+        util_1.util.objectKeys(mask).forEach((key) => {
+          if (mask[key] && this.shape[key]) {
+            shape[key] = this.shape[key];
+          }
+        });
+        return new ZodObject({
+          ...this._def,
+          shape: () => shape
+        });
+      }
+      omit(mask) {
+        const shape = {};
+        util_1.util.objectKeys(this.shape).forEach((key) => {
+          if (!mask[key]) {
+            shape[key] = this.shape[key];
+          }
+        });
+        return new ZodObject({
+          ...this._def,
+          shape: () => shape
+        });
+      }
+      deepPartial() {
+        return deepPartialify(this);
+      }
+      partial(mask) {
+        const newShape = {};
+        util_1.util.objectKeys(this.shape).forEach((key) => {
+          const fieldSchema = this.shape[key];
+          if (mask && !mask[key]) {
+            newShape[key] = fieldSchema;
+          } else {
+            newShape[key] = fieldSchema.optional();
+          }
+        });
+        return new ZodObject({
+          ...this._def,
+          shape: () => newShape
+        });
+      }
+      required(mask) {
+        const newShape = {};
+        util_1.util.objectKeys(this.shape).forEach((key) => {
+          if (mask && !mask[key]) {
+            newShape[key] = this.shape[key];
+          } else {
+            const fieldSchema = this.shape[key];
+            let newField = fieldSchema;
+            while (newField instanceof ZodOptional) {
+              newField = newField._def.innerType;
+            }
+            newShape[key] = newField;
+          }
+        });
+        return new ZodObject({
+          ...this._def,
+          shape: () => newShape
+        });
+      }
+      keyof() {
+        return createZodEnum(util_1.util.objectKeys(this.shape));
+      }
+    };
+    exports.ZodObject = ZodObject;
+    ZodObject.create = (shape, params) => {
+      return new ZodObject({
+        shape: () => shape,
+        unknownKeys: "strip",
+        catchall: ZodNever.create(),
+        typeName: ZodFirstPartyTypeKind.ZodObject,
+        ...processCreateParams(params)
+      });
+    };
+    ZodObject.strictCreate = (shape, params) => {
+      return new ZodObject({
+        shape: () => shape,
+        unknownKeys: "strict",
+        catchall: ZodNever.create(),
+        typeName: ZodFirstPartyTypeKind.ZodObject,
+        ...processCreateParams(params)
+      });
+    };
+    ZodObject.lazycreate = (shape, params) => {
+      return new ZodObject({
+        shape,
+        unknownKeys: "strip",
+        catchall: ZodNever.create(),
+        typeName: ZodFirstPartyTypeKind.ZodObject,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodUnion = class extends ZodType {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const options = this._def.options;
+        function handleResults(results) {
+          for (const result of results) {
+            if (result.result.status === "valid") {
+              return result.result;
+            }
+          }
+          for (const result of results) {
+            if (result.result.status === "dirty") {
+              ctx.common.issues.push(...result.ctx.common.issues);
+              return result.result;
+            }
+          }
+          const unionErrors = results.map((result) => new ZodError_1.ZodError(result.ctx.common.issues));
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_union,
+            unionErrors
+          });
+          return parseUtil_1.INVALID;
+        }
+        if (ctx.common.async) {
+          return Promise.all(options.map(async (option) => {
+            const childCtx = {
+              ...ctx,
+              common: {
+                ...ctx.common,
+                issues: []
+              },
+              parent: null
+            };
+            return {
+              result: await option._parseAsync({
+                data: ctx.data,
+                path: ctx.path,
+                parent: childCtx
+              }),
+              ctx: childCtx
+            };
+          })).then(handleResults);
+        } else {
+          let dirty = void 0;
+          const issues = [];
+          for (const option of options) {
+            const childCtx = {
+              ...ctx,
+              common: {
+                ...ctx.common,
+                issues: []
+              },
+              parent: null
+            };
+            const result = option._parseSync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: childCtx
+            });
+            if (result.status === "valid") {
+              return result;
+            } else if (result.status === "dirty" && !dirty) {
+              dirty = { result, ctx: childCtx };
+            }
+            if (childCtx.common.issues.length) {
+              issues.push(childCtx.common.issues);
+            }
+          }
+          if (dirty) {
+            ctx.common.issues.push(...dirty.ctx.common.issues);
+            return dirty.result;
+          }
+          const unionErrors = issues.map((issues2) => new ZodError_1.ZodError(issues2));
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_union,
+            unionErrors
+          });
+          return parseUtil_1.INVALID;
+        }
+      }
+      get options() {
+        return this._def.options;
+      }
+    };
+    exports.ZodUnion = ZodUnion;
+    ZodUnion.create = (types, params) => {
+      return new ZodUnion({
+        options: types,
+        typeName: ZodFirstPartyTypeKind.ZodUnion,
+        ...processCreateParams(params)
+      });
+    };
+    var getDiscriminator = (type2) => {
+      if (type2 instanceof ZodLazy) {
+        return getDiscriminator(type2.schema);
+      } else if (type2 instanceof ZodEffects) {
+        return getDiscriminator(type2.innerType());
+      } else if (type2 instanceof ZodLiteral) {
+        return [type2.value];
+      } else if (type2 instanceof ZodEnum) {
+        return type2.options;
+      } else if (type2 instanceof ZodNativeEnum) {
+        return util_1.util.objectValues(type2.enum);
+      } else if (type2 instanceof ZodDefault) {
+        return getDiscriminator(type2._def.innerType);
+      } else if (type2 instanceof ZodUndefined) {
+        return [void 0];
+      } else if (type2 instanceof ZodNull) {
+        return [null];
+      } else if (type2 instanceof ZodOptional) {
+        return [void 0, ...getDiscriminator(type2.unwrap())];
+      } else if (type2 instanceof ZodNullable) {
+        return [null, ...getDiscriminator(type2.unwrap())];
+      } else if (type2 instanceof ZodBranded) {
+        return getDiscriminator(type2.unwrap());
+      } else if (type2 instanceof ZodReadonly) {
+        return getDiscriminator(type2.unwrap());
+      } else if (type2 instanceof ZodCatch) {
+        return getDiscriminator(type2._def.innerType);
+      } else {
+        return [];
+      }
+    };
+    var ZodDiscriminatedUnion = class extends ZodType {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.object) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.object,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        const discriminator = this.discriminator;
+        const discriminatorValue = ctx.data[discriminator];
+        const option = this.optionsMap.get(discriminatorValue);
+        if (!option) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_union_discriminator,
+            options: Array.from(this.optionsMap.keys()),
+            path: [discriminator]
+          });
+          return parseUtil_1.INVALID;
+        }
+        if (ctx.common.async) {
+          return option._parseAsync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          });
+        } else {
+          return option._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          });
+        }
+      }
+      get discriminator() {
+        return this._def.discriminator;
+      }
+      get options() {
+        return this._def.options;
+      }
+      get optionsMap() {
+        return this._def.optionsMap;
+      }
+      static create(discriminator, options, params) {
+        const optionsMap = /* @__PURE__ */ new Map();
+        for (const type2 of options) {
+          const discriminatorValues = getDiscriminator(type2.shape[discriminator]);
+          if (!discriminatorValues.length) {
+            throw new Error(`A discriminator value for key \`${discriminator}\` could not be extracted from all schema options`);
+          }
+          for (const value of discriminatorValues) {
+            if (optionsMap.has(value)) {
+              throw new Error(`Discriminator property ${String(discriminator)} has duplicate value ${String(value)}`);
+            }
+            optionsMap.set(value, type2);
+          }
+        }
+        return new ZodDiscriminatedUnion({
+          typeName: ZodFirstPartyTypeKind.ZodDiscriminatedUnion,
+          discriminator,
+          options,
+          optionsMap,
+          ...processCreateParams(params)
+        });
+      }
+    };
+    exports.ZodDiscriminatedUnion = ZodDiscriminatedUnion;
+    function mergeValues(a4, b7) {
+      const aType = (0, util_1.getParsedType)(a4);
+      const bType = (0, util_1.getParsedType)(b7);
+      if (a4 === b7) {
+        return { valid: true, data: a4 };
+      } else if (aType === util_1.ZodParsedType.object && bType === util_1.ZodParsedType.object) {
+        const bKeys = util_1.util.objectKeys(b7);
+        const sharedKeys = util_1.util.objectKeys(a4).filter((key) => bKeys.indexOf(key) !== -1);
+        const newObj = { ...a4, ...b7 };
+        for (const key of sharedKeys) {
+          const sharedValue = mergeValues(a4[key], b7[key]);
+          if (!sharedValue.valid) {
+            return { valid: false };
+          }
+          newObj[key] = sharedValue.data;
+        }
+        return { valid: true, data: newObj };
+      } else if (aType === util_1.ZodParsedType.array && bType === util_1.ZodParsedType.array) {
+        if (a4.length !== b7.length) {
+          return { valid: false };
+        }
+        const newArray = [];
+        for (let index = 0; index < a4.length; index++) {
+          const itemA = a4[index];
+          const itemB = b7[index];
+          const sharedValue = mergeValues(itemA, itemB);
+          if (!sharedValue.valid) {
+            return { valid: false };
+          }
+          newArray.push(sharedValue.data);
+        }
+        return { valid: true, data: newArray };
+      } else if (aType === util_1.ZodParsedType.date && bType === util_1.ZodParsedType.date && +a4 === +b7) {
+        return { valid: true, data: a4 };
+      } else {
+        return { valid: false };
+      }
+    }
+    var ZodIntersection = class extends ZodType {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        const handleParsed = (parsedLeft, parsedRight) => {
+          if ((0, parseUtil_1.isAborted)(parsedLeft) || (0, parseUtil_1.isAborted)(parsedRight)) {
+            return parseUtil_1.INVALID;
+          }
+          const merged = mergeValues(parsedLeft.value, parsedRight.value);
+          if (!merged.valid) {
+            (0, parseUtil_1.addIssueToContext)(ctx, {
+              code: ZodError_1.ZodIssueCode.invalid_intersection_types
+            });
+            return parseUtil_1.INVALID;
+          }
+          if ((0, parseUtil_1.isDirty)(parsedLeft) || (0, parseUtil_1.isDirty)(parsedRight)) {
+            status.dirty();
+          }
+          return { status: status.value, value: merged.data };
+        };
+        if (ctx.common.async) {
+          return Promise.all([
+            this._def.left._parseAsync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            }),
+            this._def.right._parseAsync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            })
+          ]).then(([left, right]) => handleParsed(left, right));
+        } else {
+          return handleParsed(this._def.left._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          }), this._def.right._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          }));
+        }
+      }
+    };
+    exports.ZodIntersection = ZodIntersection;
+    ZodIntersection.create = (left, right, params) => {
+      return new ZodIntersection({
+        left,
+        right,
+        typeName: ZodFirstPartyTypeKind.ZodIntersection,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodTuple = class extends ZodType {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.array) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.array,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        if (ctx.data.length < this._def.items.length) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.too_small,
+            minimum: this._def.items.length,
+            inclusive: true,
+            exact: false,
+            type: "array"
+          });
+          return parseUtil_1.INVALID;
+        }
+        const rest = this._def.rest;
+        if (!rest && ctx.data.length > this._def.items.length) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.too_big,
+            maximum: this._def.items.length,
+            inclusive: true,
+            exact: false,
+            type: "array"
+          });
+          status.dirty();
+        }
+        const items = [...ctx.data].map((item, itemIndex) => {
+          const schema = this._def.items[itemIndex] || this._def.rest;
+          if (!schema)
+            return null;
+          return schema._parse(new ParseInputLazyPath(ctx, item, ctx.path, itemIndex));
+        }).filter((x5) => !!x5);
+        if (ctx.common.async) {
+          return Promise.all(items).then((results) => {
+            return parseUtil_1.ParseStatus.mergeArray(status, results);
+          });
+        } else {
+          return parseUtil_1.ParseStatus.mergeArray(status, items);
+        }
+      }
+      get items() {
+        return this._def.items;
+      }
+      rest(rest) {
+        return new ZodTuple({
+          ...this._def,
+          rest
+        });
+      }
+    };
+    exports.ZodTuple = ZodTuple;
+    ZodTuple.create = (schemas, params) => {
+      if (!Array.isArray(schemas)) {
+        throw new Error("You must pass an array of schemas to z.tuple([ ... ])");
+      }
+      return new ZodTuple({
+        items: schemas,
+        typeName: ZodFirstPartyTypeKind.ZodTuple,
+        rest: null,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodRecord = class extends ZodType {
+      get keySchema() {
+        return this._def.keyType;
+      }
+      get valueSchema() {
+        return this._def.valueType;
+      }
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.object) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.object,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        const pairs = [];
+        const keyType = this._def.keyType;
+        const valueType = this._def.valueType;
+        for (const key in ctx.data) {
+          pairs.push({
+            key: keyType._parse(new ParseInputLazyPath(ctx, key, ctx.path, key)),
+            value: valueType._parse(new ParseInputLazyPath(ctx, ctx.data[key], ctx.path, key)),
+            alwaysSet: key in ctx.data
+          });
+        }
+        if (ctx.common.async) {
+          return parseUtil_1.ParseStatus.mergeObjectAsync(status, pairs);
+        } else {
+          return parseUtil_1.ParseStatus.mergeObjectSync(status, pairs);
+        }
+      }
+      get element() {
+        return this._def.valueType;
+      }
+      static create(first, second, third) {
+        if (second instanceof ZodType) {
+          return new ZodRecord({
+            keyType: first,
+            valueType: second,
+            typeName: ZodFirstPartyTypeKind.ZodRecord,
+            ...processCreateParams(third)
+          });
+        }
+        return new ZodRecord({
+          keyType: ZodString.create(),
+          valueType: first,
+          typeName: ZodFirstPartyTypeKind.ZodRecord,
+          ...processCreateParams(second)
+        });
+      }
+    };
+    exports.ZodRecord = ZodRecord;
+    var ZodMap = class extends ZodType {
+      get keySchema() {
+        return this._def.keyType;
+      }
+      get valueSchema() {
+        return this._def.valueType;
+      }
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.map) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.map,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        const keyType = this._def.keyType;
+        const valueType = this._def.valueType;
+        const pairs = [...ctx.data.entries()].map(([key, value], index) => {
+          return {
+            key: keyType._parse(new ParseInputLazyPath(ctx, key, ctx.path, [index, "key"])),
+            value: valueType._parse(new ParseInputLazyPath(ctx, value, ctx.path, [index, "value"]))
+          };
+        });
+        if (ctx.common.async) {
+          const finalMap = /* @__PURE__ */ new Map();
+          return Promise.resolve().then(async () => {
+            for (const pair of pairs) {
+              const key = await pair.key;
+              const value = await pair.value;
+              if (key.status === "aborted" || value.status === "aborted") {
+                return parseUtil_1.INVALID;
+              }
+              if (key.status === "dirty" || value.status === "dirty") {
+                status.dirty();
+              }
+              finalMap.set(key.value, value.value);
+            }
+            return { status: status.value, value: finalMap };
+          });
+        } else {
+          const finalMap = /* @__PURE__ */ new Map();
+          for (const pair of pairs) {
+            const key = pair.key;
+            const value = pair.value;
+            if (key.status === "aborted" || value.status === "aborted") {
+              return parseUtil_1.INVALID;
+            }
+            if (key.status === "dirty" || value.status === "dirty") {
+              status.dirty();
+            }
+            finalMap.set(key.value, value.value);
+          }
+          return { status: status.value, value: finalMap };
+        }
+      }
+    };
+    exports.ZodMap = ZodMap;
+    ZodMap.create = (keyType, valueType, params) => {
+      return new ZodMap({
+        valueType,
+        keyType,
+        typeName: ZodFirstPartyTypeKind.ZodMap,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodSet = class extends ZodType {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.set) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.set,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        const def = this._def;
+        if (def.minSize !== null) {
+          if (ctx.data.size < def.minSize.value) {
+            (0, parseUtil_1.addIssueToContext)(ctx, {
+              code: ZodError_1.ZodIssueCode.too_small,
+              minimum: def.minSize.value,
+              type: "set",
+              inclusive: true,
+              exact: false,
+              message: def.minSize.message
+            });
+            status.dirty();
+          }
+        }
+        if (def.maxSize !== null) {
+          if (ctx.data.size > def.maxSize.value) {
+            (0, parseUtil_1.addIssueToContext)(ctx, {
+              code: ZodError_1.ZodIssueCode.too_big,
+              maximum: def.maxSize.value,
+              type: "set",
+              inclusive: true,
+              exact: false,
+              message: def.maxSize.message
+            });
+            status.dirty();
+          }
+        }
+        const valueType = this._def.valueType;
+        function finalizeSet(elements2) {
+          const parsedSet = /* @__PURE__ */ new Set();
+          for (const element of elements2) {
+            if (element.status === "aborted")
+              return parseUtil_1.INVALID;
+            if (element.status === "dirty")
+              status.dirty();
+            parsedSet.add(element.value);
+          }
+          return { status: status.value, value: parsedSet };
+        }
+        const elements = [...ctx.data.values()].map((item, i3) => valueType._parse(new ParseInputLazyPath(ctx, item, ctx.path, i3)));
+        if (ctx.common.async) {
+          return Promise.all(elements).then((elements2) => finalizeSet(elements2));
+        } else {
+          return finalizeSet(elements);
+        }
+      }
+      min(minSize, message) {
+        return new ZodSet({
+          ...this._def,
+          minSize: { value: minSize, message: errorUtil_1.errorUtil.toString(message) }
+        });
+      }
+      max(maxSize, message) {
+        return new ZodSet({
+          ...this._def,
+          maxSize: { value: maxSize, message: errorUtil_1.errorUtil.toString(message) }
+        });
+      }
+      size(size, message) {
+        return this.min(size, message).max(size, message);
+      }
+      nonempty(message) {
+        return this.min(1, message);
+      }
+    };
+    exports.ZodSet = ZodSet;
+    ZodSet.create = (valueType, params) => {
+      return new ZodSet({
+        valueType,
+        minSize: null,
+        maxSize: null,
+        typeName: ZodFirstPartyTypeKind.ZodSet,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodFunction = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        this.validate = this.implement;
+      }
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.function) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.function,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        function makeArgsIssue(args, error) {
+          return (0, parseUtil_1.makeIssue)({
+            data: args,
+            path: ctx.path,
+            errorMaps: [
+              ctx.common.contextualErrorMap,
+              ctx.schemaErrorMap,
+              (0, errors_1.getErrorMap)(),
+              errors_1.defaultErrorMap
+            ].filter((x5) => !!x5),
+            issueData: {
+              code: ZodError_1.ZodIssueCode.invalid_arguments,
+              argumentsError: error
+            }
+          });
+        }
+        function makeReturnsIssue(returns, error) {
+          return (0, parseUtil_1.makeIssue)({
+            data: returns,
+            path: ctx.path,
+            errorMaps: [
+              ctx.common.contextualErrorMap,
+              ctx.schemaErrorMap,
+              (0, errors_1.getErrorMap)(),
+              errors_1.defaultErrorMap
+            ].filter((x5) => !!x5),
+            issueData: {
+              code: ZodError_1.ZodIssueCode.invalid_return_type,
+              returnTypeError: error
+            }
+          });
+        }
+        const params = { errorMap: ctx.common.contextualErrorMap };
+        const fn = ctx.data;
+        if (this._def.returns instanceof ZodPromise) {
+          const me2 = this;
+          return (0, parseUtil_1.OK)(async function(...args) {
+            const error = new ZodError_1.ZodError([]);
+            const parsedArgs = await me2._def.args.parseAsync(args, params).catch((e3) => {
+              error.addIssue(makeArgsIssue(args, e3));
+              throw error;
+            });
+            const result = await Reflect.apply(fn, this, parsedArgs);
+            const parsedReturns = await me2._def.returns._def.type.parseAsync(result, params).catch((e3) => {
+              error.addIssue(makeReturnsIssue(result, e3));
+              throw error;
+            });
+            return parsedReturns;
+          });
+        } else {
+          const me2 = this;
+          return (0, parseUtil_1.OK)(function(...args) {
+            const parsedArgs = me2._def.args.safeParse(args, params);
+            if (!parsedArgs.success) {
+              throw new ZodError_1.ZodError([makeArgsIssue(args, parsedArgs.error)]);
+            }
+            const result = Reflect.apply(fn, this, parsedArgs.data);
+            const parsedReturns = me2._def.returns.safeParse(result, params);
+            if (!parsedReturns.success) {
+              throw new ZodError_1.ZodError([makeReturnsIssue(result, parsedReturns.error)]);
+            }
+            return parsedReturns.data;
+          });
+        }
+      }
+      parameters() {
+        return this._def.args;
+      }
+      returnType() {
+        return this._def.returns;
+      }
+      args(...items) {
+        return new ZodFunction({
+          ...this._def,
+          args: ZodTuple.create(items).rest(ZodUnknown.create())
+        });
+      }
+      returns(returnType) {
+        return new ZodFunction({
+          ...this._def,
+          returns: returnType
+        });
+      }
+      implement(func) {
+        const validatedFunc = this.parse(func);
+        return validatedFunc;
+      }
+      strictImplement(func) {
+        const validatedFunc = this.parse(func);
+        return validatedFunc;
+      }
+      static create(args, returns, params) {
+        return new ZodFunction({
+          args: args ? args : ZodTuple.create([]).rest(ZodUnknown.create()),
+          returns: returns || ZodUnknown.create(),
+          typeName: ZodFirstPartyTypeKind.ZodFunction,
+          ...processCreateParams(params)
+        });
+      }
+    };
+    exports.ZodFunction = ZodFunction;
+    var ZodLazy = class extends ZodType {
+      get schema() {
+        return this._def.getter();
+      }
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const lazySchema = this._def.getter();
+        return lazySchema._parse({ data: ctx.data, path: ctx.path, parent: ctx });
+      }
+    };
+    exports.ZodLazy = ZodLazy;
+    ZodLazy.create = (getter, params) => {
+      return new ZodLazy({
+        getter,
+        typeName: ZodFirstPartyTypeKind.ZodLazy,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodLiteral = class extends ZodType {
+      _parse(input) {
+        if (input.data !== this._def.value) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            received: ctx.data,
+            code: ZodError_1.ZodIssueCode.invalid_literal,
+            expected: this._def.value
+          });
+          return parseUtil_1.INVALID;
+        }
+        return { status: "valid", value: input.data };
+      }
+      get value() {
+        return this._def.value;
+      }
+    };
+    exports.ZodLiteral = ZodLiteral;
+    ZodLiteral.create = (value, params) => {
+      return new ZodLiteral({
+        value,
+        typeName: ZodFirstPartyTypeKind.ZodLiteral,
+        ...processCreateParams(params)
+      });
+    };
+    function createZodEnum(values, params) {
+      return new ZodEnum({
+        values,
+        typeName: ZodFirstPartyTypeKind.ZodEnum,
+        ...processCreateParams(params)
+      });
+    }
+    var ZodEnum = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        _ZodEnum_cache.set(this, void 0);
+      }
+      _parse(input) {
+        if (typeof input.data !== "string") {
+          const ctx = this._getOrReturnCtx(input);
+          const expectedValues = this._def.values;
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            expected: util_1.util.joinValues(expectedValues),
+            received: ctx.parsedType,
+            code: ZodError_1.ZodIssueCode.invalid_type
+          });
+          return parseUtil_1.INVALID;
+        }
+        if (!__classPrivateFieldGet14(this, _ZodEnum_cache, "f")) {
+          __classPrivateFieldSet12(this, _ZodEnum_cache, new Set(this._def.values), "f");
+        }
+        if (!__classPrivateFieldGet14(this, _ZodEnum_cache, "f").has(input.data)) {
+          const ctx = this._getOrReturnCtx(input);
+          const expectedValues = this._def.values;
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            received: ctx.data,
+            code: ZodError_1.ZodIssueCode.invalid_enum_value,
+            options: expectedValues
+          });
+          return parseUtil_1.INVALID;
+        }
+        return (0, parseUtil_1.OK)(input.data);
+      }
+      get options() {
+        return this._def.values;
+      }
+      get enum() {
+        const enumValues = {};
+        for (const val of this._def.values) {
+          enumValues[val] = val;
+        }
+        return enumValues;
+      }
+      get Values() {
+        const enumValues = {};
+        for (const val of this._def.values) {
+          enumValues[val] = val;
+        }
+        return enumValues;
+      }
+      get Enum() {
+        const enumValues = {};
+        for (const val of this._def.values) {
+          enumValues[val] = val;
+        }
+        return enumValues;
+      }
+      extract(values, newDef = this._def) {
+        return ZodEnum.create(values, {
+          ...this._def,
+          ...newDef
+        });
+      }
+      exclude(values, newDef = this._def) {
+        return ZodEnum.create(this.options.filter((opt) => !values.includes(opt)), {
+          ...this._def,
+          ...newDef
+        });
+      }
+    };
+    exports.ZodEnum = ZodEnum;
+    _ZodEnum_cache = /* @__PURE__ */ new WeakMap();
+    ZodEnum.create = createZodEnum;
+    var ZodNativeEnum = class extends ZodType {
+      constructor() {
+        super(...arguments);
+        _ZodNativeEnum_cache.set(this, void 0);
+      }
+      _parse(input) {
+        const nativeEnumValues = util_1.util.getValidEnumValues(this._def.values);
+        const ctx = this._getOrReturnCtx(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.string && ctx.parsedType !== util_1.ZodParsedType.number) {
+          const expectedValues = util_1.util.objectValues(nativeEnumValues);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            expected: util_1.util.joinValues(expectedValues),
+            received: ctx.parsedType,
+            code: ZodError_1.ZodIssueCode.invalid_type
+          });
+          return parseUtil_1.INVALID;
+        }
+        if (!__classPrivateFieldGet14(this, _ZodNativeEnum_cache, "f")) {
+          __classPrivateFieldSet12(this, _ZodNativeEnum_cache, new Set(util_1.util.getValidEnumValues(this._def.values)), "f");
+        }
+        if (!__classPrivateFieldGet14(this, _ZodNativeEnum_cache, "f").has(input.data)) {
+          const expectedValues = util_1.util.objectValues(nativeEnumValues);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            received: ctx.data,
+            code: ZodError_1.ZodIssueCode.invalid_enum_value,
+            options: expectedValues
+          });
+          return parseUtil_1.INVALID;
+        }
+        return (0, parseUtil_1.OK)(input.data);
+      }
+      get enum() {
+        return this._def.values;
+      }
+    };
+    exports.ZodNativeEnum = ZodNativeEnum;
+    _ZodNativeEnum_cache = /* @__PURE__ */ new WeakMap();
+    ZodNativeEnum.create = (values, params) => {
+      return new ZodNativeEnum({
+        values,
+        typeName: ZodFirstPartyTypeKind.ZodNativeEnum,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodPromise = class extends ZodType {
+      unwrap() {
+        return this._def.type;
+      }
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        if (ctx.parsedType !== util_1.ZodParsedType.promise && ctx.common.async === false) {
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.promise,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        const promisified = ctx.parsedType === util_1.ZodParsedType.promise ? ctx.data : Promise.resolve(ctx.data);
+        return (0, parseUtil_1.OK)(promisified.then((data) => {
+          return this._def.type.parseAsync(data, {
+            path: ctx.path,
+            errorMap: ctx.common.contextualErrorMap
+          });
+        }));
+      }
+    };
+    exports.ZodPromise = ZodPromise;
+    ZodPromise.create = (schema, params) => {
+      return new ZodPromise({
+        type: schema,
+        typeName: ZodFirstPartyTypeKind.ZodPromise,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodEffects = class extends ZodType {
+      innerType() {
+        return this._def.schema;
+      }
+      sourceType() {
+        return this._def.schema._def.typeName === ZodFirstPartyTypeKind.ZodEffects ? this._def.schema.sourceType() : this._def.schema;
+      }
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        const effect = this._def.effect || null;
+        const checkCtx = {
+          addIssue: (arg) => {
+            (0, parseUtil_1.addIssueToContext)(ctx, arg);
+            if (arg.fatal) {
+              status.abort();
+            } else {
+              status.dirty();
+            }
+          },
+          get path() {
+            return ctx.path;
+          }
+        };
+        checkCtx.addIssue = checkCtx.addIssue.bind(checkCtx);
+        if (effect.type === "preprocess") {
+          const processed = effect.transform(ctx.data, checkCtx);
+          if (ctx.common.async) {
+            return Promise.resolve(processed).then(async (processed2) => {
+              if (status.value === "aborted")
+                return parseUtil_1.INVALID;
+              const result = await this._def.schema._parseAsync({
+                data: processed2,
+                path: ctx.path,
+                parent: ctx
+              });
+              if (result.status === "aborted")
+                return parseUtil_1.INVALID;
+              if (result.status === "dirty")
+                return (0, parseUtil_1.DIRTY)(result.value);
+              if (status.value === "dirty")
+                return (0, parseUtil_1.DIRTY)(result.value);
+              return result;
+            });
+          } else {
+            if (status.value === "aborted")
+              return parseUtil_1.INVALID;
+            const result = this._def.schema._parseSync({
+              data: processed,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (result.status === "aborted")
+              return parseUtil_1.INVALID;
+            if (result.status === "dirty")
+              return (0, parseUtil_1.DIRTY)(result.value);
+            if (status.value === "dirty")
+              return (0, parseUtil_1.DIRTY)(result.value);
+            return result;
+          }
+        }
+        if (effect.type === "refinement") {
+          const executeRefinement = (acc) => {
+            const result = effect.refinement(acc, checkCtx);
+            if (ctx.common.async) {
+              return Promise.resolve(result);
+            }
+            if (result instanceof Promise) {
+              throw new Error("Async refinement encountered during synchronous parse operation. Use .parseAsync instead.");
+            }
+            return acc;
+          };
+          if (ctx.common.async === false) {
+            const inner = this._def.schema._parseSync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (inner.status === "aborted")
+              return parseUtil_1.INVALID;
+            if (inner.status === "dirty")
+              status.dirty();
+            executeRefinement(inner.value);
+            return { status: status.value, value: inner.value };
+          } else {
+            return this._def.schema._parseAsync({ data: ctx.data, path: ctx.path, parent: ctx }).then((inner) => {
+              if (inner.status === "aborted")
+                return parseUtil_1.INVALID;
+              if (inner.status === "dirty")
+                status.dirty();
+              return executeRefinement(inner.value).then(() => {
+                return { status: status.value, value: inner.value };
+              });
+            });
+          }
+        }
+        if (effect.type === "transform") {
+          if (ctx.common.async === false) {
+            const base = this._def.schema._parseSync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (!(0, parseUtil_1.isValid)(base))
+              return base;
+            const result = effect.transform(base.value, checkCtx);
+            if (result instanceof Promise) {
+              throw new Error(`Asynchronous transform encountered during synchronous parse operation. Use .parseAsync instead.`);
+            }
+            return { status: status.value, value: result };
+          } else {
+            return this._def.schema._parseAsync({ data: ctx.data, path: ctx.path, parent: ctx }).then((base) => {
+              if (!(0, parseUtil_1.isValid)(base))
+                return base;
+              return Promise.resolve(effect.transform(base.value, checkCtx)).then((result) => ({ status: status.value, value: result }));
+            });
+          }
+        }
+        util_1.util.assertNever(effect);
+      }
+    };
+    exports.ZodEffects = ZodEffects;
+    exports.ZodTransformer = ZodEffects;
+    ZodEffects.create = (schema, effect, params) => {
+      return new ZodEffects({
+        schema,
+        typeName: ZodFirstPartyTypeKind.ZodEffects,
+        effect,
+        ...processCreateParams(params)
+      });
+    };
+    ZodEffects.createWithPreprocess = (preprocess, schema, params) => {
+      return new ZodEffects({
+        schema,
+        effect: { type: "preprocess", transform: preprocess },
+        typeName: ZodFirstPartyTypeKind.ZodEffects,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodOptional = class extends ZodType {
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType === util_1.ZodParsedType.undefined) {
+          return (0, parseUtil_1.OK)(void 0);
+        }
+        return this._def.innerType._parse(input);
+      }
+      unwrap() {
+        return this._def.innerType;
+      }
+    };
+    exports.ZodOptional = ZodOptional;
+    ZodOptional.create = (type2, params) => {
+      return new ZodOptional({
+        innerType: type2,
+        typeName: ZodFirstPartyTypeKind.ZodOptional,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodNullable = class extends ZodType {
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType === util_1.ZodParsedType.null) {
+          return (0, parseUtil_1.OK)(null);
+        }
+        return this._def.innerType._parse(input);
+      }
+      unwrap() {
+        return this._def.innerType;
+      }
+    };
+    exports.ZodNullable = ZodNullable;
+    ZodNullable.create = (type2, params) => {
+      return new ZodNullable({
+        innerType: type2,
+        typeName: ZodFirstPartyTypeKind.ZodNullable,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodDefault = class extends ZodType {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        let data = ctx.data;
+        if (ctx.parsedType === util_1.ZodParsedType.undefined) {
+          data = this._def.defaultValue();
+        }
+        return this._def.innerType._parse({
+          data,
+          path: ctx.path,
+          parent: ctx
+        });
+      }
+      removeDefault() {
+        return this._def.innerType;
+      }
+    };
+    exports.ZodDefault = ZodDefault;
+    ZodDefault.create = (type2, params) => {
+      return new ZodDefault({
+        innerType: type2,
+        typeName: ZodFirstPartyTypeKind.ZodDefault,
+        defaultValue: typeof params.default === "function" ? params.default : () => params.default,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodCatch = class extends ZodType {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const newCtx = {
+          ...ctx,
+          common: {
+            ...ctx.common,
+            issues: []
+          }
+        };
+        const result = this._def.innerType._parse({
+          data: newCtx.data,
+          path: newCtx.path,
+          parent: {
+            ...newCtx
+          }
+        });
+        if ((0, parseUtil_1.isAsync)(result)) {
+          return result.then((result2) => {
+            return {
+              status: "valid",
+              value: result2.status === "valid" ? result2.value : this._def.catchValue({
+                get error() {
+                  return new ZodError_1.ZodError(newCtx.common.issues);
+                },
+                input: newCtx.data
+              })
+            };
+          });
+        } else {
+          return {
+            status: "valid",
+            value: result.status === "valid" ? result.value : this._def.catchValue({
+              get error() {
+                return new ZodError_1.ZodError(newCtx.common.issues);
+              },
+              input: newCtx.data
+            })
+          };
+        }
+      }
+      removeCatch() {
+        return this._def.innerType;
+      }
+    };
+    exports.ZodCatch = ZodCatch;
+    ZodCatch.create = (type2, params) => {
+      return new ZodCatch({
+        innerType: type2,
+        typeName: ZodFirstPartyTypeKind.ZodCatch,
+        catchValue: typeof params.catch === "function" ? params.catch : () => params.catch,
+        ...processCreateParams(params)
+      });
+    };
+    var ZodNaN = class extends ZodType {
+      _parse(input) {
+        const parsedType = this._getType(input);
+        if (parsedType !== util_1.ZodParsedType.nan) {
+          const ctx = this._getOrReturnCtx(input);
+          (0, parseUtil_1.addIssueToContext)(ctx, {
+            code: ZodError_1.ZodIssueCode.invalid_type,
+            expected: util_1.ZodParsedType.nan,
+            received: ctx.parsedType
+          });
+          return parseUtil_1.INVALID;
+        }
+        return { status: "valid", value: input.data };
+      }
+    };
+    exports.ZodNaN = ZodNaN;
+    ZodNaN.create = (params) => {
+      return new ZodNaN({
+        typeName: ZodFirstPartyTypeKind.ZodNaN,
+        ...processCreateParams(params)
+      });
+    };
+    exports.BRAND = Symbol("zod_brand");
+    var ZodBranded = class extends ZodType {
+      _parse(input) {
+        const { ctx } = this._processInputParams(input);
+        const data = ctx.data;
+        return this._def.type._parse({
+          data,
+          path: ctx.path,
+          parent: ctx
+        });
+      }
+      unwrap() {
+        return this._def.type;
+      }
+    };
+    exports.ZodBranded = ZodBranded;
+    var ZodPipeline = class extends ZodType {
+      _parse(input) {
+        const { status, ctx } = this._processInputParams(input);
+        if (ctx.common.async) {
+          const handleAsync = async () => {
+            const inResult = await this._def.in._parseAsync({
+              data: ctx.data,
+              path: ctx.path,
+              parent: ctx
+            });
+            if (inResult.status === "aborted")
+              return parseUtil_1.INVALID;
+            if (inResult.status === "dirty") {
+              status.dirty();
+              return (0, parseUtil_1.DIRTY)(inResult.value);
+            } else {
+              return this._def.out._parseAsync({
+                data: inResult.value,
+                path: ctx.path,
+                parent: ctx
+              });
+            }
+          };
+          return handleAsync();
+        } else {
+          const inResult = this._def.in._parseSync({
+            data: ctx.data,
+            path: ctx.path,
+            parent: ctx
+          });
+          if (inResult.status === "aborted")
+            return parseUtil_1.INVALID;
+          if (inResult.status === "dirty") {
+            status.dirty();
+            return {
+              status: "dirty",
+              value: inResult.value
+            };
+          } else {
+            return this._def.out._parseSync({
+              data: inResult.value,
+              path: ctx.path,
+              parent: ctx
+            });
+          }
+        }
+      }
+      static create(a4, b7) {
+        return new ZodPipeline({
+          in: a4,
+          out: b7,
+          typeName: ZodFirstPartyTypeKind.ZodPipeline
+        });
+      }
+    };
+    exports.ZodPipeline = ZodPipeline;
+    var ZodReadonly = class extends ZodType {
+      _parse(input) {
+        const result = this._def.innerType._parse(input);
+        const freeze = (data) => {
+          if ((0, parseUtil_1.isValid)(data)) {
+            data.value = Object.freeze(data.value);
+          }
+          return data;
+        };
+        return (0, parseUtil_1.isAsync)(result) ? result.then((data) => freeze(data)) : freeze(result);
+      }
+      unwrap() {
+        return this._def.innerType;
+      }
+    };
+    exports.ZodReadonly = ZodReadonly;
+    ZodReadonly.create = (type2, params) => {
+      return new ZodReadonly({
+        innerType: type2,
+        typeName: ZodFirstPartyTypeKind.ZodReadonly,
+        ...processCreateParams(params)
+      });
+    };
+    function custom2(check, params = {}, fatal) {
+      if (check)
+        return ZodAny.create().superRefine((data, ctx) => {
+          var _a5, _b2;
+          if (!check(data)) {
+            const p4 = typeof params === "function" ? params(data) : typeof params === "string" ? { message: params } : params;
+            const _fatal = (_b2 = (_a5 = p4.fatal) !== null && _a5 !== void 0 ? _a5 : fatal) !== null && _b2 !== void 0 ? _b2 : true;
+            const p22 = typeof p4 === "string" ? { message: p4 } : p4;
+            ctx.addIssue({ code: "custom", ...p22, fatal: _fatal });
+          }
+        });
+      return ZodAny.create();
+    }
+    exports.custom = custom2;
+    exports.late = {
+      object: ZodObject.lazycreate
+    };
+    var ZodFirstPartyTypeKind;
+    (function(ZodFirstPartyTypeKind2) {
+      ZodFirstPartyTypeKind2["ZodString"] = "ZodString";
+      ZodFirstPartyTypeKind2["ZodNumber"] = "ZodNumber";
+      ZodFirstPartyTypeKind2["ZodNaN"] = "ZodNaN";
+      ZodFirstPartyTypeKind2["ZodBigInt"] = "ZodBigInt";
+      ZodFirstPartyTypeKind2["ZodBoolean"] = "ZodBoolean";
+      ZodFirstPartyTypeKind2["ZodDate"] = "ZodDate";
+      ZodFirstPartyTypeKind2["ZodSymbol"] = "ZodSymbol";
+      ZodFirstPartyTypeKind2["ZodUndefined"] = "ZodUndefined";
+      ZodFirstPartyTypeKind2["ZodNull"] = "ZodNull";
+      ZodFirstPartyTypeKind2["ZodAny"] = "ZodAny";
+      ZodFirstPartyTypeKind2["ZodUnknown"] = "ZodUnknown";
+      ZodFirstPartyTypeKind2["ZodNever"] = "ZodNever";
+      ZodFirstPartyTypeKind2["ZodVoid"] = "ZodVoid";
+      ZodFirstPartyTypeKind2["ZodArray"] = "ZodArray";
+      ZodFirstPartyTypeKind2["ZodObject"] = "ZodObject";
+      ZodFirstPartyTypeKind2["ZodUnion"] = "ZodUnion";
+      ZodFirstPartyTypeKind2["ZodDiscriminatedUnion"] = "ZodDiscriminatedUnion";
+      ZodFirstPartyTypeKind2["ZodIntersection"] = "ZodIntersection";
+      ZodFirstPartyTypeKind2["ZodTuple"] = "ZodTuple";
+      ZodFirstPartyTypeKind2["ZodRecord"] = "ZodRecord";
+      ZodFirstPartyTypeKind2["ZodMap"] = "ZodMap";
+      ZodFirstPartyTypeKind2["ZodSet"] = "ZodSet";
+      ZodFirstPartyTypeKind2["ZodFunction"] = "ZodFunction";
+      ZodFirstPartyTypeKind2["ZodLazy"] = "ZodLazy";
+      ZodFirstPartyTypeKind2["ZodLiteral"] = "ZodLiteral";
+      ZodFirstPartyTypeKind2["ZodEnum"] = "ZodEnum";
+      ZodFirstPartyTypeKind2["ZodEffects"] = "ZodEffects";
+      ZodFirstPartyTypeKind2["ZodNativeEnum"] = "ZodNativeEnum";
+      ZodFirstPartyTypeKind2["ZodOptional"] = "ZodOptional";
+      ZodFirstPartyTypeKind2["ZodNullable"] = "ZodNullable";
+      ZodFirstPartyTypeKind2["ZodDefault"] = "ZodDefault";
+      ZodFirstPartyTypeKind2["ZodCatch"] = "ZodCatch";
+      ZodFirstPartyTypeKind2["ZodPromise"] = "ZodPromise";
+      ZodFirstPartyTypeKind2["ZodBranded"] = "ZodBranded";
+      ZodFirstPartyTypeKind2["ZodPipeline"] = "ZodPipeline";
+      ZodFirstPartyTypeKind2["ZodReadonly"] = "ZodReadonly";
+    })(ZodFirstPartyTypeKind = exports.ZodFirstPartyTypeKind || (exports.ZodFirstPartyTypeKind = {}));
+    var instanceOfType = (cls, params = {
+      message: `Input not instance of ${cls.name}`
+    }) => custom2((data) => data instanceof cls, params);
+    exports.instanceof = instanceOfType;
+    var stringType = ZodString.create;
+    exports.string = stringType;
+    var numberType = ZodNumber.create;
+    exports.number = numberType;
+    var nanType = ZodNaN.create;
+    exports.nan = nanType;
+    var bigIntType = ZodBigInt.create;
+    exports.bigint = bigIntType;
+    var booleanType = ZodBoolean.create;
+    exports.boolean = booleanType;
+    var dateType = ZodDate.create;
+    exports.date = dateType;
+    var symbolType = ZodSymbol.create;
+    exports.symbol = symbolType;
+    var undefinedType = ZodUndefined.create;
+    exports.undefined = undefinedType;
+    var nullType = ZodNull.create;
+    exports.null = nullType;
+    var anyType = ZodAny.create;
+    exports.any = anyType;
+    var unknownType = ZodUnknown.create;
+    exports.unknown = unknownType;
+    var neverType = ZodNever.create;
+    exports.never = neverType;
+    var voidType = ZodVoid.create;
+    exports.void = voidType;
+    var arrayType = ZodArray.create;
+    exports.array = arrayType;
+    var objectType = ZodObject.create;
+    exports.object = objectType;
+    var strictObjectType = ZodObject.strictCreate;
+    exports.strictObject = strictObjectType;
+    var unionType = ZodUnion.create;
+    exports.union = unionType;
+    var discriminatedUnionType = ZodDiscriminatedUnion.create;
+    exports.discriminatedUnion = discriminatedUnionType;
+    var intersectionType = ZodIntersection.create;
+    exports.intersection = intersectionType;
+    var tupleType = ZodTuple.create;
+    exports.tuple = tupleType;
+    var recordType = ZodRecord.create;
+    exports.record = recordType;
+    var mapType = ZodMap.create;
+    exports.map = mapType;
+    var setType = ZodSet.create;
+    exports.set = setType;
+    var functionType = ZodFunction.create;
+    exports.function = functionType;
+    var lazyType = ZodLazy.create;
+    exports.lazy = lazyType;
+    var literalType = ZodLiteral.create;
+    exports.literal = literalType;
+    var enumType = ZodEnum.create;
+    exports.enum = enumType;
+    var nativeEnumType = ZodNativeEnum.create;
+    exports.nativeEnum = nativeEnumType;
+    var promiseType = ZodPromise.create;
+    exports.promise = promiseType;
+    var effectsType = ZodEffects.create;
+    exports.effect = effectsType;
+    exports.transformer = effectsType;
+    var optionalType = ZodOptional.create;
+    exports.optional = optionalType;
+    var nullableType = ZodNullable.create;
+    exports.nullable = nullableType;
+    var preprocessType = ZodEffects.createWithPreprocess;
+    exports.preprocess = preprocessType;
+    var pipelineType = ZodPipeline.create;
+    exports.pipeline = pipelineType;
+    var ostring = () => stringType().optional();
+    exports.ostring = ostring;
+    var onumber = () => numberType().optional();
+    exports.onumber = onumber;
+    var oboolean = () => booleanType().optional();
+    exports.oboolean = oboolean;
+    exports.coerce = {
+      string: (arg) => ZodString.create({ ...arg, coerce: true }),
+      number: (arg) => ZodNumber.create({ ...arg, coerce: true }),
+      boolean: (arg) => ZodBoolean.create({
+        ...arg,
+        coerce: true
+      }),
+      bigint: (arg) => ZodBigInt.create({ ...arg, coerce: true }),
+      date: (arg) => ZodDate.create({ ...arg, coerce: true })
+    };
+    exports.NEVER = parseUtil_1.INVALID;
+  }
+});
+
+// node_modules/zod/lib/external.js
+var require_external = __commonJS({
+  "node_modules/zod/lib/external.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      Object.defineProperty(o3, k22, { enumerable: true, get: function() {
+        return m5[k7];
+      } });
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __exportStar2 = exports && exports.__exportStar || function(m5, exports2) {
+      for (var p4 in m5)
+        if (p4 !== "default" && !Object.prototype.hasOwnProperty.call(exports2, p4))
+          __createBinding2(exports2, m5, p4);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    __exportStar2(require_errors(), exports);
+    __exportStar2(require_parseUtil(), exports);
+    __exportStar2(require_typeAliases(), exports);
+    __exportStar2(require_util(), exports);
+    __exportStar2(require_types(), exports);
+    __exportStar2(require_ZodError(), exports);
+  }
+});
+
+// node_modules/zod/lib/index.js
+var require_lib4 = __commonJS({
+  "node_modules/zod/lib/index.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      Object.defineProperty(o3, k22, { enumerable: true, get: function() {
+        return m5[k7];
+      } });
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    var __exportStar2 = exports && exports.__exportStar || function(m5, exports2) {
+      for (var p4 in m5)
+        if (p4 !== "default" && !Object.prototype.hasOwnProperty.call(exports2, p4))
+          __createBinding2(exports2, m5, p4);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.z = void 0;
+    var z6 = __importStar2(require_external());
+    exports.z = z6;
+    __exportStar2(require_external(), exports);
+    exports.default = z6;
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/base64.js
+var require_base64 = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/base64.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.zodInbound = exports.zodOutbound = void 0;
+    exports.bytesToBase64 = bytesToBase64;
+    exports.bytesFromBase64 = bytesFromBase64;
+    exports.stringToBytes = stringToBytes;
+    exports.stringFromBytes = stringFromBytes;
+    exports.stringToBase64 = stringToBase64;
+    exports.stringFromBase64 = stringFromBase64;
+    var z6 = __importStar2(require_lib4());
+    function bytesToBase64(u8arr) {
+      return btoa(String.fromCodePoint(...u8arr));
+    }
+    function bytesFromBase64(encoded) {
+      return Uint8Array.from(atob(encoded), (c3) => c3.charCodeAt(0));
+    }
+    function stringToBytes(str2) {
+      return new TextEncoder().encode(str2);
+    }
+    function stringFromBytes(u8arr) {
+      return new TextDecoder().decode(u8arr);
+    }
+    function stringToBase64(str2) {
+      return bytesToBase64(stringToBytes(str2));
+    }
+    function stringFromBase64(b64str) {
+      return stringFromBytes(bytesFromBase64(b64str));
+    }
+    exports.zodOutbound = z6.instanceof(Uint8Array).or(z6.string().transform(stringToBytes));
+    exports.zodInbound = z6.instanceof(Uint8Array).or(z6.string().transform(bytesFromBase64));
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/is-plain-object.js
+var require_is_plain_object = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/is-plain-object.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.isPlainObject = isPlainObject4;
+    function isPlainObject4(value) {
+      if (typeof value !== "object" || value === null) {
+        return false;
+      }
+      const prototype3 = Object.getPrototypeOf(value);
+      return (prototype3 === null || prototype3 === Object.prototype || Object.getPrototypeOf(prototype3) === null) && !(Symbol.toStringTag in value) && !(Symbol.iterator in value);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/encodings.js
+var require_encodings = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/encodings.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.encodeDeepObjectQuery = exports.encodePipeDelimitedQuery = exports.encodeSpaceDelimitedQuery = exports.encodeFormQuery = exports.encodeJSONQuery = exports.encodeSimple = exports.encodePipeDelimited = exports.encodeSpaceDelimited = exports.encodeForm = exports.EncodingError = void 0;
+    exports.encodeMatrix = encodeMatrix;
+    exports.encodeLabel = encodeLabel;
+    exports.encodeBodyForm = encodeBodyForm;
+    exports.encodeDeepObject = encodeDeepObject;
+    exports.encodeDeepObjectObject = encodeDeepObjectObject;
+    exports.encodeJSON = encodeJSON;
+    exports.queryJoin = queryJoin;
+    exports.queryEncoder = queryEncoder;
+    var base64_js_1 = require_base64();
+    var is_plain_object_js_1 = require_is_plain_object();
+    var EncodingError = class extends Error {
+      constructor(message) {
+        super(message);
+        this.name = "EncodingError";
+      }
+    };
+    exports.EncodingError = EncodingError;
+    function encodeMatrix(key, value, options) {
+      let out = "";
+      const pairs = (options === null || options === void 0 ? void 0 : options.explode) ? explode(key, value) : [[key, value]];
+      const encodeString = (v5) => {
+        return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v5) : v5;
+      };
+      const encodeValue = (v5) => encodeString(serializeValue(v5));
+      pairs.forEach(([pk, pv]) => {
+        let tmp = "";
+        let encValue = "";
+        if (pv === void 0) {
+          return;
+        } else if (Array.isArray(pv)) {
+          encValue = mapDefined(pv, (v5) => `${encodeValue(v5)}`).join(",");
+        } else if ((0, is_plain_object_js_1.isPlainObject)(pv)) {
+          encValue = mapDefinedEntries(Object.entries(pv), ([k7, v5]) => {
+            return `,${encodeString(k7)},${encodeValue(v5)}`;
+          }).join("");
+          encValue = encValue.slice(1);
+        } else {
+          encValue = `${encodeValue(pv)}`;
+        }
+        const keyPrefix = encodeString(pk);
+        tmp = `${keyPrefix}=${encValue}`;
+        if (tmp === `${keyPrefix}=`) {
+          tmp = tmp.slice(0, -1);
+        }
+        if (!tmp) {
+          return;
+        }
+        out += `;${tmp}`;
+      });
+      return out;
+    }
+    function encodeLabel(key, value, options) {
+      let out = "";
+      const pairs = (options === null || options === void 0 ? void 0 : options.explode) ? explode(key, value) : [[key, value]];
+      const encodeString = (v5) => {
+        return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v5) : v5;
+      };
+      const encodeValue = (v5) => encodeString(serializeValue(v5));
+      pairs.forEach(([pk, pv]) => {
+        let encValue = "";
+        if (pv === void 0) {
+          return;
+        } else if (Array.isArray(pv)) {
+          encValue = mapDefined(pv, (v5) => `${encodeValue(v5)}`).join(".");
+        } else if ((0, is_plain_object_js_1.isPlainObject)(pv)) {
+          encValue = mapDefinedEntries(Object.entries(pv), ([k7, v5]) => {
+            return `.${encodeString(k7)}.${encodeValue(v5)}`;
+          }).join("");
+          encValue = encValue.slice(1);
+        } else {
+          const k7 = (options === null || options === void 0 ? void 0 : options.explode) && (0, is_plain_object_js_1.isPlainObject)(value) ? `${encodeString(pk)}=` : "";
+          encValue = `${k7}${encodeValue(pv)}`;
+        }
+        out += `.${encValue}`;
+      });
+      return out;
+    }
+    function formEncoder(sep) {
+      return (key, value, options) => {
+        let out = "";
+        const pairs = (options === null || options === void 0 ? void 0 : options.explode) ? explode(key, value) : [[key, value]];
+        const encodeString = (v5) => {
+          return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v5) : v5;
+        };
+        const encodeValue = (v5) => encodeString(serializeValue(v5));
+        const encodedSep = encodeString(sep);
+        pairs.forEach(([pk, pv]) => {
+          let tmp = "";
+          let encValue = "";
+          if (pv === void 0) {
+            return;
+          } else if (Array.isArray(pv)) {
+            encValue = mapDefined(pv, (v5) => `${encodeValue(v5)}`).join(encodedSep);
+          } else if ((0, is_plain_object_js_1.isPlainObject)(pv)) {
+            encValue = mapDefinedEntries(Object.entries(pv), ([k7, v5]) => {
+              return `${encodeString(k7)}${encodedSep}${encodeValue(v5)}`;
+            }).join(encodedSep);
+          } else {
+            encValue = `${encodeValue(pv)}`;
+          }
+          tmp = `${encodeString(pk)}=${encValue}`;
+          if (!tmp || tmp === "=") {
+            return;
+          }
+          out += `&${tmp}`;
+        });
+        return out.slice(1);
+      };
+    }
+    exports.encodeForm = formEncoder(",");
+    exports.encodeSpaceDelimited = formEncoder(" ");
+    exports.encodePipeDelimited = formEncoder("|");
+    function encodeBodyForm(key, value, options) {
+      let out = "";
+      const pairs = (options === null || options === void 0 ? void 0 : options.explode) ? explode(key, value) : [[key, value]];
+      const encodeString = (v5) => {
+        return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v5) : v5;
+      };
+      const encodeValue = (v5) => encodeString(serializeValue(v5));
+      pairs.forEach(([pk, pv]) => {
+        let tmp = "";
+        let encValue = "";
+        if (pv === void 0) {
+          return;
+        } else if (Array.isArray(pv)) {
+          encValue = JSON.stringify(pv, jsonReplacer);
+        } else if ((0, is_plain_object_js_1.isPlainObject)(pv)) {
+          encValue = JSON.stringify(pv, jsonReplacer);
+        } else {
+          encValue = `${encodeValue(pv)}`;
+        }
+        tmp = `${encodeString(pk)}=${encValue}`;
+        if (!tmp || tmp === "=") {
+          return;
+        }
+        out += `&${tmp}`;
+      });
+      return out.slice(1);
+    }
+    function encodeDeepObject(key, value, options) {
+      if (value == null) {
+        return "";
+      }
+      if (!(0, is_plain_object_js_1.isPlainObject)(value)) {
+        throw new EncodingError(`Value of parameter '${key}' which uses deepObject encoding must be an object`);
+      }
+      return encodeDeepObjectObject(key, value, options);
+    }
+    function encodeDeepObjectObject(key, value, options) {
+      if (value == null) {
+        return "";
+      }
+      let out = "";
+      const encodeString = (v5) => {
+        return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v5) : v5;
+      };
+      if (!(0, is_plain_object_js_1.isPlainObject)(value)) {
+        throw new EncodingError(`Expected parameter '${key}' to be an object.`);
+      }
+      Object.entries(value).forEach(([ck, cv]) => {
+        if (cv === void 0) {
+          return;
+        }
+        const pk = `${key}[${ck}]`;
+        if ((0, is_plain_object_js_1.isPlainObject)(cv)) {
+          const objOut = encodeDeepObjectObject(pk, cv, options);
+          out += `&${objOut}`;
+          return;
+        }
+        const pairs = Array.isArray(cv) ? cv : [cv];
+        let encoded = "";
+        encoded = mapDefined(pairs, (v5) => {
+          return `${encodeString(pk)}=${encodeString(serializeValue(v5))}`;
+        }).join("&");
+        out += `&${encoded}`;
+      });
+      return out.slice(1);
+    }
+    function encodeJSON(key, value, options) {
+      if (typeof value === "undefined") {
+        return "";
+      }
+      const encodeString = (v5) => {
+        return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v5) : v5;
+      };
+      const encVal = encodeString(JSON.stringify(value, jsonReplacer));
+      return (options === null || options === void 0 ? void 0 : options.explode) ? encVal : `${encodeString(key)}=${encVal}`;
+    }
+    var encodeSimple = (key, value, options) => {
+      let out = "";
+      const pairs = (options === null || options === void 0 ? void 0 : options.explode) ? explode(key, value) : [[key, value]];
+      const encodeString = (v5) => {
+        return (options === null || options === void 0 ? void 0 : options.charEncoding) === "percent" ? encodeURIComponent(v5) : v5;
+      };
+      const encodeValue = (v5) => encodeString(serializeValue(v5));
+      pairs.forEach(([pk, pv]) => {
+        let tmp = "";
+        if (pv === void 0) {
+          return;
+        } else if (Array.isArray(pv)) {
+          tmp = mapDefined(pv, (v5) => `${encodeValue(v5)}`).join(",");
+        } else if ((0, is_plain_object_js_1.isPlainObject)(pv)) {
+          tmp = mapDefinedEntries(Object.entries(pv), ([k7, v5]) => {
+            return `,${encodeString(k7)},${encodeValue(v5)}`;
+          }).join("");
+          tmp = tmp.slice(1);
+        } else {
+          const k7 = (options === null || options === void 0 ? void 0 : options.explode) && (0, is_plain_object_js_1.isPlainObject)(value) ? `${pk}=` : "";
+          tmp = `${k7}${encodeValue(pv)}`;
+        }
+        if (!tmp) {
+          return;
+        }
+        out += `,${tmp}`;
+      });
+      return out.slice(1);
+    };
+    exports.encodeSimple = encodeSimple;
+    function explode(key, value) {
+      if (Array.isArray(value)) {
+        return value.map((v5) => [key, v5]);
+      } else if ((0, is_plain_object_js_1.isPlainObject)(value)) {
+        const o3 = value !== null && value !== void 0 ? value : {};
+        return Object.entries(o3).map(([k7, v5]) => [k7, v5]);
+      } else {
+        return [[key, value]];
+      }
+    }
+    function serializeValue(value) {
+      if (value === null) {
+        return "null";
+      } else if (typeof value === "undefined") {
+        return "";
+      } else if (value instanceof Date) {
+        return value.toISOString();
+      } else if (value instanceof Uint8Array) {
+        return (0, base64_js_1.bytesToBase64)(value);
+      } else if (typeof value === "object") {
+        return JSON.stringify(value, jsonReplacer);
+      }
+      return `${value}`;
+    }
+    function jsonReplacer(_7, value) {
+      if (value instanceof Uint8Array) {
+        return (0, base64_js_1.bytesToBase64)(value);
+      } else {
+        return value;
+      }
+    }
+    function mapDefined(inp, mapper) {
+      return inp.reduce((acc, v5) => {
+        if (v5 === void 0) {
+          return acc;
+        }
+        const m5 = mapper(v5);
+        if (m5 === void 0) {
+          return acc;
+        }
+        acc.push(m5);
+        return acc;
+      }, []);
+    }
+    function mapDefinedEntries(inp, mapper) {
+      const acc = [];
+      for (const [k7, v5] of inp) {
+        if (v5 === void 0) {
+          continue;
+        }
+        const m5 = mapper([k7, v5]);
+        if (m5 === void 0) {
+          continue;
+        }
+        acc.push(m5);
+      }
+      return acc;
+    }
+    function queryJoin(...args) {
+      return args.filter(Boolean).join("&");
+    }
+    function queryEncoder(f4) {
+      const bulkEncode = function(values, options) {
+        var _a5, _b2;
+        const opts = {
+          ...options,
+          explode: (_a5 = options === null || options === void 0 ? void 0 : options.explode) !== null && _a5 !== void 0 ? _a5 : true,
+          charEncoding: (_b2 = options === null || options === void 0 ? void 0 : options.charEncoding) !== null && _b2 !== void 0 ? _b2 : "percent"
+        };
+        const encoded = Object.entries(values).map(([key, value]) => {
+          return f4(key, value, opts);
+        });
+        return queryJoin(...encoded);
+      };
+      return bulkEncode;
+    }
+    exports.encodeJSONQuery = queryEncoder(encodeJSON);
+    exports.encodeFormQuery = queryEncoder(exports.encodeForm);
+    exports.encodeSpaceDelimitedQuery = queryEncoder(exports.encodeSpaceDelimited);
+    exports.encodePipeDelimitedQuery = queryEncoder(exports.encodePipeDelimited);
+    exports.encodeDeepObjectQuery = queryEncoder(encodeDeepObject);
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/dlv.js
+var require_dlv = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/dlv.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.dlv = dlv;
+    function dlv(obj, key, def, p4, undef) {
+      key = Array.isArray(key) ? key : key.split(".");
+      for (p4 = 0; p4 < key.length; p4++) {
+        const k7 = key[p4];
+        obj = k7 != null && obj ? obj[k7] : undef;
+      }
+      return obj === undef ? def : obj;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/env.js
+var require_env = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/env.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.envSchema = void 0;
+    exports.env = env2;
+    exports.resetEnv = resetEnv;
+    var dlv_js_1 = require_dlv();
+    var z6 = __importStar2(require_lib4());
+    exports.envSchema = z6.object({
+      MISTRAL_API_KEY: z6.string().optional(),
+      MISTRAL_DEBUG: z6.coerce.boolean().optional()
+    });
+    var envMemo = void 0;
+    function env2() {
+      var _a5, _b2;
+      if (envMemo) {
+        return envMemo;
+      }
+      envMemo = exports.envSchema.parse((_b2 = (_a5 = (0, dlv_js_1.dlv)(globalThis, "process.env")) !== null && _a5 !== void 0 ? _a5 : (0, dlv_js_1.dlv)(globalThis, "Deno.env")) !== null && _b2 !== void 0 ? _b2 : {});
+      return envMemo;
+    }
+    function resetEnv() {
+      envMemo = void 0;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/http.js
+var require_http = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/http.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.HTTPClient = void 0;
+    exports.matchContentType = matchContentType;
+    exports.matchStatusCode = matchStatusCode;
+    exports.matchResponse = matchResponse;
+    exports.isConnectionError = isConnectionError;
+    exports.isTimeoutError = isTimeoutError;
+    exports.isAbortError = isAbortError;
+    var DEFAULT_FETCHER = (input, init) => {
+      if (init == null) {
+        return fetch(input);
+      } else {
+        return fetch(input, init);
+      }
+    };
+    var HTTPClient = class {
+      constructor(options = {}) {
+        this.options = options;
+        this.requestHooks = [];
+        this.requestErrorHooks = [];
+        this.responseHooks = [];
+        this.fetcher = options.fetcher || DEFAULT_FETCHER;
+      }
+      async request(request3) {
+        let req = request3;
+        for (const hook of this.requestHooks) {
+          const nextRequest = await hook(req);
+          if (nextRequest) {
+            req = nextRequest;
+          }
+        }
+        try {
+          const res = await this.fetcher(req);
+          for (const hook of this.responseHooks) {
+            await hook(res, req);
+          }
+          return res;
+        } catch (err) {
+          for (const hook of this.requestErrorHooks) {
+            await hook(err, req);
+          }
+          throw err;
+        }
+      }
+      addHook(...args) {
+        if (args[0] === "beforeRequest") {
+          this.requestHooks.push(args[1]);
+        } else if (args[0] === "requestError") {
+          this.requestErrorHooks.push(args[1]);
+        } else if (args[0] === "response") {
+          this.responseHooks.push(args[1]);
+        } else {
+          throw new Error(`Invalid hook type: ${args[0]}`);
+        }
+        return this;
+      }
+      removeHook(...args) {
+        let target;
+        if (args[0] === "beforeRequest") {
+          target = this.requestHooks;
+        } else if (args[0] === "requestError") {
+          target = this.requestErrorHooks;
+        } else if (args[0] === "response") {
+          target = this.responseHooks;
+        } else {
+          throw new Error(`Invalid hook type: ${args[0]}`);
+        }
+        const index = target.findIndex((v5) => v5 === args[1]);
+        if (index >= 0) {
+          target.splice(index, 1);
+        }
+        return this;
+      }
+      clone() {
+        const child = new HTTPClient(this.options);
+        child.requestHooks = this.requestHooks.slice();
+        child.requestErrorHooks = this.requestErrorHooks.slice();
+        child.responseHooks = this.responseHooks.slice();
+        return child;
+      }
+    };
+    exports.HTTPClient = HTTPClient;
+    var mediaParamSeparator = /\s*;\s*/g;
+    function matchContentType(response, pattern) {
+      var _a5;
+      if (pattern === "*") {
+        return true;
+      }
+      let contentType = ((_a5 = response.headers.get("content-type")) === null || _a5 === void 0 ? void 0 : _a5.trim()) || "application/octet-stream";
+      contentType = contentType.toLowerCase();
+      const wantParts = pattern.toLowerCase().trim().split(mediaParamSeparator);
+      const [wantType = "", ...wantParams] = wantParts;
+      if (wantType.split("/").length !== 2) {
+        return false;
+      }
+      const gotParts = contentType.split(mediaParamSeparator);
+      const [gotType = "", ...gotParams] = gotParts;
+      const [type2 = "", subtype = ""] = gotType.split("/");
+      if (!type2 || !subtype) {
+        return false;
+      }
+      if (wantType !== "*/*" && gotType !== wantType && `${type2}/*` !== wantType && `*/${subtype}` !== wantType) {
+        return false;
+      }
+      if (gotParams.length < wantParams.length) {
+        return false;
+      }
+      const params = new Set(gotParams);
+      for (const wantParam of wantParams) {
+        if (!params.has(wantParam)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    var codeRangeRE = new RegExp("^[0-9]xx$", "i");
+    function matchStatusCode(response, codes) {
+      const actual = `${response.status}`;
+      const expectedCodes = Array.isArray(codes) ? codes : [codes];
+      if (!expectedCodes.length) {
+        return false;
+      }
+      return expectedCodes.some((ec) => {
+        const code = `${ec}`;
+        if (code === "default") {
+          return true;
+        }
+        if (!codeRangeRE.test(`${code}`)) {
+          return code === actual;
+        }
+        const expectFamily = code.charAt(0);
+        if (!expectFamily) {
+          throw new Error("Invalid status code range");
+        }
+        const actualFamily = actual.charAt(0);
+        if (!actualFamily) {
+          throw new Error(`Invalid response status code: ${actual}`);
+        }
+        return actualFamily === expectFamily;
+      });
+    }
+    function matchResponse(response, code, contentTypePattern) {
+      return matchStatusCode(response, code) && matchContentType(response, contentTypePattern);
+    }
+    function isConnectionError(err) {
+      if (typeof err !== "object" || err == null) {
+        return false;
+      }
+      const isBrowserErr = err instanceof TypeError && err.message.toLowerCase().startsWith("failed to fetch");
+      const isNodeErr = err instanceof TypeError && err.message.toLowerCase().startsWith("fetch failed");
+      const isBunErr = "name" in err && err.name === "ConnectionError";
+      const isGenericErr = "code" in err && typeof err.code === "string" && err.code.toLowerCase() === "econnreset";
+      return isBrowserErr || isNodeErr || isGenericErr || isBunErr;
+    }
+    function isTimeoutError(err) {
+      if (typeof err !== "object" || err == null) {
+        return false;
+      }
+      const isNative = "name" in err && err.name === "TimeoutError";
+      const isLegacyNative = "code" in err && err.code === 23;
+      const isGenericErr = "code" in err && typeof err.code === "string" && err.code.toLowerCase() === "econnaborted";
+      return isNative || isLegacyNative || isGenericErr;
+    }
+    function isAbortError(err) {
+      if (typeof err !== "object" || err == null) {
+        return false;
+      }
+      const isNative = "name" in err && err.name === "AbortError";
+      const isLegacyNative = "code" in err && err.code === 20;
+      const isGenericErr = "code" in err && typeof err.code === "string" && err.code.toLowerCase() === "econnaborted";
+      return isNative || isLegacyNative || isGenericErr;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/retries.js
+var require_retries = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/retries.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.TemporaryError = exports.PermanentError = void 0;
+    exports.retry = retry;
+    var http_js_1 = require_http();
+    var defaultBackoff = {
+      initialInterval: 500,
+      maxInterval: 6e4,
+      exponent: 1.5,
+      maxElapsedTime: 36e5
+    };
+    var PermanentError = class extends Error {
+      constructor(message, options) {
+        let msg = message;
+        if (options === null || options === void 0 ? void 0 : options.cause) {
+          msg += `: ${options.cause}`;
+        }
+        super(msg, options);
+        this.name = "PermanentError";
+        if (typeof this.cause === "undefined") {
+          this.cause = options === null || options === void 0 ? void 0 : options.cause;
+        }
+        Object.setPrototypeOf(this, PermanentError.prototype);
+      }
+    };
+    exports.PermanentError = PermanentError;
+    var TemporaryError = class extends Error {
+      constructor(message, response) {
+        super(message);
+        this.response = response;
+        this.name = "TemporaryError";
+        Object.setPrototypeOf(this, TemporaryError.prototype);
+      }
+    };
+    exports.TemporaryError = TemporaryError;
+    async function retry(fetchFn, options) {
+      var _a5;
+      switch (options.config.strategy) {
+        case "backoff":
+          return retryBackoff(wrapFetcher(fetchFn, {
+            statusCodes: options.statusCodes,
+            retryConnectionErrors: !!options.config.retryConnectionErrors
+          }), (_a5 = options.config.backoff) !== null && _a5 !== void 0 ? _a5 : defaultBackoff);
+        default:
+          return await fetchFn();
+      }
+    }
+    function wrapFetcher(fn, options) {
+      return async () => {
+        try {
+          const res = await fn();
+          if (isRetryableResponse(res, options.statusCodes)) {
+            throw new TemporaryError("Response failed with retryable status code", res);
+          }
+          return res;
+        } catch (err) {
+          if (err instanceof TemporaryError) {
+            throw err;
+          }
+          if (options.retryConnectionErrors && ((0, http_js_1.isTimeoutError)(err) || (0, http_js_1.isConnectionError)(err))) {
+            throw err;
+          }
+          throw new PermanentError("Permanent error", { cause: err });
+        }
+      };
+    }
+    var codeRangeRE = new RegExp("^[0-9]xx$", "i");
+    function isRetryableResponse(res, statusCodes) {
+      const actual = `${res.status}`;
+      return statusCodes.some((code) => {
+        if (!codeRangeRE.test(code)) {
+          return code === actual;
+        }
+        const expectFamily = code.charAt(0);
+        if (!expectFamily) {
+          throw new Error("Invalid status code range");
+        }
+        const actualFamily = actual.charAt(0);
+        if (!actualFamily) {
+          throw new Error(`Invalid response status code: ${actual}`);
+        }
+        return actualFamily === expectFamily;
+      });
+    }
+    async function retryBackoff(fn, strategy) {
+      const { maxElapsedTime, initialInterval, exponent, maxInterval } = strategy;
+      const start = Date.now();
+      let x5 = 0;
+      while (true) {
+        try {
+          const res = await fn();
+          return res;
+        } catch (err) {
+          if (err instanceof PermanentError) {
+            throw err.cause;
+          }
+          const elapsed = Date.now() - start;
+          if (elapsed > maxElapsedTime) {
+            if (err instanceof TemporaryError) {
+              return err.response;
+            }
+            throw err;
+          }
+          let retryInterval = 0;
+          if (err instanceof TemporaryError) {
+            retryInterval = retryIntervalFromResponse(err.response);
+          }
+          if (retryInterval <= 0) {
+            retryInterval = initialInterval * Math.pow(x5, exponent) + Math.random() * 1e3;
+          }
+          const d7 = Math.min(retryInterval, maxInterval);
+          await delay4(d7);
+          x5++;
+        }
+      }
+    }
+    function retryIntervalFromResponse(res) {
+      const retryVal = res.headers.get("retry-after") || "";
+      if (!retryVal) {
+        return 0;
+      }
+      const parsedNumber = Number(retryVal);
+      if (Number.isInteger(parsedNumber)) {
+        return parsedNumber * 1e3;
+      }
+      const parsedDate = Date.parse(retryVal);
+      if (Number.isInteger(parsedDate)) {
+        const deltaMS = parsedDate - Date.now();
+        return deltaMS > 0 ? Math.ceil(deltaMS) : 0;
+      }
+      return 0;
+    }
+    async function delay4(delay5) {
+      return new Promise((resolve) => setTimeout(resolve, delay5));
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/sdks.js
+var require_sdks = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/sdks.js"(exports) {
+    "use strict";
+    var __classPrivateFieldSet12 = exports && exports.__classPrivateFieldSet || function(receiver, state2, value, kind3, f4) {
+      if (kind3 === "m")
+        throw new TypeError("Private method is not writable");
+      if (kind3 === "a" && !f4)
+        throw new TypeError("Private accessor was defined without a setter");
+      if (typeof state2 === "function" ? receiver !== state2 || !f4 : !state2.has(receiver))
+        throw new TypeError("Cannot write private member to an object whose class did not declare it");
+      return kind3 === "a" ? f4.call(receiver, value) : f4 ? f4.value = value : state2.set(receiver, value), value;
+    };
+    var __classPrivateFieldGet14 = exports && exports.__classPrivateFieldGet || function(receiver, state2, kind3, f4) {
+      if (kind3 === "a" && !f4)
+        throw new TypeError("Private accessor was defined without a getter");
+      if (typeof state2 === "function" ? receiver !== state2 || !f4 : !state2.has(receiver))
+        throw new TypeError("Cannot read private member from an object whose class did not declare it");
+      return kind3 === "m" ? f4 : kind3 === "a" ? f4.call(receiver) : f4 ? f4.value : state2.get(receiver);
+    };
+    var _ClientSDK_httpClient;
+    var _ClientSDK_hooks;
+    var _ClientSDK_logger;
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ClientSDK = void 0;
+    var hooks_js_1 = require_hooks();
+    var httpclienterrors_js_1 = require_httpclienterrors();
+    var fp_js_1 = require_fp();
+    var base64_js_1 = require_base64();
+    var config_js_1 = require_config();
+    var encodings_js_1 = require_encodings();
+    var env_js_1 = require_env();
+    var http_js_1 = require_http();
+    var retries_js_1 = require_retries();
+    var gt2 = typeof globalThis === "undefined" ? null : globalThis;
+    var webWorkerLike = typeof gt2 === "object" && gt2 != null && "importScripts" in gt2 && typeof gt2["importScripts"] === "function";
+    var isBrowserLike = webWorkerLike || typeof navigator !== "undefined" && "serviceWorker" in navigator || typeof window === "object" && typeof window.document !== "undefined";
+    var ClientSDK = class {
+      constructor(options = {}) {
+        _ClientSDK_httpClient.set(this, void 0);
+        _ClientSDK_hooks.set(this, void 0);
+        _ClientSDK_logger.set(this, void 0);
+        const opt = options;
+        if (typeof opt === "object" && opt != null && "hooks" in opt && opt.hooks instanceof hooks_js_1.SDKHooks) {
+          __classPrivateFieldSet12(this, _ClientSDK_hooks, opt.hooks, "f");
+        } else {
+          __classPrivateFieldSet12(this, _ClientSDK_hooks, new hooks_js_1.SDKHooks(), "f");
+        }
+        this._options = { ...options, hooks: __classPrivateFieldGet14(this, _ClientSDK_hooks, "f") };
+        const url2 = (0, config_js_1.serverURLFromOptions)(options);
+        if (url2) {
+          url2.pathname = url2.pathname.replace(/\/+$/, "") + "/";
+        }
+        const { baseURL, client } = __classPrivateFieldGet14(this, _ClientSDK_hooks, "f").sdkInit({
+          baseURL: url2,
+          client: options.httpClient || new http_js_1.HTTPClient()
+        });
+        this._baseURL = baseURL;
+        __classPrivateFieldSet12(this, _ClientSDK_httpClient, client, "f");
+        __classPrivateFieldSet12(this, _ClientSDK_logger, options.debugLogger, "f");
+        if (!__classPrivateFieldGet14(this, _ClientSDK_logger, "f") && (0, env_js_1.env)().MISTRAL_DEBUG) {
+          __classPrivateFieldSet12(this, _ClientSDK_logger, console, "f");
+        }
+      }
+      _createRequest(context, conf, options) {
+        var _a5, _b2, _c2, _d2;
+        const { method, path: path5, query, headers: opHeaders, security } = conf;
+        const base = (_a5 = conf.baseURL) !== null && _a5 !== void 0 ? _a5 : this._baseURL;
+        if (!base) {
+          return (0, fp_js_1.ERR)(new httpclienterrors_js_1.InvalidRequestError("No base URL provided for operation"));
+        }
+        const reqURL = new URL(base);
+        const inputURL = new URL(path5, reqURL);
+        if (path5) {
+          reqURL.pathname += inputURL.pathname.replace(/^\/+/, "");
+        }
+        let finalQuery = query || "";
+        const secQuery = [];
+        for (const [k7, v5] of Object.entries((security === null || security === void 0 ? void 0 : security.queryParams) || {})) {
+          secQuery.push((0, encodings_js_1.encodeForm)(k7, v5, { charEncoding: "percent" }));
+        }
+        if (secQuery.length) {
+          finalQuery += `&${secQuery.join("&")}`;
+        }
+        if (finalQuery) {
+          const q6 = finalQuery.startsWith("&") ? finalQuery.slice(1) : finalQuery;
+          reqURL.search = `?${q6}`;
+        }
+        const headers = new Headers(opHeaders);
+        const username = security === null || security === void 0 ? void 0 : security.basic.username;
+        const password = security === null || security === void 0 ? void 0 : security.basic.password;
+        if (username != null || password != null) {
+          const encoded = (0, base64_js_1.stringToBase64)([username || "", password || ""].join(":"));
+          headers.set("Authorization", `Basic ${encoded}`);
+        }
+        const securityHeaders = new Headers((security === null || security === void 0 ? void 0 : security.headers) || {});
+        for (const [k7, v5] of securityHeaders) {
+          headers.set(k7, v5);
+        }
+        let cookie = headers.get("cookie") || "";
+        for (const [k7, v5] of Object.entries((security === null || security === void 0 ? void 0 : security.cookies) || {})) {
+          cookie += `; ${k7}=${v5}`;
+        }
+        cookie = cookie.startsWith("; ") ? cookie.slice(2) : cookie;
+        headers.set("cookie", cookie);
+        const userHeaders = new Headers((_b2 = options === null || options === void 0 ? void 0 : options.fetchOptions) === null || _b2 === void 0 ? void 0 : _b2.headers);
+        for (const [k7, v5] of userHeaders) {
+          headers.set(k7, v5);
+        }
+        if (!isBrowserLike) {
+          headers.set((_c2 = conf.uaHeader) !== null && _c2 !== void 0 ? _c2 : "user-agent", config_js_1.SDK_METADATA.userAgent);
+        }
+        let fetchOptions = options === null || options === void 0 ? void 0 : options.fetchOptions;
+        if (!(fetchOptions === null || fetchOptions === void 0 ? void 0 : fetchOptions.signal) && conf.timeoutMs && conf.timeoutMs > 0) {
+          const timeoutSignal = AbortSignal.timeout(conf.timeoutMs);
+          if (!fetchOptions) {
+            fetchOptions = { signal: timeoutSignal };
+          } else {
+            fetchOptions.signal = timeoutSignal;
+          }
+        }
+        if (conf.body instanceof ReadableStream) {
+          if (!fetchOptions) {
+            fetchOptions = {
+              duplex: "half"
+            };
+          } else {
+            fetchOptions.duplex = "half";
+          }
+        }
+        let input;
+        try {
+          input = __classPrivateFieldGet14(this, _ClientSDK_hooks, "f").beforeCreateRequest(context, {
+            url: reqURL,
+            options: {
+              ...fetchOptions,
+              body: (_d2 = conf.body) !== null && _d2 !== void 0 ? _d2 : null,
+              headers,
+              method
+            }
+          });
+        } catch (err) {
+          return (0, fp_js_1.ERR)(new httpclienterrors_js_1.UnexpectedClientError("Create request hook failed to execute", {
+            cause: err
+          }));
+        }
+        return (0, fp_js_1.OK)(new Request(input.url, input.options));
+      }
+      async _do(request3, options) {
+        const { context, errorCodes } = options;
+        return (0, retries_js_1.retry)(async () => {
+          const req = await __classPrivateFieldGet14(this, _ClientSDK_hooks, "f").beforeRequest(context, request3.clone());
+          await logRequest(__classPrivateFieldGet14(this, _ClientSDK_logger, "f"), req).catch((e3) => {
+            var _a5;
+            return (_a5 = __classPrivateFieldGet14(this, _ClientSDK_logger, "f")) === null || _a5 === void 0 ? void 0 : _a5.log("Failed to log request:", e3);
+          });
+          let response = await __classPrivateFieldGet14(this, _ClientSDK_httpClient, "f").request(req);
+          try {
+            if ((0, http_js_1.matchStatusCode)(response, errorCodes)) {
+              const result = await __classPrivateFieldGet14(this, _ClientSDK_hooks, "f").afterError(context, response, null);
+              if (result.error) {
+                throw result.error;
+              }
+              response = result.response || response;
+            } else {
+              response = await __classPrivateFieldGet14(this, _ClientSDK_hooks, "f").afterSuccess(context, response);
+            }
+          } finally {
+            await logResponse(__classPrivateFieldGet14(this, _ClientSDK_logger, "f"), response, req).catch((e3) => {
+              var _a5;
+              return (_a5 = __classPrivateFieldGet14(this, _ClientSDK_logger, "f")) === null || _a5 === void 0 ? void 0 : _a5.log("Failed to log response:", e3);
+            });
+          }
+          return response;
+        }, { config: options.retryConfig, statusCodes: options.retryCodes }).then((r3) => (0, fp_js_1.OK)(r3), (err) => {
+          switch (true) {
+            case (0, http_js_1.isAbortError)(err):
+              return (0, fp_js_1.ERR)(new httpclienterrors_js_1.RequestAbortedError("Request aborted by client", {
+                cause: err
+              }));
+            case (0, http_js_1.isTimeoutError)(err):
+              return (0, fp_js_1.ERR)(new httpclienterrors_js_1.RequestTimeoutError("Request timed out", { cause: err }));
+            case (0, http_js_1.isConnectionError)(err):
+              return (0, fp_js_1.ERR)(new httpclienterrors_js_1.ConnectionError("Unable to make request", { cause: err }));
+            default:
+              return (0, fp_js_1.ERR)(new httpclienterrors_js_1.UnexpectedClientError("Unexpected HTTP client error", {
+                cause: err
+              }));
+          }
+        });
+      }
+    };
+    exports.ClientSDK = ClientSDK;
+    _ClientSDK_httpClient = /* @__PURE__ */ new WeakMap(), _ClientSDK_hooks = /* @__PURE__ */ new WeakMap(), _ClientSDK_logger = /* @__PURE__ */ new WeakMap();
+    var jsonLikeContentTypeRE = /^application\/(?:.{0,100}\+)?json/;
+    async function logRequest(logger3, req) {
+      if (!logger3) {
+        return;
+      }
+      const contentType = req.headers.get("content-type");
+      const ct2 = (contentType === null || contentType === void 0 ? void 0 : contentType.split(";")[0]) || "";
+      logger3.group(`> Request: ${req.method} ${req.url}`);
+      logger3.group("Headers:");
+      for (const [k7, v5] of req.headers.entries()) {
+        logger3.log(`${k7}: ${v5}`);
+      }
+      logger3.groupEnd();
+      logger3.group("Body:");
+      switch (true) {
+        case jsonLikeContentTypeRE.test(ct2):
+          logger3.log(await req.clone().json());
+          break;
+        case ct2.startsWith("text/"):
+          logger3.log(await req.clone().text());
+          break;
+        case ct2 === "multipart/form-data": {
+          const body = await req.clone().formData();
+          for (const [k7, v5] of body) {
+            const vlabel = v5 instanceof Blob ? "<Blob>" : v5;
+            logger3.log(`${k7}: ${vlabel}`);
+          }
+          break;
+        }
+        default:
+          logger3.log(`<${contentType}>`);
+          break;
+      }
+      logger3.groupEnd();
+      logger3.groupEnd();
+    }
+    async function logResponse(logger3, res, req) {
+      if (!logger3) {
+        return;
+      }
+      const contentType = res.headers.get("content-type");
+      const ct2 = (contentType === null || contentType === void 0 ? void 0 : contentType.split(";")[0]) || "";
+      logger3.group(`< Response: ${req.method} ${req.url}`);
+      logger3.log("Status Code:", res.status, res.statusText);
+      logger3.group("Headers:");
+      for (const [k7, v5] of res.headers.entries()) {
+        logger3.log(`${k7}: ${v5}`);
+      }
+      logger3.groupEnd();
+      logger3.group("Body:");
+      switch (true) {
+        case ((0, http_js_1.matchContentType)(res, "application/json") || jsonLikeContentTypeRE.test(ct2)):
+          logger3.log(await res.clone().json());
+          break;
+        case (0, http_js_1.matchContentType)(res, "text/event-stream"):
+          logger3.log(`<${contentType}>`);
+          break;
+        case (0, http_js_1.matchContentType)(res, "text/*"):
+          logger3.log(await res.clone().text());
+          break;
+        case (0, http_js_1.matchContentType)(res, "multipart/form-data"): {
+          const body = await res.clone().formData();
+          for (const [k7, v5] of body) {
+            const vlabel = v5 instanceof Blob ? "<Blob>" : v5;
+            logger3.log(`${k7}: ${vlabel}`);
+          }
+          break;
+        }
+        default:
+          logger3.log(`<${contentType}>`);
+          break;
+      }
+      logger3.groupEnd();
+      logger3.groupEnd();
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/errors/sdkerror.js
+var require_sdkerror = __commonJS({
+  "node_modules/@mistralai/mistralai/models/errors/sdkerror.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SDKError = void 0;
+    var SDKError = class extends Error {
+      constructor(message, rawResponse, body = "") {
+        const statusCode = rawResponse.status;
+        const contentType = rawResponse.headers.get("content-type") || "";
+        const bodyString = body.length > 0 ? `
+${body}` : "";
+        super(`${message}: Status ${statusCode} Content-Type ${contentType} Body ${bodyString}`);
+        this.rawResponse = rawResponse;
+        this.body = body;
+        this.statusCode = statusCode;
+        this.contentType = contentType;
+        this.name = "SDKError";
+      }
+    };
+    exports.SDKError = SDKError;
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/event-streams.js
+var require_event_streams = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/event-streams.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.EventStream = void 0;
+    exports.discardSentinel = discardSentinel;
+    var LF = 10;
+    var CR = 13;
+    var NEWLINE_CHARS = /* @__PURE__ */ new Set([LF, CR]);
+    var MESSAGE_BOUNDARIES = [
+      new Uint8Array([CR, LF, CR, LF]),
+      new Uint8Array([CR, CR]),
+      new Uint8Array([LF, LF])
+    ];
+    var EventStream2 = class {
+      constructor(init) {
+        this.stream = init.stream;
+        this.decoder = init.decoder;
+      }
+      async *[Symbol.asyncIterator]() {
+        const reader = this.stream.getReader();
+        let buffer = new Uint8Array([]);
+        let position = 0;
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              break;
+            }
+            const newBuffer = new Uint8Array(buffer.length + value.length);
+            newBuffer.set(buffer);
+            newBuffer.set(value, buffer.length);
+            buffer = newBuffer;
+            for (let i3 = position; i3 < buffer.length; i3++) {
+              const boundary = findBoundary(buffer, i3);
+              if (boundary == null) {
+                continue;
+              }
+              const chunk = buffer.slice(position, i3);
+              position = i3 + boundary.length;
+              const event = parseEvent(chunk, this.decoder);
+              if (event != null) {
+                yield event;
+              }
+            }
+            if (position > 0) {
+              buffer = buffer.slice(position);
+              position = 0;
+            }
+          }
+          if (buffer.length > 0) {
+            const event = parseEvent(buffer, this.decoder);
+            if (event != null) {
+              yield event;
+            }
+          }
+        } catch (e3) {
+          if (e3 instanceof Error && e3.name === "AbortError") {
+            return;
+          }
+          throw e3;
+        } finally {
+          reader.releaseLock();
+        }
+      }
+    };
+    exports.EventStream = EventStream2;
+    function findBoundary(buffer, start) {
+      const char1 = buffer[start];
+      const char2 = buffer[start + 1];
+      if (char1 == null || char2 == null || !NEWLINE_CHARS.has(char1) || !NEWLINE_CHARS.has(char2)) {
+        return null;
+      }
+      for (const s2 of MESSAGE_BOUNDARIES) {
+        const seq = peekSequence(start, buffer, s2);
+        if (seq != null) {
+          return seq;
+        }
+      }
+      return null;
+    }
+    function peekSequence(position, buffer, sequence) {
+      if (sequence.length > buffer.length - position) {
+        return null;
+      }
+      for (let i3 = 0; i3 < sequence.length; i3++) {
+        if (buffer[position + i3] !== sequence[i3]) {
+          return null;
+        }
+      }
+      return sequence;
+    }
+    function parseEvent(chunk, decoder) {
+      var _a5;
+      if (!chunk.length) {
+        return null;
+      }
+      const td = new TextDecoder();
+      const raw = td.decode(chunk);
+      const lines = raw.split(/\r?\n|\r/g);
+      let publish = false;
+      const rawEvent = {};
+      for (const line of lines) {
+        if (!line) {
+          continue;
+        }
+        const delim = line.indexOf(":");
+        if (delim === 0) {
+          continue;
+        }
+        const field = delim > 0 ? line.substring(0, delim) : "";
+        let value = delim > 0 ? line.substring(delim + 1) : "";
+        if (value.charAt(0) === " ") {
+          value = value.substring(1);
+        }
+        switch (field) {
+          case "event": {
+            publish = true;
+            rawEvent.event = value;
+            break;
+          }
+          case "data": {
+            publish = true;
+            (_a5 = rawEvent.data) !== null && _a5 !== void 0 ? _a5 : rawEvent.data = "";
+            rawEvent.data += value + "\n";
+            break;
+          }
+          case "id": {
+            publish = true;
+            rawEvent.id = value;
+            break;
+          }
+          case "retry": {
+            const r3 = parseInt(value, 10);
+            if (!Number.isNaN(r3)) {
+              publish = true;
+              rawEvent.retry = r3;
+            }
+            break;
+          }
+        }
+      }
+      if (!publish) {
+        return null;
+      }
+      if (rawEvent.data != null) {
+        rawEvent.data = rawEvent.data.slice(0, -1);
+      }
+      return decoder(rawEvent);
+    }
+    function discardSentinel(stream4, sentinel) {
+      return new ReadableStream({
+        async start(controller) {
+          let buffer = new Uint8Array([]);
+          let position = 0;
+          let done = false;
+          let discard = false;
+          const rdr = stream4.getReader();
+          try {
+            while (!done) {
+              const result = await rdr.read();
+              const value = result.value;
+              done = done || result.done;
+              if (discard) {
+                continue;
+              }
+              if (typeof value === "undefined") {
+                continue;
+              }
+              const newBuffer = new Uint8Array(buffer.length + value.length);
+              newBuffer.set(buffer);
+              newBuffer.set(value, buffer.length);
+              buffer = newBuffer;
+              for (let i3 = position; i3 < buffer.length; i3++) {
+                const boundary = findBoundary(buffer, i3);
+                if (boundary == null) {
+                  continue;
+                }
+                const start = position;
+                const chunk = buffer.slice(start, i3);
+                position = i3 + boundary.length;
+                const event = parseEvent(chunk, id);
+                if ((event === null || event === void 0 ? void 0 : event.data) === sentinel) {
+                  controller.enqueue(buffer.slice(0, start));
+                  discard = true;
+                } else {
+                  controller.enqueue(buffer.slice(0, position));
+                  buffer = buffer.slice(position);
+                  position = 0;
+                }
+              }
+            }
+          } catch (e3) {
+            controller.error(e3);
+          } finally {
+            controller.close();
+            rdr.releaseLock();
+          }
+        }
+      });
+    }
+    function id(v5) {
+      return v5;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/errors/sdkvalidationerror.js
+var require_sdkvalidationerror = __commonJS({
+  "node_modules/@mistralai/mistralai/models/errors/sdkvalidationerror.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SDKValidationError = void 0;
+    exports.formatZodError = formatZodError;
+    var z6 = __importStar2(require_lib4());
+    var SDKValidationError = class extends Error {
+      constructor(message, cause, rawValue) {
+        super(`${message}: ${cause}`);
+        this.name = "SDKValidationError";
+        this.cause = cause;
+        this.rawValue = rawValue;
+        this.rawMessage = message;
+      }
+      pretty() {
+        if (this.cause instanceof z6.ZodError) {
+          return `${this.rawMessage}
+${formatZodError(this.cause)}`;
+        } else {
+          return this.toString();
+        }
+      }
+    };
+    exports.SDKValidationError = SDKValidationError;
+    function formatZodError(err, level = 0) {
+      let pre = "  ".repeat(level);
+      pre = level > 0 ? `\u2502${pre}` : pre;
+      pre += " ".repeat(level);
+      let message = "";
+      const append2 = (str2) => message += `
+${pre}${str2}`;
+      const len = err.issues.length;
+      const headline = len === 1 ? `${len} issue found` : `${len} issues found`;
+      if (len) {
+        append2(`\u250C ${headline}:`);
+      }
+      for (const issue of err.issues) {
+        let path5 = issue.path.join(".");
+        path5 = path5 ? `<root>.${path5}` : "<root>";
+        append2(`\u2502 \u2022 [${path5}]: ${issue.message} (${issue.code})`);
+        switch (issue.code) {
+          case "invalid_literal":
+          case "invalid_type": {
+            append2(`\u2502     Want: ${issue.expected}`);
+            append2(`\u2502      Got: ${issue.received}`);
+            break;
+          }
+          case "unrecognized_keys": {
+            append2(`\u2502     Keys: ${issue.keys.join(", ")}`);
+            break;
+          }
+          case "invalid_enum_value": {
+            append2(`\u2502     Allowed: ${issue.options.join(", ")}`);
+            append2(`\u2502         Got: ${issue.received}`);
+            break;
+          }
+          case "invalid_union_discriminator": {
+            append2(`\u2502     Allowed: ${issue.options.join(", ")}`);
+            break;
+          }
+          case "invalid_union": {
+            const len2 = issue.unionErrors.length;
+            append2(`\u2502   \u2716\uFE0E Attemped to deserialize into one of ${len2} union members:`);
+            issue.unionErrors.forEach((err2, i3) => {
+              append2(`\u2502   \u2716\uFE0E Member ${i3 + 1} of ${len2}`);
+              append2(`${formatZodError(err2, level + 1)}`);
+            });
+          }
+        }
+      }
+      if (err.issues.length) {
+        append2(`\u2514\u2500*`);
+      }
+      return message.slice(1);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/schemas.js
+var require_schemas = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/schemas.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.parse = parse;
+    exports.safeParse = safeParse;
+    exports.collectExtraKeys = collectExtraKeys;
+    var zod_1 = require_lib4();
+    var sdkvalidationerror_js_1 = require_sdkvalidationerror();
+    var fp_js_1 = require_fp();
+    function parse(rawValue, fn, errorMessage) {
+      try {
+        return fn(rawValue);
+      } catch (err) {
+        if (err instanceof zod_1.ZodError) {
+          throw new sdkvalidationerror_js_1.SDKValidationError(errorMessage, err, rawValue);
+        }
+        throw err;
+      }
+    }
+    function safeParse(rawValue, fn, errorMessage) {
+      try {
+        return (0, fp_js_1.OK)(fn(rawValue));
+      } catch (err) {
+        return (0, fp_js_1.ERR)(new sdkvalidationerror_js_1.SDKValidationError(errorMessage, err, rawValue));
+      }
+    }
+    function collectExtraKeys(obj, extrasKey) {
+      return obj.transform((val) => {
+        const extras = {};
+        const { shape } = obj;
+        for (const [key] of Object.entries(val)) {
+          if (key in shape) {
+            continue;
+          }
+          const v5 = val[key];
+          if (typeof v5 === "undefined") {
+            continue;
+          }
+          extras[key] = v5;
+          delete val[key];
+        }
+        return { ...val, [extrasKey]: extras };
+      });
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/matchers.js
+var require_matchers = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/matchers.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.jsonErr = jsonErr;
+    exports.json = json;
+    exports.textErr = textErr;
+    exports.text = text;
+    exports.bytesErr = bytesErr;
+    exports.bytes = bytes;
+    exports.streamErr = streamErr;
+    exports.stream = stream4;
+    exports.sseErr = sseErr;
+    exports.sse = sse;
+    exports.nilErr = nilErr;
+    exports.nil = nil;
+    exports.fail = fail;
+    exports.match = match;
+    exports.unpackHeaders = unpackHeaders;
+    exports.discardResponseBody = discardResponseBody;
+    var sdkerror_js_1 = require_sdkerror();
+    var event_streams_js_1 = require_event_streams();
+    var http_js_1 = require_http();
+    var is_plain_object_js_1 = require_is_plain_object();
+    var schemas_js_1 = require_schemas();
+    var DEFAULT_CONTENT_TYPES = {
+      json: "application/json",
+      text: "text/plain",
+      bytes: "application/octet-stream",
+      stream: "application/octet-stream",
+      sse: "text/event-stream",
+      nil: "*",
+      fail: "*"
+    };
+    function jsonErr(codes, schema, options) {
+      return { ...options, err: true, enc: "json", codes, schema };
+    }
+    function json(codes, schema, options) {
+      return { ...options, enc: "json", codes, schema };
+    }
+    function textErr(codes, schema, options) {
+      return { ...options, err: true, enc: "text", codes, schema };
+    }
+    function text(codes, schema, options) {
+      return { ...options, enc: "text", codes, schema };
+    }
+    function bytesErr(codes, schema, options) {
+      return { ...options, err: true, enc: "bytes", codes, schema };
+    }
+    function bytes(codes, schema, options) {
+      return { ...options, enc: "bytes", codes, schema };
+    }
+    function streamErr(codes, schema, options) {
+      return { ...options, err: true, enc: "stream", codes, schema };
+    }
+    function stream4(codes, schema, options) {
+      return { ...options, enc: "stream", codes, schema };
+    }
+    function sseErr(codes, schema, options) {
+      return { ...options, err: true, enc: "sse", codes, schema };
+    }
+    function sse(codes, schema, options) {
+      return { ...options, enc: "sse", codes, schema };
+    }
+    function nilErr(codes, schema, options) {
+      return { ...options, err: true, enc: "nil", codes, schema };
+    }
+    function nil(codes, schema, options) {
+      return { ...options, enc: "nil", codes, schema };
+    }
+    function fail(codes) {
+      return { enc: "fail", codes };
+    }
+    function match(...matchers) {
+      return async function matchFunc(response, options) {
+        let raw;
+        let matcher;
+        for (const match2 of matchers) {
+          const { codes } = match2;
+          const ctpattern = "ctype" in match2 ? match2.ctype : DEFAULT_CONTENT_TYPES[match2.enc];
+          if (ctpattern && (0, http_js_1.matchResponse)(response, codes, ctpattern)) {
+            matcher = match2;
+            break;
+          } else if (!ctpattern && (0, http_js_1.matchStatusCode)(response, codes)) {
+            matcher = match2;
+            break;
+          }
+        }
+        if (!matcher) {
+          const responseBody = await response.text();
+          return [{
+            ok: false,
+            error: new sdkerror_js_1.SDKError("Unexpected API response status or content-type", response, responseBody)
+          }, responseBody];
+        }
+        const encoding = matcher.enc;
+        switch (encoding) {
+          case "json":
+            raw = await response.json();
+            break;
+          case "bytes":
+            raw = new Uint8Array(await response.arrayBuffer());
+            break;
+          case "stream":
+            raw = response.body;
+            break;
+          case "text":
+            raw = await response.text();
+            break;
+          case "sse":
+            raw = response.body && matcher.sseSentinel ? (0, event_streams_js_1.discardSentinel)(response.body, matcher.sseSentinel) : response.body;
+            break;
+          case "nil":
+            raw = await discardResponseBody(response);
+            break;
+          case "fail":
+            raw = await response.text();
+            break;
+          default:
+            encoding;
+            throw new Error(`Unsupported response type: ${encoding}`);
+        }
+        if (matcher.enc === "fail") {
+          return [{
+            ok: false,
+            error: new sdkerror_js_1.SDKError("API error occurred", response, typeof raw === "string" ? raw : "")
+          }, raw];
+        }
+        const resultKey = matcher.key || (options === null || options === void 0 ? void 0 : options.resultKey);
+        let data;
+        if ("err" in matcher) {
+          data = {
+            ...options === null || options === void 0 ? void 0 : options.extraFields,
+            ...matcher.hdrs ? { Headers: unpackHeaders(response.headers) } : null,
+            ...(0, is_plain_object_js_1.isPlainObject)(raw) ? raw : null
+          };
+        } else if (resultKey) {
+          data = {
+            ...options === null || options === void 0 ? void 0 : options.extraFields,
+            ...matcher.hdrs ? { Headers: unpackHeaders(response.headers) } : null,
+            [resultKey]: raw
+          };
+        } else if (matcher.hdrs) {
+          data = {
+            ...options === null || options === void 0 ? void 0 : options.extraFields,
+            ...matcher.hdrs ? { Headers: unpackHeaders(response.headers) } : null,
+            ...(0, is_plain_object_js_1.isPlainObject)(raw) ? raw : null
+          };
+        } else {
+          data = raw;
+        }
+        if ("err" in matcher) {
+          const result = (0, schemas_js_1.safeParse)(data, (v5) => matcher.schema.parse(v5), "Response validation failed");
+          return [result.ok ? { ok: false, error: result.value } : result, raw];
+        } else {
+          return [
+            (0, schemas_js_1.safeParse)(data, (v5) => matcher.schema.parse(v5), "Response validation failed"),
+            raw
+          ];
+        }
+      };
+    }
+    var headerValRE = /, */;
+    function unpackHeaders(headers) {
+      const out = {};
+      for (const [k7, v5] of headers.entries()) {
+        out[k7] = v5.split(headerValRE);
+      }
+      return out;
+    }
+    async function discardResponseBody(res) {
+      var _a5;
+      const reader = (_a5 = res.body) === null || _a5 === void 0 ? void 0 : _a5.getReader();
+      if (reader == null) {
+        return;
+      }
+      try {
+        let done = false;
+        while (!done) {
+          const res2 = await reader.read();
+          done = res2.done;
+        }
+      } finally {
+        reader.releaseLock();
+      }
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/security.js
+var require_security = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/security.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SecurityError = exports.SecurityErrorCode = void 0;
+    exports.resolveSecurity = resolveSecurity;
+    exports.resolveGlobalSecurity = resolveGlobalSecurity;
+    exports.extractSecurity = extractSecurity;
+    var env_js_1 = require_env();
+    var SecurityErrorCode;
+    (function(SecurityErrorCode2) {
+      SecurityErrorCode2["Incomplete"] = "incomplete";
+      SecurityErrorCode2["UnrecognisedSecurityType"] = "unrecognized_security_type";
+    })(SecurityErrorCode || (exports.SecurityErrorCode = SecurityErrorCode = {}));
+    var SecurityError = class extends Error {
+      constructor(code, message) {
+        super(message);
+        this.code = code;
+        this.name = "SecurityError";
+      }
+      static incomplete() {
+        return new SecurityError(SecurityErrorCode.Incomplete, "Security requirements not met in order to perform the operation");
+      }
+      static unrecognizedType(type2) {
+        return new SecurityError(SecurityErrorCode.UnrecognisedSecurityType, `Unrecognised security type: ${type2}`);
+      }
+    };
+    exports.SecurityError = SecurityError;
+    function resolveSecurity(...options) {
+      const state2 = {
+        basic: { username: "", password: "" },
+        headers: {},
+        queryParams: {},
+        cookies: {},
+        oauth2: { type: "none" }
+      };
+      const option = options.find((opts) => {
+        return opts.every((o3) => {
+          if (o3.value == null) {
+            return false;
+          } else if (o3.type === "http:basic") {
+            return o3.value.username != null || o3.value.password != null;
+          } else if (o3.type === "http:custom") {
+            return null;
+          } else if (o3.type === "oauth2:password") {
+            return typeof o3.value === "string" && !!o3.value;
+          } else if (o3.type === "oauth2:client_credentials") {
+            return o3.value.clientID != null || o3.value.clientSecret != null;
+          } else if (typeof o3.value === "string") {
+            return !!o3.value;
+          } else {
+            throw new Error(`Unrecognized security type: ${o3.type} (value type: ${typeof o3.value})`);
+          }
+        });
+      });
+      if (option == null) {
+        return null;
+      }
+      option.forEach((spec) => {
+        if (spec.value == null) {
+          return;
+        }
+        const { type: type2 } = spec;
+        switch (type2) {
+          case "apiKey:header":
+            state2.headers[spec.fieldName] = spec.value;
+            break;
+          case "apiKey:query":
+            state2.queryParams[spec.fieldName] = spec.value;
+            break;
+          case "apiKey:cookie":
+            state2.cookies[spec.fieldName] = spec.value;
+            break;
+          case "http:basic":
+            applyBasic(state2, spec);
+            break;
+          case "http:custom":
+            break;
+          case "http:bearer":
+            applyBearer(state2, spec);
+            break;
+          case "oauth2":
+            applyBearer(state2, spec);
+            break;
+          case "oauth2:password":
+            applyBearer(state2, spec);
+            break;
+          case "oauth2:client_credentials":
+            break;
+          case "openIdConnect":
+            applyBearer(state2, spec);
+            break;
+          default:
+            spec;
+            throw SecurityError.unrecognizedType(type2);
+        }
+      });
+      return state2;
+    }
+    function applyBasic(state2, spec) {
+      if (spec.value == null) {
+        return;
+      }
+      state2.basic = spec.value;
+    }
+    function applyBearer(state2, spec) {
+      if (typeof spec.value !== "string" || !spec.value) {
+        return;
+      }
+      let value = spec.value;
+      if (value.slice(0, 7).toLowerCase() !== "bearer ") {
+        value = `Bearer ${value}`;
+      }
+      state2.headers[spec.fieldName] = value;
+    }
+    function resolveGlobalSecurity(security) {
+      var _a5;
+      return resolveSecurity([
+        {
+          fieldName: "Authorization",
+          type: "http:bearer",
+          value: (_a5 = security === null || security === void 0 ? void 0 : security.apiKey) !== null && _a5 !== void 0 ? _a5 : (0, env_js_1.env)().MISTRAL_API_KEY
+        }
+      ]);
+    }
+    async function extractSecurity(sec) {
+      if (sec == null) {
+        return;
+      }
+      return typeof sec === "function" ? sec() : sec;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/lib/primitives.js
+var require_primitives = __commonJS({
+  "node_modules/@mistralai/mistralai/lib/primitives.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.invariant = invariant;
+    exports.remap = remap;
+    exports.combineSignals = combineSignals;
+    exports.abortSignalAny = abortSignalAny;
+    var InvariantError = class extends Error {
+      constructor(message) {
+        super(message);
+        this.name = "InvariantError";
+      }
+    };
+    function invariant(condition, message) {
+      if (!condition) {
+        throw new InvariantError(message);
+      }
+    }
+    function remap(inp, mappings) {
+      let out = {};
+      if (!Object.keys(mappings).length) {
+        out = inp;
+        return out;
+      }
+      for (const [k7, v5] of Object.entries(inp)) {
+        const j4 = mappings[k7];
+        if (j4 === null) {
+          continue;
+        }
+        out[j4 !== null && j4 !== void 0 ? j4 : k7] = v5;
+      }
+      return out;
+    }
+    function combineSignals(...signals) {
+      const filtered = [];
+      for (const signal of signals) {
+        if (signal) {
+          filtered.push(signal);
+        }
+      }
+      switch (filtered.length) {
+        case 0:
+        case 1:
+          return filtered[0] || null;
+        default:
+          if ("any" in AbortSignal && typeof AbortSignal.any === "function") {
+            return AbortSignal.any(filtered);
+          }
+          return abortSignalAny(filtered);
+      }
+    }
+    function abortSignalAny(signals) {
+      const controller = new AbortController();
+      const result = controller.signal;
+      if (!signals.length) {
+        return controller.signal;
+      }
+      if (signals.length === 1) {
+        return signals[0] || controller.signal;
+      }
+      for (const signal of signals) {
+        if (signal.aborted) {
+          return signal;
+        }
+      }
+      function abort() {
+        controller.abort(this.reason);
+        clean();
+      }
+      const signalRefs = [];
+      function clean() {
+        for (const signalRef of signalRefs) {
+          const signal = signalRef.deref();
+          if (signal) {
+            signal.removeEventListener("abort", abort);
+          }
+        }
+      }
+      for (const signal of signals) {
+        signalRefs.push(new WeakRef(signal));
+        signal.addEventListener("abort", abort);
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/imageurl.js
+var require_imageurl = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/imageurl.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ImageURL$ = exports.ImageURL$outboundSchema = exports.ImageURL$inboundSchema = void 0;
+    exports.imageURLToJSON = imageURLToJSON;
+    exports.imageURLFromJSON = imageURLFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.ImageURL$inboundSchema = z6.object({
+      url: z6.string(),
+      detail: z6.nullable(z6.string()).optional()
+    });
+    exports.ImageURL$outboundSchema = z6.object({
+      url: z6.string(),
+      detail: z6.nullable(z6.string()).optional()
+    });
+    var ImageURL$;
+    (function(ImageURL$2) {
+      ImageURL$2.inboundSchema = exports.ImageURL$inboundSchema;
+      ImageURL$2.outboundSchema = exports.ImageURL$outboundSchema;
+    })(ImageURL$ || (exports.ImageURL$ = ImageURL$ = {}));
+    function imageURLToJSON(imageURL) {
+      return JSON.stringify(exports.ImageURL$outboundSchema.parse(imageURL));
+    }
+    function imageURLFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ImageURL$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ImageURL' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/imageurlchunk.js
+var require_imageurlchunk = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/imageurlchunk.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ImageURLChunk$ = exports.ImageURLChunk$outboundSchema = exports.ImageURLChunk$inboundSchema = exports.ImageURLChunkType$ = exports.ImageURLChunkType$outboundSchema = exports.ImageURLChunkType$inboundSchema = exports.ImageURLChunkImageURL$ = exports.ImageURLChunkImageURL$outboundSchema = exports.ImageURLChunkImageURL$inboundSchema = exports.ImageURLChunkType = void 0;
+    exports.imageURLChunkImageURLToJSON = imageURLChunkImageURLToJSON;
+    exports.imageURLChunkImageURLFromJSON = imageURLChunkImageURLFromJSON;
+    exports.imageURLChunkToJSON = imageURLChunkToJSON;
+    exports.imageURLChunkFromJSON = imageURLChunkFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var imageurl_js_1 = require_imageurl();
+    exports.ImageURLChunkType = {
+      ImageUrl: "image_url"
+    };
+    exports.ImageURLChunkImageURL$inboundSchema = z6.union([imageurl_js_1.ImageURL$inboundSchema, z6.string()]);
+    exports.ImageURLChunkImageURL$outboundSchema = z6.union([imageurl_js_1.ImageURL$outboundSchema, z6.string()]);
+    var ImageURLChunkImageURL$;
+    (function(ImageURLChunkImageURL$2) {
+      ImageURLChunkImageURL$2.inboundSchema = exports.ImageURLChunkImageURL$inboundSchema;
+      ImageURLChunkImageURL$2.outboundSchema = exports.ImageURLChunkImageURL$outboundSchema;
+    })(ImageURLChunkImageURL$ || (exports.ImageURLChunkImageURL$ = ImageURLChunkImageURL$ = {}));
+    function imageURLChunkImageURLToJSON(imageURLChunkImageURL) {
+      return JSON.stringify(exports.ImageURLChunkImageURL$outboundSchema.parse(imageURLChunkImageURL));
+    }
+    function imageURLChunkImageURLFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ImageURLChunkImageURL$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ImageURLChunkImageURL' from JSON`);
+    }
+    exports.ImageURLChunkType$inboundSchema = z6.nativeEnum(exports.ImageURLChunkType);
+    exports.ImageURLChunkType$outboundSchema = exports.ImageURLChunkType$inboundSchema;
+    var ImageURLChunkType$;
+    (function(ImageURLChunkType$2) {
+      ImageURLChunkType$2.inboundSchema = exports.ImageURLChunkType$inboundSchema;
+      ImageURLChunkType$2.outboundSchema = exports.ImageURLChunkType$outboundSchema;
+    })(ImageURLChunkType$ || (exports.ImageURLChunkType$ = ImageURLChunkType$ = {}));
+    exports.ImageURLChunk$inboundSchema = z6.object({
+      image_url: z6.union([imageurl_js_1.ImageURL$inboundSchema, z6.string()]),
+      type: exports.ImageURLChunkType$inboundSchema.default("image_url")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "image_url": "imageUrl"
+      });
+    });
+    exports.ImageURLChunk$outboundSchema = z6.object({
+      imageUrl: z6.union([imageurl_js_1.ImageURL$outboundSchema, z6.string()]),
+      type: exports.ImageURLChunkType$outboundSchema.default("image_url")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        imageUrl: "image_url"
+      });
+    });
+    var ImageURLChunk$;
+    (function(ImageURLChunk$2) {
+      ImageURLChunk$2.inboundSchema = exports.ImageURLChunk$inboundSchema;
+      ImageURLChunk$2.outboundSchema = exports.ImageURLChunk$outboundSchema;
+    })(ImageURLChunk$ || (exports.ImageURLChunk$ = ImageURLChunk$ = {}));
+    function imageURLChunkToJSON(imageURLChunk) {
+      return JSON.stringify(exports.ImageURLChunk$outboundSchema.parse(imageURLChunk));
+    }
+    function imageURLChunkFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ImageURLChunk$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ImageURLChunk' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/referencechunk.js
+var require_referencechunk = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/referencechunk.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ReferenceChunk$ = exports.ReferenceChunk$outboundSchema = exports.ReferenceChunk$inboundSchema = exports.ReferenceChunkType$ = exports.ReferenceChunkType$outboundSchema = exports.ReferenceChunkType$inboundSchema = exports.ReferenceChunkType = void 0;
+    exports.referenceChunkToJSON = referenceChunkToJSON;
+    exports.referenceChunkFromJSON = referenceChunkFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.ReferenceChunkType = {
+      Reference: "reference"
+    };
+    exports.ReferenceChunkType$inboundSchema = z6.nativeEnum(exports.ReferenceChunkType);
+    exports.ReferenceChunkType$outboundSchema = exports.ReferenceChunkType$inboundSchema;
+    var ReferenceChunkType$;
+    (function(ReferenceChunkType$2) {
+      ReferenceChunkType$2.inboundSchema = exports.ReferenceChunkType$inboundSchema;
+      ReferenceChunkType$2.outboundSchema = exports.ReferenceChunkType$outboundSchema;
+    })(ReferenceChunkType$ || (exports.ReferenceChunkType$ = ReferenceChunkType$ = {}));
+    exports.ReferenceChunk$inboundSchema = z6.object({
+      reference_ids: z6.array(z6.number().int()),
+      type: exports.ReferenceChunkType$inboundSchema.default("reference")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "reference_ids": "referenceIds"
+      });
+    });
+    exports.ReferenceChunk$outboundSchema = z6.object({
+      referenceIds: z6.array(z6.number().int()),
+      type: exports.ReferenceChunkType$outboundSchema.default("reference")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        referenceIds: "reference_ids"
+      });
+    });
+    var ReferenceChunk$;
+    (function(ReferenceChunk$2) {
+      ReferenceChunk$2.inboundSchema = exports.ReferenceChunk$inboundSchema;
+      ReferenceChunk$2.outboundSchema = exports.ReferenceChunk$outboundSchema;
+    })(ReferenceChunk$ || (exports.ReferenceChunk$ = ReferenceChunk$ = {}));
+    function referenceChunkToJSON(referenceChunk) {
+      return JSON.stringify(exports.ReferenceChunk$outboundSchema.parse(referenceChunk));
+    }
+    function referenceChunkFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ReferenceChunk$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ReferenceChunk' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/textchunk.js
+var require_textchunk = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/textchunk.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.TextChunk$ = exports.TextChunk$outboundSchema = exports.TextChunk$inboundSchema = exports.TextChunkType$ = exports.TextChunkType$outboundSchema = exports.TextChunkType$inboundSchema = exports.TextChunkType = void 0;
+    exports.textChunkToJSON = textChunkToJSON;
+    exports.textChunkFromJSON = textChunkFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.TextChunkType = {
+      Text: "text"
+    };
+    exports.TextChunkType$inboundSchema = z6.nativeEnum(exports.TextChunkType);
+    exports.TextChunkType$outboundSchema = exports.TextChunkType$inboundSchema;
+    var TextChunkType$;
+    (function(TextChunkType$2) {
+      TextChunkType$2.inboundSchema = exports.TextChunkType$inboundSchema;
+      TextChunkType$2.outboundSchema = exports.TextChunkType$outboundSchema;
+    })(TextChunkType$ || (exports.TextChunkType$ = TextChunkType$ = {}));
+    exports.TextChunk$inboundSchema = z6.object({
+      text: z6.string(),
+      type: exports.TextChunkType$inboundSchema.default("text")
+    });
+    exports.TextChunk$outboundSchema = z6.object({
+      text: z6.string(),
+      type: exports.TextChunkType$outboundSchema.default("text")
+    });
+    var TextChunk$;
+    (function(TextChunk$2) {
+      TextChunk$2.inboundSchema = exports.TextChunk$inboundSchema;
+      TextChunk$2.outboundSchema = exports.TextChunk$outboundSchema;
+    })(TextChunk$ || (exports.TextChunk$ = TextChunk$ = {}));
+    function textChunkToJSON(textChunk) {
+      return JSON.stringify(exports.TextChunk$outboundSchema.parse(textChunk));
+    }
+    function textChunkFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.TextChunk$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'TextChunk' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/contentchunk.js
+var require_contentchunk = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/contentchunk.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ContentChunk$ = exports.ContentChunk$outboundSchema = exports.ContentChunk$inboundSchema = void 0;
+    exports.contentChunkToJSON = contentChunkToJSON;
+    exports.contentChunkFromJSON = contentChunkFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var imageurlchunk_js_1 = require_imageurlchunk();
+    var referencechunk_js_1 = require_referencechunk();
+    var textchunk_js_1 = require_textchunk();
+    exports.ContentChunk$inboundSchema = z6.union([
+      imageurlchunk_js_1.ImageURLChunk$inboundSchema.and(z6.object({ type: z6.literal("image_url") }).transform((v5) => ({
+        type: v5.type
+      }))),
+      textchunk_js_1.TextChunk$inboundSchema.and(z6.object({ type: z6.literal("text") }).transform((v5) => ({ type: v5.type }))),
+      referencechunk_js_1.ReferenceChunk$inboundSchema.and(z6.object({ type: z6.literal("reference") }).transform((v5) => ({
+        type: v5.type
+      })))
+    ]);
+    exports.ContentChunk$outboundSchema = z6.union([
+      imageurlchunk_js_1.ImageURLChunk$outboundSchema.and(z6.object({ type: z6.literal("image_url") }).transform((v5) => ({
+        type: v5.type
+      }))),
+      textchunk_js_1.TextChunk$outboundSchema.and(z6.object({ type: z6.literal("text") }).transform((v5) => ({ type: v5.type }))),
+      referencechunk_js_1.ReferenceChunk$outboundSchema.and(z6.object({ type: z6.literal("reference") }).transform((v5) => ({
+        type: v5.type
+      })))
+    ]);
+    var ContentChunk$;
+    (function(ContentChunk$2) {
+      ContentChunk$2.inboundSchema = exports.ContentChunk$inboundSchema;
+      ContentChunk$2.outboundSchema = exports.ContentChunk$outboundSchema;
+    })(ContentChunk$ || (exports.ContentChunk$ = ContentChunk$ = {}));
+    function contentChunkToJSON(contentChunk) {
+      return JSON.stringify(exports.ContentChunk$outboundSchema.parse(contentChunk));
+    }
+    function contentChunkFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ContentChunk$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ContentChunk' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/functioncall.js
+var require_functioncall = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/functioncall.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FunctionCall$ = exports.FunctionCall$outboundSchema = exports.FunctionCall$inboundSchema = exports.Arguments$ = exports.Arguments$outboundSchema = exports.Arguments$inboundSchema = void 0;
+    exports.argumentsToJSON = argumentsToJSON;
+    exports.argumentsFromJSON = argumentsFromJSON;
+    exports.functionCallToJSON = functionCallToJSON;
+    exports.functionCallFromJSON = functionCallFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.Arguments$inboundSchema = z6.union([z6.record(z6.any()), z6.string()]);
+    exports.Arguments$outboundSchema = z6.union([z6.record(z6.any()), z6.string()]);
+    var Arguments$;
+    (function(Arguments$2) {
+      Arguments$2.inboundSchema = exports.Arguments$inboundSchema;
+      Arguments$2.outboundSchema = exports.Arguments$outboundSchema;
+    })(Arguments$ || (exports.Arguments$ = Arguments$ = {}));
+    function argumentsToJSON(value) {
+      return JSON.stringify(exports.Arguments$outboundSchema.parse(value));
+    }
+    function argumentsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Arguments$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Arguments' from JSON`);
+    }
+    exports.FunctionCall$inboundSchema = z6.object({
+      name: z6.string(),
+      arguments: z6.union([z6.record(z6.any()), z6.string()])
+    });
+    exports.FunctionCall$outboundSchema = z6.object({
+      name: z6.string(),
+      arguments: z6.union([z6.record(z6.any()), z6.string()])
+    });
+    var FunctionCall$;
+    (function(FunctionCall$2) {
+      FunctionCall$2.inboundSchema = exports.FunctionCall$inboundSchema;
+      FunctionCall$2.outboundSchema = exports.FunctionCall$outboundSchema;
+    })(FunctionCall$ || (exports.FunctionCall$ = FunctionCall$ = {}));
+    function functionCallToJSON(functionCall) {
+      return JSON.stringify(exports.FunctionCall$outboundSchema.parse(functionCall));
+    }
+    function functionCallFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FunctionCall$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FunctionCall' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/types/enums.js
+var require_enums = __commonJS({
+  "node_modules/@mistralai/mistralai/types/enums.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.catchUnrecognizedEnum = catchUnrecognizedEnum;
+    function catchUnrecognizedEnum(value) {
+      return value;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/tooltypes.js
+var require_tooltypes = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/tooltypes.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ToolTypes$ = exports.ToolTypes$outboundSchema = exports.ToolTypes$inboundSchema = exports.ToolTypes = void 0;
+    var z6 = __importStar2(require_lib4());
+    var enums_js_1 = require_enums();
+    exports.ToolTypes = {
+      Function: "function"
+    };
+    exports.ToolTypes$inboundSchema = z6.union([
+      z6.nativeEnum(exports.ToolTypes),
+      z6.string().transform(enums_js_1.catchUnrecognizedEnum)
+    ]);
+    exports.ToolTypes$outboundSchema = z6.union([
+      z6.nativeEnum(exports.ToolTypes),
+      z6.string().and(z6.custom())
+    ]);
+    var ToolTypes$;
+    (function(ToolTypes$2) {
+      ToolTypes$2.inboundSchema = exports.ToolTypes$inboundSchema;
+      ToolTypes$2.outboundSchema = exports.ToolTypes$outboundSchema;
+    })(ToolTypes$ || (exports.ToolTypes$ = ToolTypes$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/toolcall.js
+var require_toolcall = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/toolcall.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ToolCall$ = exports.ToolCall$outboundSchema = exports.ToolCall$inboundSchema = void 0;
+    exports.toolCallToJSON = toolCallToJSON;
+    exports.toolCallFromJSON = toolCallFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var functioncall_js_1 = require_functioncall();
+    var tooltypes_js_1 = require_tooltypes();
+    exports.ToolCall$inboundSchema = z6.object({
+      id: z6.string().default("null"),
+      type: tooltypes_js_1.ToolTypes$inboundSchema.optional(),
+      function: functioncall_js_1.FunctionCall$inboundSchema
+    });
+    exports.ToolCall$outboundSchema = z6.object({
+      id: z6.string().default("null"),
+      type: tooltypes_js_1.ToolTypes$outboundSchema.optional(),
+      function: functioncall_js_1.FunctionCall$outboundSchema
+    });
+    var ToolCall$;
+    (function(ToolCall$2) {
+      ToolCall$2.inboundSchema = exports.ToolCall$inboundSchema;
+      ToolCall$2.outboundSchema = exports.ToolCall$outboundSchema;
+    })(ToolCall$ || (exports.ToolCall$ = ToolCall$ = {}));
+    function toolCallToJSON(toolCall) {
+      return JSON.stringify(exports.ToolCall$outboundSchema.parse(toolCall));
+    }
+    function toolCallFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ToolCall$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ToolCall' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/assistantmessage.js
+var require_assistantmessage = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/assistantmessage.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AssistantMessage$ = exports.AssistantMessage$outboundSchema = exports.AssistantMessage$inboundSchema = exports.AssistantMessageRole$ = exports.AssistantMessageRole$outboundSchema = exports.AssistantMessageRole$inboundSchema = exports.AssistantMessageContent$ = exports.AssistantMessageContent$outboundSchema = exports.AssistantMessageContent$inboundSchema = exports.AssistantMessageRole = void 0;
+    exports.assistantMessageContentToJSON = assistantMessageContentToJSON;
+    exports.assistantMessageContentFromJSON = assistantMessageContentFromJSON;
+    exports.assistantMessageToJSON = assistantMessageToJSON;
+    exports.assistantMessageFromJSON = assistantMessageFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var contentchunk_js_1 = require_contentchunk();
+    var toolcall_js_1 = require_toolcall();
+    exports.AssistantMessageRole = {
+      Assistant: "assistant"
+    };
+    exports.AssistantMessageContent$inboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)]);
+    exports.AssistantMessageContent$outboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)]);
+    var AssistantMessageContent$;
+    (function(AssistantMessageContent$2) {
+      AssistantMessageContent$2.inboundSchema = exports.AssistantMessageContent$inboundSchema;
+      AssistantMessageContent$2.outboundSchema = exports.AssistantMessageContent$outboundSchema;
+    })(AssistantMessageContent$ || (exports.AssistantMessageContent$ = AssistantMessageContent$ = {}));
+    function assistantMessageContentToJSON(assistantMessageContent) {
+      return JSON.stringify(exports.AssistantMessageContent$outboundSchema.parse(assistantMessageContent));
+    }
+    function assistantMessageContentFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AssistantMessageContent$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AssistantMessageContent' from JSON`);
+    }
+    exports.AssistantMessageRole$inboundSchema = z6.nativeEnum(exports.AssistantMessageRole);
+    exports.AssistantMessageRole$outboundSchema = exports.AssistantMessageRole$inboundSchema;
+    var AssistantMessageRole$;
+    (function(AssistantMessageRole$2) {
+      AssistantMessageRole$2.inboundSchema = exports.AssistantMessageRole$inboundSchema;
+      AssistantMessageRole$2.outboundSchema = exports.AssistantMessageRole$outboundSchema;
+    })(AssistantMessageRole$ || (exports.AssistantMessageRole$ = AssistantMessageRole$ = {}));
+    exports.AssistantMessage$inboundSchema = z6.object({
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)])).optional(),
+      tool_calls: z6.nullable(z6.array(toolcall_js_1.ToolCall$inboundSchema)).optional(),
+      prefix: z6.boolean().default(false),
+      role: exports.AssistantMessageRole$inboundSchema.default("assistant")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "tool_calls": "toolCalls"
+      });
+    });
+    exports.AssistantMessage$outboundSchema = z6.object({
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)])).optional(),
+      toolCalls: z6.nullable(z6.array(toolcall_js_1.ToolCall$outboundSchema)).optional(),
+      prefix: z6.boolean().default(false),
+      role: exports.AssistantMessageRole$outboundSchema.default("assistant")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        toolCalls: "tool_calls"
+      });
+    });
+    var AssistantMessage$;
+    (function(AssistantMessage$2) {
+      AssistantMessage$2.inboundSchema = exports.AssistantMessage$inboundSchema;
+      AssistantMessage$2.outboundSchema = exports.AssistantMessage$outboundSchema;
+    })(AssistantMessage$ || (exports.AssistantMessage$ = AssistantMessage$ = {}));
+    function assistantMessageToJSON(assistantMessage) {
+      return JSON.stringify(exports.AssistantMessage$outboundSchema.parse(assistantMessage));
+    }
+    function assistantMessageFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AssistantMessage$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AssistantMessage' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/responseformats.js
+var require_responseformats = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/responseformats.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ResponseFormats$ = exports.ResponseFormats$outboundSchema = exports.ResponseFormats$inboundSchema = exports.ResponseFormats = void 0;
+    var z6 = __importStar2(require_lib4());
+    exports.ResponseFormats = {
+      Text: "text",
+      JsonObject: "json_object"
+    };
+    exports.ResponseFormats$inboundSchema = z6.nativeEnum(exports.ResponseFormats);
+    exports.ResponseFormats$outboundSchema = exports.ResponseFormats$inboundSchema;
+    var ResponseFormats$;
+    (function(ResponseFormats$2) {
+      ResponseFormats$2.inboundSchema = exports.ResponseFormats$inboundSchema;
+      ResponseFormats$2.outboundSchema = exports.ResponseFormats$outboundSchema;
+    })(ResponseFormats$ || (exports.ResponseFormats$ = ResponseFormats$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/responseformat.js
+var require_responseformat = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/responseformat.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ResponseFormat$ = exports.ResponseFormat$outboundSchema = exports.ResponseFormat$inboundSchema = void 0;
+    exports.responseFormatToJSON = responseFormatToJSON;
+    exports.responseFormatFromJSON = responseFormatFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var responseformats_js_1 = require_responseformats();
+    exports.ResponseFormat$inboundSchema = z6.object({
+      type: responseformats_js_1.ResponseFormats$inboundSchema.optional()
+    });
+    exports.ResponseFormat$outboundSchema = z6.object({
+      type: responseformats_js_1.ResponseFormats$outboundSchema.optional()
+    });
+    var ResponseFormat$;
+    (function(ResponseFormat$2) {
+      ResponseFormat$2.inboundSchema = exports.ResponseFormat$inboundSchema;
+      ResponseFormat$2.outboundSchema = exports.ResponseFormat$outboundSchema;
+    })(ResponseFormat$ || (exports.ResponseFormat$ = ResponseFormat$ = {}));
+    function responseFormatToJSON(responseFormat) {
+      return JSON.stringify(exports.ResponseFormat$outboundSchema.parse(responseFormat));
+    }
+    function responseFormatFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ResponseFormat$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ResponseFormat' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/systemmessage.js
+var require_systemmessage = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/systemmessage.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SystemMessage$ = exports.SystemMessage$outboundSchema = exports.SystemMessage$inboundSchema = exports.Role$ = exports.Role$outboundSchema = exports.Role$inboundSchema = exports.SystemMessageContent$ = exports.SystemMessageContent$outboundSchema = exports.SystemMessageContent$inboundSchema = exports.Role = void 0;
+    exports.systemMessageContentToJSON = systemMessageContentToJSON;
+    exports.systemMessageContentFromJSON = systemMessageContentFromJSON;
+    exports.systemMessageToJSON = systemMessageToJSON;
+    exports.systemMessageFromJSON = systemMessageFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var textchunk_js_1 = require_textchunk();
+    exports.Role = {
+      System: "system"
+    };
+    exports.SystemMessageContent$inboundSchema = z6.union([z6.string(), z6.array(textchunk_js_1.TextChunk$inboundSchema)]);
+    exports.SystemMessageContent$outboundSchema = z6.union([z6.string(), z6.array(textchunk_js_1.TextChunk$outboundSchema)]);
+    var SystemMessageContent$;
+    (function(SystemMessageContent$2) {
+      SystemMessageContent$2.inboundSchema = exports.SystemMessageContent$inboundSchema;
+      SystemMessageContent$2.outboundSchema = exports.SystemMessageContent$outboundSchema;
+    })(SystemMessageContent$ || (exports.SystemMessageContent$ = SystemMessageContent$ = {}));
+    function systemMessageContentToJSON(systemMessageContent) {
+      return JSON.stringify(exports.SystemMessageContent$outboundSchema.parse(systemMessageContent));
+    }
+    function systemMessageContentFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.SystemMessageContent$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'SystemMessageContent' from JSON`);
+    }
+    exports.Role$inboundSchema = z6.nativeEnum(exports.Role);
+    exports.Role$outboundSchema = exports.Role$inboundSchema;
+    var Role$;
+    (function(Role$2) {
+      Role$2.inboundSchema = exports.Role$inboundSchema;
+      Role$2.outboundSchema = exports.Role$outboundSchema;
+    })(Role$ || (exports.Role$ = Role$ = {}));
+    exports.SystemMessage$inboundSchema = z6.object({
+      content: z6.union([z6.string(), z6.array(textchunk_js_1.TextChunk$inboundSchema)]),
+      role: exports.Role$inboundSchema.default("system")
+    });
+    exports.SystemMessage$outboundSchema = z6.object({
+      content: z6.union([z6.string(), z6.array(textchunk_js_1.TextChunk$outboundSchema)]),
+      role: exports.Role$outboundSchema.default("system")
+    });
+    var SystemMessage$;
+    (function(SystemMessage$2) {
+      SystemMessage$2.inboundSchema = exports.SystemMessage$inboundSchema;
+      SystemMessage$2.outboundSchema = exports.SystemMessage$outboundSchema;
+    })(SystemMessage$ || (exports.SystemMessage$ = SystemMessage$ = {}));
+    function systemMessageToJSON(systemMessage) {
+      return JSON.stringify(exports.SystemMessage$outboundSchema.parse(systemMessage));
+    }
+    function systemMessageFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.SystemMessage$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'SystemMessage' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/function.js
+var require_function = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/function.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FunctionT$ = exports.FunctionT$outboundSchema = exports.FunctionT$inboundSchema = void 0;
+    exports.functionToJSON = functionToJSON;
+    exports.functionFromJSON = functionFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.FunctionT$inboundSchema = z6.object({
+      name: z6.string(),
+      description: z6.string().default(""),
+      parameters: z6.record(z6.any())
+    });
+    exports.FunctionT$outboundSchema = z6.object({
+      name: z6.string(),
+      description: z6.string().default(""),
+      parameters: z6.record(z6.any())
+    });
+    var FunctionT$;
+    (function(FunctionT$2) {
+      FunctionT$2.inboundSchema = exports.FunctionT$inboundSchema;
+      FunctionT$2.outboundSchema = exports.FunctionT$outboundSchema;
+    })(FunctionT$ || (exports.FunctionT$ = FunctionT$ = {}));
+    function functionToJSON(functionT) {
+      return JSON.stringify(exports.FunctionT$outboundSchema.parse(functionT));
+    }
+    function functionFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FunctionT$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FunctionT' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/tool.js
+var require_tool = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/tool.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Tool$ = exports.Tool$outboundSchema = exports.Tool$inboundSchema = void 0;
+    exports.toolToJSON = toolToJSON;
+    exports.toolFromJSON = toolFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var function_js_1 = require_function();
+    var tooltypes_js_1 = require_tooltypes();
+    exports.Tool$inboundSchema = z6.object({
+      type: tooltypes_js_1.ToolTypes$inboundSchema.optional(),
+      function: function_js_1.FunctionT$inboundSchema
+    });
+    exports.Tool$outboundSchema = z6.object({
+      type: tooltypes_js_1.ToolTypes$outboundSchema.optional(),
+      function: function_js_1.FunctionT$outboundSchema
+    });
+    var Tool$;
+    (function(Tool$2) {
+      Tool$2.inboundSchema = exports.Tool$inboundSchema;
+      Tool$2.outboundSchema = exports.Tool$outboundSchema;
+    })(Tool$ || (exports.Tool$ = Tool$ = {}));
+    function toolToJSON(tool) {
+      return JSON.stringify(exports.Tool$outboundSchema.parse(tool));
+    }
+    function toolFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Tool$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Tool' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/functionname.js
+var require_functionname = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/functionname.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FunctionName$ = exports.FunctionName$outboundSchema = exports.FunctionName$inboundSchema = void 0;
+    exports.functionNameToJSON = functionNameToJSON;
+    exports.functionNameFromJSON = functionNameFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.FunctionName$inboundSchema = z6.object({
+      name: z6.string()
+    });
+    exports.FunctionName$outboundSchema = z6.object({
+      name: z6.string()
+    });
+    var FunctionName$;
+    (function(FunctionName$2) {
+      FunctionName$2.inboundSchema = exports.FunctionName$inboundSchema;
+      FunctionName$2.outboundSchema = exports.FunctionName$outboundSchema;
+    })(FunctionName$ || (exports.FunctionName$ = FunctionName$ = {}));
+    function functionNameToJSON(functionName) {
+      return JSON.stringify(exports.FunctionName$outboundSchema.parse(functionName));
+    }
+    function functionNameFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FunctionName$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FunctionName' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/toolchoice.js
+var require_toolchoice = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/toolchoice.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ToolChoice$ = exports.ToolChoice$outboundSchema = exports.ToolChoice$inboundSchema = void 0;
+    exports.toolChoiceToJSON = toolChoiceToJSON;
+    exports.toolChoiceFromJSON = toolChoiceFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var functionname_js_1 = require_functionname();
+    var tooltypes_js_1 = require_tooltypes();
+    exports.ToolChoice$inboundSchema = z6.object({
+      type: tooltypes_js_1.ToolTypes$inboundSchema.optional(),
+      function: functionname_js_1.FunctionName$inboundSchema
+    });
+    exports.ToolChoice$outboundSchema = z6.object({
+      type: tooltypes_js_1.ToolTypes$outboundSchema.optional(),
+      function: functionname_js_1.FunctionName$outboundSchema
+    });
+    var ToolChoice$;
+    (function(ToolChoice$2) {
+      ToolChoice$2.inboundSchema = exports.ToolChoice$inboundSchema;
+      ToolChoice$2.outboundSchema = exports.ToolChoice$outboundSchema;
+    })(ToolChoice$ || (exports.ToolChoice$ = ToolChoice$ = {}));
+    function toolChoiceToJSON(toolChoice) {
+      return JSON.stringify(exports.ToolChoice$outboundSchema.parse(toolChoice));
+    }
+    function toolChoiceFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ToolChoice$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ToolChoice' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/toolchoiceenum.js
+var require_toolchoiceenum = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/toolchoiceenum.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ToolChoiceEnum$ = exports.ToolChoiceEnum$outboundSchema = exports.ToolChoiceEnum$inboundSchema = exports.ToolChoiceEnum = void 0;
+    var z6 = __importStar2(require_lib4());
+    exports.ToolChoiceEnum = {
+      Auto: "auto",
+      None: "none",
+      Any: "any",
+      Required: "required"
+    };
+    exports.ToolChoiceEnum$inboundSchema = z6.nativeEnum(exports.ToolChoiceEnum);
+    exports.ToolChoiceEnum$outboundSchema = exports.ToolChoiceEnum$inboundSchema;
+    var ToolChoiceEnum$;
+    (function(ToolChoiceEnum$2) {
+      ToolChoiceEnum$2.inboundSchema = exports.ToolChoiceEnum$inboundSchema;
+      ToolChoiceEnum$2.outboundSchema = exports.ToolChoiceEnum$outboundSchema;
+    })(ToolChoiceEnum$ || (exports.ToolChoiceEnum$ = ToolChoiceEnum$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/toolmessage.js
+var require_toolmessage = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/toolmessage.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ToolMessage$ = exports.ToolMessage$outboundSchema = exports.ToolMessage$inboundSchema = exports.ToolMessageRole$ = exports.ToolMessageRole$outboundSchema = exports.ToolMessageRole$inboundSchema = exports.ToolMessageContent$ = exports.ToolMessageContent$outboundSchema = exports.ToolMessageContent$inboundSchema = exports.ToolMessageRole = void 0;
+    exports.toolMessageContentToJSON = toolMessageContentToJSON;
+    exports.toolMessageContentFromJSON = toolMessageContentFromJSON;
+    exports.toolMessageToJSON = toolMessageToJSON;
+    exports.toolMessageFromJSON = toolMessageFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var contentchunk_js_1 = require_contentchunk();
+    exports.ToolMessageRole = {
+      Tool: "tool"
+    };
+    exports.ToolMessageContent$inboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)]);
+    exports.ToolMessageContent$outboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)]);
+    var ToolMessageContent$;
+    (function(ToolMessageContent$2) {
+      ToolMessageContent$2.inboundSchema = exports.ToolMessageContent$inboundSchema;
+      ToolMessageContent$2.outboundSchema = exports.ToolMessageContent$outboundSchema;
+    })(ToolMessageContent$ || (exports.ToolMessageContent$ = ToolMessageContent$ = {}));
+    function toolMessageContentToJSON(toolMessageContent) {
+      return JSON.stringify(exports.ToolMessageContent$outboundSchema.parse(toolMessageContent));
+    }
+    function toolMessageContentFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ToolMessageContent$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ToolMessageContent' from JSON`);
+    }
+    exports.ToolMessageRole$inboundSchema = z6.nativeEnum(exports.ToolMessageRole);
+    exports.ToolMessageRole$outboundSchema = exports.ToolMessageRole$inboundSchema;
+    var ToolMessageRole$;
+    (function(ToolMessageRole$2) {
+      ToolMessageRole$2.inboundSchema = exports.ToolMessageRole$inboundSchema;
+      ToolMessageRole$2.outboundSchema = exports.ToolMessageRole$outboundSchema;
+    })(ToolMessageRole$ || (exports.ToolMessageRole$ = ToolMessageRole$ = {}));
+    exports.ToolMessage$inboundSchema = z6.object({
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)])),
+      tool_call_id: z6.nullable(z6.string()).optional(),
+      name: z6.nullable(z6.string()).optional(),
+      role: exports.ToolMessageRole$inboundSchema.default("tool")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "tool_call_id": "toolCallId"
+      });
+    });
+    exports.ToolMessage$outboundSchema = z6.object({
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)])),
+      toolCallId: z6.nullable(z6.string()).optional(),
+      name: z6.nullable(z6.string()).optional(),
+      role: exports.ToolMessageRole$outboundSchema.default("tool")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        toolCallId: "tool_call_id"
+      });
+    });
+    var ToolMessage$;
+    (function(ToolMessage$2) {
+      ToolMessage$2.inboundSchema = exports.ToolMessage$inboundSchema;
+      ToolMessage$2.outboundSchema = exports.ToolMessage$outboundSchema;
+    })(ToolMessage$ || (exports.ToolMessage$ = ToolMessage$ = {}));
+    function toolMessageToJSON(toolMessage) {
+      return JSON.stringify(exports.ToolMessage$outboundSchema.parse(toolMessage));
+    }
+    function toolMessageFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ToolMessage$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ToolMessage' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/usermessage.js
+var require_usermessage = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/usermessage.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.UserMessage$ = exports.UserMessage$outboundSchema = exports.UserMessage$inboundSchema = exports.UserMessageRole$ = exports.UserMessageRole$outboundSchema = exports.UserMessageRole$inboundSchema = exports.UserMessageContent$ = exports.UserMessageContent$outboundSchema = exports.UserMessageContent$inboundSchema = exports.UserMessageRole = void 0;
+    exports.userMessageContentToJSON = userMessageContentToJSON;
+    exports.userMessageContentFromJSON = userMessageContentFromJSON;
+    exports.userMessageToJSON = userMessageToJSON;
+    exports.userMessageFromJSON = userMessageFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var contentchunk_js_1 = require_contentchunk();
+    exports.UserMessageRole = {
+      User: "user"
+    };
+    exports.UserMessageContent$inboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)]);
+    exports.UserMessageContent$outboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)]);
+    var UserMessageContent$;
+    (function(UserMessageContent$2) {
+      UserMessageContent$2.inboundSchema = exports.UserMessageContent$inboundSchema;
+      UserMessageContent$2.outboundSchema = exports.UserMessageContent$outboundSchema;
+    })(UserMessageContent$ || (exports.UserMessageContent$ = UserMessageContent$ = {}));
+    function userMessageContentToJSON(userMessageContent) {
+      return JSON.stringify(exports.UserMessageContent$outboundSchema.parse(userMessageContent));
+    }
+    function userMessageContentFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.UserMessageContent$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'UserMessageContent' from JSON`);
+    }
+    exports.UserMessageRole$inboundSchema = z6.nativeEnum(exports.UserMessageRole);
+    exports.UserMessageRole$outboundSchema = exports.UserMessageRole$inboundSchema;
+    var UserMessageRole$;
+    (function(UserMessageRole$2) {
+      UserMessageRole$2.inboundSchema = exports.UserMessageRole$inboundSchema;
+      UserMessageRole$2.outboundSchema = exports.UserMessageRole$outboundSchema;
+    })(UserMessageRole$ || (exports.UserMessageRole$ = UserMessageRole$ = {}));
+    exports.UserMessage$inboundSchema = z6.object({
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)])),
+      role: exports.UserMessageRole$inboundSchema.default("user")
+    });
+    exports.UserMessage$outboundSchema = z6.object({
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)])),
+      role: exports.UserMessageRole$outboundSchema.default("user")
+    });
+    var UserMessage$;
+    (function(UserMessage$2) {
+      UserMessage$2.inboundSchema = exports.UserMessage$inboundSchema;
+      UserMessage$2.outboundSchema = exports.UserMessage$outboundSchema;
+    })(UserMessage$ || (exports.UserMessage$ = UserMessage$ = {}));
+    function userMessageToJSON(userMessage) {
+      return JSON.stringify(exports.UserMessage$outboundSchema.parse(userMessage));
+    }
+    function userMessageFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.UserMessage$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'UserMessage' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/agentscompletionrequest.js
+var require_agentscompletionrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/agentscompletionrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AgentsCompletionRequest$ = exports.AgentsCompletionRequest$outboundSchema = exports.AgentsCompletionRequest$inboundSchema = exports.AgentsCompletionRequestToolChoice$ = exports.AgentsCompletionRequestToolChoice$outboundSchema = exports.AgentsCompletionRequestToolChoice$inboundSchema = exports.AgentsCompletionRequestMessages$ = exports.AgentsCompletionRequestMessages$outboundSchema = exports.AgentsCompletionRequestMessages$inboundSchema = exports.AgentsCompletionRequestStop$ = exports.AgentsCompletionRequestStop$outboundSchema = exports.AgentsCompletionRequestStop$inboundSchema = void 0;
+    exports.agentsCompletionRequestStopToJSON = agentsCompletionRequestStopToJSON;
+    exports.agentsCompletionRequestStopFromJSON = agentsCompletionRequestStopFromJSON;
+    exports.agentsCompletionRequestMessagesToJSON = agentsCompletionRequestMessagesToJSON;
+    exports.agentsCompletionRequestMessagesFromJSON = agentsCompletionRequestMessagesFromJSON;
+    exports.agentsCompletionRequestToolChoiceToJSON = agentsCompletionRequestToolChoiceToJSON;
+    exports.agentsCompletionRequestToolChoiceFromJSON = agentsCompletionRequestToolChoiceFromJSON;
+    exports.agentsCompletionRequestToJSON = agentsCompletionRequestToJSON;
+    exports.agentsCompletionRequestFromJSON = agentsCompletionRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var assistantmessage_js_1 = require_assistantmessage();
+    var responseformat_js_1 = require_responseformat();
+    var systemmessage_js_1 = require_systemmessage();
+    var tool_js_1 = require_tool();
+    var toolchoice_js_1 = require_toolchoice();
+    var toolchoiceenum_js_1 = require_toolchoiceenum();
+    var toolmessage_js_1 = require_toolmessage();
+    var usermessage_js_1 = require_usermessage();
+    exports.AgentsCompletionRequestStop$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.AgentsCompletionRequestStop$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var AgentsCompletionRequestStop$;
+    (function(AgentsCompletionRequestStop$2) {
+      AgentsCompletionRequestStop$2.inboundSchema = exports.AgentsCompletionRequestStop$inboundSchema;
+      AgentsCompletionRequestStop$2.outboundSchema = exports.AgentsCompletionRequestStop$outboundSchema;
+    })(AgentsCompletionRequestStop$ || (exports.AgentsCompletionRequestStop$ = AgentsCompletionRequestStop$ = {}));
+    function agentsCompletionRequestStopToJSON(agentsCompletionRequestStop) {
+      return JSON.stringify(exports.AgentsCompletionRequestStop$outboundSchema.parse(agentsCompletionRequestStop));
+    }
+    function agentsCompletionRequestStopFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionRequestStop$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionRequestStop' from JSON`);
+    }
+    exports.AgentsCompletionRequestMessages$inboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    exports.AgentsCompletionRequestMessages$outboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    var AgentsCompletionRequestMessages$;
+    (function(AgentsCompletionRequestMessages$2) {
+      AgentsCompletionRequestMessages$2.inboundSchema = exports.AgentsCompletionRequestMessages$inboundSchema;
+      AgentsCompletionRequestMessages$2.outboundSchema = exports.AgentsCompletionRequestMessages$outboundSchema;
+    })(AgentsCompletionRequestMessages$ || (exports.AgentsCompletionRequestMessages$ = AgentsCompletionRequestMessages$ = {}));
+    function agentsCompletionRequestMessagesToJSON(agentsCompletionRequestMessages) {
+      return JSON.stringify(exports.AgentsCompletionRequestMessages$outboundSchema.parse(agentsCompletionRequestMessages));
+    }
+    function agentsCompletionRequestMessagesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionRequestMessages$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionRequestMessages' from JSON`);
+    }
+    exports.AgentsCompletionRequestToolChoice$inboundSchema = z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]);
+    exports.AgentsCompletionRequestToolChoice$outboundSchema = z6.union([toolchoice_js_1.ToolChoice$outboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema]);
+    var AgentsCompletionRequestToolChoice$;
+    (function(AgentsCompletionRequestToolChoice$2) {
+      AgentsCompletionRequestToolChoice$2.inboundSchema = exports.AgentsCompletionRequestToolChoice$inboundSchema;
+      AgentsCompletionRequestToolChoice$2.outboundSchema = exports.AgentsCompletionRequestToolChoice$outboundSchema;
+    })(AgentsCompletionRequestToolChoice$ || (exports.AgentsCompletionRequestToolChoice$ = AgentsCompletionRequestToolChoice$ = {}));
+    function agentsCompletionRequestToolChoiceToJSON(agentsCompletionRequestToolChoice) {
+      return JSON.stringify(exports.AgentsCompletionRequestToolChoice$outboundSchema.parse(agentsCompletionRequestToolChoice));
+    }
+    function agentsCompletionRequestToolChoiceFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionRequestToolChoice$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionRequestToolChoice' from JSON`);
+    }
+    exports.AgentsCompletionRequest$inboundSchema = z6.object({
+      max_tokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(false),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      random_seed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      response_format: responseformat_js_1.ResponseFormat$inboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$inboundSchema)).optional(),
+      tool_choice: z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]).optional(),
+      presence_penalty: z6.number().optional(),
+      frequency_penalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      agent_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "max_tokens": "maxTokens",
+        "random_seed": "randomSeed",
+        "response_format": "responseFormat",
+        "tool_choice": "toolChoice",
+        "presence_penalty": "presencePenalty",
+        "frequency_penalty": "frequencyPenalty",
+        "agent_id": "agentId"
+      });
+    });
+    exports.AgentsCompletionRequest$outboundSchema = z6.object({
+      maxTokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(false),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      randomSeed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      responseFormat: responseformat_js_1.ResponseFormat$outboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$outboundSchema)).optional(),
+      toolChoice: z6.union([
+        toolchoice_js_1.ToolChoice$outboundSchema,
+        toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema
+      ]).optional(),
+      presencePenalty: z6.number().optional(),
+      frequencyPenalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      agentId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        maxTokens: "max_tokens",
+        randomSeed: "random_seed",
+        responseFormat: "response_format",
+        toolChoice: "tool_choice",
+        presencePenalty: "presence_penalty",
+        frequencyPenalty: "frequency_penalty",
+        agentId: "agent_id"
+      });
+    });
+    var AgentsCompletionRequest$;
+    (function(AgentsCompletionRequest$2) {
+      AgentsCompletionRequest$2.inboundSchema = exports.AgentsCompletionRequest$inboundSchema;
+      AgentsCompletionRequest$2.outboundSchema = exports.AgentsCompletionRequest$outboundSchema;
+    })(AgentsCompletionRequest$ || (exports.AgentsCompletionRequest$ = AgentsCompletionRequest$ = {}));
+    function agentsCompletionRequestToJSON(agentsCompletionRequest) {
+      return JSON.stringify(exports.AgentsCompletionRequest$outboundSchema.parse(agentsCompletionRequest));
+    }
+    function agentsCompletionRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/agentscompletionstreamrequest.js
+var require_agentscompletionstreamrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/agentscompletionstreamrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.AgentsCompletionStreamRequest$ = exports.AgentsCompletionStreamRequest$outboundSchema = exports.AgentsCompletionStreamRequest$inboundSchema = exports.AgentsCompletionStreamRequestToolChoice$ = exports.AgentsCompletionStreamRequestToolChoice$outboundSchema = exports.AgentsCompletionStreamRequestToolChoice$inboundSchema = exports.AgentsCompletionStreamRequestMessages$ = exports.AgentsCompletionStreamRequestMessages$outboundSchema = exports.AgentsCompletionStreamRequestMessages$inboundSchema = exports.AgentsCompletionStreamRequestStop$ = exports.AgentsCompletionStreamRequestStop$outboundSchema = exports.AgentsCompletionStreamRequestStop$inboundSchema = void 0;
+    exports.agentsCompletionStreamRequestStopToJSON = agentsCompletionStreamRequestStopToJSON;
+    exports.agentsCompletionStreamRequestStopFromJSON = agentsCompletionStreamRequestStopFromJSON;
+    exports.agentsCompletionStreamRequestMessagesToJSON = agentsCompletionStreamRequestMessagesToJSON;
+    exports.agentsCompletionStreamRequestMessagesFromJSON = agentsCompletionStreamRequestMessagesFromJSON;
+    exports.agentsCompletionStreamRequestToolChoiceToJSON = agentsCompletionStreamRequestToolChoiceToJSON;
+    exports.agentsCompletionStreamRequestToolChoiceFromJSON = agentsCompletionStreamRequestToolChoiceFromJSON;
+    exports.agentsCompletionStreamRequestToJSON = agentsCompletionStreamRequestToJSON;
+    exports.agentsCompletionStreamRequestFromJSON = agentsCompletionStreamRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var assistantmessage_js_1 = require_assistantmessage();
+    var responseformat_js_1 = require_responseformat();
+    var systemmessage_js_1 = require_systemmessage();
+    var tool_js_1 = require_tool();
+    var toolchoice_js_1 = require_toolchoice();
+    var toolchoiceenum_js_1 = require_toolchoiceenum();
+    var toolmessage_js_1 = require_toolmessage();
+    var usermessage_js_1 = require_usermessage();
+    exports.AgentsCompletionStreamRequestStop$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.AgentsCompletionStreamRequestStop$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var AgentsCompletionStreamRequestStop$;
+    (function(AgentsCompletionStreamRequestStop$2) {
+      AgentsCompletionStreamRequestStop$2.inboundSchema = exports.AgentsCompletionStreamRequestStop$inboundSchema;
+      AgentsCompletionStreamRequestStop$2.outboundSchema = exports.AgentsCompletionStreamRequestStop$outboundSchema;
+    })(AgentsCompletionStreamRequestStop$ || (exports.AgentsCompletionStreamRequestStop$ = AgentsCompletionStreamRequestStop$ = {}));
+    function agentsCompletionStreamRequestStopToJSON(agentsCompletionStreamRequestStop) {
+      return JSON.stringify(exports.AgentsCompletionStreamRequestStop$outboundSchema.parse(agentsCompletionStreamRequestStop));
+    }
+    function agentsCompletionStreamRequestStopFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionStreamRequestStop$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionStreamRequestStop' from JSON`);
+    }
+    exports.AgentsCompletionStreamRequestMessages$inboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    exports.AgentsCompletionStreamRequestMessages$outboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    var AgentsCompletionStreamRequestMessages$;
+    (function(AgentsCompletionStreamRequestMessages$2) {
+      AgentsCompletionStreamRequestMessages$2.inboundSchema = exports.AgentsCompletionStreamRequestMessages$inboundSchema;
+      AgentsCompletionStreamRequestMessages$2.outboundSchema = exports.AgentsCompletionStreamRequestMessages$outboundSchema;
+    })(AgentsCompletionStreamRequestMessages$ || (exports.AgentsCompletionStreamRequestMessages$ = AgentsCompletionStreamRequestMessages$ = {}));
+    function agentsCompletionStreamRequestMessagesToJSON(agentsCompletionStreamRequestMessages) {
+      return JSON.stringify(exports.AgentsCompletionStreamRequestMessages$outboundSchema.parse(agentsCompletionStreamRequestMessages));
+    }
+    function agentsCompletionStreamRequestMessagesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionStreamRequestMessages$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionStreamRequestMessages' from JSON`);
+    }
+    exports.AgentsCompletionStreamRequestToolChoice$inboundSchema = z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]);
+    exports.AgentsCompletionStreamRequestToolChoice$outboundSchema = z6.union([toolchoice_js_1.ToolChoice$outboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema]);
+    var AgentsCompletionStreamRequestToolChoice$;
+    (function(AgentsCompletionStreamRequestToolChoice$2) {
+      AgentsCompletionStreamRequestToolChoice$2.inboundSchema = exports.AgentsCompletionStreamRequestToolChoice$inboundSchema;
+      AgentsCompletionStreamRequestToolChoice$2.outboundSchema = exports.AgentsCompletionStreamRequestToolChoice$outboundSchema;
+    })(AgentsCompletionStreamRequestToolChoice$ || (exports.AgentsCompletionStreamRequestToolChoice$ = AgentsCompletionStreamRequestToolChoice$ = {}));
+    function agentsCompletionStreamRequestToolChoiceToJSON(agentsCompletionStreamRequestToolChoice) {
+      return JSON.stringify(exports.AgentsCompletionStreamRequestToolChoice$outboundSchema.parse(agentsCompletionStreamRequestToolChoice));
+    }
+    function agentsCompletionStreamRequestToolChoiceFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionStreamRequestToolChoice$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionStreamRequestToolChoice' from JSON`);
+    }
+    exports.AgentsCompletionStreamRequest$inboundSchema = z6.object({
+      max_tokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(true),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      random_seed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      response_format: responseformat_js_1.ResponseFormat$inboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$inboundSchema)).optional(),
+      tool_choice: z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]).optional(),
+      presence_penalty: z6.number().optional(),
+      frequency_penalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      agent_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "max_tokens": "maxTokens",
+        "random_seed": "randomSeed",
+        "response_format": "responseFormat",
+        "tool_choice": "toolChoice",
+        "presence_penalty": "presencePenalty",
+        "frequency_penalty": "frequencyPenalty",
+        "agent_id": "agentId"
+      });
+    });
+    exports.AgentsCompletionStreamRequest$outboundSchema = z6.object({
+      maxTokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(true),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      randomSeed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      responseFormat: responseformat_js_1.ResponseFormat$outboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$outboundSchema)).optional(),
+      toolChoice: z6.union([
+        toolchoice_js_1.ToolChoice$outboundSchema,
+        toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema
+      ]).optional(),
+      presencePenalty: z6.number().optional(),
+      frequencyPenalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      agentId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        maxTokens: "max_tokens",
+        randomSeed: "random_seed",
+        responseFormat: "response_format",
+        toolChoice: "tool_choice",
+        presencePenalty: "presence_penalty",
+        frequencyPenalty: "frequency_penalty",
+        agentId: "agent_id"
+      });
+    });
+    var AgentsCompletionStreamRequest$;
+    (function(AgentsCompletionStreamRequest$2) {
+      AgentsCompletionStreamRequest$2.inboundSchema = exports.AgentsCompletionStreamRequest$inboundSchema;
+      AgentsCompletionStreamRequest$2.outboundSchema = exports.AgentsCompletionStreamRequest$outboundSchema;
+    })(AgentsCompletionStreamRequest$ || (exports.AgentsCompletionStreamRequest$ = AgentsCompletionStreamRequest$ = {}));
+    function agentsCompletionStreamRequestToJSON(agentsCompletionStreamRequest) {
+      return JSON.stringify(exports.AgentsCompletionStreamRequest$outboundSchema.parse(agentsCompletionStreamRequest));
+    }
+    function agentsCompletionStreamRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.AgentsCompletionStreamRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'AgentsCompletionStreamRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/apiendpoint.js
+var require_apiendpoint = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/apiendpoint.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ApiEndpoint$ = exports.ApiEndpoint$outboundSchema = exports.ApiEndpoint$inboundSchema = exports.ApiEndpoint = void 0;
+    var z6 = __importStar2(require_lib4());
+    var enums_js_1 = require_enums();
+    exports.ApiEndpoint = {
+      RootV1ChatCompletions: "/v1/chat/completions",
+      RootV1Embeddings: "/v1/embeddings",
+      RootV1FimCompletions: "/v1/fim/completions",
+      RootV1Moderations: "/v1/moderations",
+      RootV1ChatModerations: "/v1/chat/moderations"
+    };
+    exports.ApiEndpoint$inboundSchema = z6.union([
+      z6.nativeEnum(exports.ApiEndpoint),
+      z6.string().transform(enums_js_1.catchUnrecognizedEnum)
+    ]);
+    exports.ApiEndpoint$outboundSchema = z6.union([
+      z6.nativeEnum(exports.ApiEndpoint),
+      z6.string().and(z6.custom())
+    ]);
+    var ApiEndpoint$;
+    (function(ApiEndpoint$2) {
+      ApiEndpoint$2.inboundSchema = exports.ApiEndpoint$inboundSchema;
+      ApiEndpoint$2.outboundSchema = exports.ApiEndpoint$outboundSchema;
+    })(ApiEndpoint$ || (exports.ApiEndpoint$ = ApiEndpoint$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/archiveftmodelout.js
+var require_archiveftmodelout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/archiveftmodelout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ArchiveFTModelOut$ = exports.ArchiveFTModelOut$outboundSchema = exports.ArchiveFTModelOut$inboundSchema = exports.ArchiveFTModelOutObject$ = exports.ArchiveFTModelOutObject$outboundSchema = exports.ArchiveFTModelOutObject$inboundSchema = exports.ArchiveFTModelOutObject = void 0;
+    exports.archiveFTModelOutToJSON = archiveFTModelOutToJSON;
+    exports.archiveFTModelOutFromJSON = archiveFTModelOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.ArchiveFTModelOutObject = {
+      Model: "model"
+    };
+    exports.ArchiveFTModelOutObject$inboundSchema = z6.nativeEnum(exports.ArchiveFTModelOutObject);
+    exports.ArchiveFTModelOutObject$outboundSchema = exports.ArchiveFTModelOutObject$inboundSchema;
+    var ArchiveFTModelOutObject$;
+    (function(ArchiveFTModelOutObject$2) {
+      ArchiveFTModelOutObject$2.inboundSchema = exports.ArchiveFTModelOutObject$inboundSchema;
+      ArchiveFTModelOutObject$2.outboundSchema = exports.ArchiveFTModelOutObject$outboundSchema;
+    })(ArchiveFTModelOutObject$ || (exports.ArchiveFTModelOutObject$ = ArchiveFTModelOutObject$ = {}));
+    exports.ArchiveFTModelOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("model").default("model"),
+      archived: z6.boolean().default(true)
+    });
+    exports.ArchiveFTModelOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("model").default("model"),
+      archived: z6.boolean().default(true)
+    });
+    var ArchiveFTModelOut$;
+    (function(ArchiveFTModelOut$2) {
+      ArchiveFTModelOut$2.inboundSchema = exports.ArchiveFTModelOut$inboundSchema;
+      ArchiveFTModelOut$2.outboundSchema = exports.ArchiveFTModelOut$outboundSchema;
+    })(ArchiveFTModelOut$ || (exports.ArchiveFTModelOut$ = ArchiveFTModelOut$ = {}));
+    function archiveFTModelOutToJSON(archiveFTModelOut) {
+      return JSON.stringify(exports.ArchiveFTModelOut$outboundSchema.parse(archiveFTModelOut));
+    }
+    function archiveFTModelOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ArchiveFTModelOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ArchiveFTModelOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/modelcapabilities.js
+var require_modelcapabilities = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/modelcapabilities.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ModelCapabilities$ = exports.ModelCapabilities$outboundSchema = exports.ModelCapabilities$inboundSchema = void 0;
+    exports.modelCapabilitiesToJSON = modelCapabilitiesToJSON;
+    exports.modelCapabilitiesFromJSON = modelCapabilitiesFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.ModelCapabilities$inboundSchema = z6.object({
+      completion_chat: z6.boolean().default(true),
+      completion_fim: z6.boolean().default(false),
+      function_calling: z6.boolean().default(true),
+      fine_tuning: z6.boolean().default(false),
+      vision: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "completion_chat": "completionChat",
+        "completion_fim": "completionFim",
+        "function_calling": "functionCalling",
+        "fine_tuning": "fineTuning"
+      });
+    });
+    exports.ModelCapabilities$outboundSchema = z6.object({
+      completionChat: z6.boolean().default(true),
+      completionFim: z6.boolean().default(false),
+      functionCalling: z6.boolean().default(true),
+      fineTuning: z6.boolean().default(false),
+      vision: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        completionChat: "completion_chat",
+        completionFim: "completion_fim",
+        functionCalling: "function_calling",
+        fineTuning: "fine_tuning"
+      });
+    });
+    var ModelCapabilities$;
+    (function(ModelCapabilities$2) {
+      ModelCapabilities$2.inboundSchema = exports.ModelCapabilities$inboundSchema;
+      ModelCapabilities$2.outboundSchema = exports.ModelCapabilities$outboundSchema;
+    })(ModelCapabilities$ || (exports.ModelCapabilities$ = ModelCapabilities$ = {}));
+    function modelCapabilitiesToJSON(modelCapabilities) {
+      return JSON.stringify(exports.ModelCapabilities$outboundSchema.parse(modelCapabilities));
+    }
+    function modelCapabilitiesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ModelCapabilities$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ModelCapabilities' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/basemodelcard.js
+var require_basemodelcard = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/basemodelcard.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.BaseModelCard$ = exports.BaseModelCard$outboundSchema = exports.BaseModelCard$inboundSchema = exports.Type$ = exports.Type$outboundSchema = exports.Type$inboundSchema = exports.Type = void 0;
+    exports.baseModelCardToJSON = baseModelCardToJSON;
+    exports.baseModelCardFromJSON = baseModelCardFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var modelcapabilities_js_1 = require_modelcapabilities();
+    exports.Type = {
+      Base: "base"
+    };
+    exports.Type$inboundSchema = z6.nativeEnum(exports.Type);
+    exports.Type$outboundSchema = exports.Type$inboundSchema;
+    var Type$;
+    (function(Type$2) {
+      Type$2.inboundSchema = exports.Type$inboundSchema;
+      Type$2.outboundSchema = exports.Type$outboundSchema;
+    })(Type$ || (exports.Type$ = Type$ = {}));
+    exports.BaseModelCard$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().default("model"),
+      created: z6.number().int().optional(),
+      owned_by: z6.string().default("mistralai"),
+      capabilities: modelcapabilities_js_1.ModelCapabilities$inboundSchema,
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional(),
+      max_context_length: z6.number().int().default(32768),
+      aliases: z6.array(z6.string()).optional(),
+      deprecation: z6.nullable(z6.string().datetime({ offset: true }).transform((v5) => new Date(v5))).optional(),
+      default_model_temperature: z6.nullable(z6.number()).optional(),
+      type: z6.literal("base").default("base")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "owned_by": "ownedBy",
+        "max_context_length": "maxContextLength",
+        "default_model_temperature": "defaultModelTemperature"
+      });
+    });
+    exports.BaseModelCard$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().default("model"),
+      created: z6.number().int().optional(),
+      ownedBy: z6.string().default("mistralai"),
+      capabilities: modelcapabilities_js_1.ModelCapabilities$outboundSchema,
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional(),
+      maxContextLength: z6.number().int().default(32768),
+      aliases: z6.array(z6.string()).optional(),
+      deprecation: z6.nullable(z6.date().transform((v5) => v5.toISOString())).optional(),
+      defaultModelTemperature: z6.nullable(z6.number()).optional(),
+      type: z6.literal("base").default("base")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        ownedBy: "owned_by",
+        maxContextLength: "max_context_length",
+        defaultModelTemperature: "default_model_temperature"
+      });
+    });
+    var BaseModelCard$;
+    (function(BaseModelCard$2) {
+      BaseModelCard$2.inboundSchema = exports.BaseModelCard$inboundSchema;
+      BaseModelCard$2.outboundSchema = exports.BaseModelCard$outboundSchema;
+    })(BaseModelCard$ || (exports.BaseModelCard$ = BaseModelCard$ = {}));
+    function baseModelCardToJSON(baseModelCard) {
+      return JSON.stringify(exports.BaseModelCard$outboundSchema.parse(baseModelCard));
+    }
+    function baseModelCardFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.BaseModelCard$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'BaseModelCard' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/batcherror.js
+var require_batcherror = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/batcherror.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.BatchError$ = exports.BatchError$outboundSchema = exports.BatchError$inboundSchema = void 0;
+    exports.batchErrorToJSON = batchErrorToJSON;
+    exports.batchErrorFromJSON = batchErrorFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.BatchError$inboundSchema = z6.object({
+      message: z6.string(),
+      count: z6.number().int().default(1)
+    });
+    exports.BatchError$outboundSchema = z6.object({
+      message: z6.string(),
+      count: z6.number().int().default(1)
+    });
+    var BatchError$;
+    (function(BatchError$2) {
+      BatchError$2.inboundSchema = exports.BatchError$inboundSchema;
+      BatchError$2.outboundSchema = exports.BatchError$outboundSchema;
+    })(BatchError$ || (exports.BatchError$ = BatchError$ = {}));
+    function batchErrorToJSON(batchError) {
+      return JSON.stringify(exports.BatchError$outboundSchema.parse(batchError));
+    }
+    function batchErrorFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.BatchError$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'BatchError' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/batchjobin.js
+var require_batchjobin = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/batchjobin.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.BatchJobIn$ = exports.BatchJobIn$outboundSchema = exports.BatchJobIn$inboundSchema = void 0;
+    exports.batchJobInToJSON = batchJobInToJSON;
+    exports.batchJobInFromJSON = batchJobInFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var apiendpoint_js_1 = require_apiendpoint();
+    exports.BatchJobIn$inboundSchema = z6.object({
+      input_files: z6.array(z6.string()),
+      endpoint: apiendpoint_js_1.ApiEndpoint$inboundSchema,
+      model: z6.string(),
+      metadata: z6.nullable(z6.record(z6.string())).optional(),
+      timeout_hours: z6.number().int().default(24)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "input_files": "inputFiles",
+        "timeout_hours": "timeoutHours"
+      });
+    });
+    exports.BatchJobIn$outboundSchema = z6.object({
+      inputFiles: z6.array(z6.string()),
+      endpoint: apiendpoint_js_1.ApiEndpoint$outboundSchema,
+      model: z6.string(),
+      metadata: z6.nullable(z6.record(z6.string())).optional(),
+      timeoutHours: z6.number().int().default(24)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        inputFiles: "input_files",
+        timeoutHours: "timeout_hours"
+      });
+    });
+    var BatchJobIn$;
+    (function(BatchJobIn$2) {
+      BatchJobIn$2.inboundSchema = exports.BatchJobIn$inboundSchema;
+      BatchJobIn$2.outboundSchema = exports.BatchJobIn$outboundSchema;
+    })(BatchJobIn$ || (exports.BatchJobIn$ = BatchJobIn$ = {}));
+    function batchJobInToJSON(batchJobIn) {
+      return JSON.stringify(exports.BatchJobIn$outboundSchema.parse(batchJobIn));
+    }
+    function batchJobInFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.BatchJobIn$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'BatchJobIn' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/batchjobstatus.js
+var require_batchjobstatus = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/batchjobstatus.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.BatchJobStatus$ = exports.BatchJobStatus$outboundSchema = exports.BatchJobStatus$inboundSchema = exports.BatchJobStatus = void 0;
+    var z6 = __importStar2(require_lib4());
+    exports.BatchJobStatus = {
+      Queued: "QUEUED",
+      Running: "RUNNING",
+      Success: "SUCCESS",
+      Failed: "FAILED",
+      TimeoutExceeded: "TIMEOUT_EXCEEDED",
+      CancellationRequested: "CANCELLATION_REQUESTED",
+      Cancelled: "CANCELLED"
+    };
+    exports.BatchJobStatus$inboundSchema = z6.nativeEnum(exports.BatchJobStatus);
+    exports.BatchJobStatus$outboundSchema = exports.BatchJobStatus$inboundSchema;
+    var BatchJobStatus$;
+    (function(BatchJobStatus$2) {
+      BatchJobStatus$2.inboundSchema = exports.BatchJobStatus$inboundSchema;
+      BatchJobStatus$2.outboundSchema = exports.BatchJobStatus$outboundSchema;
+    })(BatchJobStatus$ || (exports.BatchJobStatus$ = BatchJobStatus$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/batchjobout.js
+var require_batchjobout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/batchjobout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.BatchJobOut$ = exports.BatchJobOut$outboundSchema = exports.BatchJobOut$inboundSchema = exports.BatchJobOutObject$ = exports.BatchJobOutObject$outboundSchema = exports.BatchJobOutObject$inboundSchema = exports.BatchJobOutObject = void 0;
+    exports.batchJobOutToJSON = batchJobOutToJSON;
+    exports.batchJobOutFromJSON = batchJobOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var batcherror_js_1 = require_batcherror();
+    var batchjobstatus_js_1 = require_batchjobstatus();
+    exports.BatchJobOutObject = {
+      Batch: "batch"
+    };
+    exports.BatchJobOutObject$inboundSchema = z6.nativeEnum(exports.BatchJobOutObject);
+    exports.BatchJobOutObject$outboundSchema = exports.BatchJobOutObject$inboundSchema;
+    var BatchJobOutObject$;
+    (function(BatchJobOutObject$2) {
+      BatchJobOutObject$2.inboundSchema = exports.BatchJobOutObject$inboundSchema;
+      BatchJobOutObject$2.outboundSchema = exports.BatchJobOutObject$outboundSchema;
+    })(BatchJobOutObject$ || (exports.BatchJobOutObject$ = BatchJobOutObject$ = {}));
+    exports.BatchJobOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("batch").default("batch"),
+      input_files: z6.array(z6.string()),
+      metadata: z6.nullable(z6.record(z6.any())).optional(),
+      endpoint: z6.string(),
+      model: z6.string(),
+      output_file: z6.nullable(z6.string()).optional(),
+      error_file: z6.nullable(z6.string()).optional(),
+      errors: z6.array(batcherror_js_1.BatchError$inboundSchema),
+      status: batchjobstatus_js_1.BatchJobStatus$inboundSchema,
+      created_at: z6.number().int(),
+      total_requests: z6.number().int(),
+      completed_requests: z6.number().int(),
+      succeeded_requests: z6.number().int(),
+      failed_requests: z6.number().int(),
+      started_at: z6.nullable(z6.number().int()).optional(),
+      completed_at: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "input_files": "inputFiles",
+        "output_file": "outputFile",
+        "error_file": "errorFile",
+        "created_at": "createdAt",
+        "total_requests": "totalRequests",
+        "completed_requests": "completedRequests",
+        "succeeded_requests": "succeededRequests",
+        "failed_requests": "failedRequests",
+        "started_at": "startedAt",
+        "completed_at": "completedAt"
+      });
+    });
+    exports.BatchJobOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("batch").default("batch"),
+      inputFiles: z6.array(z6.string()),
+      metadata: z6.nullable(z6.record(z6.any())).optional(),
+      endpoint: z6.string(),
+      model: z6.string(),
+      outputFile: z6.nullable(z6.string()).optional(),
+      errorFile: z6.nullable(z6.string()).optional(),
+      errors: z6.array(batcherror_js_1.BatchError$outboundSchema),
+      status: batchjobstatus_js_1.BatchJobStatus$outboundSchema,
+      createdAt: z6.number().int(),
+      totalRequests: z6.number().int(),
+      completedRequests: z6.number().int(),
+      succeededRequests: z6.number().int(),
+      failedRequests: z6.number().int(),
+      startedAt: z6.nullable(z6.number().int()).optional(),
+      completedAt: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        inputFiles: "input_files",
+        outputFile: "output_file",
+        errorFile: "error_file",
+        createdAt: "created_at",
+        totalRequests: "total_requests",
+        completedRequests: "completed_requests",
+        succeededRequests: "succeeded_requests",
+        failedRequests: "failed_requests",
+        startedAt: "started_at",
+        completedAt: "completed_at"
+      });
+    });
+    var BatchJobOut$;
+    (function(BatchJobOut$2) {
+      BatchJobOut$2.inboundSchema = exports.BatchJobOut$inboundSchema;
+      BatchJobOut$2.outboundSchema = exports.BatchJobOut$outboundSchema;
+    })(BatchJobOut$ || (exports.BatchJobOut$ = BatchJobOut$ = {}));
+    function batchJobOutToJSON(batchJobOut) {
+      return JSON.stringify(exports.BatchJobOut$outboundSchema.parse(batchJobOut));
+    }
+    function batchJobOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.BatchJobOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'BatchJobOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/batchjobsout.js
+var require_batchjobsout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/batchjobsout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.BatchJobsOut$ = exports.BatchJobsOut$outboundSchema = exports.BatchJobsOut$inboundSchema = exports.BatchJobsOutObject$ = exports.BatchJobsOutObject$outboundSchema = exports.BatchJobsOutObject$inboundSchema = exports.BatchJobsOutObject = void 0;
+    exports.batchJobsOutToJSON = batchJobsOutToJSON;
+    exports.batchJobsOutFromJSON = batchJobsOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var batchjobout_js_1 = require_batchjobout();
+    exports.BatchJobsOutObject = {
+      List: "list"
+    };
+    exports.BatchJobsOutObject$inboundSchema = z6.nativeEnum(exports.BatchJobsOutObject);
+    exports.BatchJobsOutObject$outboundSchema = exports.BatchJobsOutObject$inboundSchema;
+    var BatchJobsOutObject$;
+    (function(BatchJobsOutObject$2) {
+      BatchJobsOutObject$2.inboundSchema = exports.BatchJobsOutObject$inboundSchema;
+      BatchJobsOutObject$2.outboundSchema = exports.BatchJobsOutObject$outboundSchema;
+    })(BatchJobsOutObject$ || (exports.BatchJobsOutObject$ = BatchJobsOutObject$ = {}));
+    exports.BatchJobsOut$inboundSchema = z6.object({
+      data: z6.array(batchjobout_js_1.BatchJobOut$inboundSchema).optional(),
+      object: z6.literal("list").default("list"),
+      total: z6.number().int()
+    });
+    exports.BatchJobsOut$outboundSchema = z6.object({
+      data: z6.array(batchjobout_js_1.BatchJobOut$outboundSchema).optional(),
+      object: z6.literal("list").default("list"),
+      total: z6.number().int()
+    });
+    var BatchJobsOut$;
+    (function(BatchJobsOut$2) {
+      BatchJobsOut$2.inboundSchema = exports.BatchJobsOut$inboundSchema;
+      BatchJobsOut$2.outboundSchema = exports.BatchJobsOut$outboundSchema;
+    })(BatchJobsOut$ || (exports.BatchJobsOut$ = BatchJobsOut$ = {}));
+    function batchJobsOutToJSON(batchJobsOut) {
+      return JSON.stringify(exports.BatchJobsOut$outboundSchema.parse(batchJobsOut));
+    }
+    function batchJobsOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.BatchJobsOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'BatchJobsOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/chatclassificationrequest.js
+var require_chatclassificationrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/chatclassificationrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ChatClassificationRequest$ = exports.ChatClassificationRequest$outboundSchema = exports.ChatClassificationRequest$inboundSchema = exports.ChatClassificationRequestInputs$ = exports.ChatClassificationRequestInputs$outboundSchema = exports.ChatClassificationRequestInputs$inboundSchema = exports.One$ = exports.One$outboundSchema = exports.One$inboundSchema = exports.Two$ = exports.Two$outboundSchema = exports.Two$inboundSchema = void 0;
+    exports.twoToJSON = twoToJSON;
+    exports.twoFromJSON = twoFromJSON;
+    exports.oneToJSON = oneToJSON;
+    exports.oneFromJSON = oneFromJSON;
+    exports.chatClassificationRequestInputsToJSON = chatClassificationRequestInputsToJSON;
+    exports.chatClassificationRequestInputsFromJSON = chatClassificationRequestInputsFromJSON;
+    exports.chatClassificationRequestToJSON = chatClassificationRequestToJSON;
+    exports.chatClassificationRequestFromJSON = chatClassificationRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var assistantmessage_js_1 = require_assistantmessage();
+    var systemmessage_js_1 = require_systemmessage();
+    var toolmessage_js_1 = require_toolmessage();
+    var usermessage_js_1 = require_usermessage();
+    exports.Two$inboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+        role: v5.role
+      })))
+    ]);
+    exports.Two$outboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+        role: v5.role
+      })))
+    ]);
+    var Two$;
+    (function(Two$2) {
+      Two$2.inboundSchema = exports.Two$inboundSchema;
+      Two$2.outboundSchema = exports.Two$outboundSchema;
+    })(Two$ || (exports.Two$ = Two$ = {}));
+    function twoToJSON(two) {
+      return JSON.stringify(exports.Two$outboundSchema.parse(two));
+    }
+    function twoFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Two$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Two' from JSON`);
+    }
+    exports.One$inboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+        role: v5.role
+      })))
+    ]);
+    exports.One$outboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+        role: v5.role
+      })))
+    ]);
+    var One$;
+    (function(One$2) {
+      One$2.inboundSchema = exports.One$inboundSchema;
+      One$2.outboundSchema = exports.One$outboundSchema;
+    })(One$ || (exports.One$ = One$ = {}));
+    function oneToJSON(one) {
+      return JSON.stringify(exports.One$outboundSchema.parse(one));
+    }
+    function oneFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.One$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'One' from JSON`);
+    }
+    exports.ChatClassificationRequestInputs$inboundSchema = z6.union([
+      z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      z6.array(z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])))
+    ]);
+    exports.ChatClassificationRequestInputs$outboundSchema = z6.union([
+      z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      z6.array(z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])))
+    ]);
+    var ChatClassificationRequestInputs$;
+    (function(ChatClassificationRequestInputs$2) {
+      ChatClassificationRequestInputs$2.inboundSchema = exports.ChatClassificationRequestInputs$inboundSchema;
+      ChatClassificationRequestInputs$2.outboundSchema = exports.ChatClassificationRequestInputs$outboundSchema;
+    })(ChatClassificationRequestInputs$ || (exports.ChatClassificationRequestInputs$ = ChatClassificationRequestInputs$ = {}));
+    function chatClassificationRequestInputsToJSON(chatClassificationRequestInputs) {
+      return JSON.stringify(exports.ChatClassificationRequestInputs$outboundSchema.parse(chatClassificationRequestInputs));
+    }
+    function chatClassificationRequestInputsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatClassificationRequestInputs$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatClassificationRequestInputs' from JSON`);
+    }
+    exports.ChatClassificationRequest$inboundSchema = z6.object({
+      input: z6.union([
+        z6.array(z6.union([
+          systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+            role: v5.role
+          })))
+        ])),
+        z6.array(z6.array(z6.union([
+          systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+            role: v5.role
+          })))
+        ])))
+      ]),
+      model: z6.nullable(z6.string())
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "input": "inputs"
+      });
+    });
+    exports.ChatClassificationRequest$outboundSchema = z6.object({
+      inputs: z6.union([
+        z6.array(z6.union([
+          systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+            role: v5.role
+          })))
+        ])),
+        z6.array(z6.array(z6.union([
+          systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+            role: v5.role
+          }))),
+          toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+            role: v5.role
+          })))
+        ])))
+      ]),
+      model: z6.nullable(z6.string())
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        inputs: "input"
+      });
+    });
+    var ChatClassificationRequest$;
+    (function(ChatClassificationRequest$2) {
+      ChatClassificationRequest$2.inboundSchema = exports.ChatClassificationRequest$inboundSchema;
+      ChatClassificationRequest$2.outboundSchema = exports.ChatClassificationRequest$outboundSchema;
+    })(ChatClassificationRequest$ || (exports.ChatClassificationRequest$ = ChatClassificationRequest$ = {}));
+    function chatClassificationRequestToJSON(chatClassificationRequest) {
+      return JSON.stringify(exports.ChatClassificationRequest$outboundSchema.parse(chatClassificationRequest));
+    }
+    function chatClassificationRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatClassificationRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatClassificationRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/chatcompletionchoice.js
+var require_chatcompletionchoice = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/chatcompletionchoice.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ChatCompletionChoice$ = exports.ChatCompletionChoice$outboundSchema = exports.ChatCompletionChoice$inboundSchema = exports.FinishReason$ = exports.FinishReason$outboundSchema = exports.FinishReason$inboundSchema = exports.FinishReason = void 0;
+    exports.chatCompletionChoiceToJSON = chatCompletionChoiceToJSON;
+    exports.chatCompletionChoiceFromJSON = chatCompletionChoiceFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var enums_js_1 = require_enums();
+    var assistantmessage_js_1 = require_assistantmessage();
+    exports.FinishReason = {
+      Stop: "stop",
+      Length: "length",
+      ModelLength: "model_length",
+      Error: "error",
+      ToolCalls: "tool_calls"
+    };
+    exports.FinishReason$inboundSchema = z6.union([
+      z6.nativeEnum(exports.FinishReason),
+      z6.string().transform(enums_js_1.catchUnrecognizedEnum)
+    ]);
+    exports.FinishReason$outboundSchema = z6.union([
+      z6.nativeEnum(exports.FinishReason),
+      z6.string().and(z6.custom())
+    ]);
+    var FinishReason$;
+    (function(FinishReason$2) {
+      FinishReason$2.inboundSchema = exports.FinishReason$inboundSchema;
+      FinishReason$2.outboundSchema = exports.FinishReason$outboundSchema;
+    })(FinishReason$ || (exports.FinishReason$ = FinishReason$ = {}));
+    exports.ChatCompletionChoice$inboundSchema = z6.object({
+      index: z6.number().int(),
+      message: assistantmessage_js_1.AssistantMessage$inboundSchema,
+      finish_reason: exports.FinishReason$inboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "finish_reason": "finishReason"
+      });
+    });
+    exports.ChatCompletionChoice$outboundSchema = z6.object({
+      index: z6.number().int(),
+      message: assistantmessage_js_1.AssistantMessage$outboundSchema,
+      finishReason: exports.FinishReason$outboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        finishReason: "finish_reason"
+      });
+    });
+    var ChatCompletionChoice$;
+    (function(ChatCompletionChoice$2) {
+      ChatCompletionChoice$2.inboundSchema = exports.ChatCompletionChoice$inboundSchema;
+      ChatCompletionChoice$2.outboundSchema = exports.ChatCompletionChoice$outboundSchema;
+    })(ChatCompletionChoice$ || (exports.ChatCompletionChoice$ = ChatCompletionChoice$ = {}));
+    function chatCompletionChoiceToJSON(chatCompletionChoice) {
+      return JSON.stringify(exports.ChatCompletionChoice$outboundSchema.parse(chatCompletionChoice));
+    }
+    function chatCompletionChoiceFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionChoice$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionChoice' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/chatcompletionrequest.js
+var require_chatcompletionrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/chatcompletionrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ChatCompletionRequest$ = exports.ChatCompletionRequest$outboundSchema = exports.ChatCompletionRequest$inboundSchema = exports.ChatCompletionRequestToolChoice$ = exports.ChatCompletionRequestToolChoice$outboundSchema = exports.ChatCompletionRequestToolChoice$inboundSchema = exports.Messages$ = exports.Messages$outboundSchema = exports.Messages$inboundSchema = exports.Stop$ = exports.Stop$outboundSchema = exports.Stop$inboundSchema = void 0;
+    exports.stopToJSON = stopToJSON;
+    exports.stopFromJSON = stopFromJSON;
+    exports.messagesToJSON = messagesToJSON;
+    exports.messagesFromJSON = messagesFromJSON;
+    exports.chatCompletionRequestToolChoiceToJSON = chatCompletionRequestToolChoiceToJSON;
+    exports.chatCompletionRequestToolChoiceFromJSON = chatCompletionRequestToolChoiceFromJSON;
+    exports.chatCompletionRequestToJSON = chatCompletionRequestToJSON;
+    exports.chatCompletionRequestFromJSON = chatCompletionRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var assistantmessage_js_1 = require_assistantmessage();
+    var responseformat_js_1 = require_responseformat();
+    var systemmessage_js_1 = require_systemmessage();
+    var tool_js_1 = require_tool();
+    var toolchoice_js_1 = require_toolchoice();
+    var toolchoiceenum_js_1 = require_toolchoiceenum();
+    var toolmessage_js_1 = require_toolmessage();
+    var usermessage_js_1 = require_usermessage();
+    exports.Stop$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.Stop$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var Stop$;
+    (function(Stop$2) {
+      Stop$2.inboundSchema = exports.Stop$inboundSchema;
+      Stop$2.outboundSchema = exports.Stop$outboundSchema;
+    })(Stop$ || (exports.Stop$ = Stop$ = {}));
+    function stopToJSON(stop) {
+      return JSON.stringify(exports.Stop$outboundSchema.parse(stop));
+    }
+    function stopFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Stop$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Stop' from JSON`);
+    }
+    exports.Messages$inboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    exports.Messages$outboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    var Messages$;
+    (function(Messages$2) {
+      Messages$2.inboundSchema = exports.Messages$inboundSchema;
+      Messages$2.outboundSchema = exports.Messages$outboundSchema;
+    })(Messages$ || (exports.Messages$ = Messages$ = {}));
+    function messagesToJSON(messages) {
+      return JSON.stringify(exports.Messages$outboundSchema.parse(messages));
+    }
+    function messagesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Messages$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Messages' from JSON`);
+    }
+    exports.ChatCompletionRequestToolChoice$inboundSchema = z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]);
+    exports.ChatCompletionRequestToolChoice$outboundSchema = z6.union([toolchoice_js_1.ToolChoice$outboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema]);
+    var ChatCompletionRequestToolChoice$;
+    (function(ChatCompletionRequestToolChoice$2) {
+      ChatCompletionRequestToolChoice$2.inboundSchema = exports.ChatCompletionRequestToolChoice$inboundSchema;
+      ChatCompletionRequestToolChoice$2.outboundSchema = exports.ChatCompletionRequestToolChoice$outboundSchema;
+    })(ChatCompletionRequestToolChoice$ || (exports.ChatCompletionRequestToolChoice$ = ChatCompletionRequestToolChoice$ = {}));
+    function chatCompletionRequestToolChoiceToJSON(chatCompletionRequestToolChoice) {
+      return JSON.stringify(exports.ChatCompletionRequestToolChoice$outboundSchema.parse(chatCompletionRequestToolChoice));
+    }
+    function chatCompletionRequestToolChoiceFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionRequestToolChoice$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionRequestToolChoice' from JSON`);
+    }
+    exports.ChatCompletionRequest$inboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      top_p: z6.number().default(1),
+      max_tokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(false),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      random_seed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      response_format: responseformat_js_1.ResponseFormat$inboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$inboundSchema)).optional(),
+      tool_choice: z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]).optional(),
+      presence_penalty: z6.number().optional(),
+      frequency_penalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      safe_prompt: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "top_p": "topP",
+        "max_tokens": "maxTokens",
+        "random_seed": "randomSeed",
+        "response_format": "responseFormat",
+        "tool_choice": "toolChoice",
+        "presence_penalty": "presencePenalty",
+        "frequency_penalty": "frequencyPenalty",
+        "safe_prompt": "safePrompt"
+      });
+    });
+    exports.ChatCompletionRequest$outboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      topP: z6.number().default(1),
+      maxTokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(false),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      randomSeed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      responseFormat: responseformat_js_1.ResponseFormat$outboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$outboundSchema)).optional(),
+      toolChoice: z6.union([
+        toolchoice_js_1.ToolChoice$outboundSchema,
+        toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema
+      ]).optional(),
+      presencePenalty: z6.number().optional(),
+      frequencyPenalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      safePrompt: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        topP: "top_p",
+        maxTokens: "max_tokens",
+        randomSeed: "random_seed",
+        responseFormat: "response_format",
+        toolChoice: "tool_choice",
+        presencePenalty: "presence_penalty",
+        frequencyPenalty: "frequency_penalty",
+        safePrompt: "safe_prompt"
+      });
+    });
+    var ChatCompletionRequest$;
+    (function(ChatCompletionRequest$2) {
+      ChatCompletionRequest$2.inboundSchema = exports.ChatCompletionRequest$inboundSchema;
+      ChatCompletionRequest$2.outboundSchema = exports.ChatCompletionRequest$outboundSchema;
+    })(ChatCompletionRequest$ || (exports.ChatCompletionRequest$ = ChatCompletionRequest$ = {}));
+    function chatCompletionRequestToJSON(chatCompletionRequest) {
+      return JSON.stringify(exports.ChatCompletionRequest$outboundSchema.parse(chatCompletionRequest));
+    }
+    function chatCompletionRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/usageinfo.js
+var require_usageinfo = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/usageinfo.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.UsageInfo$ = exports.UsageInfo$outboundSchema = exports.UsageInfo$inboundSchema = void 0;
+    exports.usageInfoToJSON = usageInfoToJSON;
+    exports.usageInfoFromJSON = usageInfoFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.UsageInfo$inboundSchema = z6.object({
+      prompt_tokens: z6.number().int(),
+      completion_tokens: z6.number().int(),
+      total_tokens: z6.number().int()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "prompt_tokens": "promptTokens",
+        "completion_tokens": "completionTokens",
+        "total_tokens": "totalTokens"
+      });
+    });
+    exports.UsageInfo$outboundSchema = z6.object({
+      promptTokens: z6.number().int(),
+      completionTokens: z6.number().int(),
+      totalTokens: z6.number().int()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        promptTokens: "prompt_tokens",
+        completionTokens: "completion_tokens",
+        totalTokens: "total_tokens"
+      });
+    });
+    var UsageInfo$;
+    (function(UsageInfo$2) {
+      UsageInfo$2.inboundSchema = exports.UsageInfo$inboundSchema;
+      UsageInfo$2.outboundSchema = exports.UsageInfo$outboundSchema;
+    })(UsageInfo$ || (exports.UsageInfo$ = UsageInfo$ = {}));
+    function usageInfoToJSON(usageInfo) {
+      return JSON.stringify(exports.UsageInfo$outboundSchema.parse(usageInfo));
+    }
+    function usageInfoFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.UsageInfo$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'UsageInfo' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/chatcompletionresponse.js
+var require_chatcompletionresponse = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/chatcompletionresponse.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ChatCompletionResponse$ = exports.ChatCompletionResponse$outboundSchema = exports.ChatCompletionResponse$inboundSchema = void 0;
+    exports.chatCompletionResponseToJSON = chatCompletionResponseToJSON;
+    exports.chatCompletionResponseFromJSON = chatCompletionResponseFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var chatcompletionchoice_js_1 = require_chatcompletionchoice();
+    var usageinfo_js_1 = require_usageinfo();
+    exports.ChatCompletionResponse$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$inboundSchema,
+      created: z6.number().int().optional(),
+      choices: z6.array(chatcompletionchoice_js_1.ChatCompletionChoice$inboundSchema).optional()
+    });
+    exports.ChatCompletionResponse$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$outboundSchema,
+      created: z6.number().int().optional(),
+      choices: z6.array(chatcompletionchoice_js_1.ChatCompletionChoice$outboundSchema).optional()
+    });
+    var ChatCompletionResponse$;
+    (function(ChatCompletionResponse$2) {
+      ChatCompletionResponse$2.inboundSchema = exports.ChatCompletionResponse$inboundSchema;
+      ChatCompletionResponse$2.outboundSchema = exports.ChatCompletionResponse$outboundSchema;
+    })(ChatCompletionResponse$ || (exports.ChatCompletionResponse$ = ChatCompletionResponse$ = {}));
+    function chatCompletionResponseToJSON(chatCompletionResponse) {
+      return JSON.stringify(exports.ChatCompletionResponse$outboundSchema.parse(chatCompletionResponse));
+    }
+    function chatCompletionResponseFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionResponse$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionResponse' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/chatcompletionstreamrequest.js
+var require_chatcompletionstreamrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/chatcompletionstreamrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ChatCompletionStreamRequest$ = exports.ChatCompletionStreamRequest$outboundSchema = exports.ChatCompletionStreamRequest$inboundSchema = exports.ChatCompletionStreamRequestToolChoice$ = exports.ChatCompletionStreamRequestToolChoice$outboundSchema = exports.ChatCompletionStreamRequestToolChoice$inboundSchema = exports.ChatCompletionStreamRequestMessages$ = exports.ChatCompletionStreamRequestMessages$outboundSchema = exports.ChatCompletionStreamRequestMessages$inboundSchema = exports.ChatCompletionStreamRequestStop$ = exports.ChatCompletionStreamRequestStop$outboundSchema = exports.ChatCompletionStreamRequestStop$inboundSchema = void 0;
+    exports.chatCompletionStreamRequestStopToJSON = chatCompletionStreamRequestStopToJSON;
+    exports.chatCompletionStreamRequestStopFromJSON = chatCompletionStreamRequestStopFromJSON;
+    exports.chatCompletionStreamRequestMessagesToJSON = chatCompletionStreamRequestMessagesToJSON;
+    exports.chatCompletionStreamRequestMessagesFromJSON = chatCompletionStreamRequestMessagesFromJSON;
+    exports.chatCompletionStreamRequestToolChoiceToJSON = chatCompletionStreamRequestToolChoiceToJSON;
+    exports.chatCompletionStreamRequestToolChoiceFromJSON = chatCompletionStreamRequestToolChoiceFromJSON;
+    exports.chatCompletionStreamRequestToJSON = chatCompletionStreamRequestToJSON;
+    exports.chatCompletionStreamRequestFromJSON = chatCompletionStreamRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var assistantmessage_js_1 = require_assistantmessage();
+    var responseformat_js_1 = require_responseformat();
+    var systemmessage_js_1 = require_systemmessage();
+    var tool_js_1 = require_tool();
+    var toolchoice_js_1 = require_toolchoice();
+    var toolchoiceenum_js_1 = require_toolchoiceenum();
+    var toolmessage_js_1 = require_toolmessage();
+    var usermessage_js_1 = require_usermessage();
+    exports.ChatCompletionStreamRequestStop$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.ChatCompletionStreamRequestStop$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var ChatCompletionStreamRequestStop$;
+    (function(ChatCompletionStreamRequestStop$2) {
+      ChatCompletionStreamRequestStop$2.inboundSchema = exports.ChatCompletionStreamRequestStop$inboundSchema;
+      ChatCompletionStreamRequestStop$2.outboundSchema = exports.ChatCompletionStreamRequestStop$outboundSchema;
+    })(ChatCompletionStreamRequestStop$ || (exports.ChatCompletionStreamRequestStop$ = ChatCompletionStreamRequestStop$ = {}));
+    function chatCompletionStreamRequestStopToJSON(chatCompletionStreamRequestStop) {
+      return JSON.stringify(exports.ChatCompletionStreamRequestStop$outboundSchema.parse(chatCompletionStreamRequestStop));
+    }
+    function chatCompletionStreamRequestStopFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionStreamRequestStop$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionStreamRequestStop' from JSON`);
+    }
+    exports.ChatCompletionStreamRequestMessages$inboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    exports.ChatCompletionStreamRequestMessages$outboundSchema = z6.union([
+      systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({ role: v5.role }))),
+      assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+        role: v5.role
+      }))),
+      toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({ role: v5.role })))
+    ]);
+    var ChatCompletionStreamRequestMessages$;
+    (function(ChatCompletionStreamRequestMessages$2) {
+      ChatCompletionStreamRequestMessages$2.inboundSchema = exports.ChatCompletionStreamRequestMessages$inboundSchema;
+      ChatCompletionStreamRequestMessages$2.outboundSchema = exports.ChatCompletionStreamRequestMessages$outboundSchema;
+    })(ChatCompletionStreamRequestMessages$ || (exports.ChatCompletionStreamRequestMessages$ = ChatCompletionStreamRequestMessages$ = {}));
+    function chatCompletionStreamRequestMessagesToJSON(chatCompletionStreamRequestMessages) {
+      return JSON.stringify(exports.ChatCompletionStreamRequestMessages$outboundSchema.parse(chatCompletionStreamRequestMessages));
+    }
+    function chatCompletionStreamRequestMessagesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionStreamRequestMessages$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionStreamRequestMessages' from JSON`);
+    }
+    exports.ChatCompletionStreamRequestToolChoice$inboundSchema = z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]);
+    exports.ChatCompletionStreamRequestToolChoice$outboundSchema = z6.union([toolchoice_js_1.ToolChoice$outboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema]);
+    var ChatCompletionStreamRequestToolChoice$;
+    (function(ChatCompletionStreamRequestToolChoice$2) {
+      ChatCompletionStreamRequestToolChoice$2.inboundSchema = exports.ChatCompletionStreamRequestToolChoice$inboundSchema;
+      ChatCompletionStreamRequestToolChoice$2.outboundSchema = exports.ChatCompletionStreamRequestToolChoice$outboundSchema;
+    })(ChatCompletionStreamRequestToolChoice$ || (exports.ChatCompletionStreamRequestToolChoice$ = ChatCompletionStreamRequestToolChoice$ = {}));
+    function chatCompletionStreamRequestToolChoiceToJSON(chatCompletionStreamRequestToolChoice) {
+      return JSON.stringify(exports.ChatCompletionStreamRequestToolChoice$outboundSchema.parse(chatCompletionStreamRequestToolChoice));
+    }
+    function chatCompletionStreamRequestToolChoiceFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionStreamRequestToolChoice$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionStreamRequestToolChoice' from JSON`);
+    }
+    exports.ChatCompletionStreamRequest$inboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      top_p: z6.number().default(1),
+      max_tokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(true),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      random_seed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$inboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$inboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$inboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$inboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      response_format: responseformat_js_1.ResponseFormat$inboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$inboundSchema)).optional(),
+      tool_choice: z6.union([toolchoice_js_1.ToolChoice$inboundSchema, toolchoiceenum_js_1.ToolChoiceEnum$inboundSchema]).optional(),
+      presence_penalty: z6.number().optional(),
+      frequency_penalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      safe_prompt: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "top_p": "topP",
+        "max_tokens": "maxTokens",
+        "random_seed": "randomSeed",
+        "response_format": "responseFormat",
+        "tool_choice": "toolChoice",
+        "presence_penalty": "presencePenalty",
+        "frequency_penalty": "frequencyPenalty",
+        "safe_prompt": "safePrompt"
+      });
+    });
+    exports.ChatCompletionStreamRequest$outboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      topP: z6.number().default(1),
+      maxTokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(true),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      randomSeed: z6.nullable(z6.number().int()).optional(),
+      messages: z6.array(z6.union([
+        systemmessage_js_1.SystemMessage$outboundSchema.and(z6.object({ role: z6.literal("system") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        usermessage_js_1.UserMessage$outboundSchema.and(z6.object({ role: z6.literal("user") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        assistantmessage_js_1.AssistantMessage$outboundSchema.and(z6.object({ role: z6.literal("assistant") }).transform((v5) => ({
+          role: v5.role
+        }))),
+        toolmessage_js_1.ToolMessage$outboundSchema.and(z6.object({ role: z6.literal("tool") }).transform((v5) => ({
+          role: v5.role
+        })))
+      ])),
+      responseFormat: responseformat_js_1.ResponseFormat$outboundSchema.optional(),
+      tools: z6.nullable(z6.array(tool_js_1.Tool$outboundSchema)).optional(),
+      toolChoice: z6.union([
+        toolchoice_js_1.ToolChoice$outboundSchema,
+        toolchoiceenum_js_1.ToolChoiceEnum$outboundSchema
+      ]).optional(),
+      presencePenalty: z6.number().optional(),
+      frequencyPenalty: z6.number().optional(),
+      n: z6.nullable(z6.number().int()).optional(),
+      safePrompt: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        topP: "top_p",
+        maxTokens: "max_tokens",
+        randomSeed: "random_seed",
+        responseFormat: "response_format",
+        toolChoice: "tool_choice",
+        presencePenalty: "presence_penalty",
+        frequencyPenalty: "frequency_penalty",
+        safePrompt: "safe_prompt"
+      });
+    });
+    var ChatCompletionStreamRequest$;
+    (function(ChatCompletionStreamRequest$2) {
+      ChatCompletionStreamRequest$2.inboundSchema = exports.ChatCompletionStreamRequest$inboundSchema;
+      ChatCompletionStreamRequest$2.outboundSchema = exports.ChatCompletionStreamRequest$outboundSchema;
+    })(ChatCompletionStreamRequest$ || (exports.ChatCompletionStreamRequest$ = ChatCompletionStreamRequest$ = {}));
+    function chatCompletionStreamRequestToJSON(chatCompletionStreamRequest) {
+      return JSON.stringify(exports.ChatCompletionStreamRequest$outboundSchema.parse(chatCompletionStreamRequest));
+    }
+    function chatCompletionStreamRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ChatCompletionStreamRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ChatCompletionStreamRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/metricout.js
+var require_metricout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/metricout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MetricOut$ = exports.MetricOut$outboundSchema = exports.MetricOut$inboundSchema = void 0;
+    exports.metricOutToJSON = metricOutToJSON;
+    exports.metricOutFromJSON = metricOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.MetricOut$inboundSchema = z6.object({
+      train_loss: z6.nullable(z6.number()).optional(),
+      valid_loss: z6.nullable(z6.number()).optional(),
+      valid_mean_token_accuracy: z6.nullable(z6.number()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "train_loss": "trainLoss",
+        "valid_loss": "validLoss",
+        "valid_mean_token_accuracy": "validMeanTokenAccuracy"
+      });
+    });
+    exports.MetricOut$outboundSchema = z6.object({
+      trainLoss: z6.nullable(z6.number()).optional(),
+      validLoss: z6.nullable(z6.number()).optional(),
+      validMeanTokenAccuracy: z6.nullable(z6.number()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        trainLoss: "train_loss",
+        validLoss: "valid_loss",
+        validMeanTokenAccuracy: "valid_mean_token_accuracy"
+      });
+    });
+    var MetricOut$;
+    (function(MetricOut$2) {
+      MetricOut$2.inboundSchema = exports.MetricOut$inboundSchema;
+      MetricOut$2.outboundSchema = exports.MetricOut$outboundSchema;
+    })(MetricOut$ || (exports.MetricOut$ = MetricOut$ = {}));
+    function metricOutToJSON(metricOut) {
+      return JSON.stringify(exports.MetricOut$outboundSchema.parse(metricOut));
+    }
+    function metricOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.MetricOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'MetricOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/checkpointout.js
+var require_checkpointout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/checkpointout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.CheckpointOut$ = exports.CheckpointOut$outboundSchema = exports.CheckpointOut$inboundSchema = void 0;
+    exports.checkpointOutToJSON = checkpointOutToJSON;
+    exports.checkpointOutFromJSON = checkpointOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var metricout_js_1 = require_metricout();
+    exports.CheckpointOut$inboundSchema = z6.object({
+      metrics: metricout_js_1.MetricOut$inboundSchema,
+      step_number: z6.number().int(),
+      created_at: z6.number().int()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "step_number": "stepNumber",
+        "created_at": "createdAt"
+      });
+    });
+    exports.CheckpointOut$outboundSchema = z6.object({
+      metrics: metricout_js_1.MetricOut$outboundSchema,
+      stepNumber: z6.number().int(),
+      createdAt: z6.number().int()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        stepNumber: "step_number",
+        createdAt: "created_at"
+      });
+    });
+    var CheckpointOut$;
+    (function(CheckpointOut$2) {
+      CheckpointOut$2.inboundSchema = exports.CheckpointOut$inboundSchema;
+      CheckpointOut$2.outboundSchema = exports.CheckpointOut$outboundSchema;
+    })(CheckpointOut$ || (exports.CheckpointOut$ = CheckpointOut$ = {}));
+    function checkpointOutToJSON(checkpointOut) {
+      return JSON.stringify(exports.CheckpointOut$outboundSchema.parse(checkpointOut));
+    }
+    function checkpointOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.CheckpointOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'CheckpointOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/classificationobject.js
+var require_classificationobject = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/classificationobject.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ClassificationObject$ = exports.ClassificationObject$outboundSchema = exports.ClassificationObject$inboundSchema = void 0;
+    exports.classificationObjectToJSON = classificationObjectToJSON;
+    exports.classificationObjectFromJSON = classificationObjectFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.ClassificationObject$inboundSchema = z6.object({
+      categories: z6.record(z6.boolean()).optional(),
+      category_scores: z6.record(z6.number()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "category_scores": "categoryScores"
+      });
+    });
+    exports.ClassificationObject$outboundSchema = z6.object({
+      categories: z6.record(z6.boolean()).optional(),
+      categoryScores: z6.record(z6.number()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        categoryScores: "category_scores"
+      });
+    });
+    var ClassificationObject$;
+    (function(ClassificationObject$2) {
+      ClassificationObject$2.inboundSchema = exports.ClassificationObject$inboundSchema;
+      ClassificationObject$2.outboundSchema = exports.ClassificationObject$outboundSchema;
+    })(ClassificationObject$ || (exports.ClassificationObject$ = ClassificationObject$ = {}));
+    function classificationObjectToJSON(classificationObject) {
+      return JSON.stringify(exports.ClassificationObject$outboundSchema.parse(classificationObject));
+    }
+    function classificationObjectFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ClassificationObject$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ClassificationObject' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/classificationrequest.js
+var require_classificationrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/classificationrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ClassificationRequest$ = exports.ClassificationRequest$outboundSchema = exports.ClassificationRequest$inboundSchema = exports.ClassificationRequestInputs$ = exports.ClassificationRequestInputs$outboundSchema = exports.ClassificationRequestInputs$inboundSchema = void 0;
+    exports.classificationRequestInputsToJSON = classificationRequestInputsToJSON;
+    exports.classificationRequestInputsFromJSON = classificationRequestInputsFromJSON;
+    exports.classificationRequestToJSON = classificationRequestToJSON;
+    exports.classificationRequestFromJSON = classificationRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.ClassificationRequestInputs$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.ClassificationRequestInputs$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var ClassificationRequestInputs$;
+    (function(ClassificationRequestInputs$2) {
+      ClassificationRequestInputs$2.inboundSchema = exports.ClassificationRequestInputs$inboundSchema;
+      ClassificationRequestInputs$2.outboundSchema = exports.ClassificationRequestInputs$outboundSchema;
+    })(ClassificationRequestInputs$ || (exports.ClassificationRequestInputs$ = ClassificationRequestInputs$ = {}));
+    function classificationRequestInputsToJSON(classificationRequestInputs) {
+      return JSON.stringify(exports.ClassificationRequestInputs$outboundSchema.parse(classificationRequestInputs));
+    }
+    function classificationRequestInputsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ClassificationRequestInputs$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ClassificationRequestInputs' from JSON`);
+    }
+    exports.ClassificationRequest$inboundSchema = z6.object({
+      input: z6.union([z6.string(), z6.array(z6.string())]),
+      model: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "input": "inputs"
+      });
+    });
+    exports.ClassificationRequest$outboundSchema = z6.object({
+      inputs: z6.union([z6.string(), z6.array(z6.string())]),
+      model: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        inputs: "input"
+      });
+    });
+    var ClassificationRequest$;
+    (function(ClassificationRequest$2) {
+      ClassificationRequest$2.inboundSchema = exports.ClassificationRequest$inboundSchema;
+      ClassificationRequest$2.outboundSchema = exports.ClassificationRequest$outboundSchema;
+    })(ClassificationRequest$ || (exports.ClassificationRequest$ = ClassificationRequest$ = {}));
+    function classificationRequestToJSON(classificationRequest) {
+      return JSON.stringify(exports.ClassificationRequest$outboundSchema.parse(classificationRequest));
+    }
+    function classificationRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ClassificationRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ClassificationRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/classificationresponse.js
+var require_classificationresponse = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/classificationresponse.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ClassificationResponse$ = exports.ClassificationResponse$outboundSchema = exports.ClassificationResponse$inboundSchema = void 0;
+    exports.classificationResponseToJSON = classificationResponseToJSON;
+    exports.classificationResponseFromJSON = classificationResponseFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var classificationobject_js_1 = require_classificationobject();
+    exports.ClassificationResponse$inboundSchema = z6.object({
+      id: z6.string().optional(),
+      model: z6.string().optional(),
+      results: z6.array(classificationobject_js_1.ClassificationObject$inboundSchema).optional()
+    });
+    exports.ClassificationResponse$outboundSchema = z6.object({
+      id: z6.string().optional(),
+      model: z6.string().optional(),
+      results: z6.array(classificationobject_js_1.ClassificationObject$outboundSchema).optional()
+    });
+    var ClassificationResponse$;
+    (function(ClassificationResponse$2) {
+      ClassificationResponse$2.inboundSchema = exports.ClassificationResponse$inboundSchema;
+      ClassificationResponse$2.outboundSchema = exports.ClassificationResponse$outboundSchema;
+    })(ClassificationResponse$ || (exports.ClassificationResponse$ = ClassificationResponse$ = {}));
+    function classificationResponseToJSON(classificationResponse) {
+      return JSON.stringify(exports.ClassificationResponse$outboundSchema.parse(classificationResponse));
+    }
+    function classificationResponseFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ClassificationResponse$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ClassificationResponse' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/deltamessage.js
+var require_deltamessage = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/deltamessage.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DeltaMessage$ = exports.DeltaMessage$outboundSchema = exports.DeltaMessage$inboundSchema = exports.Content$ = exports.Content$outboundSchema = exports.Content$inboundSchema = void 0;
+    exports.contentToJSON = contentToJSON;
+    exports.contentFromJSON = contentFromJSON;
+    exports.deltaMessageToJSON = deltaMessageToJSON;
+    exports.deltaMessageFromJSON = deltaMessageFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var contentchunk_js_1 = require_contentchunk();
+    var toolcall_js_1 = require_toolcall();
+    exports.Content$inboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)]);
+    exports.Content$outboundSchema = z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)]);
+    var Content$;
+    (function(Content$2) {
+      Content$2.inboundSchema = exports.Content$inboundSchema;
+      Content$2.outboundSchema = exports.Content$outboundSchema;
+    })(Content$ || (exports.Content$ = Content$ = {}));
+    function contentToJSON(content) {
+      return JSON.stringify(exports.Content$outboundSchema.parse(content));
+    }
+    function contentFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Content$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Content' from JSON`);
+    }
+    exports.DeltaMessage$inboundSchema = z6.object({
+      role: z6.nullable(z6.string()).optional(),
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$inboundSchema)])).optional(),
+      tool_calls: z6.nullable(z6.array(toolcall_js_1.ToolCall$inboundSchema)).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "tool_calls": "toolCalls"
+      });
+    });
+    exports.DeltaMessage$outboundSchema = z6.object({
+      role: z6.nullable(z6.string()).optional(),
+      content: z6.nullable(z6.union([z6.string(), z6.array(contentchunk_js_1.ContentChunk$outboundSchema)])).optional(),
+      toolCalls: z6.nullable(z6.array(toolcall_js_1.ToolCall$outboundSchema)).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        toolCalls: "tool_calls"
+      });
+    });
+    var DeltaMessage$;
+    (function(DeltaMessage$2) {
+      DeltaMessage$2.inboundSchema = exports.DeltaMessage$inboundSchema;
+      DeltaMessage$2.outboundSchema = exports.DeltaMessage$outboundSchema;
+    })(DeltaMessage$ || (exports.DeltaMessage$ = DeltaMessage$ = {}));
+    function deltaMessageToJSON(deltaMessage) {
+      return JSON.stringify(exports.DeltaMessage$outboundSchema.parse(deltaMessage));
+    }
+    function deltaMessageFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.DeltaMessage$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'DeltaMessage' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/completionresponsestreamchoice.js
+var require_completionresponsestreamchoice = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/completionresponsestreamchoice.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.CompletionResponseStreamChoice$ = exports.CompletionResponseStreamChoice$outboundSchema = exports.CompletionResponseStreamChoice$inboundSchema = exports.CompletionResponseStreamChoiceFinishReason$ = exports.CompletionResponseStreamChoiceFinishReason$outboundSchema = exports.CompletionResponseStreamChoiceFinishReason$inboundSchema = exports.CompletionResponseStreamChoiceFinishReason = void 0;
+    exports.completionResponseStreamChoiceToJSON = completionResponseStreamChoiceToJSON;
+    exports.completionResponseStreamChoiceFromJSON = completionResponseStreamChoiceFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var enums_js_1 = require_enums();
+    var deltamessage_js_1 = require_deltamessage();
+    exports.CompletionResponseStreamChoiceFinishReason = {
+      Stop: "stop",
+      Length: "length",
+      Error: "error",
+      ToolCalls: "tool_calls"
+    };
+    exports.CompletionResponseStreamChoiceFinishReason$inboundSchema = z6.union([
+      z6.nativeEnum(exports.CompletionResponseStreamChoiceFinishReason),
+      z6.string().transform(enums_js_1.catchUnrecognizedEnum)
+    ]);
+    exports.CompletionResponseStreamChoiceFinishReason$outboundSchema = z6.union([
+      z6.nativeEnum(exports.CompletionResponseStreamChoiceFinishReason),
+      z6.string().and(z6.custom())
+    ]);
+    var CompletionResponseStreamChoiceFinishReason$;
+    (function(CompletionResponseStreamChoiceFinishReason$2) {
+      CompletionResponseStreamChoiceFinishReason$2.inboundSchema = exports.CompletionResponseStreamChoiceFinishReason$inboundSchema;
+      CompletionResponseStreamChoiceFinishReason$2.outboundSchema = exports.CompletionResponseStreamChoiceFinishReason$outboundSchema;
+    })(CompletionResponseStreamChoiceFinishReason$ || (exports.CompletionResponseStreamChoiceFinishReason$ = CompletionResponseStreamChoiceFinishReason$ = {}));
+    exports.CompletionResponseStreamChoice$inboundSchema = z6.object({
+      index: z6.number().int(),
+      delta: deltamessage_js_1.DeltaMessage$inboundSchema,
+      finish_reason: z6.nullable(exports.CompletionResponseStreamChoiceFinishReason$inboundSchema)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "finish_reason": "finishReason"
+      });
+    });
+    exports.CompletionResponseStreamChoice$outboundSchema = z6.object({
+      index: z6.number().int(),
+      delta: deltamessage_js_1.DeltaMessage$outboundSchema,
+      finishReason: z6.nullable(exports.CompletionResponseStreamChoiceFinishReason$outboundSchema)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        finishReason: "finish_reason"
+      });
+    });
+    var CompletionResponseStreamChoice$;
+    (function(CompletionResponseStreamChoice$2) {
+      CompletionResponseStreamChoice$2.inboundSchema = exports.CompletionResponseStreamChoice$inboundSchema;
+      CompletionResponseStreamChoice$2.outboundSchema = exports.CompletionResponseStreamChoice$outboundSchema;
+    })(CompletionResponseStreamChoice$ || (exports.CompletionResponseStreamChoice$ = CompletionResponseStreamChoice$ = {}));
+    function completionResponseStreamChoiceToJSON(completionResponseStreamChoice) {
+      return JSON.stringify(exports.CompletionResponseStreamChoice$outboundSchema.parse(completionResponseStreamChoice));
+    }
+    function completionResponseStreamChoiceFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.CompletionResponseStreamChoice$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'CompletionResponseStreamChoice' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/completionchunk.js
+var require_completionchunk = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/completionchunk.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.CompletionChunk$ = exports.CompletionChunk$outboundSchema = exports.CompletionChunk$inboundSchema = void 0;
+    exports.completionChunkToJSON = completionChunkToJSON;
+    exports.completionChunkFromJSON = completionChunkFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var completionresponsestreamchoice_js_1 = require_completionresponsestreamchoice();
+    var usageinfo_js_1 = require_usageinfo();
+    exports.CompletionChunk$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().optional(),
+      created: z6.number().int().optional(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$inboundSchema.optional(),
+      choices: z6.array(completionresponsestreamchoice_js_1.CompletionResponseStreamChoice$inboundSchema)
+    });
+    exports.CompletionChunk$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().optional(),
+      created: z6.number().int().optional(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$outboundSchema.optional(),
+      choices: z6.array(completionresponsestreamchoice_js_1.CompletionResponseStreamChoice$outboundSchema)
+    });
+    var CompletionChunk$;
+    (function(CompletionChunk$2) {
+      CompletionChunk$2.inboundSchema = exports.CompletionChunk$inboundSchema;
+      CompletionChunk$2.outboundSchema = exports.CompletionChunk$outboundSchema;
+    })(CompletionChunk$ || (exports.CompletionChunk$ = CompletionChunk$ = {}));
+    function completionChunkToJSON(completionChunk) {
+      return JSON.stringify(exports.CompletionChunk$outboundSchema.parse(completionChunk));
+    }
+    function completionChunkFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.CompletionChunk$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'CompletionChunk' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/completionevent.js
+var require_completionevent = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/completionevent.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.CompletionEvent$ = exports.CompletionEvent$outboundSchema = exports.CompletionEvent$inboundSchema = void 0;
+    exports.completionEventToJSON = completionEventToJSON;
+    exports.completionEventFromJSON = completionEventFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var completionchunk_js_1 = require_completionchunk();
+    exports.CompletionEvent$inboundSchema = z6.object({
+      data: z6.string().transform((v5, ctx) => {
+        try {
+          return JSON.parse(v5);
+        } catch (err) {
+          ctx.addIssue({
+            code: z6.ZodIssueCode.custom,
+            message: `malformed json: ${err}`
+          });
+          return z6.NEVER;
+        }
+      }).pipe(completionchunk_js_1.CompletionChunk$inboundSchema)
+    });
+    exports.CompletionEvent$outboundSchema = z6.object({
+      data: completionchunk_js_1.CompletionChunk$outboundSchema
+    });
+    var CompletionEvent$;
+    (function(CompletionEvent$2) {
+      CompletionEvent$2.inboundSchema = exports.CompletionEvent$inboundSchema;
+      CompletionEvent$2.outboundSchema = exports.CompletionEvent$outboundSchema;
+    })(CompletionEvent$ || (exports.CompletionEvent$ = CompletionEvent$ = {}));
+    function completionEventToJSON(completionEvent) {
+      return JSON.stringify(exports.CompletionEvent$outboundSchema.parse(completionEvent));
+    }
+    function completionEventFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.CompletionEvent$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'CompletionEvent' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/deletefileout.js
+var require_deletefileout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/deletefileout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DeleteFileOut$ = exports.DeleteFileOut$outboundSchema = exports.DeleteFileOut$inboundSchema = void 0;
+    exports.deleteFileOutToJSON = deleteFileOutToJSON;
+    exports.deleteFileOutFromJSON = deleteFileOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.DeleteFileOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      deleted: z6.boolean()
+    });
+    exports.DeleteFileOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      deleted: z6.boolean()
+    });
+    var DeleteFileOut$;
+    (function(DeleteFileOut$2) {
+      DeleteFileOut$2.inboundSchema = exports.DeleteFileOut$inboundSchema;
+      DeleteFileOut$2.outboundSchema = exports.DeleteFileOut$outboundSchema;
+    })(DeleteFileOut$ || (exports.DeleteFileOut$ = DeleteFileOut$ = {}));
+    function deleteFileOutToJSON(deleteFileOut) {
+      return JSON.stringify(exports.DeleteFileOut$outboundSchema.parse(deleteFileOut));
+    }
+    function deleteFileOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.DeleteFileOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'DeleteFileOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/deletemodelout.js
+var require_deletemodelout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/deletemodelout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DeleteModelOut$ = exports.DeleteModelOut$outboundSchema = exports.DeleteModelOut$inboundSchema = void 0;
+    exports.deleteModelOutToJSON = deleteModelOutToJSON;
+    exports.deleteModelOutFromJSON = deleteModelOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.DeleteModelOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().default("model"),
+      deleted: z6.boolean().default(true)
+    });
+    exports.DeleteModelOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().default("model"),
+      deleted: z6.boolean().default(true)
+    });
+    var DeleteModelOut$;
+    (function(DeleteModelOut$2) {
+      DeleteModelOut$2.inboundSchema = exports.DeleteModelOut$inboundSchema;
+      DeleteModelOut$2.outboundSchema = exports.DeleteModelOut$outboundSchema;
+    })(DeleteModelOut$ || (exports.DeleteModelOut$ = DeleteModelOut$ = {}));
+    function deleteModelOutToJSON(deleteModelOut) {
+      return JSON.stringify(exports.DeleteModelOut$outboundSchema.parse(deleteModelOut));
+    }
+    function deleteModelOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.DeleteModelOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'DeleteModelOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/eventout.js
+var require_eventout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/eventout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.EventOut$ = exports.EventOut$outboundSchema = exports.EventOut$inboundSchema = void 0;
+    exports.eventOutToJSON = eventOutToJSON;
+    exports.eventOutFromJSON = eventOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.EventOut$inboundSchema = z6.object({
+      name: z6.string(),
+      data: z6.nullable(z6.record(z6.any())).optional(),
+      created_at: z6.number().int()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "created_at": "createdAt"
+      });
+    });
+    exports.EventOut$outboundSchema = z6.object({
+      name: z6.string(),
+      data: z6.nullable(z6.record(z6.any())).optional(),
+      createdAt: z6.number().int()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        createdAt: "created_at"
+      });
+    });
+    var EventOut$;
+    (function(EventOut$2) {
+      EventOut$2.inboundSchema = exports.EventOut$inboundSchema;
+      EventOut$2.outboundSchema = exports.EventOut$outboundSchema;
+    })(EventOut$ || (exports.EventOut$ = EventOut$ = {}));
+    function eventOutToJSON(eventOut) {
+      return JSON.stringify(exports.EventOut$outboundSchema.parse(eventOut));
+    }
+    function eventOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.EventOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'EventOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/githubrepositoryout.js
+var require_githubrepositoryout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/githubrepositoryout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.GithubRepositoryOut$ = exports.GithubRepositoryOut$outboundSchema = exports.GithubRepositoryOut$inboundSchema = exports.GithubRepositoryOutType$ = exports.GithubRepositoryOutType$outboundSchema = exports.GithubRepositoryOutType$inboundSchema = exports.GithubRepositoryOutType = void 0;
+    exports.githubRepositoryOutToJSON = githubRepositoryOutToJSON;
+    exports.githubRepositoryOutFromJSON = githubRepositoryOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.GithubRepositoryOutType = {
+      Github: "github"
+    };
+    exports.GithubRepositoryOutType$inboundSchema = z6.nativeEnum(exports.GithubRepositoryOutType);
+    exports.GithubRepositoryOutType$outboundSchema = exports.GithubRepositoryOutType$inboundSchema;
+    var GithubRepositoryOutType$;
+    (function(GithubRepositoryOutType$2) {
+      GithubRepositoryOutType$2.inboundSchema = exports.GithubRepositoryOutType$inboundSchema;
+      GithubRepositoryOutType$2.outboundSchema = exports.GithubRepositoryOutType$outboundSchema;
+    })(GithubRepositoryOutType$ || (exports.GithubRepositoryOutType$ = GithubRepositoryOutType$ = {}));
+    exports.GithubRepositoryOut$inboundSchema = z6.object({
+      type: z6.literal("github").default("github"),
+      name: z6.string(),
+      owner: z6.string(),
+      ref: z6.nullable(z6.string()).optional(),
+      weight: z6.number().default(1),
+      commit_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "commit_id": "commitId"
+      });
+    });
+    exports.GithubRepositoryOut$outboundSchema = z6.object({
+      type: z6.literal("github").default("github"),
+      name: z6.string(),
+      owner: z6.string(),
+      ref: z6.nullable(z6.string()).optional(),
+      weight: z6.number().default(1),
+      commitId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        commitId: "commit_id"
+      });
+    });
+    var GithubRepositoryOut$;
+    (function(GithubRepositoryOut$2) {
+      GithubRepositoryOut$2.inboundSchema = exports.GithubRepositoryOut$inboundSchema;
+      GithubRepositoryOut$2.outboundSchema = exports.GithubRepositoryOut$outboundSchema;
+    })(GithubRepositoryOut$ || (exports.GithubRepositoryOut$ = GithubRepositoryOut$ = {}));
+    function githubRepositoryOutToJSON(githubRepositoryOut) {
+      return JSON.stringify(exports.GithubRepositoryOut$outboundSchema.parse(githubRepositoryOut));
+    }
+    function githubRepositoryOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.GithubRepositoryOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'GithubRepositoryOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/jobmetadataout.js
+var require_jobmetadataout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/jobmetadataout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobMetadataOut$ = exports.JobMetadataOut$outboundSchema = exports.JobMetadataOut$inboundSchema = void 0;
+    exports.jobMetadataOutToJSON = jobMetadataOutToJSON;
+    exports.jobMetadataOutFromJSON = jobMetadataOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobMetadataOut$inboundSchema = z6.object({
+      expected_duration_seconds: z6.nullable(z6.number().int()).optional(),
+      cost: z6.nullable(z6.number()).optional(),
+      cost_currency: z6.nullable(z6.string()).optional(),
+      train_tokens_per_step: z6.nullable(z6.number().int()).optional(),
+      train_tokens: z6.nullable(z6.number().int()).optional(),
+      data_tokens: z6.nullable(z6.number().int()).optional(),
+      estimated_start_time: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "expected_duration_seconds": "expectedDurationSeconds",
+        "cost_currency": "costCurrency",
+        "train_tokens_per_step": "trainTokensPerStep",
+        "train_tokens": "trainTokens",
+        "data_tokens": "dataTokens",
+        "estimated_start_time": "estimatedStartTime"
+      });
+    });
+    exports.JobMetadataOut$outboundSchema = z6.object({
+      expectedDurationSeconds: z6.nullable(z6.number().int()).optional(),
+      cost: z6.nullable(z6.number()).optional(),
+      costCurrency: z6.nullable(z6.string()).optional(),
+      trainTokensPerStep: z6.nullable(z6.number().int()).optional(),
+      trainTokens: z6.nullable(z6.number().int()).optional(),
+      dataTokens: z6.nullable(z6.number().int()).optional(),
+      estimatedStartTime: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        expectedDurationSeconds: "expected_duration_seconds",
+        costCurrency: "cost_currency",
+        trainTokensPerStep: "train_tokens_per_step",
+        trainTokens: "train_tokens",
+        dataTokens: "data_tokens",
+        estimatedStartTime: "estimated_start_time"
+      });
+    });
+    var JobMetadataOut$;
+    (function(JobMetadataOut$2) {
+      JobMetadataOut$2.inboundSchema = exports.JobMetadataOut$inboundSchema;
+      JobMetadataOut$2.outboundSchema = exports.JobMetadataOut$outboundSchema;
+    })(JobMetadataOut$ || (exports.JobMetadataOut$ = JobMetadataOut$ = {}));
+    function jobMetadataOutToJSON(jobMetadataOut) {
+      return JSON.stringify(exports.JobMetadataOut$outboundSchema.parse(jobMetadataOut));
+    }
+    function jobMetadataOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobMetadataOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobMetadataOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/trainingparameters.js
+var require_trainingparameters = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/trainingparameters.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.TrainingParameters$ = exports.TrainingParameters$outboundSchema = exports.TrainingParameters$inboundSchema = void 0;
+    exports.trainingParametersToJSON = trainingParametersToJSON;
+    exports.trainingParametersFromJSON = trainingParametersFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.TrainingParameters$inboundSchema = z6.object({
+      training_steps: z6.nullable(z6.number().int()).optional(),
+      learning_rate: z6.number().default(1e-4),
+      weight_decay: z6.nullable(z6.number()).optional(),
+      warmup_fraction: z6.nullable(z6.number()).optional(),
+      epochs: z6.nullable(z6.number()).optional(),
+      fim_ratio: z6.nullable(z6.number()).optional(),
+      seq_len: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "training_steps": "trainingSteps",
+        "learning_rate": "learningRate",
+        "weight_decay": "weightDecay",
+        "warmup_fraction": "warmupFraction",
+        "fim_ratio": "fimRatio",
+        "seq_len": "seqLen"
+      });
+    });
+    exports.TrainingParameters$outboundSchema = z6.object({
+      trainingSteps: z6.nullable(z6.number().int()).optional(),
+      learningRate: z6.number().default(1e-4),
+      weightDecay: z6.nullable(z6.number()).optional(),
+      warmupFraction: z6.nullable(z6.number()).optional(),
+      epochs: z6.nullable(z6.number()).optional(),
+      fimRatio: z6.nullable(z6.number()).optional(),
+      seqLen: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        trainingSteps: "training_steps",
+        learningRate: "learning_rate",
+        weightDecay: "weight_decay",
+        warmupFraction: "warmup_fraction",
+        fimRatio: "fim_ratio",
+        seqLen: "seq_len"
+      });
+    });
+    var TrainingParameters$;
+    (function(TrainingParameters$2) {
+      TrainingParameters$2.inboundSchema = exports.TrainingParameters$inboundSchema;
+      TrainingParameters$2.outboundSchema = exports.TrainingParameters$outboundSchema;
+    })(TrainingParameters$ || (exports.TrainingParameters$ = TrainingParameters$ = {}));
+    function trainingParametersToJSON(trainingParameters) {
+      return JSON.stringify(exports.TrainingParameters$outboundSchema.parse(trainingParameters));
+    }
+    function trainingParametersFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.TrainingParameters$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'TrainingParameters' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/wandbintegrationout.js
+var require_wandbintegrationout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/wandbintegrationout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.WandbIntegrationOut$ = exports.WandbIntegrationOut$outboundSchema = exports.WandbIntegrationOut$inboundSchema = exports.WandbIntegrationOutType$ = exports.WandbIntegrationOutType$outboundSchema = exports.WandbIntegrationOutType$inboundSchema = exports.WandbIntegrationOutType = void 0;
+    exports.wandbIntegrationOutToJSON = wandbIntegrationOutToJSON;
+    exports.wandbIntegrationOutFromJSON = wandbIntegrationOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.WandbIntegrationOutType = {
+      Wandb: "wandb"
+    };
+    exports.WandbIntegrationOutType$inboundSchema = z6.nativeEnum(exports.WandbIntegrationOutType);
+    exports.WandbIntegrationOutType$outboundSchema = exports.WandbIntegrationOutType$inboundSchema;
+    var WandbIntegrationOutType$;
+    (function(WandbIntegrationOutType$2) {
+      WandbIntegrationOutType$2.inboundSchema = exports.WandbIntegrationOutType$inboundSchema;
+      WandbIntegrationOutType$2.outboundSchema = exports.WandbIntegrationOutType$outboundSchema;
+    })(WandbIntegrationOutType$ || (exports.WandbIntegrationOutType$ = WandbIntegrationOutType$ = {}));
+    exports.WandbIntegrationOut$inboundSchema = z6.object({
+      type: z6.literal("wandb").default("wandb"),
+      project: z6.string(),
+      name: z6.nullable(z6.string()).optional(),
+      run_name: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "run_name": "runName"
+      });
+    });
+    exports.WandbIntegrationOut$outboundSchema = z6.object({
+      type: z6.literal("wandb").default("wandb"),
+      project: z6.string(),
+      name: z6.nullable(z6.string()).optional(),
+      runName: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        runName: "run_name"
+      });
+    });
+    var WandbIntegrationOut$;
+    (function(WandbIntegrationOut$2) {
+      WandbIntegrationOut$2.inboundSchema = exports.WandbIntegrationOut$inboundSchema;
+      WandbIntegrationOut$2.outboundSchema = exports.WandbIntegrationOut$outboundSchema;
+    })(WandbIntegrationOut$ || (exports.WandbIntegrationOut$ = WandbIntegrationOut$ = {}));
+    function wandbIntegrationOutToJSON(wandbIntegrationOut) {
+      return JSON.stringify(exports.WandbIntegrationOut$outboundSchema.parse(wandbIntegrationOut));
+    }
+    function wandbIntegrationOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.WandbIntegrationOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'WandbIntegrationOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/detailedjobout.js
+var require_detailedjobout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/detailedjobout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DetailedJobOut$ = exports.DetailedJobOut$outboundSchema = exports.DetailedJobOut$inboundSchema = exports.DetailedJobOutRepositories$ = exports.DetailedJobOutRepositories$outboundSchema = exports.DetailedJobOutRepositories$inboundSchema = exports.DetailedJobOutIntegrations$ = exports.DetailedJobOutIntegrations$outboundSchema = exports.DetailedJobOutIntegrations$inboundSchema = exports.DetailedJobOutObject$ = exports.DetailedJobOutObject$outboundSchema = exports.DetailedJobOutObject$inboundSchema = exports.DetailedJobOutStatus$ = exports.DetailedJobOutStatus$outboundSchema = exports.DetailedJobOutStatus$inboundSchema = exports.DetailedJobOutObject = exports.DetailedJobOutStatus = void 0;
+    exports.detailedJobOutIntegrationsToJSON = detailedJobOutIntegrationsToJSON;
+    exports.detailedJobOutIntegrationsFromJSON = detailedJobOutIntegrationsFromJSON;
+    exports.detailedJobOutRepositoriesToJSON = detailedJobOutRepositoriesToJSON;
+    exports.detailedJobOutRepositoriesFromJSON = detailedJobOutRepositoriesFromJSON;
+    exports.detailedJobOutToJSON = detailedJobOutToJSON;
+    exports.detailedJobOutFromJSON = detailedJobOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var checkpointout_js_1 = require_checkpointout();
+    var eventout_js_1 = require_eventout();
+    var githubrepositoryout_js_1 = require_githubrepositoryout();
+    var jobmetadataout_js_1 = require_jobmetadataout();
+    var trainingparameters_js_1 = require_trainingparameters();
+    var wandbintegrationout_js_1 = require_wandbintegrationout();
+    exports.DetailedJobOutStatus = {
+      Queued: "QUEUED",
+      Started: "STARTED",
+      Validating: "VALIDATING",
+      Validated: "VALIDATED",
+      Running: "RUNNING",
+      FailedValidation: "FAILED_VALIDATION",
+      Failed: "FAILED",
+      Success: "SUCCESS",
+      Cancelled: "CANCELLED",
+      CancellationRequested: "CANCELLATION_REQUESTED"
+    };
+    exports.DetailedJobOutObject = {
+      Job: "job"
+    };
+    exports.DetailedJobOutStatus$inboundSchema = z6.nativeEnum(exports.DetailedJobOutStatus);
+    exports.DetailedJobOutStatus$outboundSchema = exports.DetailedJobOutStatus$inboundSchema;
+    var DetailedJobOutStatus$;
+    (function(DetailedJobOutStatus$2) {
+      DetailedJobOutStatus$2.inboundSchema = exports.DetailedJobOutStatus$inboundSchema;
+      DetailedJobOutStatus$2.outboundSchema = exports.DetailedJobOutStatus$outboundSchema;
+    })(DetailedJobOutStatus$ || (exports.DetailedJobOutStatus$ = DetailedJobOutStatus$ = {}));
+    exports.DetailedJobOutObject$inboundSchema = z6.nativeEnum(exports.DetailedJobOutObject);
+    exports.DetailedJobOutObject$outboundSchema = exports.DetailedJobOutObject$inboundSchema;
+    var DetailedJobOutObject$;
+    (function(DetailedJobOutObject$2) {
+      DetailedJobOutObject$2.inboundSchema = exports.DetailedJobOutObject$inboundSchema;
+      DetailedJobOutObject$2.outboundSchema = exports.DetailedJobOutObject$outboundSchema;
+    })(DetailedJobOutObject$ || (exports.DetailedJobOutObject$ = DetailedJobOutObject$ = {}));
+    exports.DetailedJobOutIntegrations$inboundSchema = wandbintegrationout_js_1.WandbIntegrationOut$inboundSchema;
+    exports.DetailedJobOutIntegrations$outboundSchema = wandbintegrationout_js_1.WandbIntegrationOut$outboundSchema;
+    var DetailedJobOutIntegrations$;
+    (function(DetailedJobOutIntegrations$2) {
+      DetailedJobOutIntegrations$2.inboundSchema = exports.DetailedJobOutIntegrations$inboundSchema;
+      DetailedJobOutIntegrations$2.outboundSchema = exports.DetailedJobOutIntegrations$outboundSchema;
+    })(DetailedJobOutIntegrations$ || (exports.DetailedJobOutIntegrations$ = DetailedJobOutIntegrations$ = {}));
+    function detailedJobOutIntegrationsToJSON(detailedJobOutIntegrations) {
+      return JSON.stringify(exports.DetailedJobOutIntegrations$outboundSchema.parse(detailedJobOutIntegrations));
+    }
+    function detailedJobOutIntegrationsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.DetailedJobOutIntegrations$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'DetailedJobOutIntegrations' from JSON`);
+    }
+    exports.DetailedJobOutRepositories$inboundSchema = githubrepositoryout_js_1.GithubRepositoryOut$inboundSchema;
+    exports.DetailedJobOutRepositories$outboundSchema = githubrepositoryout_js_1.GithubRepositoryOut$outboundSchema;
+    var DetailedJobOutRepositories$;
+    (function(DetailedJobOutRepositories$2) {
+      DetailedJobOutRepositories$2.inboundSchema = exports.DetailedJobOutRepositories$inboundSchema;
+      DetailedJobOutRepositories$2.outboundSchema = exports.DetailedJobOutRepositories$outboundSchema;
+    })(DetailedJobOutRepositories$ || (exports.DetailedJobOutRepositories$ = DetailedJobOutRepositories$ = {}));
+    function detailedJobOutRepositoriesToJSON(detailedJobOutRepositories) {
+      return JSON.stringify(exports.DetailedJobOutRepositories$outboundSchema.parse(detailedJobOutRepositories));
+    }
+    function detailedJobOutRepositoriesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.DetailedJobOutRepositories$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'DetailedJobOutRepositories' from JSON`);
+    }
+    exports.DetailedJobOut$inboundSchema = z6.object({
+      id: z6.string(),
+      auto_start: z6.boolean(),
+      hyperparameters: trainingparameters_js_1.TrainingParameters$inboundSchema,
+      model: z6.string(),
+      status: exports.DetailedJobOutStatus$inboundSchema,
+      job_type: z6.string(),
+      created_at: z6.number().int(),
+      modified_at: z6.number().int(),
+      training_files: z6.array(z6.string()),
+      validation_files: z6.nullable(z6.array(z6.string())).optional(),
+      object: z6.literal("job").default("job"),
+      fine_tuned_model: z6.nullable(z6.string()).optional(),
+      suffix: z6.nullable(z6.string()).optional(),
+      integrations: z6.nullable(z6.array(wandbintegrationout_js_1.WandbIntegrationOut$inboundSchema)).optional(),
+      trained_tokens: z6.nullable(z6.number().int()).optional(),
+      repositories: z6.array(githubrepositoryout_js_1.GithubRepositoryOut$inboundSchema).optional(),
+      metadata: z6.nullable(jobmetadataout_js_1.JobMetadataOut$inboundSchema).optional(),
+      events: z6.array(eventout_js_1.EventOut$inboundSchema).optional(),
+      checkpoints: z6.array(checkpointout_js_1.CheckpointOut$inboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "auto_start": "autoStart",
+        "job_type": "jobType",
+        "created_at": "createdAt",
+        "modified_at": "modifiedAt",
+        "training_files": "trainingFiles",
+        "validation_files": "validationFiles",
+        "fine_tuned_model": "fineTunedModel",
+        "trained_tokens": "trainedTokens"
+      });
+    });
+    exports.DetailedJobOut$outboundSchema = z6.object({
+      id: z6.string(),
+      autoStart: z6.boolean(),
+      hyperparameters: trainingparameters_js_1.TrainingParameters$outboundSchema,
+      model: z6.string(),
+      status: exports.DetailedJobOutStatus$outboundSchema,
+      jobType: z6.string(),
+      createdAt: z6.number().int(),
+      modifiedAt: z6.number().int(),
+      trainingFiles: z6.array(z6.string()),
+      validationFiles: z6.nullable(z6.array(z6.string())).optional(),
+      object: z6.literal("job").default("job"),
+      fineTunedModel: z6.nullable(z6.string()).optional(),
+      suffix: z6.nullable(z6.string()).optional(),
+      integrations: z6.nullable(z6.array(wandbintegrationout_js_1.WandbIntegrationOut$outboundSchema)).optional(),
+      trainedTokens: z6.nullable(z6.number().int()).optional(),
+      repositories: z6.array(githubrepositoryout_js_1.GithubRepositoryOut$outboundSchema).optional(),
+      metadata: z6.nullable(jobmetadataout_js_1.JobMetadataOut$outboundSchema).optional(),
+      events: z6.array(eventout_js_1.EventOut$outboundSchema).optional(),
+      checkpoints: z6.array(checkpointout_js_1.CheckpointOut$outboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        autoStart: "auto_start",
+        jobType: "job_type",
+        createdAt: "created_at",
+        modifiedAt: "modified_at",
+        trainingFiles: "training_files",
+        validationFiles: "validation_files",
+        fineTunedModel: "fine_tuned_model",
+        trainedTokens: "trained_tokens"
+      });
+    });
+    var DetailedJobOut$;
+    (function(DetailedJobOut$2) {
+      DetailedJobOut$2.inboundSchema = exports.DetailedJobOut$inboundSchema;
+      DetailedJobOut$2.outboundSchema = exports.DetailedJobOut$outboundSchema;
+    })(DetailedJobOut$ || (exports.DetailedJobOut$ = DetailedJobOut$ = {}));
+    function detailedJobOutToJSON(detailedJobOut) {
+      return JSON.stringify(exports.DetailedJobOut$outboundSchema.parse(detailedJobOut));
+    }
+    function detailedJobOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.DetailedJobOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'DetailedJobOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/embeddingrequest.js
+var require_embeddingrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/embeddingrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.EmbeddingRequest$ = exports.EmbeddingRequest$outboundSchema = exports.EmbeddingRequest$inboundSchema = exports.Inputs$ = exports.Inputs$outboundSchema = exports.Inputs$inboundSchema = void 0;
+    exports.inputsToJSON = inputsToJSON;
+    exports.inputsFromJSON = inputsFromJSON;
+    exports.embeddingRequestToJSON = embeddingRequestToJSON;
+    exports.embeddingRequestFromJSON = embeddingRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.Inputs$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.Inputs$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var Inputs$;
+    (function(Inputs$2) {
+      Inputs$2.inboundSchema = exports.Inputs$inboundSchema;
+      Inputs$2.outboundSchema = exports.Inputs$outboundSchema;
+    })(Inputs$ || (exports.Inputs$ = Inputs$ = {}));
+    function inputsToJSON(inputs) {
+      return JSON.stringify(exports.Inputs$outboundSchema.parse(inputs));
+    }
+    function inputsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Inputs$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Inputs' from JSON`);
+    }
+    exports.EmbeddingRequest$inboundSchema = z6.object({
+      input: z6.union([z6.string(), z6.array(z6.string())]),
+      model: z6.string().default("mistral-embed"),
+      encoding_format: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "input": "inputs",
+        "encoding_format": "encodingFormat"
+      });
+    });
+    exports.EmbeddingRequest$outboundSchema = z6.object({
+      inputs: z6.union([z6.string(), z6.array(z6.string())]),
+      model: z6.string().default("mistral-embed"),
+      encodingFormat: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        inputs: "input",
+        encodingFormat: "encoding_format"
+      });
+    });
+    var EmbeddingRequest$;
+    (function(EmbeddingRequest$2) {
+      EmbeddingRequest$2.inboundSchema = exports.EmbeddingRequest$inboundSchema;
+      EmbeddingRequest$2.outboundSchema = exports.EmbeddingRequest$outboundSchema;
+    })(EmbeddingRequest$ || (exports.EmbeddingRequest$ = EmbeddingRequest$ = {}));
+    function embeddingRequestToJSON(embeddingRequest) {
+      return JSON.stringify(exports.EmbeddingRequest$outboundSchema.parse(embeddingRequest));
+    }
+    function embeddingRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.EmbeddingRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'EmbeddingRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/embeddingresponsedata.js
+var require_embeddingresponsedata = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/embeddingresponsedata.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.EmbeddingResponseData$ = exports.EmbeddingResponseData$outboundSchema = exports.EmbeddingResponseData$inboundSchema = void 0;
+    exports.embeddingResponseDataToJSON = embeddingResponseDataToJSON;
+    exports.embeddingResponseDataFromJSON = embeddingResponseDataFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.EmbeddingResponseData$inboundSchema = z6.object({
+      object: z6.string().optional(),
+      embedding: z6.array(z6.number()).optional(),
+      index: z6.number().int().optional()
+    });
+    exports.EmbeddingResponseData$outboundSchema = z6.object({
+      object: z6.string().optional(),
+      embedding: z6.array(z6.number()).optional(),
+      index: z6.number().int().optional()
+    });
+    var EmbeddingResponseData$;
+    (function(EmbeddingResponseData$2) {
+      EmbeddingResponseData$2.inboundSchema = exports.EmbeddingResponseData$inboundSchema;
+      EmbeddingResponseData$2.outboundSchema = exports.EmbeddingResponseData$outboundSchema;
+    })(EmbeddingResponseData$ || (exports.EmbeddingResponseData$ = EmbeddingResponseData$ = {}));
+    function embeddingResponseDataToJSON(embeddingResponseData) {
+      return JSON.stringify(exports.EmbeddingResponseData$outboundSchema.parse(embeddingResponseData));
+    }
+    function embeddingResponseDataFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.EmbeddingResponseData$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'EmbeddingResponseData' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/embeddingresponse.js
+var require_embeddingresponse = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/embeddingresponse.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.EmbeddingResponse$ = exports.EmbeddingResponse$outboundSchema = exports.EmbeddingResponse$inboundSchema = void 0;
+    exports.embeddingResponseToJSON = embeddingResponseToJSON;
+    exports.embeddingResponseFromJSON = embeddingResponseFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var embeddingresponsedata_js_1 = require_embeddingresponsedata();
+    var usageinfo_js_1 = require_usageinfo();
+    exports.EmbeddingResponse$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$inboundSchema,
+      data: z6.array(embeddingresponsedata_js_1.EmbeddingResponseData$inboundSchema)
+    });
+    exports.EmbeddingResponse$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$outboundSchema,
+      data: z6.array(embeddingresponsedata_js_1.EmbeddingResponseData$outboundSchema)
+    });
+    var EmbeddingResponse$;
+    (function(EmbeddingResponse$2) {
+      EmbeddingResponse$2.inboundSchema = exports.EmbeddingResponse$inboundSchema;
+      EmbeddingResponse$2.outboundSchema = exports.EmbeddingResponse$outboundSchema;
+    })(EmbeddingResponse$ || (exports.EmbeddingResponse$ = EmbeddingResponse$ = {}));
+    function embeddingResponseToJSON(embeddingResponse) {
+      return JSON.stringify(exports.EmbeddingResponse$outboundSchema.parse(embeddingResponse));
+    }
+    function embeddingResponseFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.EmbeddingResponse$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'EmbeddingResponse' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/filepurpose.js
+var require_filepurpose = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/filepurpose.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FilePurpose$ = exports.FilePurpose$outboundSchema = exports.FilePurpose$inboundSchema = exports.FilePurpose = void 0;
+    var z6 = __importStar2(require_lib4());
+    var enums_js_1 = require_enums();
+    exports.FilePurpose = {
+      FineTune: "fine-tune",
+      Batch: "batch"
+    };
+    exports.FilePurpose$inboundSchema = z6.union([
+      z6.nativeEnum(exports.FilePurpose),
+      z6.string().transform(enums_js_1.catchUnrecognizedEnum)
+    ]);
+    exports.FilePurpose$outboundSchema = z6.union([
+      z6.nativeEnum(exports.FilePurpose),
+      z6.string().and(z6.custom())
+    ]);
+    var FilePurpose$;
+    (function(FilePurpose$2) {
+      FilePurpose$2.inboundSchema = exports.FilePurpose$inboundSchema;
+      FilePurpose$2.outboundSchema = exports.FilePurpose$outboundSchema;
+    })(FilePurpose$ || (exports.FilePurpose$ = FilePurpose$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/sampletype.js
+var require_sampletype = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/sampletype.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.SampleType$ = exports.SampleType$outboundSchema = exports.SampleType$inboundSchema = exports.SampleType = void 0;
+    var z6 = __importStar2(require_lib4());
+    var enums_js_1 = require_enums();
+    exports.SampleType = {
+      Pretrain: "pretrain",
+      Instruct: "instruct",
+      BatchRequest: "batch_request",
+      BatchResult: "batch_result",
+      BatchError: "batch_error"
+    };
+    exports.SampleType$inboundSchema = z6.union([
+      z6.nativeEnum(exports.SampleType),
+      z6.string().transform(enums_js_1.catchUnrecognizedEnum)
+    ]);
+    exports.SampleType$outboundSchema = z6.union([
+      z6.nativeEnum(exports.SampleType),
+      z6.string().and(z6.custom())
+    ]);
+    var SampleType$;
+    (function(SampleType$2) {
+      SampleType$2.inboundSchema = exports.SampleType$inboundSchema;
+      SampleType$2.outboundSchema = exports.SampleType$outboundSchema;
+    })(SampleType$ || (exports.SampleType$ = SampleType$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/source.js
+var require_source = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/source.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Source$ = exports.Source$outboundSchema = exports.Source$inboundSchema = exports.Source = void 0;
+    var z6 = __importStar2(require_lib4());
+    var enums_js_1 = require_enums();
+    exports.Source = {
+      Upload: "upload",
+      Repository: "repository",
+      Mistral: "mistral"
+    };
+    exports.Source$inboundSchema = z6.union([
+      z6.nativeEnum(exports.Source),
+      z6.string().transform(enums_js_1.catchUnrecognizedEnum)
+    ]);
+    exports.Source$outboundSchema = z6.union([
+      z6.nativeEnum(exports.Source),
+      z6.string().and(z6.custom())
+    ]);
+    var Source$;
+    (function(Source$2) {
+      Source$2.inboundSchema = exports.Source$inboundSchema;
+      Source$2.outboundSchema = exports.Source$outboundSchema;
+    })(Source$ || (exports.Source$ = Source$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/fileschema.js
+var require_fileschema = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/fileschema.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FileSchema$ = exports.FileSchema$outboundSchema = exports.FileSchema$inboundSchema = void 0;
+    exports.fileSchemaToJSON = fileSchemaToJSON;
+    exports.fileSchemaFromJSON = fileSchemaFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var filepurpose_js_1 = require_filepurpose();
+    var sampletype_js_1 = require_sampletype();
+    var source_js_1 = require_source();
+    exports.FileSchema$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      bytes: z6.number().int(),
+      created_at: z6.number().int(),
+      filename: z6.string(),
+      purpose: filepurpose_js_1.FilePurpose$inboundSchema,
+      sample_type: sampletype_js_1.SampleType$inboundSchema,
+      num_lines: z6.nullable(z6.number().int()).optional(),
+      source: source_js_1.Source$inboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "created_at": "createdAt",
+        "sample_type": "sampleType",
+        "num_lines": "numLines"
+      });
+    });
+    exports.FileSchema$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      bytes: z6.number().int(),
+      createdAt: z6.number().int(),
+      filename: z6.string(),
+      purpose: filepurpose_js_1.FilePurpose$outboundSchema,
+      sampleType: sampletype_js_1.SampleType$outboundSchema,
+      numLines: z6.nullable(z6.number().int()).optional(),
+      source: source_js_1.Source$outboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        createdAt: "created_at",
+        sampleType: "sample_type",
+        numLines: "num_lines"
+      });
+    });
+    var FileSchema$;
+    (function(FileSchema$2) {
+      FileSchema$2.inboundSchema = exports.FileSchema$inboundSchema;
+      FileSchema$2.outboundSchema = exports.FileSchema$outboundSchema;
+    })(FileSchema$ || (exports.FileSchema$ = FileSchema$ = {}));
+    function fileSchemaToJSON(fileSchema) {
+      return JSON.stringify(exports.FileSchema$outboundSchema.parse(fileSchema));
+    }
+    function fileSchemaFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FileSchema$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FileSchema' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/filesignedurl.js
+var require_filesignedurl = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/filesignedurl.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FileSignedURL$ = exports.FileSignedURL$outboundSchema = exports.FileSignedURL$inboundSchema = void 0;
+    exports.fileSignedURLToJSON = fileSignedURLToJSON;
+    exports.fileSignedURLFromJSON = fileSignedURLFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.FileSignedURL$inboundSchema = z6.object({
+      url: z6.string()
+    });
+    exports.FileSignedURL$outboundSchema = z6.object({
+      url: z6.string()
+    });
+    var FileSignedURL$;
+    (function(FileSignedURL$2) {
+      FileSignedURL$2.inboundSchema = exports.FileSignedURL$inboundSchema;
+      FileSignedURL$2.outboundSchema = exports.FileSignedURL$outboundSchema;
+    })(FileSignedURL$ || (exports.FileSignedURL$ = FileSignedURL$ = {}));
+    function fileSignedURLToJSON(fileSignedURL) {
+      return JSON.stringify(exports.FileSignedURL$outboundSchema.parse(fileSignedURL));
+    }
+    function fileSignedURLFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FileSignedURL$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FileSignedURL' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/fimcompletionrequest.js
+var require_fimcompletionrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/fimcompletionrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FIMCompletionRequest$ = exports.FIMCompletionRequest$outboundSchema = exports.FIMCompletionRequest$inboundSchema = exports.FIMCompletionRequestStop$ = exports.FIMCompletionRequestStop$outboundSchema = exports.FIMCompletionRequestStop$inboundSchema = void 0;
+    exports.fimCompletionRequestStopToJSON = fimCompletionRequestStopToJSON;
+    exports.fimCompletionRequestStopFromJSON = fimCompletionRequestStopFromJSON;
+    exports.fimCompletionRequestToJSON = fimCompletionRequestToJSON;
+    exports.fimCompletionRequestFromJSON = fimCompletionRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.FIMCompletionRequestStop$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.FIMCompletionRequestStop$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var FIMCompletionRequestStop$;
+    (function(FIMCompletionRequestStop$2) {
+      FIMCompletionRequestStop$2.inboundSchema = exports.FIMCompletionRequestStop$inboundSchema;
+      FIMCompletionRequestStop$2.outboundSchema = exports.FIMCompletionRequestStop$outboundSchema;
+    })(FIMCompletionRequestStop$ || (exports.FIMCompletionRequestStop$ = FIMCompletionRequestStop$ = {}));
+    function fimCompletionRequestStopToJSON(fimCompletionRequestStop) {
+      return JSON.stringify(exports.FIMCompletionRequestStop$outboundSchema.parse(fimCompletionRequestStop));
+    }
+    function fimCompletionRequestStopFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FIMCompletionRequestStop$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FIMCompletionRequestStop' from JSON`);
+    }
+    exports.FIMCompletionRequest$inboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      top_p: z6.number().default(1),
+      max_tokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(false),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      random_seed: z6.nullable(z6.number().int()).optional(),
+      prompt: z6.string(),
+      suffix: z6.nullable(z6.string()).optional(),
+      min_tokens: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "top_p": "topP",
+        "max_tokens": "maxTokens",
+        "random_seed": "randomSeed",
+        "min_tokens": "minTokens"
+      });
+    });
+    exports.FIMCompletionRequest$outboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      topP: z6.number().default(1),
+      maxTokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(false),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      randomSeed: z6.nullable(z6.number().int()).optional(),
+      prompt: z6.string(),
+      suffix: z6.nullable(z6.string()).optional(),
+      minTokens: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        topP: "top_p",
+        maxTokens: "max_tokens",
+        randomSeed: "random_seed",
+        minTokens: "min_tokens"
+      });
+    });
+    var FIMCompletionRequest$;
+    (function(FIMCompletionRequest$2) {
+      FIMCompletionRequest$2.inboundSchema = exports.FIMCompletionRequest$inboundSchema;
+      FIMCompletionRequest$2.outboundSchema = exports.FIMCompletionRequest$outboundSchema;
+    })(FIMCompletionRequest$ || (exports.FIMCompletionRequest$ = FIMCompletionRequest$ = {}));
+    function fimCompletionRequestToJSON(fimCompletionRequest) {
+      return JSON.stringify(exports.FIMCompletionRequest$outboundSchema.parse(fimCompletionRequest));
+    }
+    function fimCompletionRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FIMCompletionRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FIMCompletionRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/fimcompletionresponse.js
+var require_fimcompletionresponse = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/fimcompletionresponse.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FIMCompletionResponse$ = exports.FIMCompletionResponse$outboundSchema = exports.FIMCompletionResponse$inboundSchema = void 0;
+    exports.fimCompletionResponseToJSON = fimCompletionResponseToJSON;
+    exports.fimCompletionResponseFromJSON = fimCompletionResponseFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var chatcompletionchoice_js_1 = require_chatcompletionchoice();
+    var usageinfo_js_1 = require_usageinfo();
+    exports.FIMCompletionResponse$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$inboundSchema,
+      created: z6.number().int().optional(),
+      choices: z6.array(chatcompletionchoice_js_1.ChatCompletionChoice$inboundSchema).optional()
+    });
+    exports.FIMCompletionResponse$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      model: z6.string(),
+      usage: usageinfo_js_1.UsageInfo$outboundSchema,
+      created: z6.number().int().optional(),
+      choices: z6.array(chatcompletionchoice_js_1.ChatCompletionChoice$outboundSchema).optional()
+    });
+    var FIMCompletionResponse$;
+    (function(FIMCompletionResponse$2) {
+      FIMCompletionResponse$2.inboundSchema = exports.FIMCompletionResponse$inboundSchema;
+      FIMCompletionResponse$2.outboundSchema = exports.FIMCompletionResponse$outboundSchema;
+    })(FIMCompletionResponse$ || (exports.FIMCompletionResponse$ = FIMCompletionResponse$ = {}));
+    function fimCompletionResponseToJSON(fimCompletionResponse) {
+      return JSON.stringify(exports.FIMCompletionResponse$outboundSchema.parse(fimCompletionResponse));
+    }
+    function fimCompletionResponseFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FIMCompletionResponse$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FIMCompletionResponse' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/fimcompletionstreamrequest.js
+var require_fimcompletionstreamrequest = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/fimcompletionstreamrequest.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FIMCompletionStreamRequest$ = exports.FIMCompletionStreamRequest$outboundSchema = exports.FIMCompletionStreamRequest$inboundSchema = exports.FIMCompletionStreamRequestStop$ = exports.FIMCompletionStreamRequestStop$outboundSchema = exports.FIMCompletionStreamRequestStop$inboundSchema = void 0;
+    exports.fimCompletionStreamRequestStopToJSON = fimCompletionStreamRequestStopToJSON;
+    exports.fimCompletionStreamRequestStopFromJSON = fimCompletionStreamRequestStopFromJSON;
+    exports.fimCompletionStreamRequestToJSON = fimCompletionStreamRequestToJSON;
+    exports.fimCompletionStreamRequestFromJSON = fimCompletionStreamRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.FIMCompletionStreamRequestStop$inboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    exports.FIMCompletionStreamRequestStop$outboundSchema = z6.union([z6.string(), z6.array(z6.string())]);
+    var FIMCompletionStreamRequestStop$;
+    (function(FIMCompletionStreamRequestStop$2) {
+      FIMCompletionStreamRequestStop$2.inboundSchema = exports.FIMCompletionStreamRequestStop$inboundSchema;
+      FIMCompletionStreamRequestStop$2.outboundSchema = exports.FIMCompletionStreamRequestStop$outboundSchema;
+    })(FIMCompletionStreamRequestStop$ || (exports.FIMCompletionStreamRequestStop$ = FIMCompletionStreamRequestStop$ = {}));
+    function fimCompletionStreamRequestStopToJSON(fimCompletionStreamRequestStop) {
+      return JSON.stringify(exports.FIMCompletionStreamRequestStop$outboundSchema.parse(fimCompletionStreamRequestStop));
+    }
+    function fimCompletionStreamRequestStopFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FIMCompletionStreamRequestStop$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FIMCompletionStreamRequestStop' from JSON`);
+    }
+    exports.FIMCompletionStreamRequest$inboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      top_p: z6.number().default(1),
+      max_tokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(true),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      random_seed: z6.nullable(z6.number().int()).optional(),
+      prompt: z6.string(),
+      suffix: z6.nullable(z6.string()).optional(),
+      min_tokens: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "top_p": "topP",
+        "max_tokens": "maxTokens",
+        "random_seed": "randomSeed",
+        "min_tokens": "minTokens"
+      });
+    });
+    exports.FIMCompletionStreamRequest$outboundSchema = z6.object({
+      model: z6.nullable(z6.string()),
+      temperature: z6.nullable(z6.number()).optional(),
+      topP: z6.number().default(1),
+      maxTokens: z6.nullable(z6.number().int()).optional(),
+      stream: z6.boolean().default(true),
+      stop: z6.union([z6.string(), z6.array(z6.string())]).optional(),
+      randomSeed: z6.nullable(z6.number().int()).optional(),
+      prompt: z6.string(),
+      suffix: z6.nullable(z6.string()).optional(),
+      minTokens: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        topP: "top_p",
+        maxTokens: "max_tokens",
+        randomSeed: "random_seed",
+        minTokens: "min_tokens"
+      });
+    });
+    var FIMCompletionStreamRequest$;
+    (function(FIMCompletionStreamRequest$2) {
+      FIMCompletionStreamRequest$2.inboundSchema = exports.FIMCompletionStreamRequest$inboundSchema;
+      FIMCompletionStreamRequest$2.outboundSchema = exports.FIMCompletionStreamRequest$outboundSchema;
+    })(FIMCompletionStreamRequest$ || (exports.FIMCompletionStreamRequest$ = FIMCompletionStreamRequest$ = {}));
+    function fimCompletionStreamRequestToJSON(fimCompletionStreamRequest) {
+      return JSON.stringify(exports.FIMCompletionStreamRequest$outboundSchema.parse(fimCompletionStreamRequest));
+    }
+    function fimCompletionStreamRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FIMCompletionStreamRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FIMCompletionStreamRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/ftmodelcapabilitiesout.js
+var require_ftmodelcapabilitiesout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/ftmodelcapabilitiesout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FTModelCapabilitiesOut$ = exports.FTModelCapabilitiesOut$outboundSchema = exports.FTModelCapabilitiesOut$inboundSchema = void 0;
+    exports.ftModelCapabilitiesOutToJSON = ftModelCapabilitiesOutToJSON;
+    exports.ftModelCapabilitiesOutFromJSON = ftModelCapabilitiesOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.FTModelCapabilitiesOut$inboundSchema = z6.object({
+      completion_chat: z6.boolean().default(true),
+      completion_fim: z6.boolean().default(false),
+      function_calling: z6.boolean().default(false),
+      fine_tuning: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "completion_chat": "completionChat",
+        "completion_fim": "completionFim",
+        "function_calling": "functionCalling",
+        "fine_tuning": "fineTuning"
+      });
+    });
+    exports.FTModelCapabilitiesOut$outboundSchema = z6.object({
+      completionChat: z6.boolean().default(true),
+      completionFim: z6.boolean().default(false),
+      functionCalling: z6.boolean().default(false),
+      fineTuning: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        completionChat: "completion_chat",
+        completionFim: "completion_fim",
+        functionCalling: "function_calling",
+        fineTuning: "fine_tuning"
+      });
+    });
+    var FTModelCapabilitiesOut$;
+    (function(FTModelCapabilitiesOut$2) {
+      FTModelCapabilitiesOut$2.inboundSchema = exports.FTModelCapabilitiesOut$inboundSchema;
+      FTModelCapabilitiesOut$2.outboundSchema = exports.FTModelCapabilitiesOut$outboundSchema;
+    })(FTModelCapabilitiesOut$ || (exports.FTModelCapabilitiesOut$ = FTModelCapabilitiesOut$ = {}));
+    function ftModelCapabilitiesOutToJSON(ftModelCapabilitiesOut) {
+      return JSON.stringify(exports.FTModelCapabilitiesOut$outboundSchema.parse(ftModelCapabilitiesOut));
+    }
+    function ftModelCapabilitiesOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FTModelCapabilitiesOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FTModelCapabilitiesOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/ftmodelcard.js
+var require_ftmodelcard = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/ftmodelcard.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FTModelCard$ = exports.FTModelCard$outboundSchema = exports.FTModelCard$inboundSchema = exports.FTModelCardType$ = exports.FTModelCardType$outboundSchema = exports.FTModelCardType$inboundSchema = exports.FTModelCardType = void 0;
+    exports.ftModelCardToJSON = ftModelCardToJSON;
+    exports.ftModelCardFromJSON = ftModelCardFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var modelcapabilities_js_1 = require_modelcapabilities();
+    exports.FTModelCardType = {
+      FineTuned: "fine-tuned"
+    };
+    exports.FTModelCardType$inboundSchema = z6.nativeEnum(exports.FTModelCardType);
+    exports.FTModelCardType$outboundSchema = exports.FTModelCardType$inboundSchema;
+    var FTModelCardType$;
+    (function(FTModelCardType$2) {
+      FTModelCardType$2.inboundSchema = exports.FTModelCardType$inboundSchema;
+      FTModelCardType$2.outboundSchema = exports.FTModelCardType$outboundSchema;
+    })(FTModelCardType$ || (exports.FTModelCardType$ = FTModelCardType$ = {}));
+    exports.FTModelCard$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().default("model"),
+      created: z6.number().int().optional(),
+      owned_by: z6.string().default("mistralai"),
+      capabilities: modelcapabilities_js_1.ModelCapabilities$inboundSchema,
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional(),
+      max_context_length: z6.number().int().default(32768),
+      aliases: z6.array(z6.string()).optional(),
+      deprecation: z6.nullable(z6.string().datetime({ offset: true }).transform((v5) => new Date(v5))).optional(),
+      default_model_temperature: z6.nullable(z6.number()).optional(),
+      type: z6.literal("fine-tuned").default("fine-tuned"),
+      job: z6.string(),
+      root: z6.string(),
+      archived: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "owned_by": "ownedBy",
+        "max_context_length": "maxContextLength",
+        "default_model_temperature": "defaultModelTemperature"
+      });
+    });
+    exports.FTModelCard$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string().default("model"),
+      created: z6.number().int().optional(),
+      ownedBy: z6.string().default("mistralai"),
+      capabilities: modelcapabilities_js_1.ModelCapabilities$outboundSchema,
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional(),
+      maxContextLength: z6.number().int().default(32768),
+      aliases: z6.array(z6.string()).optional(),
+      deprecation: z6.nullable(z6.date().transform((v5) => v5.toISOString())).optional(),
+      defaultModelTemperature: z6.nullable(z6.number()).optional(),
+      type: z6.literal("fine-tuned").default("fine-tuned"),
+      job: z6.string(),
+      root: z6.string(),
+      archived: z6.boolean().default(false)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        ownedBy: "owned_by",
+        maxContextLength: "max_context_length",
+        defaultModelTemperature: "default_model_temperature"
+      });
+    });
+    var FTModelCard$;
+    (function(FTModelCard$2) {
+      FTModelCard$2.inboundSchema = exports.FTModelCard$inboundSchema;
+      FTModelCard$2.outboundSchema = exports.FTModelCard$outboundSchema;
+    })(FTModelCard$ || (exports.FTModelCard$ = FTModelCard$ = {}));
+    function ftModelCardToJSON(ftModelCard) {
+      return JSON.stringify(exports.FTModelCard$outboundSchema.parse(ftModelCard));
+    }
+    function ftModelCardFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FTModelCard$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FTModelCard' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/ftmodelout.js
+var require_ftmodelout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/ftmodelout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FTModelOut$ = exports.FTModelOut$outboundSchema = exports.FTModelOut$inboundSchema = exports.FTModelOutObject$ = exports.FTModelOutObject$outboundSchema = exports.FTModelOutObject$inboundSchema = exports.FTModelOutObject = void 0;
+    exports.ftModelOutToJSON = ftModelOutToJSON;
+    exports.ftModelOutFromJSON = ftModelOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var ftmodelcapabilitiesout_js_1 = require_ftmodelcapabilitiesout();
+    exports.FTModelOutObject = {
+      Model: "model"
+    };
+    exports.FTModelOutObject$inboundSchema = z6.nativeEnum(exports.FTModelOutObject);
+    exports.FTModelOutObject$outboundSchema = exports.FTModelOutObject$inboundSchema;
+    var FTModelOutObject$;
+    (function(FTModelOutObject$2) {
+      FTModelOutObject$2.inboundSchema = exports.FTModelOutObject$inboundSchema;
+      FTModelOutObject$2.outboundSchema = exports.FTModelOutObject$outboundSchema;
+    })(FTModelOutObject$ || (exports.FTModelOutObject$ = FTModelOutObject$ = {}));
+    exports.FTModelOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("model").default("model"),
+      created: z6.number().int(),
+      owned_by: z6.string(),
+      root: z6.string(),
+      archived: z6.boolean(),
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional(),
+      capabilities: ftmodelcapabilitiesout_js_1.FTModelCapabilitiesOut$inboundSchema,
+      max_context_length: z6.number().int().default(32768),
+      aliases: z6.array(z6.string()).optional(),
+      job: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "owned_by": "ownedBy",
+        "max_context_length": "maxContextLength"
+      });
+    });
+    exports.FTModelOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("model").default("model"),
+      created: z6.number().int(),
+      ownedBy: z6.string(),
+      root: z6.string(),
+      archived: z6.boolean(),
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional(),
+      capabilities: ftmodelcapabilitiesout_js_1.FTModelCapabilitiesOut$outboundSchema,
+      maxContextLength: z6.number().int().default(32768),
+      aliases: z6.array(z6.string()).optional(),
+      job: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        ownedBy: "owned_by",
+        maxContextLength: "max_context_length"
+      });
+    });
+    var FTModelOut$;
+    (function(FTModelOut$2) {
+      FTModelOut$2.inboundSchema = exports.FTModelOut$inboundSchema;
+      FTModelOut$2.outboundSchema = exports.FTModelOut$outboundSchema;
+    })(FTModelOut$ || (exports.FTModelOut$ = FTModelOut$ = {}));
+    function ftModelOutToJSON(ftModelOut) {
+      return JSON.stringify(exports.FTModelOut$outboundSchema.parse(ftModelOut));
+    }
+    function ftModelOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FTModelOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FTModelOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/githubrepositoryin.js
+var require_githubrepositoryin = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/githubrepositoryin.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.GithubRepositoryIn$ = exports.GithubRepositoryIn$outboundSchema = exports.GithubRepositoryIn$inboundSchema = exports.GithubRepositoryInType$ = exports.GithubRepositoryInType$outboundSchema = exports.GithubRepositoryInType$inboundSchema = exports.GithubRepositoryInType = void 0;
+    exports.githubRepositoryInToJSON = githubRepositoryInToJSON;
+    exports.githubRepositoryInFromJSON = githubRepositoryInFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.GithubRepositoryInType = {
+      Github: "github"
+    };
+    exports.GithubRepositoryInType$inboundSchema = z6.nativeEnum(exports.GithubRepositoryInType);
+    exports.GithubRepositoryInType$outboundSchema = exports.GithubRepositoryInType$inboundSchema;
+    var GithubRepositoryInType$;
+    (function(GithubRepositoryInType$2) {
+      GithubRepositoryInType$2.inboundSchema = exports.GithubRepositoryInType$inboundSchema;
+      GithubRepositoryInType$2.outboundSchema = exports.GithubRepositoryInType$outboundSchema;
+    })(GithubRepositoryInType$ || (exports.GithubRepositoryInType$ = GithubRepositoryInType$ = {}));
+    exports.GithubRepositoryIn$inboundSchema = z6.object({
+      type: z6.literal("github").default("github"),
+      name: z6.string(),
+      owner: z6.string(),
+      ref: z6.nullable(z6.string()).optional(),
+      weight: z6.number().default(1),
+      token: z6.string()
+    });
+    exports.GithubRepositoryIn$outboundSchema = z6.object({
+      type: z6.literal("github").default("github"),
+      name: z6.string(),
+      owner: z6.string(),
+      ref: z6.nullable(z6.string()).optional(),
+      weight: z6.number().default(1),
+      token: z6.string()
+    });
+    var GithubRepositoryIn$;
+    (function(GithubRepositoryIn$2) {
+      GithubRepositoryIn$2.inboundSchema = exports.GithubRepositoryIn$inboundSchema;
+      GithubRepositoryIn$2.outboundSchema = exports.GithubRepositoryIn$outboundSchema;
+    })(GithubRepositoryIn$ || (exports.GithubRepositoryIn$ = GithubRepositoryIn$ = {}));
+    function githubRepositoryInToJSON(githubRepositoryIn) {
+      return JSON.stringify(exports.GithubRepositoryIn$outboundSchema.parse(githubRepositoryIn));
+    }
+    function githubRepositoryInFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.GithubRepositoryIn$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'GithubRepositoryIn' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/trainingfile.js
+var require_trainingfile = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/trainingfile.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.TrainingFile$ = exports.TrainingFile$outboundSchema = exports.TrainingFile$inboundSchema = void 0;
+    exports.trainingFileToJSON = trainingFileToJSON;
+    exports.trainingFileFromJSON = trainingFileFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.TrainingFile$inboundSchema = z6.object({
+      file_id: z6.string(),
+      weight: z6.number().default(1)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "file_id": "fileId"
+      });
+    });
+    exports.TrainingFile$outboundSchema = z6.object({
+      fileId: z6.string(),
+      weight: z6.number().default(1)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        fileId: "file_id"
+      });
+    });
+    var TrainingFile$;
+    (function(TrainingFile$2) {
+      TrainingFile$2.inboundSchema = exports.TrainingFile$inboundSchema;
+      TrainingFile$2.outboundSchema = exports.TrainingFile$outboundSchema;
+    })(TrainingFile$ || (exports.TrainingFile$ = TrainingFile$ = {}));
+    function trainingFileToJSON(trainingFile) {
+      return JSON.stringify(exports.TrainingFile$outboundSchema.parse(trainingFile));
+    }
+    function trainingFileFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.TrainingFile$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'TrainingFile' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/trainingparametersin.js
+var require_trainingparametersin = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/trainingparametersin.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.TrainingParametersIn$ = exports.TrainingParametersIn$outboundSchema = exports.TrainingParametersIn$inboundSchema = void 0;
+    exports.trainingParametersInToJSON = trainingParametersInToJSON;
+    exports.trainingParametersInFromJSON = trainingParametersInFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.TrainingParametersIn$inboundSchema = z6.object({
+      training_steps: z6.nullable(z6.number().int()).optional(),
+      learning_rate: z6.number().default(1e-4),
+      weight_decay: z6.nullable(z6.number()).optional(),
+      warmup_fraction: z6.nullable(z6.number()).optional(),
+      epochs: z6.nullable(z6.number()).optional(),
+      fim_ratio: z6.nullable(z6.number()).optional(),
+      seq_len: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "training_steps": "trainingSteps",
+        "learning_rate": "learningRate",
+        "weight_decay": "weightDecay",
+        "warmup_fraction": "warmupFraction",
+        "fim_ratio": "fimRatio",
+        "seq_len": "seqLen"
+      });
+    });
+    exports.TrainingParametersIn$outboundSchema = z6.object({
+      trainingSteps: z6.nullable(z6.number().int()).optional(),
+      learningRate: z6.number().default(1e-4),
+      weightDecay: z6.nullable(z6.number()).optional(),
+      warmupFraction: z6.nullable(z6.number()).optional(),
+      epochs: z6.nullable(z6.number()).optional(),
+      fimRatio: z6.nullable(z6.number()).optional(),
+      seqLen: z6.nullable(z6.number().int()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        trainingSteps: "training_steps",
+        learningRate: "learning_rate",
+        weightDecay: "weight_decay",
+        warmupFraction: "warmup_fraction",
+        fimRatio: "fim_ratio",
+        seqLen: "seq_len"
+      });
+    });
+    var TrainingParametersIn$;
+    (function(TrainingParametersIn$2) {
+      TrainingParametersIn$2.inboundSchema = exports.TrainingParametersIn$inboundSchema;
+      TrainingParametersIn$2.outboundSchema = exports.TrainingParametersIn$outboundSchema;
+    })(TrainingParametersIn$ || (exports.TrainingParametersIn$ = TrainingParametersIn$ = {}));
+    function trainingParametersInToJSON(trainingParametersIn) {
+      return JSON.stringify(exports.TrainingParametersIn$outboundSchema.parse(trainingParametersIn));
+    }
+    function trainingParametersInFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.TrainingParametersIn$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'TrainingParametersIn' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/wandbintegration.js
+var require_wandbintegration = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/wandbintegration.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.WandbIntegration$ = exports.WandbIntegration$outboundSchema = exports.WandbIntegration$inboundSchema = exports.WandbIntegrationType$ = exports.WandbIntegrationType$outboundSchema = exports.WandbIntegrationType$inboundSchema = exports.WandbIntegrationType = void 0;
+    exports.wandbIntegrationToJSON = wandbIntegrationToJSON;
+    exports.wandbIntegrationFromJSON = wandbIntegrationFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.WandbIntegrationType = {
+      Wandb: "wandb"
+    };
+    exports.WandbIntegrationType$inboundSchema = z6.nativeEnum(exports.WandbIntegrationType);
+    exports.WandbIntegrationType$outboundSchema = exports.WandbIntegrationType$inboundSchema;
+    var WandbIntegrationType$;
+    (function(WandbIntegrationType$2) {
+      WandbIntegrationType$2.inboundSchema = exports.WandbIntegrationType$inboundSchema;
+      WandbIntegrationType$2.outboundSchema = exports.WandbIntegrationType$outboundSchema;
+    })(WandbIntegrationType$ || (exports.WandbIntegrationType$ = WandbIntegrationType$ = {}));
+    exports.WandbIntegration$inboundSchema = z6.object({
+      type: z6.literal("wandb").default("wandb"),
+      project: z6.string(),
+      name: z6.nullable(z6.string()).optional(),
+      api_key: z6.string(),
+      run_name: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "api_key": "apiKey",
+        "run_name": "runName"
+      });
+    });
+    exports.WandbIntegration$outboundSchema = z6.object({
+      type: z6.literal("wandb").default("wandb"),
+      project: z6.string(),
+      name: z6.nullable(z6.string()).optional(),
+      apiKey: z6.string(),
+      runName: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        apiKey: "api_key",
+        runName: "run_name"
+      });
+    });
+    var WandbIntegration$;
+    (function(WandbIntegration$2) {
+      WandbIntegration$2.inboundSchema = exports.WandbIntegration$inboundSchema;
+      WandbIntegration$2.outboundSchema = exports.WandbIntegration$outboundSchema;
+    })(WandbIntegration$ || (exports.WandbIntegration$ = WandbIntegration$ = {}));
+    function wandbIntegrationToJSON(wandbIntegration) {
+      return JSON.stringify(exports.WandbIntegration$outboundSchema.parse(wandbIntegration));
+    }
+    function wandbIntegrationFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.WandbIntegration$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'WandbIntegration' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/jobin.js
+var require_jobin = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/jobin.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobIn$ = exports.JobIn$outboundSchema = exports.JobIn$inboundSchema = exports.JobInRepositories$ = exports.JobInRepositories$outboundSchema = exports.JobInRepositories$inboundSchema = exports.JobInIntegrations$ = exports.JobInIntegrations$outboundSchema = exports.JobInIntegrations$inboundSchema = void 0;
+    exports.jobInIntegrationsToJSON = jobInIntegrationsToJSON;
+    exports.jobInIntegrationsFromJSON = jobInIntegrationsFromJSON;
+    exports.jobInRepositoriesToJSON = jobInRepositoriesToJSON;
+    exports.jobInRepositoriesFromJSON = jobInRepositoriesFromJSON;
+    exports.jobInToJSON = jobInToJSON;
+    exports.jobInFromJSON = jobInFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var githubrepositoryin_js_1 = require_githubrepositoryin();
+    var trainingfile_js_1 = require_trainingfile();
+    var trainingparametersin_js_1 = require_trainingparametersin();
+    var wandbintegration_js_1 = require_wandbintegration();
+    exports.JobInIntegrations$inboundSchema = wandbintegration_js_1.WandbIntegration$inboundSchema;
+    exports.JobInIntegrations$outboundSchema = wandbintegration_js_1.WandbIntegration$outboundSchema;
+    var JobInIntegrations$;
+    (function(JobInIntegrations$2) {
+      JobInIntegrations$2.inboundSchema = exports.JobInIntegrations$inboundSchema;
+      JobInIntegrations$2.outboundSchema = exports.JobInIntegrations$outboundSchema;
+    })(JobInIntegrations$ || (exports.JobInIntegrations$ = JobInIntegrations$ = {}));
+    function jobInIntegrationsToJSON(jobInIntegrations) {
+      return JSON.stringify(exports.JobInIntegrations$outboundSchema.parse(jobInIntegrations));
+    }
+    function jobInIntegrationsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobInIntegrations$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobInIntegrations' from JSON`);
+    }
+    exports.JobInRepositories$inboundSchema = githubrepositoryin_js_1.GithubRepositoryIn$inboundSchema;
+    exports.JobInRepositories$outboundSchema = githubrepositoryin_js_1.GithubRepositoryIn$outboundSchema;
+    var JobInRepositories$;
+    (function(JobInRepositories$2) {
+      JobInRepositories$2.inboundSchema = exports.JobInRepositories$inboundSchema;
+      JobInRepositories$2.outboundSchema = exports.JobInRepositories$outboundSchema;
+    })(JobInRepositories$ || (exports.JobInRepositories$ = JobInRepositories$ = {}));
+    function jobInRepositoriesToJSON(jobInRepositories) {
+      return JSON.stringify(exports.JobInRepositories$outboundSchema.parse(jobInRepositories));
+    }
+    function jobInRepositoriesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobInRepositories$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobInRepositories' from JSON`);
+    }
+    exports.JobIn$inboundSchema = z6.object({
+      model: z6.string(),
+      training_files: z6.array(trainingfile_js_1.TrainingFile$inboundSchema).optional(),
+      validation_files: z6.nullable(z6.array(z6.string())).optional(),
+      hyperparameters: trainingparametersin_js_1.TrainingParametersIn$inboundSchema,
+      suffix: z6.nullable(z6.string()).optional(),
+      integrations: z6.nullable(z6.array(wandbintegration_js_1.WandbIntegration$inboundSchema)).optional(),
+      repositories: z6.array(githubrepositoryin_js_1.GithubRepositoryIn$inboundSchema).optional(),
+      auto_start: z6.boolean().optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "training_files": "trainingFiles",
+        "validation_files": "validationFiles",
+        "auto_start": "autoStart"
+      });
+    });
+    exports.JobIn$outboundSchema = z6.object({
+      model: z6.string(),
+      trainingFiles: z6.array(trainingfile_js_1.TrainingFile$outboundSchema).optional(),
+      validationFiles: z6.nullable(z6.array(z6.string())).optional(),
+      hyperparameters: trainingparametersin_js_1.TrainingParametersIn$outboundSchema,
+      suffix: z6.nullable(z6.string()).optional(),
+      integrations: z6.nullable(z6.array(wandbintegration_js_1.WandbIntegration$outboundSchema)).optional(),
+      repositories: z6.array(githubrepositoryin_js_1.GithubRepositoryIn$outboundSchema).optional(),
+      autoStart: z6.boolean().optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        trainingFiles: "training_files",
+        validationFiles: "validation_files",
+        autoStart: "auto_start"
+      });
+    });
+    var JobIn$;
+    (function(JobIn$2) {
+      JobIn$2.inboundSchema = exports.JobIn$inboundSchema;
+      JobIn$2.outboundSchema = exports.JobIn$outboundSchema;
+    })(JobIn$ || (exports.JobIn$ = JobIn$ = {}));
+    function jobInToJSON(jobIn) {
+      return JSON.stringify(exports.JobIn$outboundSchema.parse(jobIn));
+    }
+    function jobInFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobIn$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobIn' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/jobout.js
+var require_jobout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/jobout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobOut$ = exports.JobOut$outboundSchema = exports.JobOut$inboundSchema = exports.Repositories$ = exports.Repositories$outboundSchema = exports.Repositories$inboundSchema = exports.Integrations$ = exports.Integrations$outboundSchema = exports.Integrations$inboundSchema = exports.ObjectT$ = exports.ObjectT$outboundSchema = exports.ObjectT$inboundSchema = exports.Status$ = exports.Status$outboundSchema = exports.Status$inboundSchema = exports.ObjectT = exports.Status = void 0;
+    exports.integrationsToJSON = integrationsToJSON;
+    exports.integrationsFromJSON = integrationsFromJSON;
+    exports.repositoriesToJSON = repositoriesToJSON;
+    exports.repositoriesFromJSON = repositoriesFromJSON;
+    exports.jobOutToJSON = jobOutToJSON;
+    exports.jobOutFromJSON = jobOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var githubrepositoryout_js_1 = require_githubrepositoryout();
+    var jobmetadataout_js_1 = require_jobmetadataout();
+    var trainingparameters_js_1 = require_trainingparameters();
+    var wandbintegrationout_js_1 = require_wandbintegrationout();
+    exports.Status = {
+      Queued: "QUEUED",
+      Started: "STARTED",
+      Validating: "VALIDATING",
+      Validated: "VALIDATED",
+      Running: "RUNNING",
+      FailedValidation: "FAILED_VALIDATION",
+      Failed: "FAILED",
+      Success: "SUCCESS",
+      Cancelled: "CANCELLED",
+      CancellationRequested: "CANCELLATION_REQUESTED"
+    };
+    exports.ObjectT = {
+      Job: "job"
+    };
+    exports.Status$inboundSchema = z6.nativeEnum(exports.Status);
+    exports.Status$outboundSchema = exports.Status$inboundSchema;
+    var Status$;
+    (function(Status$2) {
+      Status$2.inboundSchema = exports.Status$inboundSchema;
+      Status$2.outboundSchema = exports.Status$outboundSchema;
+    })(Status$ || (exports.Status$ = Status$ = {}));
+    exports.ObjectT$inboundSchema = z6.nativeEnum(exports.ObjectT);
+    exports.ObjectT$outboundSchema = exports.ObjectT$inboundSchema;
+    var ObjectT$;
+    (function(ObjectT$2) {
+      ObjectT$2.inboundSchema = exports.ObjectT$inboundSchema;
+      ObjectT$2.outboundSchema = exports.ObjectT$outboundSchema;
+    })(ObjectT$ || (exports.ObjectT$ = ObjectT$ = {}));
+    exports.Integrations$inboundSchema = wandbintegrationout_js_1.WandbIntegrationOut$inboundSchema;
+    exports.Integrations$outboundSchema = wandbintegrationout_js_1.WandbIntegrationOut$outboundSchema;
+    var Integrations$;
+    (function(Integrations$2) {
+      Integrations$2.inboundSchema = exports.Integrations$inboundSchema;
+      Integrations$2.outboundSchema = exports.Integrations$outboundSchema;
+    })(Integrations$ || (exports.Integrations$ = Integrations$ = {}));
+    function integrationsToJSON(integrations) {
+      return JSON.stringify(exports.Integrations$outboundSchema.parse(integrations));
+    }
+    function integrationsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Integrations$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Integrations' from JSON`);
+    }
+    exports.Repositories$inboundSchema = githubrepositoryout_js_1.GithubRepositoryOut$inboundSchema;
+    exports.Repositories$outboundSchema = githubrepositoryout_js_1.GithubRepositoryOut$outboundSchema;
+    var Repositories$;
+    (function(Repositories$2) {
+      Repositories$2.inboundSchema = exports.Repositories$inboundSchema;
+      Repositories$2.outboundSchema = exports.Repositories$outboundSchema;
+    })(Repositories$ || (exports.Repositories$ = Repositories$ = {}));
+    function repositoriesToJSON(repositories) {
+      return JSON.stringify(exports.Repositories$outboundSchema.parse(repositories));
+    }
+    function repositoriesFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Repositories$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Repositories' from JSON`);
+    }
+    exports.JobOut$inboundSchema = z6.object({
+      id: z6.string(),
+      auto_start: z6.boolean(),
+      hyperparameters: trainingparameters_js_1.TrainingParameters$inboundSchema,
+      model: z6.string(),
+      status: exports.Status$inboundSchema,
+      job_type: z6.string(),
+      created_at: z6.number().int(),
+      modified_at: z6.number().int(),
+      training_files: z6.array(z6.string()),
+      validation_files: z6.nullable(z6.array(z6.string())).optional(),
+      object: z6.literal("job").default("job"),
+      fine_tuned_model: z6.nullable(z6.string()).optional(),
+      suffix: z6.nullable(z6.string()).optional(),
+      integrations: z6.nullable(z6.array(wandbintegrationout_js_1.WandbIntegrationOut$inboundSchema)).optional(),
+      trained_tokens: z6.nullable(z6.number().int()).optional(),
+      repositories: z6.array(githubrepositoryout_js_1.GithubRepositoryOut$inboundSchema).optional(),
+      metadata: z6.nullable(jobmetadataout_js_1.JobMetadataOut$inboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "auto_start": "autoStart",
+        "job_type": "jobType",
+        "created_at": "createdAt",
+        "modified_at": "modifiedAt",
+        "training_files": "trainingFiles",
+        "validation_files": "validationFiles",
+        "fine_tuned_model": "fineTunedModel",
+        "trained_tokens": "trainedTokens"
+      });
+    });
+    exports.JobOut$outboundSchema = z6.object({
+      id: z6.string(),
+      autoStart: z6.boolean(),
+      hyperparameters: trainingparameters_js_1.TrainingParameters$outboundSchema,
+      model: z6.string(),
+      status: exports.Status$outboundSchema,
+      jobType: z6.string(),
+      createdAt: z6.number().int(),
+      modifiedAt: z6.number().int(),
+      trainingFiles: z6.array(z6.string()),
+      validationFiles: z6.nullable(z6.array(z6.string())).optional(),
+      object: z6.literal("job").default("job"),
+      fineTunedModel: z6.nullable(z6.string()).optional(),
+      suffix: z6.nullable(z6.string()).optional(),
+      integrations: z6.nullable(z6.array(wandbintegrationout_js_1.WandbIntegrationOut$outboundSchema)).optional(),
+      trainedTokens: z6.nullable(z6.number().int()).optional(),
+      repositories: z6.array(githubrepositoryout_js_1.GithubRepositoryOut$outboundSchema).optional(),
+      metadata: z6.nullable(jobmetadataout_js_1.JobMetadataOut$outboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        autoStart: "auto_start",
+        jobType: "job_type",
+        createdAt: "created_at",
+        modifiedAt: "modified_at",
+        trainingFiles: "training_files",
+        validationFiles: "validation_files",
+        fineTunedModel: "fine_tuned_model",
+        trainedTokens: "trained_tokens"
+      });
+    });
+    var JobOut$;
+    (function(JobOut$2) {
+      JobOut$2.inboundSchema = exports.JobOut$inboundSchema;
+      JobOut$2.outboundSchema = exports.JobOut$outboundSchema;
+    })(JobOut$ || (exports.JobOut$ = JobOut$ = {}));
+    function jobOutToJSON(jobOut) {
+      return JSON.stringify(exports.JobOut$outboundSchema.parse(jobOut));
+    }
+    function jobOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/jobsout.js
+var require_jobsout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/jobsout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsOut$ = exports.JobsOut$outboundSchema = exports.JobsOut$inboundSchema = exports.JobsOutObject$ = exports.JobsOutObject$outboundSchema = exports.JobsOutObject$inboundSchema = exports.JobsOutObject = void 0;
+    exports.jobsOutToJSON = jobsOutToJSON;
+    exports.jobsOutFromJSON = jobsOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var jobout_js_1 = require_jobout();
+    exports.JobsOutObject = {
+      List: "list"
+    };
+    exports.JobsOutObject$inboundSchema = z6.nativeEnum(exports.JobsOutObject);
+    exports.JobsOutObject$outboundSchema = exports.JobsOutObject$inboundSchema;
+    var JobsOutObject$;
+    (function(JobsOutObject$2) {
+      JobsOutObject$2.inboundSchema = exports.JobsOutObject$inboundSchema;
+      JobsOutObject$2.outboundSchema = exports.JobsOutObject$outboundSchema;
+    })(JobsOutObject$ || (exports.JobsOutObject$ = JobsOutObject$ = {}));
+    exports.JobsOut$inboundSchema = z6.object({
+      data: z6.array(jobout_js_1.JobOut$inboundSchema).optional(),
+      object: z6.literal("list").default("list"),
+      total: z6.number().int()
+    });
+    exports.JobsOut$outboundSchema = z6.object({
+      data: z6.array(jobout_js_1.JobOut$outboundSchema).optional(),
+      object: z6.literal("list").default("list"),
+      total: z6.number().int()
+    });
+    var JobsOut$;
+    (function(JobsOut$2) {
+      JobsOut$2.inboundSchema = exports.JobsOut$inboundSchema;
+      JobsOut$2.outboundSchema = exports.JobsOut$outboundSchema;
+    })(JobsOut$ || (exports.JobsOut$ = JobsOut$ = {}));
+    function jobsOutToJSON(jobsOut) {
+      return JSON.stringify(exports.JobsOut$outboundSchema.parse(jobsOut));
+    }
+    function jobsOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/legacyjobmetadataout.js
+var require_legacyjobmetadataout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/legacyjobmetadataout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.LegacyJobMetadataOut$ = exports.LegacyJobMetadataOut$outboundSchema = exports.LegacyJobMetadataOut$inboundSchema = exports.LegacyJobMetadataOutObject$ = exports.LegacyJobMetadataOutObject$outboundSchema = exports.LegacyJobMetadataOutObject$inboundSchema = exports.LegacyJobMetadataOutObject = void 0;
+    exports.legacyJobMetadataOutToJSON = legacyJobMetadataOutToJSON;
+    exports.legacyJobMetadataOutFromJSON = legacyJobMetadataOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.LegacyJobMetadataOutObject = {
+      JobMetadata: "job.metadata"
+    };
+    exports.LegacyJobMetadataOutObject$inboundSchema = z6.nativeEnum(exports.LegacyJobMetadataOutObject);
+    exports.LegacyJobMetadataOutObject$outboundSchema = exports.LegacyJobMetadataOutObject$inboundSchema;
+    var LegacyJobMetadataOutObject$;
+    (function(LegacyJobMetadataOutObject$2) {
+      LegacyJobMetadataOutObject$2.inboundSchema = exports.LegacyJobMetadataOutObject$inboundSchema;
+      LegacyJobMetadataOutObject$2.outboundSchema = exports.LegacyJobMetadataOutObject$outboundSchema;
+    })(LegacyJobMetadataOutObject$ || (exports.LegacyJobMetadataOutObject$ = LegacyJobMetadataOutObject$ = {}));
+    exports.LegacyJobMetadataOut$inboundSchema = z6.object({
+      expected_duration_seconds: z6.nullable(z6.number().int()).optional(),
+      cost: z6.nullable(z6.number()).optional(),
+      cost_currency: z6.nullable(z6.string()).optional(),
+      train_tokens_per_step: z6.nullable(z6.number().int()).optional(),
+      train_tokens: z6.nullable(z6.number().int()).optional(),
+      data_tokens: z6.nullable(z6.number().int()).optional(),
+      estimated_start_time: z6.nullable(z6.number().int()).optional(),
+      deprecated: z6.boolean().default(true),
+      details: z6.string(),
+      epochs: z6.nullable(z6.number()).optional(),
+      training_steps: z6.nullable(z6.number().int()).optional(),
+      object: z6.literal("job.metadata").default("job.metadata")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "expected_duration_seconds": "expectedDurationSeconds",
+        "cost_currency": "costCurrency",
+        "train_tokens_per_step": "trainTokensPerStep",
+        "train_tokens": "trainTokens",
+        "data_tokens": "dataTokens",
+        "estimated_start_time": "estimatedStartTime",
+        "training_steps": "trainingSteps"
+      });
+    });
+    exports.LegacyJobMetadataOut$outboundSchema = z6.object({
+      expectedDurationSeconds: z6.nullable(z6.number().int()).optional(),
+      cost: z6.nullable(z6.number()).optional(),
+      costCurrency: z6.nullable(z6.string()).optional(),
+      trainTokensPerStep: z6.nullable(z6.number().int()).optional(),
+      trainTokens: z6.nullable(z6.number().int()).optional(),
+      dataTokens: z6.nullable(z6.number().int()).optional(),
+      estimatedStartTime: z6.nullable(z6.number().int()).optional(),
+      deprecated: z6.boolean().default(true),
+      details: z6.string(),
+      epochs: z6.nullable(z6.number()).optional(),
+      trainingSteps: z6.nullable(z6.number().int()).optional(),
+      object: z6.literal("job.metadata").default("job.metadata")
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        expectedDurationSeconds: "expected_duration_seconds",
+        costCurrency: "cost_currency",
+        trainTokensPerStep: "train_tokens_per_step",
+        trainTokens: "train_tokens",
+        dataTokens: "data_tokens",
+        estimatedStartTime: "estimated_start_time",
+        trainingSteps: "training_steps"
+      });
+    });
+    var LegacyJobMetadataOut$;
+    (function(LegacyJobMetadataOut$2) {
+      LegacyJobMetadataOut$2.inboundSchema = exports.LegacyJobMetadataOut$inboundSchema;
+      LegacyJobMetadataOut$2.outboundSchema = exports.LegacyJobMetadataOut$outboundSchema;
+    })(LegacyJobMetadataOut$ || (exports.LegacyJobMetadataOut$ = LegacyJobMetadataOut$ = {}));
+    function legacyJobMetadataOutToJSON(legacyJobMetadataOut) {
+      return JSON.stringify(exports.LegacyJobMetadataOut$outboundSchema.parse(legacyJobMetadataOut));
+    }
+    function legacyJobMetadataOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.LegacyJobMetadataOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'LegacyJobMetadataOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/listfilesout.js
+var require_listfilesout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/listfilesout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ListFilesOut$ = exports.ListFilesOut$outboundSchema = exports.ListFilesOut$inboundSchema = void 0;
+    exports.listFilesOutToJSON = listFilesOutToJSON;
+    exports.listFilesOutFromJSON = listFilesOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var fileschema_js_1 = require_fileschema();
+    exports.ListFilesOut$inboundSchema = z6.object({
+      data: z6.array(fileschema_js_1.FileSchema$inboundSchema),
+      object: z6.string(),
+      total: z6.number().int()
+    });
+    exports.ListFilesOut$outboundSchema = z6.object({
+      data: z6.array(fileschema_js_1.FileSchema$outboundSchema),
+      object: z6.string(),
+      total: z6.number().int()
+    });
+    var ListFilesOut$;
+    (function(ListFilesOut$2) {
+      ListFilesOut$2.inboundSchema = exports.ListFilesOut$inboundSchema;
+      ListFilesOut$2.outboundSchema = exports.ListFilesOut$outboundSchema;
+    })(ListFilesOut$ || (exports.ListFilesOut$ = ListFilesOut$ = {}));
+    function listFilesOutToJSON(listFilesOut) {
+      return JSON.stringify(exports.ListFilesOut$outboundSchema.parse(listFilesOut));
+    }
+    function listFilesOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ListFilesOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ListFilesOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/modellist.js
+var require_modellist = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/modellist.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ModelList$ = exports.ModelList$outboundSchema = exports.ModelList$inboundSchema = exports.Data$ = exports.Data$outboundSchema = exports.Data$inboundSchema = void 0;
+    exports.dataToJSON = dataToJSON;
+    exports.dataFromJSON = dataFromJSON;
+    exports.modelListToJSON = modelListToJSON;
+    exports.modelListFromJSON = modelListFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var basemodelcard_js_1 = require_basemodelcard();
+    var ftmodelcard_js_1 = require_ftmodelcard();
+    exports.Data$inboundSchema = z6.union([
+      basemodelcard_js_1.BaseModelCard$inboundSchema.and(z6.object({ type: z6.literal("base") }).transform((v5) => ({
+        type: v5.type
+      }))),
+      ftmodelcard_js_1.FTModelCard$inboundSchema.and(z6.object({ type: z6.literal("fine-tuned") }).transform((v5) => ({
+        type: v5.type
+      })))
+    ]);
+    exports.Data$outboundSchema = z6.union([
+      basemodelcard_js_1.BaseModelCard$outboundSchema.and(z6.object({ type: z6.literal("base") }).transform((v5) => ({
+        type: v5.type
+      }))),
+      ftmodelcard_js_1.FTModelCard$outboundSchema.and(z6.object({ type: z6.literal("fine-tuned") }).transform((v5) => ({
+        type: v5.type
+      })))
+    ]);
+    var Data$;
+    (function(Data$2) {
+      Data$2.inboundSchema = exports.Data$inboundSchema;
+      Data$2.outboundSchema = exports.Data$outboundSchema;
+    })(Data$ || (exports.Data$ = Data$ = {}));
+    function dataToJSON(data) {
+      return JSON.stringify(exports.Data$outboundSchema.parse(data));
+    }
+    function dataFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Data$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Data' from JSON`);
+    }
+    exports.ModelList$inboundSchema = z6.object({
+      object: z6.string().default("list"),
+      data: z6.array(z6.union([
+        basemodelcard_js_1.BaseModelCard$inboundSchema.and(z6.object({ type: z6.literal("base") }).transform((v5) => ({
+          type: v5.type
+        }))),
+        ftmodelcard_js_1.FTModelCard$inboundSchema.and(z6.object({ type: z6.literal("fine-tuned") }).transform((v5) => ({
+          type: v5.type
+        })))
+      ])).optional()
+    });
+    exports.ModelList$outboundSchema = z6.object({
+      object: z6.string().default("list"),
+      data: z6.array(z6.union([
+        basemodelcard_js_1.BaseModelCard$outboundSchema.and(z6.object({ type: z6.literal("base") }).transform((v5) => ({
+          type: v5.type
+        }))),
+        ftmodelcard_js_1.FTModelCard$outboundSchema.and(z6.object({ type: z6.literal("fine-tuned") }).transform((v5) => ({
+          type: v5.type
+        })))
+      ])).optional()
+    });
+    var ModelList$;
+    (function(ModelList$2) {
+      ModelList$2.inboundSchema = exports.ModelList$inboundSchema;
+      ModelList$2.outboundSchema = exports.ModelList$outboundSchema;
+    })(ModelList$ || (exports.ModelList$ = ModelList$ = {}));
+    function modelListToJSON(modelList) {
+      return JSON.stringify(exports.ModelList$outboundSchema.parse(modelList));
+    }
+    function modelListFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ModelList$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ModelList' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/retrievefileout.js
+var require_retrievefileout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/retrievefileout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.RetrieveFileOut$ = exports.RetrieveFileOut$outboundSchema = exports.RetrieveFileOut$inboundSchema = void 0;
+    exports.retrieveFileOutToJSON = retrieveFileOutToJSON;
+    exports.retrieveFileOutFromJSON = retrieveFileOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var filepurpose_js_1 = require_filepurpose();
+    var sampletype_js_1 = require_sampletype();
+    var source_js_1 = require_source();
+    exports.RetrieveFileOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      bytes: z6.number().int(),
+      created_at: z6.number().int(),
+      filename: z6.string(),
+      purpose: filepurpose_js_1.FilePurpose$inboundSchema,
+      sample_type: sampletype_js_1.SampleType$inboundSchema,
+      num_lines: z6.nullable(z6.number().int()).optional(),
+      source: source_js_1.Source$inboundSchema,
+      deleted: z6.boolean()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "created_at": "createdAt",
+        "sample_type": "sampleType",
+        "num_lines": "numLines"
+      });
+    });
+    exports.RetrieveFileOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      bytes: z6.number().int(),
+      createdAt: z6.number().int(),
+      filename: z6.string(),
+      purpose: filepurpose_js_1.FilePurpose$outboundSchema,
+      sampleType: sampletype_js_1.SampleType$outboundSchema,
+      numLines: z6.nullable(z6.number().int()).optional(),
+      source: source_js_1.Source$outboundSchema,
+      deleted: z6.boolean()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        createdAt: "created_at",
+        sampleType: "sample_type",
+        numLines: "num_lines"
+      });
+    });
+    var RetrieveFileOut$;
+    (function(RetrieveFileOut$2) {
+      RetrieveFileOut$2.inboundSchema = exports.RetrieveFileOut$inboundSchema;
+      RetrieveFileOut$2.outboundSchema = exports.RetrieveFileOut$outboundSchema;
+    })(RetrieveFileOut$ || (exports.RetrieveFileOut$ = RetrieveFileOut$ = {}));
+    function retrieveFileOutToJSON(retrieveFileOut) {
+      return JSON.stringify(exports.RetrieveFileOut$outboundSchema.parse(retrieveFileOut));
+    }
+    function retrieveFileOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.RetrieveFileOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'RetrieveFileOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/security.js
+var require_security2 = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/security.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Security$ = exports.Security$outboundSchema = exports.Security$inboundSchema = void 0;
+    exports.securityToJSON = securityToJSON;
+    exports.securityFromJSON = securityFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.Security$inboundSchema = z6.object({
+      ApiKey: z6.string().optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "ApiKey": "apiKey"
+      });
+    });
+    exports.Security$outboundSchema = z6.object({
+      apiKey: z6.string().optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        apiKey: "ApiKey"
+      });
+    });
+    var Security$;
+    (function(Security$2) {
+      Security$2.inboundSchema = exports.Security$inboundSchema;
+      Security$2.outboundSchema = exports.Security$outboundSchema;
+    })(Security$ || (exports.Security$ = Security$ = {}));
+    function securityToJSON(security) {
+      return JSON.stringify(exports.Security$outboundSchema.parse(security));
+    }
+    function securityFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Security$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Security' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/unarchiveftmodelout.js
+var require_unarchiveftmodelout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/unarchiveftmodelout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.UnarchiveFTModelOut$ = exports.UnarchiveFTModelOut$outboundSchema = exports.UnarchiveFTModelOut$inboundSchema = exports.UnarchiveFTModelOutObject$ = exports.UnarchiveFTModelOutObject$outboundSchema = exports.UnarchiveFTModelOutObject$inboundSchema = exports.UnarchiveFTModelOutObject = void 0;
+    exports.unarchiveFTModelOutToJSON = unarchiveFTModelOutToJSON;
+    exports.unarchiveFTModelOutFromJSON = unarchiveFTModelOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.UnarchiveFTModelOutObject = {
+      Model: "model"
+    };
+    exports.UnarchiveFTModelOutObject$inboundSchema = z6.nativeEnum(exports.UnarchiveFTModelOutObject);
+    exports.UnarchiveFTModelOutObject$outboundSchema = exports.UnarchiveFTModelOutObject$inboundSchema;
+    var UnarchiveFTModelOutObject$;
+    (function(UnarchiveFTModelOutObject$2) {
+      UnarchiveFTModelOutObject$2.inboundSchema = exports.UnarchiveFTModelOutObject$inboundSchema;
+      UnarchiveFTModelOutObject$2.outboundSchema = exports.UnarchiveFTModelOutObject$outboundSchema;
+    })(UnarchiveFTModelOutObject$ || (exports.UnarchiveFTModelOutObject$ = UnarchiveFTModelOutObject$ = {}));
+    exports.UnarchiveFTModelOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("model").default("model"),
+      archived: z6.boolean().default(false)
+    });
+    exports.UnarchiveFTModelOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.literal("model").default("model"),
+      archived: z6.boolean().default(false)
+    });
+    var UnarchiveFTModelOut$;
+    (function(UnarchiveFTModelOut$2) {
+      UnarchiveFTModelOut$2.inboundSchema = exports.UnarchiveFTModelOut$inboundSchema;
+      UnarchiveFTModelOut$2.outboundSchema = exports.UnarchiveFTModelOut$outboundSchema;
+    })(UnarchiveFTModelOut$ || (exports.UnarchiveFTModelOut$ = UnarchiveFTModelOut$ = {}));
+    function unarchiveFTModelOutToJSON(unarchiveFTModelOut) {
+      return JSON.stringify(exports.UnarchiveFTModelOut$outboundSchema.parse(unarchiveFTModelOut));
+    }
+    function unarchiveFTModelOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.UnarchiveFTModelOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'UnarchiveFTModelOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/updateftmodelin.js
+var require_updateftmodelin = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/updateftmodelin.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.UpdateFTModelIn$ = exports.UpdateFTModelIn$outboundSchema = exports.UpdateFTModelIn$inboundSchema = void 0;
+    exports.updateFTModelInToJSON = updateFTModelInToJSON;
+    exports.updateFTModelInFromJSON = updateFTModelInFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.UpdateFTModelIn$inboundSchema = z6.object({
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional()
+    });
+    exports.UpdateFTModelIn$outboundSchema = z6.object({
+      name: z6.nullable(z6.string()).optional(),
+      description: z6.nullable(z6.string()).optional()
+    });
+    var UpdateFTModelIn$;
+    (function(UpdateFTModelIn$2) {
+      UpdateFTModelIn$2.inboundSchema = exports.UpdateFTModelIn$inboundSchema;
+      UpdateFTModelIn$2.outboundSchema = exports.UpdateFTModelIn$outboundSchema;
+    })(UpdateFTModelIn$ || (exports.UpdateFTModelIn$ = UpdateFTModelIn$ = {}));
+    function updateFTModelInToJSON(updateFTModelIn) {
+      return JSON.stringify(exports.UpdateFTModelIn$outboundSchema.parse(updateFTModelIn));
+    }
+    function updateFTModelInFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.UpdateFTModelIn$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'UpdateFTModelIn' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/uploadfileout.js
+var require_uploadfileout = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/uploadfileout.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.UploadFileOut$ = exports.UploadFileOut$outboundSchema = exports.UploadFileOut$inboundSchema = void 0;
+    exports.uploadFileOutToJSON = uploadFileOutToJSON;
+    exports.uploadFileOutFromJSON = uploadFileOutFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var filepurpose_js_1 = require_filepurpose();
+    var sampletype_js_1 = require_sampletype();
+    var source_js_1 = require_source();
+    exports.UploadFileOut$inboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      bytes: z6.number().int(),
+      created_at: z6.number().int(),
+      filename: z6.string(),
+      purpose: filepurpose_js_1.FilePurpose$inboundSchema,
+      sample_type: sampletype_js_1.SampleType$inboundSchema,
+      num_lines: z6.nullable(z6.number().int()).optional(),
+      source: source_js_1.Source$inboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "created_at": "createdAt",
+        "sample_type": "sampleType",
+        "num_lines": "numLines"
+      });
+    });
+    exports.UploadFileOut$outboundSchema = z6.object({
+      id: z6.string(),
+      object: z6.string(),
+      bytes: z6.number().int(),
+      createdAt: z6.number().int(),
+      filename: z6.string(),
+      purpose: filepurpose_js_1.FilePurpose$outboundSchema,
+      sampleType: sampletype_js_1.SampleType$outboundSchema,
+      numLines: z6.nullable(z6.number().int()).optional(),
+      source: source_js_1.Source$outboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        createdAt: "created_at",
+        sampleType: "sample_type",
+        numLines: "num_lines"
+      });
+    });
+    var UploadFileOut$;
+    (function(UploadFileOut$2) {
+      UploadFileOut$2.inboundSchema = exports.UploadFileOut$inboundSchema;
+      UploadFileOut$2.outboundSchema = exports.UploadFileOut$outboundSchema;
+    })(UploadFileOut$ || (exports.UploadFileOut$ = UploadFileOut$ = {}));
+    function uploadFileOutToJSON(uploadFileOut) {
+      return JSON.stringify(exports.UploadFileOut$outboundSchema.parse(uploadFileOut));
+    }
+    function uploadFileOutFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.UploadFileOut$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'UploadFileOut' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/validationerror.js
+var require_validationerror = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/validationerror.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.ValidationError$ = exports.ValidationError$outboundSchema = exports.ValidationError$inboundSchema = exports.Loc$ = exports.Loc$outboundSchema = exports.Loc$inboundSchema = void 0;
+    exports.locToJSON = locToJSON;
+    exports.locFromJSON = locFromJSON;
+    exports.validationErrorToJSON = validationErrorToJSON;
+    exports.validationErrorFromJSON = validationErrorFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    exports.Loc$inboundSchema = z6.union([z6.string(), z6.number().int()]);
+    exports.Loc$outboundSchema = z6.union([z6.string(), z6.number().int()]);
+    var Loc$;
+    (function(Loc$2) {
+      Loc$2.inboundSchema = exports.Loc$inboundSchema;
+      Loc$2.outboundSchema = exports.Loc$outboundSchema;
+    })(Loc$ || (exports.Loc$ = Loc$ = {}));
+    function locToJSON(loc) {
+      return JSON.stringify(exports.Loc$outboundSchema.parse(loc));
+    }
+    function locFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.Loc$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'Loc' from JSON`);
+    }
+    exports.ValidationError$inboundSchema = z6.object({
+      loc: z6.array(z6.union([z6.string(), z6.number().int()])),
+      msg: z6.string(),
+      type: z6.string()
+    });
+    exports.ValidationError$outboundSchema = z6.object({
+      loc: z6.array(z6.union([z6.string(), z6.number().int()])),
+      msg: z6.string(),
+      type: z6.string()
+    });
+    var ValidationError$;
+    (function(ValidationError$2) {
+      ValidationError$2.inboundSchema = exports.ValidationError$inboundSchema;
+      ValidationError$2.outboundSchema = exports.ValidationError$outboundSchema;
+    })(ValidationError$ || (exports.ValidationError$ = ValidationError$ = {}));
+    function validationErrorToJSON(validationError) {
+      return JSON.stringify(exports.ValidationError$outboundSchema.parse(validationError));
+    }
+    function validationErrorFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.ValidationError$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'ValidationError' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/components/index.js
+var require_components = __commonJS({
+  "node_modules/@mistralai/mistralai/models/components/index.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __exportStar2 = exports && exports.__exportStar || function(m5, exports2) {
+      for (var p4 in m5)
+        if (p4 !== "default" && !Object.prototype.hasOwnProperty.call(exports2, p4))
+          __createBinding2(exports2, m5, p4);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    __exportStar2(require_agentscompletionrequest(), exports);
+    __exportStar2(require_agentscompletionstreamrequest(), exports);
+    __exportStar2(require_apiendpoint(), exports);
+    __exportStar2(require_archiveftmodelout(), exports);
+    __exportStar2(require_assistantmessage(), exports);
+    __exportStar2(require_basemodelcard(), exports);
+    __exportStar2(require_batcherror(), exports);
+    __exportStar2(require_batchjobin(), exports);
+    __exportStar2(require_batchjobout(), exports);
+    __exportStar2(require_batchjobsout(), exports);
+    __exportStar2(require_batchjobstatus(), exports);
+    __exportStar2(require_chatclassificationrequest(), exports);
+    __exportStar2(require_chatcompletionchoice(), exports);
+    __exportStar2(require_chatcompletionrequest(), exports);
+    __exportStar2(require_chatcompletionresponse(), exports);
+    __exportStar2(require_chatcompletionstreamrequest(), exports);
+    __exportStar2(require_checkpointout(), exports);
+    __exportStar2(require_classificationobject(), exports);
+    __exportStar2(require_classificationrequest(), exports);
+    __exportStar2(require_classificationresponse(), exports);
+    __exportStar2(require_completionchunk(), exports);
+    __exportStar2(require_completionevent(), exports);
+    __exportStar2(require_completionresponsestreamchoice(), exports);
+    __exportStar2(require_contentchunk(), exports);
+    __exportStar2(require_deletefileout(), exports);
+    __exportStar2(require_deletemodelout(), exports);
+    __exportStar2(require_deltamessage(), exports);
+    __exportStar2(require_detailedjobout(), exports);
+    __exportStar2(require_embeddingrequest(), exports);
+    __exportStar2(require_embeddingresponse(), exports);
+    __exportStar2(require_embeddingresponsedata(), exports);
+    __exportStar2(require_eventout(), exports);
+    __exportStar2(require_filepurpose(), exports);
+    __exportStar2(require_fileschema(), exports);
+    __exportStar2(require_filesignedurl(), exports);
+    __exportStar2(require_fimcompletionrequest(), exports);
+    __exportStar2(require_fimcompletionresponse(), exports);
+    __exportStar2(require_fimcompletionstreamrequest(), exports);
+    __exportStar2(require_ftmodelcapabilitiesout(), exports);
+    __exportStar2(require_ftmodelcard(), exports);
+    __exportStar2(require_ftmodelout(), exports);
+    __exportStar2(require_function(), exports);
+    __exportStar2(require_functioncall(), exports);
+    __exportStar2(require_functionname(), exports);
+    __exportStar2(require_githubrepositoryin(), exports);
+    __exportStar2(require_githubrepositoryout(), exports);
+    __exportStar2(require_imageurl(), exports);
+    __exportStar2(require_imageurlchunk(), exports);
+    __exportStar2(require_jobin(), exports);
+    __exportStar2(require_jobmetadataout(), exports);
+    __exportStar2(require_jobout(), exports);
+    __exportStar2(require_jobsout(), exports);
+    __exportStar2(require_legacyjobmetadataout(), exports);
+    __exportStar2(require_listfilesout(), exports);
+    __exportStar2(require_metricout(), exports);
+    __exportStar2(require_modelcapabilities(), exports);
+    __exportStar2(require_modellist(), exports);
+    __exportStar2(require_referencechunk(), exports);
+    __exportStar2(require_responseformat(), exports);
+    __exportStar2(require_responseformats(), exports);
+    __exportStar2(require_retrievefileout(), exports);
+    __exportStar2(require_sampletype(), exports);
+    __exportStar2(require_security2(), exports);
+    __exportStar2(require_source(), exports);
+    __exportStar2(require_systemmessage(), exports);
+    __exportStar2(require_textchunk(), exports);
+    __exportStar2(require_tool(), exports);
+    __exportStar2(require_toolcall(), exports);
+    __exportStar2(require_toolchoice(), exports);
+    __exportStar2(require_toolchoiceenum(), exports);
+    __exportStar2(require_toolmessage(), exports);
+    __exportStar2(require_tooltypes(), exports);
+    __exportStar2(require_trainingfile(), exports);
+    __exportStar2(require_trainingparameters(), exports);
+    __exportStar2(require_trainingparametersin(), exports);
+    __exportStar2(require_unarchiveftmodelout(), exports);
+    __exportStar2(require_updateftmodelin(), exports);
+    __exportStar2(require_uploadfileout(), exports);
+    __exportStar2(require_usageinfo(), exports);
+    __exportStar2(require_usermessage(), exports);
+    __exportStar2(require_validationerror(), exports);
+    __exportStar2(require_wandbintegration(), exports);
+    __exportStar2(require_wandbintegrationout(), exports);
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/errors/httpvalidationerror.js
+var require_httpvalidationerror = __commonJS({
+  "node_modules/@mistralai/mistralai/models/errors/httpvalidationerror.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.HTTPValidationError$ = exports.HTTPValidationError$outboundSchema = exports.HTTPValidationError$inboundSchema = exports.HTTPValidationError = void 0;
+    var z6 = __importStar2(require_lib4());
+    var components = __importStar2(require_components());
+    var HTTPValidationError = class extends Error {
+      constructor(err) {
+        const message = "message" in err && typeof err.message === "string" ? err.message : `API error occurred: ${JSON.stringify(err)}`;
+        super(message);
+        this.data$ = err;
+        if (err.detail != null)
+          this.detail = err.detail;
+        this.name = "HTTPValidationError";
+      }
+    };
+    exports.HTTPValidationError = HTTPValidationError;
+    exports.HTTPValidationError$inboundSchema = z6.object({
+      detail: z6.array(components.ValidationError$inboundSchema).optional()
+    }).transform((v5) => {
+      return new HTTPValidationError(v5);
+    });
+    exports.HTTPValidationError$outboundSchema = z6.instanceof(HTTPValidationError).transform((v5) => v5.data$).pipe(z6.object({
+      detail: z6.array(components.ValidationError$outboundSchema).optional()
+    }));
+    var HTTPValidationError$;
+    (function(HTTPValidationError$2) {
+      HTTPValidationError$2.inboundSchema = exports.HTTPValidationError$inboundSchema;
+      HTTPValidationError$2.outboundSchema = exports.HTTPValidationError$outboundSchema;
+    })(HTTPValidationError$ || (exports.HTTPValidationError$ = HTTPValidationError$ = {}));
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/errors/index.js
+var require_errors2 = __commonJS({
+  "node_modules/@mistralai/mistralai/models/errors/index.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __exportStar2 = exports && exports.__exportStar || function(m5, exports2) {
+      for (var p4 in m5)
+        if (p4 !== "default" && !Object.prototype.hasOwnProperty.call(exports2, p4))
+          __createBinding2(exports2, m5, p4);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    __exportStar2(require_httpclienterrors(), exports);
+    __exportStar2(require_httpvalidationerror(), exports);
+    __exportStar2(require_sdkerror(), exports);
+    __exportStar2(require_sdkvalidationerror(), exports);
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/agentsComplete.js
+var require_agentsComplete = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/agentsComplete.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.agentsComplete = agentsComplete;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function agentsComplete(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.AgentsCompletionRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/agents/completions")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "agents_completion_v1_agents_completions_post",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.ChatCompletionResponse$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/agentsStream.js
+var require_agentsStream = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/agentsStream.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.agentsStream = agentsStream;
+    var z6 = __importStar2(require_lib4());
+    var encodings_js_1 = require_encodings();
+    var event_streams_js_1 = require_event_streams();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function agentsStream(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.AgentsCompletionStreamRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/agents/completions#stream")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "text/event-stream"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "stream_agents",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.sse(200, z6.instanceof(ReadableStream).transform((stream4) => {
+        return new event_streams_js_1.EventStream({
+          stream: stream4,
+          decoder(rawEvent) {
+            const schema = components.CompletionEvent$inboundSchema;
+            return schema.parse(rawEvent);
+          }
+        });
+      }), { sseSentinel: "[DONE]" }), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/agents.js
+var require_agents = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/agents.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Agents = void 0;
+    var agentsComplete_js_1 = require_agentsComplete();
+    var agentsStream_js_1 = require_agentsStream();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Agents = class extends sdks_js_1.ClientSDK {
+      async complete(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, agentsComplete_js_1.agentsComplete)(this, request3, options));
+      }
+      async stream(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, agentsStream_js_1.agentsStream)(this, request3, options));
+      }
+    };
+    exports.Agents = Agents;
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/deletemodelv1modelsmodeliddelete.js
+var require_deletemodelv1modelsmodeliddelete = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/deletemodelv1modelsmodeliddelete.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.DeleteModelV1ModelsModelIdDeleteRequest$ = exports.DeleteModelV1ModelsModelIdDeleteRequest$outboundSchema = exports.DeleteModelV1ModelsModelIdDeleteRequest$inboundSchema = void 0;
+    exports.deleteModelV1ModelsModelIdDeleteRequestToJSON = deleteModelV1ModelsModelIdDeleteRequestToJSON;
+    exports.deleteModelV1ModelsModelIdDeleteRequestFromJSON = deleteModelV1ModelsModelIdDeleteRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.DeleteModelV1ModelsModelIdDeleteRequest$inboundSchema = z6.object({
+      model_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "model_id": "modelId"
+      });
+    });
+    exports.DeleteModelV1ModelsModelIdDeleteRequest$outboundSchema = z6.object({
+      modelId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        modelId: "model_id"
+      });
+    });
+    var DeleteModelV1ModelsModelIdDeleteRequest$;
+    (function(DeleteModelV1ModelsModelIdDeleteRequest$2) {
+      DeleteModelV1ModelsModelIdDeleteRequest$2.inboundSchema = exports.DeleteModelV1ModelsModelIdDeleteRequest$inboundSchema;
+      DeleteModelV1ModelsModelIdDeleteRequest$2.outboundSchema = exports.DeleteModelV1ModelsModelIdDeleteRequest$outboundSchema;
+    })(DeleteModelV1ModelsModelIdDeleteRequest$ || (exports.DeleteModelV1ModelsModelIdDeleteRequest$ = DeleteModelV1ModelsModelIdDeleteRequest$ = {}));
+    function deleteModelV1ModelsModelIdDeleteRequestToJSON(deleteModelV1ModelsModelIdDeleteRequest) {
+      return JSON.stringify(exports.DeleteModelV1ModelsModelIdDeleteRequest$outboundSchema.parse(deleteModelV1ModelsModelIdDeleteRequest));
+    }
+    function deleteModelV1ModelsModelIdDeleteRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.DeleteModelV1ModelsModelIdDeleteRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'DeleteModelV1ModelsModelIdDeleteRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/filesapiroutesdeletefile.js
+var require_filesapiroutesdeletefile = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/filesapiroutesdeletefile.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FilesApiRoutesDeleteFileRequest$ = exports.FilesApiRoutesDeleteFileRequest$outboundSchema = exports.FilesApiRoutesDeleteFileRequest$inboundSchema = void 0;
+    exports.filesApiRoutesDeleteFileRequestToJSON = filesApiRoutesDeleteFileRequestToJSON;
+    exports.filesApiRoutesDeleteFileRequestFromJSON = filesApiRoutesDeleteFileRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.FilesApiRoutesDeleteFileRequest$inboundSchema = z6.object({
+      file_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "file_id": "fileId"
+      });
+    });
+    exports.FilesApiRoutesDeleteFileRequest$outboundSchema = z6.object({
+      fileId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        fileId: "file_id"
+      });
+    });
+    var FilesApiRoutesDeleteFileRequest$;
+    (function(FilesApiRoutesDeleteFileRequest$2) {
+      FilesApiRoutesDeleteFileRequest$2.inboundSchema = exports.FilesApiRoutesDeleteFileRequest$inboundSchema;
+      FilesApiRoutesDeleteFileRequest$2.outboundSchema = exports.FilesApiRoutesDeleteFileRequest$outboundSchema;
+    })(FilesApiRoutesDeleteFileRequest$ || (exports.FilesApiRoutesDeleteFileRequest$ = FilesApiRoutesDeleteFileRequest$ = {}));
+    function filesApiRoutesDeleteFileRequestToJSON(filesApiRoutesDeleteFileRequest) {
+      return JSON.stringify(exports.FilesApiRoutesDeleteFileRequest$outboundSchema.parse(filesApiRoutesDeleteFileRequest));
+    }
+    function filesApiRoutesDeleteFileRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FilesApiRoutesDeleteFileRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FilesApiRoutesDeleteFileRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/filesapiroutesdownloadfile.js
+var require_filesapiroutesdownloadfile = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/filesapiroutesdownloadfile.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FilesApiRoutesDownloadFileRequest$ = exports.FilesApiRoutesDownloadFileRequest$outboundSchema = exports.FilesApiRoutesDownloadFileRequest$inboundSchema = void 0;
+    exports.filesApiRoutesDownloadFileRequestToJSON = filesApiRoutesDownloadFileRequestToJSON;
+    exports.filesApiRoutesDownloadFileRequestFromJSON = filesApiRoutesDownloadFileRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.FilesApiRoutesDownloadFileRequest$inboundSchema = z6.object({
+      file_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "file_id": "fileId"
+      });
+    });
+    exports.FilesApiRoutesDownloadFileRequest$outboundSchema = z6.object({
+      fileId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        fileId: "file_id"
+      });
+    });
+    var FilesApiRoutesDownloadFileRequest$;
+    (function(FilesApiRoutesDownloadFileRequest$2) {
+      FilesApiRoutesDownloadFileRequest$2.inboundSchema = exports.FilesApiRoutesDownloadFileRequest$inboundSchema;
+      FilesApiRoutesDownloadFileRequest$2.outboundSchema = exports.FilesApiRoutesDownloadFileRequest$outboundSchema;
+    })(FilesApiRoutesDownloadFileRequest$ || (exports.FilesApiRoutesDownloadFileRequest$ = FilesApiRoutesDownloadFileRequest$ = {}));
+    function filesApiRoutesDownloadFileRequestToJSON(filesApiRoutesDownloadFileRequest) {
+      return JSON.stringify(exports.FilesApiRoutesDownloadFileRequest$outboundSchema.parse(filesApiRoutesDownloadFileRequest));
+    }
+    function filesApiRoutesDownloadFileRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FilesApiRoutesDownloadFileRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FilesApiRoutesDownloadFileRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/filesapiroutesgetsignedurl.js
+var require_filesapiroutesgetsignedurl = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/filesapiroutesgetsignedurl.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FilesApiRoutesGetSignedUrlRequest$ = exports.FilesApiRoutesGetSignedUrlRequest$outboundSchema = exports.FilesApiRoutesGetSignedUrlRequest$inboundSchema = void 0;
+    exports.filesApiRoutesGetSignedUrlRequestToJSON = filesApiRoutesGetSignedUrlRequestToJSON;
+    exports.filesApiRoutesGetSignedUrlRequestFromJSON = filesApiRoutesGetSignedUrlRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.FilesApiRoutesGetSignedUrlRequest$inboundSchema = z6.object({
+      file_id: z6.string(),
+      expiry: z6.number().int().default(24)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "file_id": "fileId"
+      });
+    });
+    exports.FilesApiRoutesGetSignedUrlRequest$outboundSchema = z6.object({
+      fileId: z6.string(),
+      expiry: z6.number().int().default(24)
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        fileId: "file_id"
+      });
+    });
+    var FilesApiRoutesGetSignedUrlRequest$;
+    (function(FilesApiRoutesGetSignedUrlRequest$2) {
+      FilesApiRoutesGetSignedUrlRequest$2.inboundSchema = exports.FilesApiRoutesGetSignedUrlRequest$inboundSchema;
+      FilesApiRoutesGetSignedUrlRequest$2.outboundSchema = exports.FilesApiRoutesGetSignedUrlRequest$outboundSchema;
+    })(FilesApiRoutesGetSignedUrlRequest$ || (exports.FilesApiRoutesGetSignedUrlRequest$ = FilesApiRoutesGetSignedUrlRequest$ = {}));
+    function filesApiRoutesGetSignedUrlRequestToJSON(filesApiRoutesGetSignedUrlRequest) {
+      return JSON.stringify(exports.FilesApiRoutesGetSignedUrlRequest$outboundSchema.parse(filesApiRoutesGetSignedUrlRequest));
+    }
+    function filesApiRoutesGetSignedUrlRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FilesApiRoutesGetSignedUrlRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FilesApiRoutesGetSignedUrlRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/filesapirouteslistfiles.js
+var require_filesapirouteslistfiles = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/filesapirouteslistfiles.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FilesApiRoutesListFilesRequest$ = exports.FilesApiRoutesListFilesRequest$outboundSchema = exports.FilesApiRoutesListFilesRequest$inboundSchema = void 0;
+    exports.filesApiRoutesListFilesRequestToJSON = filesApiRoutesListFilesRequestToJSON;
+    exports.filesApiRoutesListFilesRequestFromJSON = filesApiRoutesListFilesRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var components = __importStar2(require_components());
+    exports.FilesApiRoutesListFilesRequest$inboundSchema = z6.object({
+      page: z6.number().int().default(0),
+      page_size: z6.number().int().default(100),
+      sample_type: z6.nullable(z6.array(components.SampleType$inboundSchema)).optional(),
+      source: z6.nullable(z6.array(components.Source$inboundSchema)).optional(),
+      search: z6.nullable(z6.string()).optional(),
+      purpose: z6.nullable(components.FilePurpose$inboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "page_size": "pageSize",
+        "sample_type": "sampleType"
+      });
+    });
+    exports.FilesApiRoutesListFilesRequest$outboundSchema = z6.object({
+      page: z6.number().int().default(0),
+      pageSize: z6.number().int().default(100),
+      sampleType: z6.nullable(z6.array(components.SampleType$outboundSchema)).optional(),
+      source: z6.nullable(z6.array(components.Source$outboundSchema)).optional(),
+      search: z6.nullable(z6.string()).optional(),
+      purpose: z6.nullable(components.FilePurpose$outboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        pageSize: "page_size",
+        sampleType: "sample_type"
+      });
+    });
+    var FilesApiRoutesListFilesRequest$;
+    (function(FilesApiRoutesListFilesRequest$2) {
+      FilesApiRoutesListFilesRequest$2.inboundSchema = exports.FilesApiRoutesListFilesRequest$inboundSchema;
+      FilesApiRoutesListFilesRequest$2.outboundSchema = exports.FilesApiRoutesListFilesRequest$outboundSchema;
+    })(FilesApiRoutesListFilesRequest$ || (exports.FilesApiRoutesListFilesRequest$ = FilesApiRoutesListFilesRequest$ = {}));
+    function filesApiRoutesListFilesRequestToJSON(filesApiRoutesListFilesRequest) {
+      return JSON.stringify(exports.FilesApiRoutesListFilesRequest$outboundSchema.parse(filesApiRoutesListFilesRequest));
+    }
+    function filesApiRoutesListFilesRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FilesApiRoutesListFilesRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FilesApiRoutesListFilesRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/filesapiroutesretrievefile.js
+var require_filesapiroutesretrievefile = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/filesapiroutesretrievefile.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FilesApiRoutesRetrieveFileRequest$ = exports.FilesApiRoutesRetrieveFileRequest$outboundSchema = exports.FilesApiRoutesRetrieveFileRequest$inboundSchema = void 0;
+    exports.filesApiRoutesRetrieveFileRequestToJSON = filesApiRoutesRetrieveFileRequestToJSON;
+    exports.filesApiRoutesRetrieveFileRequestFromJSON = filesApiRoutesRetrieveFileRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.FilesApiRoutesRetrieveFileRequest$inboundSchema = z6.object({
+      file_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "file_id": "fileId"
+      });
+    });
+    exports.FilesApiRoutesRetrieveFileRequest$outboundSchema = z6.object({
+      fileId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        fileId: "file_id"
+      });
+    });
+    var FilesApiRoutesRetrieveFileRequest$;
+    (function(FilesApiRoutesRetrieveFileRequest$2) {
+      FilesApiRoutesRetrieveFileRequest$2.inboundSchema = exports.FilesApiRoutesRetrieveFileRequest$inboundSchema;
+      FilesApiRoutesRetrieveFileRequest$2.outboundSchema = exports.FilesApiRoutesRetrieveFileRequest$outboundSchema;
+    })(FilesApiRoutesRetrieveFileRequest$ || (exports.FilesApiRoutesRetrieveFileRequest$ = FilesApiRoutesRetrieveFileRequest$ = {}));
+    function filesApiRoutesRetrieveFileRequestToJSON(filesApiRoutesRetrieveFileRequest) {
+      return JSON.stringify(exports.FilesApiRoutesRetrieveFileRequest$outboundSchema.parse(filesApiRoutesRetrieveFileRequest));
+    }
+    function filesApiRoutesRetrieveFileRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FilesApiRoutesRetrieveFileRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FilesApiRoutesRetrieveFileRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/types/blobs.js
+var require_blobs = __commonJS({
+  "node_modules/@mistralai/mistralai/types/blobs.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.blobLikeSchema = void 0;
+    exports.isBlobLike = isBlobLike3;
+    var z6 = __importStar2(require_lib4());
+    exports.blobLikeSchema = z6.custom(isBlobLike3, {
+      message: "expected a Blob, File or Blob-like object",
+      fatal: true
+    });
+    function isBlobLike3(val) {
+      if (val instanceof Blob) {
+        return true;
+      }
+      if (typeof val !== "object" || val == null || !(Symbol.toStringTag in val)) {
+        return false;
+      }
+      const name = val[Symbol.toStringTag];
+      if (typeof name !== "string") {
+        return false;
+      }
+      if (name !== "Blob" && name !== "File") {
+        return false;
+      }
+      return "stream" in val && typeof val.stream === "function";
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/filesapiroutesuploadfile.js
+var require_filesapiroutesuploadfile = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/filesapiroutesuploadfile.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FilesApiRoutesUploadFileMultiPartBodyParams$ = exports.FilesApiRoutesUploadFileMultiPartBodyParams$outboundSchema = exports.FilesApiRoutesUploadFileMultiPartBodyParams$inboundSchema = exports.FileT$ = exports.FileT$outboundSchema = exports.FileT$inboundSchema = void 0;
+    exports.fileToJSON = fileToJSON;
+    exports.fileFromJSON = fileFromJSON;
+    exports.filesApiRoutesUploadFileMultiPartBodyParamsToJSON = filesApiRoutesUploadFileMultiPartBodyParamsToJSON;
+    exports.filesApiRoutesUploadFileMultiPartBodyParamsFromJSON = filesApiRoutesUploadFileMultiPartBodyParamsFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var blobs_js_1 = require_blobs();
+    var components = __importStar2(require_components());
+    exports.FileT$inboundSchema = z6.object({
+      fileName: z6.string(),
+      content: z6.union([
+        z6.instanceof(ReadableStream),
+        z6.instanceof(Blob),
+        z6.instanceof(ArrayBuffer),
+        z6.instanceof(Uint8Array)
+      ])
+    });
+    exports.FileT$outboundSchema = z6.object({
+      fileName: z6.string(),
+      content: z6.union([
+        z6.instanceof(ReadableStream),
+        z6.instanceof(Blob),
+        z6.instanceof(ArrayBuffer),
+        z6.instanceof(Uint8Array)
+      ])
+    });
+    var FileT$;
+    (function(FileT$2) {
+      FileT$2.inboundSchema = exports.FileT$inboundSchema;
+      FileT$2.outboundSchema = exports.FileT$outboundSchema;
+    })(FileT$ || (exports.FileT$ = FileT$ = {}));
+    function fileToJSON(fileT) {
+      return JSON.stringify(exports.FileT$outboundSchema.parse(fileT));
+    }
+    function fileFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FileT$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FileT' from JSON`);
+    }
+    exports.FilesApiRoutesUploadFileMultiPartBodyParams$inboundSchema = z6.object({
+      file: z6.lazy(() => exports.FileT$inboundSchema),
+      purpose: components.FilePurpose$inboundSchema.optional()
+    });
+    exports.FilesApiRoutesUploadFileMultiPartBodyParams$outboundSchema = z6.object({
+      file: z6.lazy(() => exports.FileT$outboundSchema).or(blobs_js_1.blobLikeSchema),
+      purpose: components.FilePurpose$outboundSchema.optional()
+    });
+    var FilesApiRoutesUploadFileMultiPartBodyParams$;
+    (function(FilesApiRoutesUploadFileMultiPartBodyParams$2) {
+      FilesApiRoutesUploadFileMultiPartBodyParams$2.inboundSchema = exports.FilesApiRoutesUploadFileMultiPartBodyParams$inboundSchema;
+      FilesApiRoutesUploadFileMultiPartBodyParams$2.outboundSchema = exports.FilesApiRoutesUploadFileMultiPartBodyParams$outboundSchema;
+    })(FilesApiRoutesUploadFileMultiPartBodyParams$ || (exports.FilesApiRoutesUploadFileMultiPartBodyParams$ = FilesApiRoutesUploadFileMultiPartBodyParams$ = {}));
+    function filesApiRoutesUploadFileMultiPartBodyParamsToJSON(filesApiRoutesUploadFileMultiPartBodyParams) {
+      return JSON.stringify(exports.FilesApiRoutesUploadFileMultiPartBodyParams$outboundSchema.parse(filesApiRoutesUploadFileMultiPartBodyParams));
+    }
+    function filesApiRoutesUploadFileMultiPartBodyParamsFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.FilesApiRoutesUploadFileMultiPartBodyParams$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'FilesApiRoutesUploadFileMultiPartBodyParams' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesbatchcancelbatchjob.js
+var require_jobsapiroutesbatchcancelbatchjob = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesbatchcancelbatchjob.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesBatchCancelBatchJobRequest$ = exports.JobsApiRoutesBatchCancelBatchJobRequest$outboundSchema = exports.JobsApiRoutesBatchCancelBatchJobRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesBatchCancelBatchJobRequestToJSON = jobsApiRoutesBatchCancelBatchJobRequestToJSON;
+    exports.jobsApiRoutesBatchCancelBatchJobRequestFromJSON = jobsApiRoutesBatchCancelBatchJobRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobsApiRoutesBatchCancelBatchJobRequest$inboundSchema = z6.object({
+      job_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "job_id": "jobId"
+      });
+    });
+    exports.JobsApiRoutesBatchCancelBatchJobRequest$outboundSchema = z6.object({
+      jobId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        jobId: "job_id"
+      });
+    });
+    var JobsApiRoutesBatchCancelBatchJobRequest$;
+    (function(JobsApiRoutesBatchCancelBatchJobRequest$2) {
+      JobsApiRoutesBatchCancelBatchJobRequest$2.inboundSchema = exports.JobsApiRoutesBatchCancelBatchJobRequest$inboundSchema;
+      JobsApiRoutesBatchCancelBatchJobRequest$2.outboundSchema = exports.JobsApiRoutesBatchCancelBatchJobRequest$outboundSchema;
+    })(JobsApiRoutesBatchCancelBatchJobRequest$ || (exports.JobsApiRoutesBatchCancelBatchJobRequest$ = JobsApiRoutesBatchCancelBatchJobRequest$ = {}));
+    function jobsApiRoutesBatchCancelBatchJobRequestToJSON(jobsApiRoutesBatchCancelBatchJobRequest) {
+      return JSON.stringify(exports.JobsApiRoutesBatchCancelBatchJobRequest$outboundSchema.parse(jobsApiRoutesBatchCancelBatchJobRequest));
+    }
+    function jobsApiRoutesBatchCancelBatchJobRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesBatchCancelBatchJobRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesBatchCancelBatchJobRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesbatchgetbatchjob.js
+var require_jobsapiroutesbatchgetbatchjob = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesbatchgetbatchjob.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesBatchGetBatchJobRequest$ = exports.JobsApiRoutesBatchGetBatchJobRequest$outboundSchema = exports.JobsApiRoutesBatchGetBatchJobRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesBatchGetBatchJobRequestToJSON = jobsApiRoutesBatchGetBatchJobRequestToJSON;
+    exports.jobsApiRoutesBatchGetBatchJobRequestFromJSON = jobsApiRoutesBatchGetBatchJobRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobsApiRoutesBatchGetBatchJobRequest$inboundSchema = z6.object({
+      job_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "job_id": "jobId"
+      });
+    });
+    exports.JobsApiRoutesBatchGetBatchJobRequest$outboundSchema = z6.object({
+      jobId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        jobId: "job_id"
+      });
+    });
+    var JobsApiRoutesBatchGetBatchJobRequest$;
+    (function(JobsApiRoutesBatchGetBatchJobRequest$2) {
+      JobsApiRoutesBatchGetBatchJobRequest$2.inboundSchema = exports.JobsApiRoutesBatchGetBatchJobRequest$inboundSchema;
+      JobsApiRoutesBatchGetBatchJobRequest$2.outboundSchema = exports.JobsApiRoutesBatchGetBatchJobRequest$outboundSchema;
+    })(JobsApiRoutesBatchGetBatchJobRequest$ || (exports.JobsApiRoutesBatchGetBatchJobRequest$ = JobsApiRoutesBatchGetBatchJobRequest$ = {}));
+    function jobsApiRoutesBatchGetBatchJobRequestToJSON(jobsApiRoutesBatchGetBatchJobRequest) {
+      return JSON.stringify(exports.JobsApiRoutesBatchGetBatchJobRequest$outboundSchema.parse(jobsApiRoutesBatchGetBatchJobRequest));
+    }
+    function jobsApiRoutesBatchGetBatchJobRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesBatchGetBatchJobRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesBatchGetBatchJobRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesbatchgetbatchjobs.js
+var require_jobsapiroutesbatchgetbatchjobs = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesbatchgetbatchjobs.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesBatchGetBatchJobsRequest$ = exports.JobsApiRoutesBatchGetBatchJobsRequest$outboundSchema = exports.JobsApiRoutesBatchGetBatchJobsRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesBatchGetBatchJobsRequestToJSON = jobsApiRoutesBatchGetBatchJobsRequestToJSON;
+    exports.jobsApiRoutesBatchGetBatchJobsRequestFromJSON = jobsApiRoutesBatchGetBatchJobsRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var components = __importStar2(require_components());
+    exports.JobsApiRoutesBatchGetBatchJobsRequest$inboundSchema = z6.object({
+      page: z6.number().int().default(0),
+      page_size: z6.number().int().default(100),
+      model: z6.nullable(z6.string()).optional(),
+      metadata: z6.nullable(z6.record(z6.any())).optional(),
+      created_after: z6.nullable(z6.string().datetime({ offset: true }).transform((v5) => new Date(v5))).optional(),
+      created_by_me: z6.boolean().default(false),
+      status: z6.nullable(components.BatchJobStatus$inboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "page_size": "pageSize",
+        "created_after": "createdAfter",
+        "created_by_me": "createdByMe"
+      });
+    });
+    exports.JobsApiRoutesBatchGetBatchJobsRequest$outboundSchema = z6.object({
+      page: z6.number().int().default(0),
+      pageSize: z6.number().int().default(100),
+      model: z6.nullable(z6.string()).optional(),
+      metadata: z6.nullable(z6.record(z6.any())).optional(),
+      createdAfter: z6.nullable(z6.date().transform((v5) => v5.toISOString())).optional(),
+      createdByMe: z6.boolean().default(false),
+      status: z6.nullable(components.BatchJobStatus$outboundSchema).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        pageSize: "page_size",
+        createdAfter: "created_after",
+        createdByMe: "created_by_me"
+      });
+    });
+    var JobsApiRoutesBatchGetBatchJobsRequest$;
+    (function(JobsApiRoutesBatchGetBatchJobsRequest$2) {
+      JobsApiRoutesBatchGetBatchJobsRequest$2.inboundSchema = exports.JobsApiRoutesBatchGetBatchJobsRequest$inboundSchema;
+      JobsApiRoutesBatchGetBatchJobsRequest$2.outboundSchema = exports.JobsApiRoutesBatchGetBatchJobsRequest$outboundSchema;
+    })(JobsApiRoutesBatchGetBatchJobsRequest$ || (exports.JobsApiRoutesBatchGetBatchJobsRequest$ = JobsApiRoutesBatchGetBatchJobsRequest$ = {}));
+    function jobsApiRoutesBatchGetBatchJobsRequestToJSON(jobsApiRoutesBatchGetBatchJobsRequest) {
+      return JSON.stringify(exports.JobsApiRoutesBatchGetBatchJobsRequest$outboundSchema.parse(jobsApiRoutesBatchGetBatchJobsRequest));
+    }
+    function jobsApiRoutesBatchGetBatchJobsRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesBatchGetBatchJobsRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesBatchGetBatchJobsRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningarchivefinetunedmodel.js
+var require_jobsapiroutesfinetuningarchivefinetunedmodel = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningarchivefinetunedmodel.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$ = exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$outboundSchema = exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesFineTuningArchiveFineTunedModelRequestToJSON = jobsApiRoutesFineTuningArchiveFineTunedModelRequestToJSON;
+    exports.jobsApiRoutesFineTuningArchiveFineTunedModelRequestFromJSON = jobsApiRoutesFineTuningArchiveFineTunedModelRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$inboundSchema = z6.object({
+      model_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "model_id": "modelId"
+      });
+    });
+    exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$outboundSchema = z6.object({
+      modelId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        modelId: "model_id"
+      });
+    });
+    var JobsApiRoutesFineTuningArchiveFineTunedModelRequest$;
+    (function(JobsApiRoutesFineTuningArchiveFineTunedModelRequest$2) {
+      JobsApiRoutesFineTuningArchiveFineTunedModelRequest$2.inboundSchema = exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$inboundSchema;
+      JobsApiRoutesFineTuningArchiveFineTunedModelRequest$2.outboundSchema = exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$outboundSchema;
+    })(JobsApiRoutesFineTuningArchiveFineTunedModelRequest$ || (exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$ = JobsApiRoutesFineTuningArchiveFineTunedModelRequest$ = {}));
+    function jobsApiRoutesFineTuningArchiveFineTunedModelRequestToJSON(jobsApiRoutesFineTuningArchiveFineTunedModelRequest) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$outboundSchema.parse(jobsApiRoutesFineTuningArchiveFineTunedModelRequest));
+    }
+    function jobsApiRoutesFineTuningArchiveFineTunedModelRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningArchiveFineTunedModelRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningcancelfinetuningjob.js
+var require_jobsapiroutesfinetuningcancelfinetuningjob = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningcancelfinetuningjob.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$ = exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$outboundSchema = exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesFineTuningCancelFineTuningJobRequestToJSON = jobsApiRoutesFineTuningCancelFineTuningJobRequestToJSON;
+    exports.jobsApiRoutesFineTuningCancelFineTuningJobRequestFromJSON = jobsApiRoutesFineTuningCancelFineTuningJobRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$inboundSchema = z6.object({
+      job_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "job_id": "jobId"
+      });
+    });
+    exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$outboundSchema = z6.object({
+      jobId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        jobId: "job_id"
+      });
+    });
+    var JobsApiRoutesFineTuningCancelFineTuningJobRequest$;
+    (function(JobsApiRoutesFineTuningCancelFineTuningJobRequest$2) {
+      JobsApiRoutesFineTuningCancelFineTuningJobRequest$2.inboundSchema = exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$inboundSchema;
+      JobsApiRoutesFineTuningCancelFineTuningJobRequest$2.outboundSchema = exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$outboundSchema;
+    })(JobsApiRoutesFineTuningCancelFineTuningJobRequest$ || (exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$ = JobsApiRoutesFineTuningCancelFineTuningJobRequest$ = {}));
+    function jobsApiRoutesFineTuningCancelFineTuningJobRequestToJSON(jobsApiRoutesFineTuningCancelFineTuningJobRequest) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$outboundSchema.parse(jobsApiRoutesFineTuningCancelFineTuningJobRequest));
+    }
+    function jobsApiRoutesFineTuningCancelFineTuningJobRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningCancelFineTuningJobRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningCancelFineTuningJobRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningcreatefinetuningjob.js
+var require_jobsapiroutesfinetuningcreatefinetuningjob = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningcreatefinetuningjob.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$ = exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$outboundSchema = exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$inboundSchema = void 0;
+    exports.jobsApiRoutesFineTuningCreateFineTuningJobResponseToJSON = jobsApiRoutesFineTuningCreateFineTuningJobResponseToJSON;
+    exports.jobsApiRoutesFineTuningCreateFineTuningJobResponseFromJSON = jobsApiRoutesFineTuningCreateFineTuningJobResponseFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var schemas_js_1 = require_schemas();
+    var components = __importStar2(require_components());
+    exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$inboundSchema = z6.union([
+      components.LegacyJobMetadataOut$inboundSchema,
+      components.JobOut$inboundSchema
+    ]);
+    exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$outboundSchema = z6.union([
+      components.LegacyJobMetadataOut$outboundSchema,
+      components.JobOut$outboundSchema
+    ]);
+    var JobsApiRoutesFineTuningCreateFineTuningJobResponse$;
+    (function(JobsApiRoutesFineTuningCreateFineTuningJobResponse$2) {
+      JobsApiRoutesFineTuningCreateFineTuningJobResponse$2.inboundSchema = exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$inboundSchema;
+      JobsApiRoutesFineTuningCreateFineTuningJobResponse$2.outboundSchema = exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$outboundSchema;
+    })(JobsApiRoutesFineTuningCreateFineTuningJobResponse$ || (exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$ = JobsApiRoutesFineTuningCreateFineTuningJobResponse$ = {}));
+    function jobsApiRoutesFineTuningCreateFineTuningJobResponseToJSON(jobsApiRoutesFineTuningCreateFineTuningJobResponse) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$outboundSchema.parse(jobsApiRoutesFineTuningCreateFineTuningJobResponse));
+    }
+    function jobsApiRoutesFineTuningCreateFineTuningJobResponseFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningCreateFineTuningJobResponse$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningCreateFineTuningJobResponse' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuninggetfinetuningjob.js
+var require_jobsapiroutesfinetuninggetfinetuningjob = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuninggetfinetuningjob.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$ = exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$outboundSchema = exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesFineTuningGetFineTuningJobRequestToJSON = jobsApiRoutesFineTuningGetFineTuningJobRequestToJSON;
+    exports.jobsApiRoutesFineTuningGetFineTuningJobRequestFromJSON = jobsApiRoutesFineTuningGetFineTuningJobRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$inboundSchema = z6.object({
+      job_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "job_id": "jobId"
+      });
+    });
+    exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$outboundSchema = z6.object({
+      jobId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        jobId: "job_id"
+      });
+    });
+    var JobsApiRoutesFineTuningGetFineTuningJobRequest$;
+    (function(JobsApiRoutesFineTuningGetFineTuningJobRequest$2) {
+      JobsApiRoutesFineTuningGetFineTuningJobRequest$2.inboundSchema = exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$inboundSchema;
+      JobsApiRoutesFineTuningGetFineTuningJobRequest$2.outboundSchema = exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$outboundSchema;
+    })(JobsApiRoutesFineTuningGetFineTuningJobRequest$ || (exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$ = JobsApiRoutesFineTuningGetFineTuningJobRequest$ = {}));
+    function jobsApiRoutesFineTuningGetFineTuningJobRequestToJSON(jobsApiRoutesFineTuningGetFineTuningJobRequest) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$outboundSchema.parse(jobsApiRoutesFineTuningGetFineTuningJobRequest));
+    }
+    function jobsApiRoutesFineTuningGetFineTuningJobRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningGetFineTuningJobRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningGetFineTuningJobRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuninggetfinetuningjobs.js
+var require_jobsapiroutesfinetuninggetfinetuningjobs = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuninggetfinetuningjobs.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$ = exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$outboundSchema = exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$inboundSchema = exports.Status$ = exports.Status$outboundSchema = exports.Status$inboundSchema = exports.Status = void 0;
+    exports.jobsApiRoutesFineTuningGetFineTuningJobsRequestToJSON = jobsApiRoutesFineTuningGetFineTuningJobsRequestToJSON;
+    exports.jobsApiRoutesFineTuningGetFineTuningJobsRequestFromJSON = jobsApiRoutesFineTuningGetFineTuningJobsRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.Status = {
+      Queued: "QUEUED",
+      Started: "STARTED",
+      Validating: "VALIDATING",
+      Validated: "VALIDATED",
+      Running: "RUNNING",
+      FailedValidation: "FAILED_VALIDATION",
+      Failed: "FAILED",
+      Success: "SUCCESS",
+      Cancelled: "CANCELLED",
+      CancellationRequested: "CANCELLATION_REQUESTED"
+    };
+    exports.Status$inboundSchema = z6.nativeEnum(exports.Status);
+    exports.Status$outboundSchema = exports.Status$inboundSchema;
+    var Status$;
+    (function(Status$2) {
+      Status$2.inboundSchema = exports.Status$inboundSchema;
+      Status$2.outboundSchema = exports.Status$outboundSchema;
+    })(Status$ || (exports.Status$ = Status$ = {}));
+    exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$inboundSchema = z6.object({
+      page: z6.number().int().default(0),
+      page_size: z6.number().int().default(100),
+      model: z6.nullable(z6.string()).optional(),
+      created_after: z6.nullable(z6.string().datetime({ offset: true }).transform((v5) => new Date(v5))).optional(),
+      created_by_me: z6.boolean().default(false),
+      status: z6.nullable(exports.Status$inboundSchema).optional(),
+      wandb_project: z6.nullable(z6.string()).optional(),
+      wandb_name: z6.nullable(z6.string()).optional(),
+      suffix: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "page_size": "pageSize",
+        "created_after": "createdAfter",
+        "created_by_me": "createdByMe",
+        "wandb_project": "wandbProject",
+        "wandb_name": "wandbName"
+      });
+    });
+    exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$outboundSchema = z6.object({
+      page: z6.number().int().default(0),
+      pageSize: z6.number().int().default(100),
+      model: z6.nullable(z6.string()).optional(),
+      createdAfter: z6.nullable(z6.date().transform((v5) => v5.toISOString())).optional(),
+      createdByMe: z6.boolean().default(false),
+      status: z6.nullable(exports.Status$outboundSchema).optional(),
+      wandbProject: z6.nullable(z6.string()).optional(),
+      wandbName: z6.nullable(z6.string()).optional(),
+      suffix: z6.nullable(z6.string()).optional()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        pageSize: "page_size",
+        createdAfter: "created_after",
+        createdByMe: "created_by_me",
+        wandbProject: "wandb_project",
+        wandbName: "wandb_name"
+      });
+    });
+    var JobsApiRoutesFineTuningGetFineTuningJobsRequest$;
+    (function(JobsApiRoutesFineTuningGetFineTuningJobsRequest$2) {
+      JobsApiRoutesFineTuningGetFineTuningJobsRequest$2.inboundSchema = exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$inboundSchema;
+      JobsApiRoutesFineTuningGetFineTuningJobsRequest$2.outboundSchema = exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$outboundSchema;
+    })(JobsApiRoutesFineTuningGetFineTuningJobsRequest$ || (exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$ = JobsApiRoutesFineTuningGetFineTuningJobsRequest$ = {}));
+    function jobsApiRoutesFineTuningGetFineTuningJobsRequestToJSON(jobsApiRoutesFineTuningGetFineTuningJobsRequest) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$outboundSchema.parse(jobsApiRoutesFineTuningGetFineTuningJobsRequest));
+    }
+    function jobsApiRoutesFineTuningGetFineTuningJobsRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningGetFineTuningJobsRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningGetFineTuningJobsRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningstartfinetuningjob.js
+var require_jobsapiroutesfinetuningstartfinetuningjob = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningstartfinetuningjob.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$ = exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$outboundSchema = exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesFineTuningStartFineTuningJobRequestToJSON = jobsApiRoutesFineTuningStartFineTuningJobRequestToJSON;
+    exports.jobsApiRoutesFineTuningStartFineTuningJobRequestFromJSON = jobsApiRoutesFineTuningStartFineTuningJobRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$inboundSchema = z6.object({
+      job_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "job_id": "jobId"
+      });
+    });
+    exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$outboundSchema = z6.object({
+      jobId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        jobId: "job_id"
+      });
+    });
+    var JobsApiRoutesFineTuningStartFineTuningJobRequest$;
+    (function(JobsApiRoutesFineTuningStartFineTuningJobRequest$2) {
+      JobsApiRoutesFineTuningStartFineTuningJobRequest$2.inboundSchema = exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$inboundSchema;
+      JobsApiRoutesFineTuningStartFineTuningJobRequest$2.outboundSchema = exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$outboundSchema;
+    })(JobsApiRoutesFineTuningStartFineTuningJobRequest$ || (exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$ = JobsApiRoutesFineTuningStartFineTuningJobRequest$ = {}));
+    function jobsApiRoutesFineTuningStartFineTuningJobRequestToJSON(jobsApiRoutesFineTuningStartFineTuningJobRequest) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$outboundSchema.parse(jobsApiRoutesFineTuningStartFineTuningJobRequest));
+    }
+    function jobsApiRoutesFineTuningStartFineTuningJobRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningStartFineTuningJobRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningStartFineTuningJobRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningunarchivefinetunedmodel.js
+var require_jobsapiroutesfinetuningunarchivefinetunedmodel = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningunarchivefinetunedmodel.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$ = exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$outboundSchema = exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesFineTuningUnarchiveFineTunedModelRequestToJSON = jobsApiRoutesFineTuningUnarchiveFineTunedModelRequestToJSON;
+    exports.jobsApiRoutesFineTuningUnarchiveFineTunedModelRequestFromJSON = jobsApiRoutesFineTuningUnarchiveFineTunedModelRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$inboundSchema = z6.object({
+      model_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "model_id": "modelId"
+      });
+    });
+    exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$outboundSchema = z6.object({
+      modelId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        modelId: "model_id"
+      });
+    });
+    var JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$;
+    (function(JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$2) {
+      JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$2.inboundSchema = exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$inboundSchema;
+      JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$2.outboundSchema = exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$outboundSchema;
+    })(JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$ || (exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$ = JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$ = {}));
+    function jobsApiRoutesFineTuningUnarchiveFineTunedModelRequestToJSON(jobsApiRoutesFineTuningUnarchiveFineTunedModelRequest) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$outboundSchema.parse(jobsApiRoutesFineTuningUnarchiveFineTunedModelRequest));
+    }
+    function jobsApiRoutesFineTuningUnarchiveFineTunedModelRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningupdatefinetunedmodel.js
+var require_jobsapiroutesfinetuningupdatefinetunedmodel = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/jobsapiroutesfinetuningupdatefinetunedmodel.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$ = exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$outboundSchema = exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$inboundSchema = void 0;
+    exports.jobsApiRoutesFineTuningUpdateFineTunedModelRequestToJSON = jobsApiRoutesFineTuningUpdateFineTunedModelRequestToJSON;
+    exports.jobsApiRoutesFineTuningUpdateFineTunedModelRequestFromJSON = jobsApiRoutesFineTuningUpdateFineTunedModelRequestFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var components = __importStar2(require_components());
+    exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$inboundSchema = z6.object({
+      model_id: z6.string(),
+      UpdateFTModelIn: components.UpdateFTModelIn$inboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "model_id": "modelId",
+        "UpdateFTModelIn": "updateFTModelIn"
+      });
+    });
+    exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$outboundSchema = z6.object({
+      modelId: z6.string(),
+      updateFTModelIn: components.UpdateFTModelIn$outboundSchema
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        modelId: "model_id",
+        updateFTModelIn: "UpdateFTModelIn"
+      });
+    });
+    var JobsApiRoutesFineTuningUpdateFineTunedModelRequest$;
+    (function(JobsApiRoutesFineTuningUpdateFineTunedModelRequest$2) {
+      JobsApiRoutesFineTuningUpdateFineTunedModelRequest$2.inboundSchema = exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$inboundSchema;
+      JobsApiRoutesFineTuningUpdateFineTunedModelRequest$2.outboundSchema = exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$outboundSchema;
+    })(JobsApiRoutesFineTuningUpdateFineTunedModelRequest$ || (exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$ = JobsApiRoutesFineTuningUpdateFineTunedModelRequest$ = {}));
+    function jobsApiRoutesFineTuningUpdateFineTunedModelRequestToJSON(jobsApiRoutesFineTuningUpdateFineTunedModelRequest) {
+      return JSON.stringify(exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$outboundSchema.parse(jobsApiRoutesFineTuningUpdateFineTunedModelRequest));
+    }
+    function jobsApiRoutesFineTuningUpdateFineTunedModelRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'JobsApiRoutesFineTuningUpdateFineTunedModelRequest' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/retrievemodelv1modelsmodelidget.js
+var require_retrievemodelv1modelsmodelidget = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/retrievemodelv1modelsmodelidget.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$ = exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$outboundSchema = exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$inboundSchema = exports.RetrieveModelV1ModelsModelIdGetRequest$ = exports.RetrieveModelV1ModelsModelIdGetRequest$outboundSchema = exports.RetrieveModelV1ModelsModelIdGetRequest$inboundSchema = void 0;
+    exports.retrieveModelV1ModelsModelIdGetRequestToJSON = retrieveModelV1ModelsModelIdGetRequestToJSON;
+    exports.retrieveModelV1ModelsModelIdGetRequestFromJSON = retrieveModelV1ModelsModelIdGetRequestFromJSON;
+    exports.retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGetToJSON = retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGetToJSON;
+    exports.retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGetFromJSON = retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGetFromJSON;
+    var z6 = __importStar2(require_lib4());
+    var primitives_js_1 = require_primitives();
+    var schemas_js_1 = require_schemas();
+    var components = __importStar2(require_components());
+    exports.RetrieveModelV1ModelsModelIdGetRequest$inboundSchema = z6.object({
+      model_id: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        "model_id": "modelId"
+      });
+    });
+    exports.RetrieveModelV1ModelsModelIdGetRequest$outboundSchema = z6.object({
+      modelId: z6.string()
+    }).transform((v5) => {
+      return (0, primitives_js_1.remap)(v5, {
+        modelId: "model_id"
+      });
+    });
+    var RetrieveModelV1ModelsModelIdGetRequest$;
+    (function(RetrieveModelV1ModelsModelIdGetRequest$2) {
+      RetrieveModelV1ModelsModelIdGetRequest$2.inboundSchema = exports.RetrieveModelV1ModelsModelIdGetRequest$inboundSchema;
+      RetrieveModelV1ModelsModelIdGetRequest$2.outboundSchema = exports.RetrieveModelV1ModelsModelIdGetRequest$outboundSchema;
+    })(RetrieveModelV1ModelsModelIdGetRequest$ || (exports.RetrieveModelV1ModelsModelIdGetRequest$ = RetrieveModelV1ModelsModelIdGetRequest$ = {}));
+    function retrieveModelV1ModelsModelIdGetRequestToJSON(retrieveModelV1ModelsModelIdGetRequest) {
+      return JSON.stringify(exports.RetrieveModelV1ModelsModelIdGetRequest$outboundSchema.parse(retrieveModelV1ModelsModelIdGetRequest));
+    }
+    function retrieveModelV1ModelsModelIdGetRequestFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.RetrieveModelV1ModelsModelIdGetRequest$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'RetrieveModelV1ModelsModelIdGetRequest' from JSON`);
+    }
+    exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$inboundSchema = z6.union([
+      components.BaseModelCard$inboundSchema.and(z6.object({ type: z6.literal("base") }).transform((v5) => ({
+        type: v5.type
+      }))),
+      components.FTModelCard$inboundSchema.and(z6.object({ type: z6.literal("fine-tuned") }).transform((v5) => ({
+        type: v5.type
+      })))
+    ]);
+    exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$outboundSchema = z6.union([
+      components.BaseModelCard$outboundSchema.and(z6.object({ type: z6.literal("base") }).transform((v5) => ({
+        type: v5.type
+      }))),
+      components.FTModelCard$outboundSchema.and(z6.object({ type: z6.literal("fine-tuned") }).transform((v5) => ({
+        type: v5.type
+      })))
+    ]);
+    var RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$;
+    (function(RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$2) {
+      RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$2.inboundSchema = exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$inboundSchema;
+      RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$2.outboundSchema = exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$outboundSchema;
+    })(RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$ || (exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$ = RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$ = {}));
+    function retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGetToJSON(retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet) {
+      return JSON.stringify(exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$outboundSchema.parse(retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet));
+    }
+    function retrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGetFromJSON(jsonString) {
+      return (0, schemas_js_1.safeParse)(jsonString, (x5) => exports.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$inboundSchema.parse(JSON.parse(x5)), `Failed to parse 'RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet' from JSON`);
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/models/operations/index.js
+var require_operations = __commonJS({
+  "node_modules/@mistralai/mistralai/models/operations/index.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __exportStar2 = exports && exports.__exportStar || function(m5, exports2) {
+      for (var p4 in m5)
+        if (p4 !== "default" && !Object.prototype.hasOwnProperty.call(exports2, p4))
+          __createBinding2(exports2, m5, p4);
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    __exportStar2(require_deletemodelv1modelsmodeliddelete(), exports);
+    __exportStar2(require_filesapiroutesdeletefile(), exports);
+    __exportStar2(require_filesapiroutesdownloadfile(), exports);
+    __exportStar2(require_filesapiroutesgetsignedurl(), exports);
+    __exportStar2(require_filesapirouteslistfiles(), exports);
+    __exportStar2(require_filesapiroutesretrievefile(), exports);
+    __exportStar2(require_filesapiroutesuploadfile(), exports);
+    __exportStar2(require_jobsapiroutesbatchcancelbatchjob(), exports);
+    __exportStar2(require_jobsapiroutesbatchgetbatchjob(), exports);
+    __exportStar2(require_jobsapiroutesbatchgetbatchjobs(), exports);
+    __exportStar2(require_jobsapiroutesfinetuningarchivefinetunedmodel(), exports);
+    __exportStar2(require_jobsapiroutesfinetuningcancelfinetuningjob(), exports);
+    __exportStar2(require_jobsapiroutesfinetuningcreatefinetuningjob(), exports);
+    __exportStar2(require_jobsapiroutesfinetuninggetfinetuningjob(), exports);
+    __exportStar2(require_jobsapiroutesfinetuninggetfinetuningjobs(), exports);
+    __exportStar2(require_jobsapiroutesfinetuningstartfinetuningjob(), exports);
+    __exportStar2(require_jobsapiroutesfinetuningunarchivefinetunedmodel(), exports);
+    __exportStar2(require_jobsapiroutesfinetuningupdatefinetunedmodel(), exports);
+    __exportStar2(require_retrievemodelv1modelsmodelidget(), exports);
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/batchJobsCancel.js
+var require_batchJobsCancel = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/batchJobsCancel.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.batchJobsCancel = batchJobsCancel;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function batchJobsCancel(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesBatchCancelBatchJobRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        job_id: (0, encodings_js_1.encodeSimple)("job_id", payload.job_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/batch/jobs/{job_id}/cancel")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_batch_cancel_batch_job",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.BatchJobOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/batchJobsCreate.js
+var require_batchJobsCreate = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/batchJobsCreate.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.batchJobsCreate = batchJobsCreate;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    async function batchJobsCreate(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.BatchJobIn$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/batch/jobs")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_batch_create_batch_job",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.BatchJobOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/batchJobsGet.js
+var require_batchJobsGet = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/batchJobsGet.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.batchJobsGet = batchJobsGet;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function batchJobsGet(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesBatchGetBatchJobRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        job_id: (0, encodings_js_1.encodeSimple)("job_id", payload.job_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/batch/jobs/{job_id}")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_batch_get_batch_job",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.BatchJobOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/batchJobsList.js
+var require_batchJobsList = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/batchJobsList.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.batchJobsList = batchJobsList;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function batchJobsList(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesBatchGetBatchJobsRequest$outboundSchema.optional().parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const path5 = (0, url_js_1.pathToFunc)("/v1/batch/jobs")();
+      const query = (0, encodings_js_1.encodeFormQuery)({
+        "created_after": payload === null || payload === void 0 ? void 0 : payload.created_after,
+        "created_by_me": payload === null || payload === void 0 ? void 0 : payload.created_by_me,
+        "metadata": payload === null || payload === void 0 ? void 0 : payload.metadata,
+        "model": payload === null || payload === void 0 ? void 0 : payload.model,
+        "page": payload === null || payload === void 0 ? void 0 : payload.page,
+        "page_size": payload === null || payload === void 0 ? void 0 : payload.page_size,
+        "status": payload === null || payload === void 0 ? void 0 : payload.status
+      });
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_batch_get_batch_jobs",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        query,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.BatchJobsOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/mistraljobs.js
+var require_mistraljobs = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/mistraljobs.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.MistralJobs = void 0;
+    var batchJobsCancel_js_1 = require_batchJobsCancel();
+    var batchJobsCreate_js_1 = require_batchJobsCreate();
+    var batchJobsGet_js_1 = require_batchJobsGet();
+    var batchJobsList_js_1 = require_batchJobsList();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var MistralJobs = class extends sdks_js_1.ClientSDK {
+      async list(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, batchJobsList_js_1.batchJobsList)(this, request3, options));
+      }
+      async create(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, batchJobsCreate_js_1.batchJobsCreate)(this, request3, options));
+      }
+      async get(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, batchJobsGet_js_1.batchJobsGet)(this, request3, options));
+      }
+      async cancel(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, batchJobsCancel_js_1.batchJobsCancel)(this, request3, options));
+      }
+    };
+    exports.MistralJobs = MistralJobs;
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/batch.js
+var require_batch = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/batch.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Batch = void 0;
+    var sdks_js_1 = require_sdks();
+    var mistraljobs_js_1 = require_mistraljobs();
+    var Batch = class extends sdks_js_1.ClientSDK {
+      get jobs() {
+        var _a5;
+        return (_a5 = this._jobs) !== null && _a5 !== void 0 ? _a5 : this._jobs = new mistraljobs_js_1.MistralJobs(this._options);
+      }
+    };
+    exports.Batch = Batch;
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/chatComplete.js
+var require_chatComplete = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/chatComplete.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.chatComplete = chatComplete;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function chatComplete(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.ChatCompletionRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/chat/completions")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "chat_completion_v1_chat_completions_post",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.ChatCompletionResponse$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/chatStream.js
+var require_chatStream = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/chatStream.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.chatStream = chatStream;
+    var z6 = __importStar2(require_lib4());
+    var encodings_js_1 = require_encodings();
+    var event_streams_js_1 = require_event_streams();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function chatStream(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.ChatCompletionStreamRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/chat/completions#stream")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "text/event-stream"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "stream_chat",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.sse(200, z6.instanceof(ReadableStream).transform((stream4) => {
+        return new event_streams_js_1.EventStream({
+          stream: stream4,
+          decoder(rawEvent) {
+            const schema = components.CompletionEvent$inboundSchema;
+            return schema.parse(rawEvent);
+          }
+        });
+      }), { sseSentinel: "[DONE]" }), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/chat.js
+var require_chat = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/chat.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Chat = void 0;
+    var chatComplete_js_1 = require_chatComplete();
+    var chatStream_js_1 = require_chatStream();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Chat3 = class extends sdks_js_1.ClientSDK {
+      async complete(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, chatComplete_js_1.chatComplete)(this, request3, options));
+      }
+      async stream(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, chatStream_js_1.chatStream)(this, request3, options));
+      }
+    };
+    exports.Chat = Chat3;
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/classifiersModerate.js
+var require_classifiersModerate = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/classifiersModerate.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.classifiersModerate = classifiersModerate;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function classifiersModerate(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.ClassificationRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/moderations")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "moderations_v1_moderations_post",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.ClassificationResponse$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/classifiersModerateChat.js
+var require_classifiersModerateChat = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/classifiersModerateChat.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.classifiersModerateChat = classifiersModerateChat;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function classifiersModerateChat(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.ChatClassificationRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/chat/moderations")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "moderations_chat_v1_chat_moderations_post",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.ClassificationResponse$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/classifiers.js
+var require_classifiers = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/classifiers.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Classifiers = void 0;
+    var classifiersModerate_js_1 = require_classifiersModerate();
+    var classifiersModerateChat_js_1 = require_classifiersModerateChat();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Classifiers = class extends sdks_js_1.ClientSDK {
+      async moderate(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, classifiersModerate_js_1.classifiersModerate)(this, request3, options));
+      }
+      async moderateChat(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, classifiersModerateChat_js_1.classifiersModerateChat)(this, request3, options));
+      }
+    };
+    exports.Classifiers = Classifiers;
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/embeddingsCreate.js
+var require_embeddingsCreate = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/embeddingsCreate.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.embeddingsCreate = embeddingsCreate;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function embeddingsCreate(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.EmbeddingRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/embeddings")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "embeddings_v1_embeddings_post",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.EmbeddingResponse$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/embeddings.js
+var require_embeddings = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/embeddings.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Embeddings = void 0;
+    var embeddingsCreate_js_1 = require_embeddingsCreate();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Embeddings2 = class extends sdks_js_1.ClientSDK {
+      async create(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, embeddingsCreate_js_1.embeddingsCreate)(this, request3, options));
+      }
+    };
+    exports.Embeddings = Embeddings2;
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/filesDelete.js
+var require_filesDelete = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/filesDelete.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.filesDelete = filesDelete;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function filesDelete(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.FilesApiRoutesDeleteFileRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        file_id: (0, encodings_js_1.encodeSimple)("file_id", payload.file_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/files/{file_id}")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "files_api_routes_delete_file",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "DELETE",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.DeleteFileOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/filesDownload.js
+var require_filesDownload = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/filesDownload.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.filesDownload = filesDownload;
+    var z6 = __importStar2(require_lib4());
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var operations = __importStar2(require_operations());
+    async function filesDownload(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.FilesApiRoutesDownloadFileRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        file_id: (0, encodings_js_1.encodeSimple)("file_id", payload.file_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/files/{file_id}/content")(pathParams);
+      const headers = new Headers({
+        Accept: "application/octet-stream"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "files_api_routes_download_file",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.stream(200, z6.instanceof(ReadableStream)), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/filesGetSignedUrl.js
+var require_filesGetSignedUrl = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/filesGetSignedUrl.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.filesGetSignedUrl = filesGetSignedUrl;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function filesGetSignedUrl(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.FilesApiRoutesGetSignedUrlRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        file_id: (0, encodings_js_1.encodeSimple)("file_id", payload.file_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/files/{file_id}/url")(pathParams);
+      const query = (0, encodings_js_1.encodeFormQuery)({
+        "expiry": payload.expiry
+      });
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "files_api_routes_get_signed_url",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        query,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.FileSignedURL$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/filesList.js
+var require_filesList = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/filesList.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.filesList = filesList;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function filesList(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.FilesApiRoutesListFilesRequest$outboundSchema.optional().parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const path5 = (0, url_js_1.pathToFunc)("/v1/files")();
+      const query = (0, encodings_js_1.encodeFormQuery)({
+        "page": payload === null || payload === void 0 ? void 0 : payload.page,
+        "page_size": payload === null || payload === void 0 ? void 0 : payload.page_size,
+        "purpose": payload === null || payload === void 0 ? void 0 : payload.purpose,
+        "sample_type": payload === null || payload === void 0 ? void 0 : payload.sample_type,
+        "search": payload === null || payload === void 0 ? void 0 : payload.search,
+        "source": payload === null || payload === void 0 ? void 0 : payload.source
+      });
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "files_api_routes_list_files",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        query,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.ListFilesOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/filesRetrieve.js
+var require_filesRetrieve = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/filesRetrieve.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.filesRetrieve = filesRetrieve;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function filesRetrieve(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.FilesApiRoutesRetrieveFileRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        file_id: (0, encodings_js_1.encodeSimple)("file_id", payload.file_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/files/{file_id}")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "files_api_routes_retrieve_file",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.RetrieveFileOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/types/streams.js
+var require_streams = __commonJS({
+  "node_modules/@mistralai/mistralai/types/streams.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.isReadableStream = isReadableStream5;
+    function isReadableStream5(val) {
+      if (typeof val !== "object" || val === null) {
+        return false;
+      }
+      const stream4 = val;
+      return typeof stream4.getReader === "function" && typeof stream4.cancel === "function" && typeof stream4.tee === "function";
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/filesUpload.js
+var require_filesUpload = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/filesUpload.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.filesUpload = filesUpload;
+    var files_js_1 = require_files();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    var blobs_js_1 = require_blobs();
+    var streams_js_1 = require_streams();
+    async function filesUpload(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.FilesApiRoutesUploadFileMultiPartBodyParams$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = new FormData();
+      if ((0, blobs_js_1.isBlobLike)(payload.file)) {
+        body.append("file", payload.file);
+      } else if ((0, streams_js_1.isReadableStream)(payload.file.content)) {
+        const buffer = await (0, files_js_1.readableStreamToArrayBuffer)(payload.file.content);
+        const blob = new Blob([buffer], { type: "application/octet-stream" });
+        body.append("file", blob);
+      } else {
+        body.append("file", new Blob([payload.file.content], { type: "application/octet-stream" }), payload.file.fileName);
+      }
+      if (payload.purpose !== void 0) {
+        body.append("purpose", payload.purpose);
+      }
+      const path5 = (0, url_js_1.pathToFunc)("/v1/files")();
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "files_api_routes_upload_file",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.UploadFileOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/files.js
+var require_files2 = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/files.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Files = void 0;
+    var filesDelete_js_1 = require_filesDelete();
+    var filesDownload_js_1 = require_filesDownload();
+    var filesGetSignedUrl_js_1 = require_filesGetSignedUrl();
+    var filesList_js_1 = require_filesList();
+    var filesRetrieve_js_1 = require_filesRetrieve();
+    var filesUpload_js_1 = require_filesUpload();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Files3 = class extends sdks_js_1.ClientSDK {
+      async upload(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, filesUpload_js_1.filesUpload)(this, request3, options));
+      }
+      async list(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, filesList_js_1.filesList)(this, request3, options));
+      }
+      async retrieve(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, filesRetrieve_js_1.filesRetrieve)(this, request3, options));
+      }
+      async delete(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, filesDelete_js_1.filesDelete)(this, request3, options));
+      }
+      async download(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, filesDownload_js_1.filesDownload)(this, request3, options));
+      }
+      async getSignedUrl(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, filesGetSignedUrl_js_1.filesGetSignedUrl)(this, request3, options));
+      }
+    };
+    exports.Files = Files3;
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/fimComplete.js
+var require_fimComplete = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/fimComplete.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.fimComplete = fimComplete;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function fimComplete(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.FIMCompletionRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fim/completions")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "fim_completion_v1_fim_completions_post",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.FIMCompletionResponse$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/fimStream.js
+var require_fimStream = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/fimStream.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.fimStream = fimStream;
+    var z6 = __importStar2(require_lib4());
+    var encodings_js_1 = require_encodings();
+    var event_streams_js_1 = require_event_streams();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function fimStream(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.FIMCompletionStreamRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fim/completions#stream")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "text/event-stream"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "stream_fim",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.sse(200, z6.instanceof(ReadableStream).transform((stream4) => {
+        return new event_streams_js_1.EventStream({
+          stream: stream4,
+          decoder(rawEvent) {
+            const schema = components.CompletionEvent$inboundSchema;
+            return schema.parse(rawEvent);
+          }
+        });
+      }), { sseSentinel: "[DONE]" }), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/fim.js
+var require_fim = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/fim.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Fim = void 0;
+    var fimComplete_js_1 = require_fimComplete();
+    var fimStream_js_1 = require_fimStream();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Fim = class extends sdks_js_1.ClientSDK {
+      async complete(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, fimComplete_js_1.fimComplete)(this, request3, options));
+      }
+      async stream(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, fimStream_js_1.fimStream)(this, request3, options));
+      }
+    };
+    exports.Fim = Fim;
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/fineTuningJobsCancel.js
+var require_fineTuningJobsCancel = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/fineTuningJobsCancel.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.fineTuningJobsCancel = fineTuningJobsCancel;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function fineTuningJobsCancel(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesFineTuningCancelFineTuningJobRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        job_id: (0, encodings_js_1.encodeSimple)("job_id", payload.job_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/jobs/{job_id}/cancel")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_cancel_fine_tuning_job",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.DetailedJobOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/fineTuningJobsCreate.js
+var require_fineTuningJobsCreate = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/fineTuningJobsCreate.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.fineTuningJobsCreate = fineTuningJobsCreate;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function fineTuningJobsCreate(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => components.JobIn$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload, { explode: true });
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/jobs")();
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_create_fine_tuning_job",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, operations.JobsApiRoutesFineTuningCreateFineTuningJobResponse$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/fineTuningJobsGet.js
+var require_fineTuningJobsGet = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/fineTuningJobsGet.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.fineTuningJobsGet = fineTuningJobsGet;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function fineTuningJobsGet(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesFineTuningGetFineTuningJobRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        job_id: (0, encodings_js_1.encodeSimple)("job_id", payload.job_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/jobs/{job_id}")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_get_fine_tuning_job",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.DetailedJobOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/fineTuningJobsList.js
+var require_fineTuningJobsList = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/fineTuningJobsList.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.fineTuningJobsList = fineTuningJobsList;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function fineTuningJobsList(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesFineTuningGetFineTuningJobsRequest$outboundSchema.optional().parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/jobs")();
+      const query = (0, encodings_js_1.encodeFormQuery)({
+        "created_after": payload === null || payload === void 0 ? void 0 : payload.created_after,
+        "created_by_me": payload === null || payload === void 0 ? void 0 : payload.created_by_me,
+        "model": payload === null || payload === void 0 ? void 0 : payload.model,
+        "page": payload === null || payload === void 0 ? void 0 : payload.page,
+        "page_size": payload === null || payload === void 0 ? void 0 : payload.page_size,
+        "status": payload === null || payload === void 0 ? void 0 : payload.status,
+        "suffix": payload === null || payload === void 0 ? void 0 : payload.suffix,
+        "wandb_name": payload === null || payload === void 0 ? void 0 : payload.wandb_name,
+        "wandb_project": payload === null || payload === void 0 ? void 0 : payload.wandb_project
+      });
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_get_fine_tuning_jobs",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        query,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.JobsOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/fineTuningJobsStart.js
+var require_fineTuningJobsStart = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/fineTuningJobsStart.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.fineTuningJobsStart = fineTuningJobsStart;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function fineTuningJobsStart(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesFineTuningStartFineTuningJobRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        job_id: (0, encodings_js_1.encodeSimple)("job_id", payload.job_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/jobs/{job_id}/start")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_start_fine_tuning_job",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.DetailedJobOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/jobs.js
+var require_jobs = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/jobs.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Jobs = void 0;
+    var fineTuningJobsCancel_js_1 = require_fineTuningJobsCancel();
+    var fineTuningJobsCreate_js_1 = require_fineTuningJobsCreate();
+    var fineTuningJobsGet_js_1 = require_fineTuningJobsGet();
+    var fineTuningJobsList_js_1 = require_fineTuningJobsList();
+    var fineTuningJobsStart_js_1 = require_fineTuningJobsStart();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Jobs2 = class extends sdks_js_1.ClientSDK {
+      async list(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, fineTuningJobsList_js_1.fineTuningJobsList)(this, request3, options));
+      }
+      async create(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, fineTuningJobsCreate_js_1.fineTuningJobsCreate)(this, request3, options));
+      }
+      async get(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, fineTuningJobsGet_js_1.fineTuningJobsGet)(this, request3, options));
+      }
+      async cancel(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, fineTuningJobsCancel_js_1.fineTuningJobsCancel)(this, request3, options));
+      }
+      async start(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, fineTuningJobsStart_js_1.fineTuningJobsStart)(this, request3, options));
+      }
+    };
+    exports.Jobs = Jobs2;
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/finetuning.js
+var require_finetuning = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/finetuning.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.FineTuning = void 0;
+    var sdks_js_1 = require_sdks();
+    var jobs_js_1 = require_jobs();
+    var FineTuning2 = class extends sdks_js_1.ClientSDK {
+      get jobs() {
+        var _a5;
+        return (_a5 = this._jobs) !== null && _a5 !== void 0 ? _a5 : this._jobs = new jobs_js_1.Jobs(this._options);
+      }
+    };
+    exports.FineTuning = FineTuning2;
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/modelsArchive.js
+var require_modelsArchive = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/modelsArchive.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.modelsArchive = modelsArchive;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function modelsArchive(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesFineTuningArchiveFineTunedModelRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        model_id: (0, encodings_js_1.encodeSimple)("model_id", payload.model_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/models/{model_id}/archive")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_archive_fine_tuned_model",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "POST",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.ArchiveFTModelOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/modelsDelete.js
+var require_modelsDelete = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/modelsDelete.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.modelsDelete = modelsDelete;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    var operations = __importStar2(require_operations());
+    async function modelsDelete(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.DeleteModelV1ModelsModelIdDeleteRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        model_id: (0, encodings_js_1.encodeSimple)("model_id", payload.model_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/models/{model_id}")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "delete_model_v1_models__model_id__delete",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "DELETE",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.DeleteModelOut$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/modelsList.js
+var require_modelsList = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/modelsList.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.modelsList = modelsList;
+    var M5 = __importStar2(require_matchers());
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var errors = __importStar2(require_errors2());
+    async function modelsList(client, options) {
+      const path5 = (0, url_js_1.pathToFunc)("/v1/models")();
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "list_models_v1_models_get",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, components.ModelList$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/modelsRetrieve.js
+var require_modelsRetrieve = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/modelsRetrieve.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.modelsRetrieve = modelsRetrieve;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var errors = __importStar2(require_errors2());
+    var operations = __importStar2(require_operations());
+    async function modelsRetrieve(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.RetrieveModelV1ModelsModelIdGetRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        model_id: (0, encodings_js_1.encodeSimple)("model_id", payload.model_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/models/{model_id}")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "retrieve_model_v1_models__model_id__get",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "GET",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["422", "4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const responseFields = {
+        HttpMeta: { Response: response, Request: req }
+      };
+      const [result] = await M5.match(M5.json(200, operations.RetrieveModelV1ModelsModelIdGetResponseRetrieveModelV1ModelsModelIdGet$inboundSchema), M5.jsonErr(422, errors.HTTPValidationError$inboundSchema), M5.fail(["4XX", "5XX"]))(response, { extraFields: responseFields });
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/modelsUnarchive.js
+var require_modelsUnarchive = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/modelsUnarchive.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.modelsUnarchive = modelsUnarchive;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function modelsUnarchive(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesFineTuningUnarchiveFineTunedModelRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = null;
+      const pathParams = {
+        model_id: (0, encodings_js_1.encodeSimple)("model_id", payload.model_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/models/{model_id}/archive")(pathParams);
+      const headers = new Headers({
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_unarchive_fine_tuned_model",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "DELETE",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.UnarchiveFTModelOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/funcs/modelsUpdate.js
+var require_modelsUpdate = __commonJS({
+  "node_modules/@mistralai/mistralai/funcs/modelsUpdate.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.modelsUpdate = modelsUpdate;
+    var encodings_js_1 = require_encodings();
+    var M5 = __importStar2(require_matchers());
+    var schemas_js_1 = require_schemas();
+    var security_js_1 = require_security();
+    var url_js_1 = require_url();
+    var components = __importStar2(require_components());
+    var operations = __importStar2(require_operations());
+    async function modelsUpdate(client, request3, options) {
+      const parsed = (0, schemas_js_1.safeParse)(request3, (value) => operations.JobsApiRoutesFineTuningUpdateFineTunedModelRequest$outboundSchema.parse(value), "Input validation failed");
+      if (!parsed.ok) {
+        return parsed;
+      }
+      const payload = parsed.value;
+      const body = (0, encodings_js_1.encodeJSON)("body", payload.UpdateFTModelIn, { explode: true });
+      const pathParams = {
+        model_id: (0, encodings_js_1.encodeSimple)("model_id", payload.model_id, {
+          explode: false,
+          charEncoding: "percent"
+        })
+      };
+      const path5 = (0, url_js_1.pathToFunc)("/v1/fine_tuning/models/{model_id}")(pathParams);
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      });
+      const secConfig = await (0, security_js_1.extractSecurity)(client._options.apiKey);
+      const securityInput = secConfig == null ? {} : { apiKey: secConfig };
+      const requestSecurity = (0, security_js_1.resolveGlobalSecurity)(securityInput);
+      const context = {
+        operationID: "jobs_api_routes_fine_tuning_update_fine_tuned_model",
+        oAuth2Scopes: [],
+        resolvedSecurity: requestSecurity,
+        securitySource: client._options.apiKey,
+        retryConfig: (options === null || options === void 0 ? void 0 : options.retries) || client._options.retryConfig || { strategy: "none" },
+        retryCodes: (options === null || options === void 0 ? void 0 : options.retryCodes) || ["429", "500", "502", "503", "504"]
+      };
+      const requestRes = client._createRequest(context, {
+        security: requestSecurity,
+        method: "PATCH",
+        path: path5,
+        headers,
+        body,
+        timeoutMs: (options === null || options === void 0 ? void 0 : options.timeoutMs) || client._options.timeoutMs || -1
+      }, options);
+      if (!requestRes.ok) {
+        return requestRes;
+      }
+      const req = requestRes.value;
+      const doResult = await client._do(req, {
+        context,
+        errorCodes: ["4XX", "5XX"],
+        retryConfig: context.retryConfig,
+        retryCodes: context.retryCodes
+      });
+      if (!doResult.ok) {
+        return doResult;
+      }
+      const response = doResult.value;
+      const [result] = await M5.match(M5.json(200, components.FTModelOut$inboundSchema), M5.fail(["4XX", "5XX"]))(response);
+      if (!result.ok) {
+        return result;
+      }
+      return result;
+    }
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/models.js
+var require_models = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/models.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Models = void 0;
+    var modelsArchive_js_1 = require_modelsArchive();
+    var modelsDelete_js_1 = require_modelsDelete();
+    var modelsList_js_1 = require_modelsList();
+    var modelsRetrieve_js_1 = require_modelsRetrieve();
+    var modelsUnarchive_js_1 = require_modelsUnarchive();
+    var modelsUpdate_js_1 = require_modelsUpdate();
+    var sdks_js_1 = require_sdks();
+    var fp_js_1 = require_fp();
+    var Models2 = class extends sdks_js_1.ClientSDK {
+      async list(options) {
+        return (0, fp_js_1.unwrapAsync)((0, modelsList_js_1.modelsList)(this, options));
+      }
+      async retrieve(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, modelsRetrieve_js_1.modelsRetrieve)(this, request3, options));
+      }
+      async delete(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, modelsDelete_js_1.modelsDelete)(this, request3, options));
+      }
+      async update(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, modelsUpdate_js_1.modelsUpdate)(this, request3, options));
+      }
+      async archive(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, modelsArchive_js_1.modelsArchive)(this, request3, options));
+      }
+      async unarchive(request3, options) {
+        return (0, fp_js_1.unwrapAsync)((0, modelsUnarchive_js_1.modelsUnarchive)(this, request3, options));
+      }
+    };
+    exports.Models = Models2;
+  }
+});
+
+// node_modules/@mistralai/mistralai/sdk/sdk.js
+var require_sdk = __commonJS({
+  "node_modules/@mistralai/mistralai/sdk/sdk.js"(exports) {
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.Mistral = void 0;
+    var sdks_js_1 = require_sdks();
+    var agents_js_1 = require_agents();
+    var batch_js_1 = require_batch();
+    var chat_js_1 = require_chat();
+    var classifiers_js_1 = require_classifiers();
+    var embeddings_js_1 = require_embeddings();
+    var files_js_1 = require_files2();
+    var fim_js_1 = require_fim();
+    var finetuning_js_1 = require_finetuning();
+    var models_js_1 = require_models();
+    var Mistral2 = class extends sdks_js_1.ClientSDK {
+      get models() {
+        var _a5;
+        return (_a5 = this._models) !== null && _a5 !== void 0 ? _a5 : this._models = new models_js_1.Models(this._options);
+      }
+      get files() {
+        var _a5;
+        return (_a5 = this._files) !== null && _a5 !== void 0 ? _a5 : this._files = new files_js_1.Files(this._options);
+      }
+      get fineTuning() {
+        var _a5;
+        return (_a5 = this._fineTuning) !== null && _a5 !== void 0 ? _a5 : this._fineTuning = new finetuning_js_1.FineTuning(this._options);
+      }
+      get batch() {
+        var _a5;
+        return (_a5 = this._batch) !== null && _a5 !== void 0 ? _a5 : this._batch = new batch_js_1.Batch(this._options);
+      }
+      get chat() {
+        var _a5;
+        return (_a5 = this._chat) !== null && _a5 !== void 0 ? _a5 : this._chat = new chat_js_1.Chat(this._options);
+      }
+      get fim() {
+        var _a5;
+        return (_a5 = this._fim) !== null && _a5 !== void 0 ? _a5 : this._fim = new fim_js_1.Fim(this._options);
+      }
+      get agents() {
+        var _a5;
+        return (_a5 = this._agents) !== null && _a5 !== void 0 ? _a5 : this._agents = new agents_js_1.Agents(this._options);
+      }
+      get embeddings() {
+        var _a5;
+        return (_a5 = this._embeddings) !== null && _a5 !== void 0 ? _a5 : this._embeddings = new embeddings_js_1.Embeddings(this._options);
+      }
+      get classifiers() {
+        var _a5;
+        return (_a5 = this._classifiers) !== null && _a5 !== void 0 ? _a5 : this._classifiers = new classifiers_js_1.Classifiers(this._options);
+      }
+    };
+    exports.Mistral = Mistral2;
+  }
+});
+
+// node_modules/@mistralai/mistralai/index.js
+var require_mistralai = __commonJS({
+  "node_modules/@mistralai/mistralai/index.js"(exports) {
+    "use strict";
+    var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      var desc = Object.getOwnPropertyDescriptor(m5, k7);
+      if (!desc || ("get" in desc ? !m5.__esModule : desc.writable || desc.configurable)) {
+        desc = { enumerable: true, get: function() {
+          return m5[k7];
+        } };
+      }
+      Object.defineProperty(o3, k22, desc);
+    } : function(o3, m5, k7, k22) {
+      if (k22 === void 0)
+        k22 = k7;
+      o3[k22] = m5[k7];
+    });
+    var __setModuleDefault = exports && exports.__setModuleDefault || (Object.create ? function(o3, v5) {
+      Object.defineProperty(o3, "default", { enumerable: true, value: v5 });
+    } : function(o3, v5) {
+      o3["default"] = v5;
+    });
+    var __exportStar2 = exports && exports.__exportStar || function(m5, exports2) {
+      for (var p4 in m5)
+        if (p4 !== "default" && !Object.prototype.hasOwnProperty.call(exports2, p4))
+          __createBinding2(exports2, m5, p4);
+    };
+    var __importStar2 = exports && exports.__importStar || function(mod) {
+      if (mod && mod.__esModule)
+        return mod;
+      var result = {};
+      if (mod != null) {
+        for (var k7 in mod)
+          if (k7 !== "default" && Object.prototype.hasOwnProperty.call(mod, k7))
+            __createBinding2(result, mod, k7);
+      }
+      __setModuleDefault(result, mod);
+      return result;
+    };
+    Object.defineProperty(exports, "__esModule", { value: true });
+    exports.files = void 0;
+    __exportStar2(require_config(), exports);
+    exports.files = __importStar2(require_files());
+    __exportStar2(require_sdk(), exports);
+  }
+});
+
 // node_modules/@commitlint/types/lib/ensure.js
 var require_ensure = __commonJS({
   "node_modules/@commitlint/types/lib/ensure.js"(exports) {
@@ -26273,7 +45454,7 @@ var require_rules = __commonJS({
 });
 
 // node_modules/@commitlint/types/lib/index.js
-var require_lib4 = __commonJS({
+var require_lib5 = __commonJS({
   "node_modules/@commitlint/types/lib/index.js"(exports) {
     "use strict";
     var __createBinding2 = exports && exports.__createBinding || (Object.create ? function(o3, m5, k7, k22) {
@@ -27331,7 +46512,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.2.2",
+  version: "3.2.5",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -27348,11 +46529,11 @@ var package_default = {
   ],
   main: "cli.js",
   bin: {
-    opencommit: "./out/cli.cjs",
-    oco: "./out/cli.cjs"
+    opencommit: "out/cli.cjs",
+    oco: "out/cli.cjs"
   },
   repository: {
-    url: "https://github.com/di-sukharev/opencommit"
+    url: "git+https://github.com/di-sukharev/opencommit.git"
   },
   type: "module",
   author: "https://github.com/di-sukharev",
@@ -27419,6 +46600,7 @@ var package_default = {
     "@clack/prompts": "^0.6.1",
     "@dqbd/tiktoken": "^1.0.2",
     "@google/generative-ai": "^0.11.4",
+    "@mistralai/mistralai": "^1.3.5",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
     axios: "^1.3.4",
@@ -27429,7 +46611,9 @@ var package_default = {
     ignore: "^5.2.4",
     ini: "^3.0.1",
     inquirer: "^9.1.4",
-    openai: "^4.57.0"
+    openai: "^4.57.0",
+    punycode: "^2.3.1",
+    zod: "^3.23.8"
   }
 };
 
@@ -29928,6 +49112,47 @@ var MODEL_LIST = {
     "llama-3.1-70b-versatile",
     "gemma-7b-it",
     "gemma2-9b-it"
+  ],
+  mistral: [
+    "ministral-3b-2410",
+    "ministral-3b-latest",
+    "ministral-8b-2410",
+    "ministral-8b-latest",
+    "open-mistral-7b",
+    "mistral-tiny",
+    "mistral-tiny-2312",
+    "open-mistral-nemo",
+    "open-mistral-nemo-2407",
+    "mistral-tiny-2407",
+    "mistral-tiny-latest",
+    "open-mixtral-8x7b",
+    "mistral-small",
+    "mistral-small-2312",
+    "open-mixtral-8x22b",
+    "open-mixtral-8x22b-2404",
+    "mistral-small-2402",
+    "mistral-small-2409",
+    "mistral-small-latest",
+    "mistral-medium-2312",
+    "mistral-medium",
+    "mistral-medium-latest",
+    "mistral-large-2402",
+    "mistral-large-2407",
+    "mistral-large-2411",
+    "mistral-large-latest",
+    "pixtral-large-2411",
+    "pixtral-large-latest",
+    "codestral-2405",
+    "codestral-latest",
+    "codestral-mamba-2407",
+    "open-codestral-mamba",
+    "codestral-mamba-latest",
+    "pixtral-12b-2409",
+    "pixtral-12b",
+    "pixtral-12b-latest",
+    "mistral-embed",
+    "mistral-moderation-2411",
+    "mistral-moderation-latest"
   ]
 };
 var getDefaultModel = (provider) => {
@@ -29942,6 +49167,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.gemini[0];
     case "groq":
       return MODEL_LIST.groq[0];
+    case "mistral":
+      return MODEL_LIST.mistral[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -30067,14 +49294,20 @@ var configValidators = {
       "OCO_AI_PROVIDER" /* OCO_AI_PROVIDER */,
       [
         "openai",
+        "mistral",
         "anthropic",
         "gemini",
         "azure",
         "test",
         "flowise",
         "groq"
+<<<<<<< HEAD
       ].includes(value) || value.startsWith("ollama") || value.startsWith("mlx"),
       `${value} is not supported yet, use 'ollama', 'mlx', anthropic', 'azure', 'gemini', 'flowise' or 'openai' (default)`
+=======
+      ].includes(value) || value.startsWith("ollama"),
+      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral' or 'openai' (default)`
+>>>>>>> master
     );
     return value;
   },
@@ -30114,6 +49347,10 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["TEST"] = "test";
   OCO_AI_PROVIDER_ENUM2["FLOWISE"] = "flowise";
   OCO_AI_PROVIDER_ENUM2["GROQ"] = "groq";
+<<<<<<< HEAD
+=======
+  OCO_AI_PROVIDER_ENUM2["MISTRAL"] = "mistral";
+>>>>>>> master
   OCO_AI_PROVIDER_ENUM2["MLX"] = "mlx";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
@@ -44520,6 +63757,47 @@ var OpenAiEngine = class {
   }
 };
 
+// src/engine/mistral.ts
+var import_mistralai = __toESM(require_mistralai(), 1);
+var MistralAiEngine = class {
+  constructor(config7) {
+    this.generateCommitMessage = async (messages) => {
+      const params = {
+        model: this.config.model,
+        messages,
+        topP: 0.1,
+        maxTokens: this.config.maxTokensOutput
+      };
+      try {
+        const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
+        if (REQUEST_TOKENS > this.config.maxTokensInput - this.config.maxTokensOutput)
+          throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+        const completion = await this.client.chat.complete(params);
+        if (!completion.choices)
+          throw Error("No completion choice available.");
+        const message = completion.choices[0].message;
+        if (!message || !message.content)
+          throw Error("No completion choice available.");
+        return message.content;
+      } catch (error) {
+        const err = error;
+        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+          const mistralError = error.response.data.error;
+          if (mistralError)
+            throw new Error(mistralError.message);
+        }
+        throw err;
+      }
+    };
+    this.config = config7;
+    if (!config7.baseURL) {
+      this.client = new import_mistralai.Mistral({ apiKey: config7.apiKey });
+    } else {
+      this.client = new import_mistralai.Mistral({ apiKey: config7.apiKey, serverURL: config7.baseURL });
+    }
+  }
+};
+
 // src/engine/groq.ts
 var GroqEngine = class extends OpenAiEngine {
   constructor(config7) {
@@ -44586,6 +63864,11 @@ function getEngine() {
       return new FlowiseEngine(DEFAULT_CONFIG2);
     case "groq" /* GROQ */:
       return new GroqEngine(DEFAULT_CONFIG2);
+<<<<<<< HEAD
+=======
+    case "mistral" /* MISTRAL */:
+      return new MistralAiEngine(DEFAULT_CONFIG2);
+>>>>>>> master
     case "mlx" /* MLX */:
       return new MLXEngine(DEFAULT_CONFIG2);
     default:
@@ -44610,7 +63893,7 @@ var computeHash = async (content, algorithm = "sha256") => {
 };
 
 // src/modules/commitlint/prompts.ts
-var import_types = __toESM(require_lib4(), 1);
+var import_types = __toESM(require_lib5(), 1);
 var config2 = getConfig();
 var translation = i18n[config2.OCO_LANGUAGE || "en"];
 var getTypeRuleExtraDescription = (type2, prompt) => prompt?.questions?.type?.enum?.[type2]?.description;
@@ -45414,22 +64697,25 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
           process.exit(0);
         }
       } else {
+        const skipOption = `don't push`;
         const selectedRemote = await ee({
           message: "Choose a remote to push to",
-          options: remotes.map((remote) => ({ value: remote, label: remote }))
+          options: [...remotes, skipOption].map((remote) => ({ value: remote, label: remote }))
         });
         if (hD2(selectedRemote))
           process.exit(1);
-        const pushSpinner = le();
-        pushSpinner.start(`Running 'git push ${selectedRemote}'`);
-        const { stdout: stdout2 } = await execa("git", ["push", selectedRemote]);
-        if (stdout2)
-          ce(stdout2);
-        pushSpinner.stop(
-          `${source_default.green(
-            "\u2714"
-          )} successfully pushed all commits to ${selectedRemote}`
-        );
+        if (selectedRemote !== skipOption) {
+          const pushSpinner = le();
+          pushSpinner.start(`Running 'git push ${selectedRemote}'`);
+          const { stdout: stdout2 } = await execa("git", ["push", selectedRemote]);
+          if (stdout2)
+            ce(stdout2);
+          pushSpinner.stop(
+            `${source_default.green(
+              "\u2714"
+            )} successfully pushed all commits to ${selectedRemote}`
+          );
+        }
       }
     } else {
       const regenerateMessage = await Q3({

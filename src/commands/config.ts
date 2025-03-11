@@ -127,8 +127,9 @@ export const MODEL_LIST = {
     'pixtral-12b-latest',
     'mistral-embed',
     'mistral-moderation-2411',
-    'mistral-moderation-latest',
-  ]
+    'mistral-moderation-latest'
+  ],
+  deepseek: ['deepseek-chat', 'deepseek-reasoner']
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -145,6 +146,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.groq[0];
     case 'mistral':
       return MODEL_LIST.mistral[0];
+    case 'deepseek':
+      return MODEL_LIST.deepseek[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -184,7 +187,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -307,9 +310,10 @@ export const configValidators = {
         'azure',
         'test',
         'flowise',
-        'groq'
+        'groq',
+        'deepseek'
       ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek' or 'openai' (default)`
     );
 
     return value;
@@ -356,7 +360,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   FLOWISE = 'flowise',
   GROQ = 'groq',
   MISTRAL = 'mistral',
-  MLX = 'mlx'
+  MLX = 'mlx',
+  DEEPSEEK = 'deepseek'
 }
 
 export type ConfigType = {
