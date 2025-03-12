@@ -111,6 +111,11 @@ const getOneLineCommitInstruction = () =>
     ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
     : '';
 
+const getScopeInstruction = () =>
+  config.OCO_OMIT_SCOPE
+    ? 'Do not include a scope in the commit message format. Use the format: <type>: <subject>'
+    : '';
+
 /**
  * Get the context of the user input
  * @param extraArgs - The arguments passed to the command line
@@ -141,10 +146,11 @@ const INIT_MAIN_PROMPT = (
     const conventionGuidelines = getCommitConvention(fullGitMojiSpec);
     const descriptionGuideline = getDescriptionInstruction();
     const oneLineCommitGuideline = getOneLineCommitInstruction();
+    const scopeInstruction = getScopeInstruction();
     const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
     const userInputContext = userInputCodeContext(context);
 
-    return `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${generalGuidelines}\n${userInputContext}`;
+    return `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
   })()
 });
 
@@ -178,13 +184,29 @@ export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessagePara
 };
 
 const getContent = (translation: ConsistencyPrompt) => {
-  const fix = config.OCO_EMOJI
-    ? `🐛 ${removeConventionalCommitWord(translation.commitFix)}`
-    : translation.commitFix;
+  const getCommitString = (commitWithScope: string, commitWithoutScope?: string) => {
+    if (config.OCO_OMIT_SCOPE && commitWithoutScope) {
+      return config.OCO_EMOJI
+        ? `🐛 ${removeConventionalCommitWord(commitWithoutScope)}`
+        : commitWithoutScope;
+    }
+    return config.OCO_EMOJI
+      ? `🐛 ${removeConventionalCommitWord(commitWithScope)}`
+      : commitWithScope;
+  };
 
-  const feat = config.OCO_EMOJI
-    ? `✨ ${removeConventionalCommitWord(translation.commitFeat)}`
-    : translation.commitFeat;
+  const fix = getCommitString(
+    translation.commitFix,
+    translation.commitFixOmitScope
+  );
+
+  const feat = config.OCO_OMIT_SCOPE && translation.commitFeatOmitScope
+    ? (config.OCO_EMOJI
+      ? `✨ ${removeConventionalCommitWord(translation.commitFeatOmitScope)}`
+      : translation.commitFeatOmitScope)
+    : (config.OCO_EMOJI
+      ? `✨ ${removeConventionalCommitWord(translation.commitFeat)}`
+      : translation.commitFeat);
 
   const description = config.OCO_DESCRIPTION
     ? translation.commitDescription

@@ -204,7 +204,11 @@ export const inferPromptsFromCommitlintConfig = (
  * ubiquitous language from @commitlint.
  * While gpt-4 does this on it self, gpt-3.5 can't map this on his own atm.
  */
-const STRUCTURE_OF_COMMIT = `
+const STRUCTURE_OF_COMMIT = config.OCO_OMIT_SCOPE
+  ? `
+- Header of commit is composed of type and subject: <type-of-commit>: <subject-of-commit>
+- Description of commit is composed of body and footer (optional): <body-of-commit>\n<footer(s)-of-commit>`
+  : `
 - Header of commit is composed of type, scope, subject: <type-of-commit>(<scope-of-commit>): <subject-of-commit>
 - Description of commit is composed of body and footer (optional): <body-of-commit>\n<footer(s)-of-commit>`;
 
@@ -221,7 +225,7 @@ Here are the specific requirements and conventions that should be strictly follo
 Commit Message Conventions:
 - The commit message consists of three parts: Header, Body, and Footer.
 - Header: 
-  - Format: \`<type>(<scope>): <subject>\`
+  - Format: ${config.OCO_OMIT_SCOPE ? '`<type>: <subject>`' : '`<type>(<scope>): <subject>`'}
 - ${prompts.join('\n- ')}
 
 JSON Output Format:
@@ -229,8 +233,10 @@ JSON Output Format:
 \`\`\`json
 {
   "localLanguage": "${translation.localLanguage}",
-  "commitFix": "<Header of commit for bug fix>",
-  "commitFeat": "<Header of commit for feature>",
+  "commitFix": "<Header of commit for bug fix with scope>",
+  "commitFeat": "<Header of commit for feature with scope>",
+  "commitFixOmitScope": "<Header of commit for bug fix without scope>",
+  "commitFeatOmitScope": "<Header of commit for feature without scope>",
   "commitDescription": "<Description of commit for both the bug fix and the feature>"
 }
 \`\`\`
@@ -238,8 +244,8 @@ JSON Output Format:
 - Description should not be more than 74 characters.
 
 Additional Details:
-- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix. 
-- Allowing the server to listen on a port specified through the environment variable is considered a new feature. 
+- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix.
+- Allowing the server to listen on a port specified through the environment variable is considered a new feature.
 
 Example Git Diff is to follow:`
   },
@@ -277,7 +283,11 @@ ${
     ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
     : ''
 }
-    
+${
+  config.OCO_OMIT_SCOPE
+    ? 'Do not include a scope in the commit message format. Use the format: <type>: <subject>'
+    : ''
+}
 You will strictly follow the following conventions to generate the content of the commit message:
 - ${prompts.join('\n- ')}
 

@@ -25,11 +25,12 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
-  OCO_GITPUSH = 'OCO_GITPUSH',
   OCO_ENABLE_LOGGING = 'OCO_ENABLE_LOGGING',
   OCO_ENABLE_CACHE = 'OCO_ENABLE_CACHE',
   OCO_CACHE_DIR = 'OCO_CACHE_DIR',
   OCO_LOG_DIR = 'OCO_LOG_DIR'
+  OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
+  OCO_GITPUSH = 'OCO_GITPUSH' // todo: deprecate
 }
 
 export enum CONFIG_MODES {
@@ -131,12 +132,9 @@ export const MODEL_LIST = {
     'pixtral-12b-latest',
     'mistral-embed',
     'mistral-moderation-2411',
-    'mistral-moderation-latest',
+    'mistral-moderation-latest'
   ],
-  deepseek : [
-	  'deepseek-chat',
-	  'deepseek-reasoner',
-  ]
+  deepseek: ['deepseek-chat', 'deepseek-reasoner']
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -154,7 +152,7 @@ const getDefaultModel = (provider: string | undefined): string => {
     case 'mistral':
       return MODEL_LIST.mistral[0];
     case 'deepseek':
-	return MODEL_LIST.deepseek[0];
+      return MODEL_LIST.deepseek[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -242,6 +240,16 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_OMIT_SCOPE](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_OMIT_SCOPE,
+      typeof value === 'boolean',
+      'Must be boolean: true or false'
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_LANGUAGE](value: any) {
     const supportedLanguages = Object.keys(i18n);
 
@@ -318,7 +326,7 @@ export const configValidators = {
         'test',
         'flowise',
         'groq',
-	'deepseek'
+        'deepseek'
       ].includes(value) || value.startsWith('ollama'),
       `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek' or 'openai' (default)`
     );
@@ -386,6 +394,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_AI_PROVIDER]: OCO_AI_PROVIDER_ENUM;
   [CONFIG_KEYS.OCO_GITPUSH]: boolean;
   [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
+  [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_ENABLE_LOGGING]?: boolean;
   [CONFIG_KEYS.OCO_ENABLE_CACHE]?: boolean;
@@ -437,11 +446,12 @@ export const DEFAULT_CONFIG = {
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: 'commit-message',
   OCO_WHY: false,
-  OCO_GITPUSH: true,
   OCO_ENABLE_LOGGING: true,
   OCO_ENABLE_CACHE: true,
   OCO_CACHE_DIR: '',
   OCO_LOG_DIR: ''
+  OCO_OMIT_SCOPE: false,
+  OCO_GITPUSH: true // todo: deprecate
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
@@ -479,6 +489,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
+    OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH),
     OCO_ENABLE_LOGGING: parseConfigVarValue(process.env.OCO_ENABLE_LOGGING),

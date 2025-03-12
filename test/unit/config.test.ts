@@ -106,7 +106,8 @@ describe('config', () => {
 
       envConfigFile = await generateConfig('.env', {
         OCO_TOKENS_MAX_INPUT: '8192',
-        OCO_ONE_LINE_COMMIT: 'false'
+        OCO_ONE_LINE_COMMIT: 'false',
+        OCO_OMIT_SCOPE: 'true'
       });
 
       const config = getConfig({
@@ -119,6 +120,7 @@ describe('config', () => {
       expect(config.OCO_TOKENS_MAX_OUTPUT).toEqual(500);
       expect(config.OCO_GITPUSH).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
+      expect(config.OCO_OMIT_SCOPE).toEqual(true);
     });
 
     it('should handle empty local config correctly', async () => {

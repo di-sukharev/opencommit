@@ -46512,7 +46512,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.2.5",
+  version: "3.2.7",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -48861,7 +48861,9 @@ var cs_default = {
   localLanguage: "\u010Desky",
   commitFix: "fix(server.ts): zlep\u0161en\xED velikosti prom\u011Bnn\xE9 port na velk\xE1 p\xEDsmena PORT",
   commitFeat: "feat(server.ts): p\u0159id\xE1n\xED podpory pro prom\u011Bnnou prost\u0159ed\xED process.env.PORT",
-  commitDescription: "Prom\u011Bnn\xE1 port se nyn\xED jmenuje PORT, co\u017E odpov\xEDd\xE1 konvenci pojmenov\xE1n\xED, proto\u017Ee PORT je konstanta. Podpora prom\u011Bnn\xE9 prost\u0159ed\xED process.env.PORT umo\u017E\u0148uje snadn\u011Bj\u0161\xED spr\xE1vu nastaven\xED p\u0159i spu\u0161t\u011Bn\xED."
+  commitDescription: "Prom\u011Bnn\xE1 port se nyn\xED jmenuje PORT, co\u017E odpov\xEDd\xE1 konvenci pojmenov\xE1n\xED, proto\u017Ee PORT je konstanta. Podpora prom\u011Bnn\xE9 prost\u0159ed\xED process.env.PORT umo\u017E\u0148uje snadn\u011Bj\u0161\xED spr\xE1vu nastaven\xED p\u0159i spu\u0161t\u011Bn\xED.",
+  commitFixOmitScope: "fix: zlep\u0161en\xED velikosti prom\u011Bnn\xE9 port na velk\xE1 p\xEDsmena PORT",
+  commitFeatOmitScope: "feat: p\u0159id\xE1n\xED podpory pro prom\u011Bnnou prost\u0159ed\xED process.env.PORT"
 };
 
 // src/i18n/de.json
@@ -48869,7 +48871,9 @@ var de_default = {
   localLanguage: "Deutsch",
   commitFix: "fix(server.ts): \xC4ndere die Gro\xDF- und Kleinschreibung der Port-Variable von Kleinbuchstaben auf Gro\xDFbuchstaben PORT.",
   commitFeat: "Funktion(server.ts): Unterst\xFCtzung f\xFCr die Umgebungsvariable process.env.PORT hinzuf\xFCgen",
-  commitDescription: "Die Port-Variable hei\xDFt jetzt PORT, was die Konsistenz mit den Namenskonventionen verbessert, da PORT eine Konstante ist. Die Unterst\xFCtzung f\xFCr eine Umgebungsvariable erm\xF6glicht es der Anwendung, flexibler zu sein, da sie jetzt auf jedem verf\xFCgbaren Port laufen kann, der \xFCber die Umgebungsvariable process.env.PORT angegeben wird."
+  commitDescription: "Die Port-Variable hei\xDFt jetzt PORT, was die Konsistenz mit den Namenskonventionen verbessert, da PORT eine Konstante ist. Die Unterst\xFCtzung f\xFCr eine Umgebungsvariable erm\xF6glicht es der Anwendung, flexibler zu sein, da sie jetzt auf jedem verf\xFCgbaren Port laufen kann, der \xFCber die Umgebungsvariable process.env.PORT angegeben wird.",
+  commitFixOmitScope: "fix: \xC4ndere die Gro\xDF- und Kleinschreibung der Port-Variable von Kleinbuchstaben auf Gro\xDFbuchstaben PORT.",
+  commitFeatOmitScope: "Funktion: Unterst\xFCtzung f\xFCr die Umgebungsvariable process.env.PORT hinzuf\xFCgen"
 };
 
 // src/i18n/en.json
@@ -48877,7 +48881,9 @@ var en_default = {
   localLanguage: "english",
   commitFix: "fix(server.ts): change port variable case from lowercase port to uppercase PORT to improve semantics",
   commitFeat: "feat(server.ts): add support for process.env.PORT environment variable to be able to run app on a configurable port",
-  commitDescription: "The port variable is now named PORT, which improves consistency with the naming conventions as PORT is a constant. Support for an environment variable allows the application to be more flexible as it can now run on any available port specified via the process.env.PORT environment variable."
+  commitDescription: "The port variable is now named PORT, which improves consistency with the naming conventions as PORT is a constant. Support for an environment variable allows the application to be more flexible as it can now run on any available port specified via the process.env.PORT environment variable.",
+  commitFixOmitScope: "fix: change port variable case from lowercase port to uppercase PORT to improve semantics",
+  commitFeatOmitScope: "feat: add support for process.env.PORT environment variable to be able to run app on a configurable port"
 };
 
 // src/i18n/es_ES.json
@@ -48885,7 +48891,9 @@ var es_ES_default = {
   localLanguage: "spanish",
   commitFix: "fix(server.ts): cambiar la variable port de min\xFAsculas a may\xFAsculas PORT",
   commitFeat: "feat(server.ts): a\xF1adir soporte para la variable de entorno process.env.PORT",
-  commitDescription: "La variable port ahora se llama PORT, lo que mejora la coherencia con las convenciones de nomenclatura, ya que PORT es una constante. El soporte para una variable de entorno permite que la aplicaci\xF3n sea m\xE1s flexible, ya que ahora puede ejecutarse en cualquier puerto disponible especificado a trav\xE9s de la variable de entorno process.env.PORT."
+  commitDescription: "La variable port ahora se llama PORT, lo que mejora la coherencia con las convenciones de nomenclatura, ya que PORT es una constante. El soporte para una variable de entorno permite que la aplicaci\xF3n sea m\xE1s flexible, ya que ahora puede ejecutarse en cualquier puerto disponible especificado a trav\xE9s de la variable de entorno process.env.PORT.",
+  commitFixOmitScope: "fix: cambiar la variable port de min\xFAsculas a may\xFAsculas PORT",
+  commitFeatOmitScope: "feat: a\xF1adir soporte para la variable de entorno process.env.PORT"
 };
 
 // src/i18n/fr.json
@@ -48893,7 +48901,9 @@ var fr_default = {
   localLanguage: "fran\xE7aise",
   commitFix: "corriger(server.ts) : changer la casse de la variable de port de minuscules \xE0 majuscules (PORT)",
   commitFeat: "fonctionnalit\xE9(server.ts) : ajouter la prise en charge de la variable d'environnement process.env.PORT",
-  commitDescription: "La variable de port est maintenant nomm\xE9e PORT, ce qui am\xE9liore la coh\xE9rence avec les conventions de nommage car PORT est une constante. La prise en charge d'une variable d'environnement permet \xE0 l'application d'\xEAtre plus flexible car elle peut maintenant s'ex\xE9cuter sur n'importe quel port disponible sp\xE9cifi\xE9 via la variable d'environnement process.env.PORT."
+  commitDescription: "La variable de port est maintenant nomm\xE9e PORT, ce qui am\xE9liore la coh\xE9rence avec les conventions de nommage car PORT est une constante. La prise en charge d'une variable d'environnement permet \xE0 l'application d'\xEAtre plus flexible car elle peut maintenant s'ex\xE9cuter sur n'importe quel port disponible sp\xE9cifi\xE9 via la variable d'environnement process.env.PORT.",
+  commitFixOmitScope: "corriger : changer la casse de la variable de port de minuscules \xE0 majuscules (PORT)",
+  commitFeatOmitScope: "fonctionnalit\xE9 : ajouter la prise en charge de la variable d'environnement process.env.PORT"
 };
 
 // src/i18n/id_ID.json
@@ -48901,7 +48911,9 @@ var id_ID_default = {
   localLanguage: "bahasa",
   commitFix: "fix(server.ts): mengubah huruf port variable dari huruf kecil ke huruf besar PORT",
   commitFeat: "feat(server.ts): menambahkan support di process.env.PORT environment variabel",
-  commitDescription: "Port variabel bernama PORT, yang membantu konsistensi dengan memberi nama yaitu PORT yang konstan. Bantuan environment variabel membantu aplikasi lebih fleksibel, dan dapat di jalankan di port manapun yang tertulis pada process.env.PORT"
+  commitDescription: "Port variabel bernama PORT, yang membantu konsistensi dengan memberi nama yaitu PORT yang konstan. Bantuan environment variabel membantu aplikasi lebih fleksibel, dan dapat di jalankan di port manapun yang tertulis pada process.env.PORT",
+  commitFixOmitScope: "fix: mengubah huruf port variable dari huruf kecil ke huruf besar PORT",
+  commitFeatOmitScope: "feat: menambahkan support di process.env.PORT environment variabel"
 };
 
 // src/i18n/it.json
@@ -48909,7 +48921,9 @@ var it_default = {
   localLanguage: "italiano",
   commitFix: "fix(server.ts): cambia la grafia della variabile della porta dal minuscolo port al maiuscolo PORT",
   commitFeat: "feat(server.ts): aggiunge il supporto per la variabile di ambiente process.env.PORT",
-  commitDescription: "La variabile port \xE8 ora chiamata PORT, migliorando la coerenza con le convenzioni di denominazione in quanto PORT \xE8 una costante. Il supporto per una variabile di ambiente consente all'applicazione di essere pi\xF9 flessibile poich\xE9 ora pu\xF2 essere eseguita su qualsiasi porta disponibile specificata tramite la variabile di ambiente process.env.PORT."
+  commitDescription: "La variabile port \xE8 ora chiamata PORT, migliorando la coerenza con le convenzioni di denominazione in quanto PORT \xE8 una costante. Il supporto per una variabile di ambiente consente all'applicazione di essere pi\xF9 flessibile poich\xE9 ora pu\xF2 essere eseguita su qualsiasi porta disponibile specificata tramite la variabile di ambiente process.env.PORT.",
+  commitFixOmitScope: "fix: cambia la grafia della variabile della porta dal minuscolo port al maiuscolo PORT",
+  commitFeatOmitScope: "feat: aggiunge il supporto per la variabile di ambiente process.env.PORT"
 };
 
 // src/i18n/ja.json
@@ -48917,7 +48931,9 @@ var ja_default = {
   localLanguage: "\u65E5\u672C\u8A9E",
   commitFix: "\u4FEE\u6B63(server.ts): \u30DD\u30FC\u30C8\u5909\u6570\u3092\u5C0F\u6587\u5B57\u306Eport\u304B\u3089\u5927\u6587\u5B57\u306EPORT\u306B\u5909\u66F4",
   commitFeat: "\u65B0\u6A5F\u80FD(server.ts): \u74B0\u5883\u5909\u6570process.env.PORT\u306E\u30B5\u30DD\u30FC\u30C8\u3092\u8FFD\u52A0",
-  commitDescription: "\u30DD\u30FC\u30C8\u5909\u6570\u306F\u73FE\u5728PORT\u3068\u3044\u3046\u540D\u524D\u306B\u306A\u308A\u3001\u5B9A\u6570\u3067\u3042\u308BPORT\u3092\u4F7F\u3046\u3053\u3068\u3067\u547D\u540D\u898F\u5247\u306B\u4E00\u8CAB\u6027\u304C\u751F\u307E\u308C\u307E\u3057\u305F\u3002\u74B0\u5883\u5909\u6570\u3092\u30B5\u30DD\u30FC\u30C8\u3059\u308B\u3053\u3068\u3067\u3001\u74B0\u5883\u5909\u6570process.env.PORT\u3067\u6307\u5B9A\u3055\u308C\u305F\u4EFB\u610F\u306E\u5229\u7528\u53EF\u80FD\u306A\u30DD\u30FC\u30C8\u3067\u5B9F\u884C\u3067\u304D\u308B\u3088\u3046\u306B\u306A\u308A\u3001\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306F\u3088\u308A\u67D4\u8EDF\u306B\u306A\u308A\u307E\u3057\u305F\u3002"
+  commitDescription: "\u30DD\u30FC\u30C8\u5909\u6570\u306F\u73FE\u5728PORT\u3068\u3044\u3046\u540D\u524D\u306B\u306A\u308A\u3001\u5B9A\u6570\u3067\u3042\u308BPORT\u3092\u4F7F\u3046\u3053\u3068\u3067\u547D\u540D\u898F\u5247\u306B\u4E00\u8CAB\u6027\u304C\u751F\u307E\u308C\u307E\u3057\u305F\u3002\u74B0\u5883\u5909\u6570\u3092\u30B5\u30DD\u30FC\u30C8\u3059\u308B\u3053\u3068\u3067\u3001\u74B0\u5883\u5909\u6570process.env.PORT\u3067\u6307\u5B9A\u3055\u308C\u305F\u4EFB\u610F\u306E\u5229\u7528\u53EF\u80FD\u306A\u30DD\u30FC\u30C8\u3067\u5B9F\u884C\u3067\u304D\u308B\u3088\u3046\u306B\u306A\u308A\u3001\u30A2\u30D7\u30EA\u30B1\u30FC\u30B7\u30E7\u30F3\u306F\u3088\u308A\u67D4\u8EDF\u306B\u306A\u308A\u307E\u3057\u305F\u3002",
+  commitFixOmitScope: "\u4FEE\u6B63: \u30DD\u30FC\u30C8\u5909\u6570\u3092\u5C0F\u6587\u5B57\u306Eport\u304B\u3089\u5927\u6587\u5B57\u306EPORT\u306B\u5909\u66F4",
+  commitFeatOmitScope: "\u65B0\u6A5F\u80FD: \u74B0\u5883\u5909\u6570process.env.PORT\u306E\u30B5\u30DD\u30FC\u30C8\u3092\u8FFD\u52A0"
 };
 
 // src/i18n/ko.json
@@ -48925,7 +48941,9 @@ var ko_default = {
   localLanguage: "\uD55C\uAD6D\uC5B4",
   commitFix: "fix(server.ts): \uD3EC\uD2B8 \uBCC0\uC218\uB97C \uC18C\uBB38\uC790 port\uC5D0\uC11C \uB300\uBB38\uC790 PORT\uB85C \uBCC0\uACBD",
   commitFeat: "\uD53C\uD2B8(server.ts): process.env.PORT \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0 \uCD94\uAC00",
-  commitDescription: "\uD3EC\uD2B8 \uBCC0\uC218\uB294 \uC774\uC81C PORT\uB85C \uC774\uB984\uC774 \uC9C0\uC815\uB418\uC5B4 \uC0C1\uC218\uC778 PORT\uC640 \uC77C\uAD00\uC131 \uC788\uB294 \uC774\uB984 \uADDC\uCE59\uC744 \uB530\uB985\uB2C8\uB2E4. \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0\uC744 \uD1B5\uD574 \uC560\uD50C\uB9AC\uCF00\uC774\uC158\uC740 \uC774\uC81C process.env.PORT \uD658\uACBD \uBCC0\uC218\uB85C \uC9C0\uC815\uB41C \uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uBAA8\uB4E0 \uD3EC\uD2B8\uC5D0\uC11C \uC2E4\uD589\uD560 \uC218 \uC788\uC73C\uBBC0\uB85C \uB354 \uC720\uC5F0\uD574\uC84C\uC2B5\uB2C8\uB2E4."
+  commitDescription: "\uD3EC\uD2B8 \uBCC0\uC218\uB294 \uC774\uC81C PORT\uB85C \uC774\uB984\uC774 \uC9C0\uC815\uB418\uC5B4 \uC0C1\uC218\uC778 PORT\uC640 \uC77C\uAD00\uC131 \uC788\uB294 \uC774\uB984 \uADDC\uCE59\uC744 \uB530\uB985\uB2C8\uB2E4. \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0\uC744 \uD1B5\uD574 \uC560\uD50C\uB9AC\uCF00\uC774\uC158\uC740 \uC774\uC81C process.env.PORT \uD658\uACBD \uBCC0\uC218\uB85C \uC9C0\uC815\uB41C \uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uBAA8\uB4E0 \uD3EC\uD2B8\uC5D0\uC11C \uC2E4\uD589\uD560 \uC218 \uC788\uC73C\uBBC0\uB85C \uB354 \uC720\uC5F0\uD574\uC84C\uC2B5\uB2C8\uB2E4.",
+  commitFixOmitScope: "fix: \uD3EC\uD2B8 \uBCC0\uC218\uB97C \uC18C\uBB38\uC790 port\uC5D0\uC11C \uB300\uBB38\uC790 PORT\uB85C \uBCC0\uACBD",
+  commitFeatOmitScope: "\uD53C\uD2B8: process.env.PORT \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0 \uCD94\uAC00"
 };
 
 // src/i18n/nl.json
@@ -48933,7 +48951,9 @@ var nl_default = {
   localLanguage: "Nederlands",
   commitFix: "fix(server.ts): verander poortvariabele van kleine letters poort naar hoofdletters PORT",
   commitFeat: "feat(server.ts): voeg ondersteuning toe voor process.env.PORT omgevingsvariabele",
-  commitDescription: "De poortvariabele heet nu PORT, wat de consistentie met de naamgevingsconventies verbetert omdat PORT een constante is. Ondersteuning voor een omgevingsvariabele maakt de applicatie flexibeler, omdat deze nu kan draaien op elke beschikbare poort die is gespecificeerd via de process.env.PORT omgevingsvariabele."
+  commitDescription: "De poortvariabele heet nu PORT, wat de consistentie met de naamgevingsconventies verbetert omdat PORT een constante is. Ondersteuning voor een omgevingsvariabele maakt de applicatie flexibeler, omdat deze nu kan draaien op elke beschikbare poort die is gespecificeerd via de process.env.PORT omgevingsvariabele.",
+  commitFixOmitScope: "fix: verander poortvariabele van kleine letters poort naar hoofdletters PORT",
+  commitFeatOmitScope: "feat: voeg ondersteuning toe voor process.env.PORT omgevingsvariabele"
 };
 
 // src/i18n/pl.json
@@ -48941,7 +48961,9 @@ var pl_default = {
   localLanguage: "polski",
   commitFix: "fix(server.ts): poprawa wielko\u015Bci zmiennej port na pisane z du\u017Cymi literami PORT",
   commitFeat: "feat(server.ts): dodanie obs\u0142ugi zmiennej \u015Brodowiskowej process.env.PORT",
-  commitDescription: "Zmienna port jest teraz nazwana PORT, co jest zgodne z konwencj\u0105 nazewnicz\u0105 poniewa\u017C PORT jest sta\u0142\u0105. Obs\u0142uga zmiennej \u015Brodowiskowej process.env.PORT pozwala \u0142atwiej zarz\u0105dza\u0107 ustawieniami przy starcie."
+  commitDescription: "Zmienna port jest teraz nazwana PORT, co jest zgodne z konwencj\u0105 nazewnicz\u0105 poniewa\u017C PORT jest sta\u0142\u0105. Obs\u0142uga zmiennej \u015Brodowiskowej process.env.PORT pozwala \u0142atwiej zarz\u0105dza\u0107 ustawieniami przy starcie.",
+  commitFixOmitScope: "fix: poprawa wielko\u015Bci zmiennej port na pisane z du\u017Cymi literami PORT",
+  commitFeatOmitScope: "feat: dodanie obs\u0142ugi zmiennej \u015Brodowiskowej process.env.PORT"
 };
 
 // src/i18n/pt_br.json
@@ -48949,7 +48971,9 @@ var pt_br_default = {
   localLanguage: "portugu\xEAs",
   commitFix: "fix(server.ts): altera o caso da vari\xE1vel de porta de port min\xFAscula para PORT mai\xFAscula",
   commitFeat: "feat(server.ts): adiciona suporte para a vari\xE1vel de ambiente process.env.PORT",
-  commitDescription: "A vari\xE1vel de porta agora \xE9 denominada PORT, o que melhora a consist\xEAncia com as conven\xE7\xF5es de nomenclatura, pois PORT \xE9 uma constante. O suporte para uma vari\xE1vel de ambiente permite que o aplicativo seja mais flex\xEDvel, pois agora pode ser executado em qualquer porta dispon\xEDvel especificada por meio da vari\xE1vel de ambiente process.env.PORT."
+  commitDescription: "A vari\xE1vel de porta agora \xE9 denominada PORT, o que melhora a consist\xEAncia com as conven\xE7\xF5es de nomenclatura, pois PORT \xE9 uma constante. O suporte para uma vari\xE1vel de ambiente permite que o aplicativo seja mais flex\xEDvel, pois agora pode ser executado em qualquer porta dispon\xEDvel especificada por meio da vari\xE1vel de ambiente process.env.PORT.",
+  commitFixOmitScope: "fix: altera o caso da vari\xE1vel de porta de port min\xFAscula para PORT mai\xFAscula",
+  commitFeatOmitScope: "feat: adiciona suporte para a vari\xE1vel de ambiente process.env.PORT"
 };
 
 // src/i18n/ru.json
@@ -48957,7 +48981,9 @@ var ru_default = {
   localLanguage: "\u0440\u0443\u0441\u0441\u043A\u0438\u0439",
   commitFix: "fix(server.ts): \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043F\u043E\u0440\u0442\u0430 \u0441 \u043D\u0438\u0436\u043D\u0435\u0433\u043E \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430 port \u043D\u0430 \u0432\u0435\u0440\u0445\u043D\u0438\u0439 \u0440\u0435\u0433\u0438\u0441\u0442\u0440 PORT",
   commitFeat: "feat(server.ts): \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0430 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043E\u043A\u0440\u0443\u0436\u0435\u043D\u0438\u044F process.env.PORT",
-  commitDescription: "\u041F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F port \u0442\u0435\u043F\u0435\u0440\u044C \u043D\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F PORT, \u0447\u0442\u043E \u0443\u043B\u0443\u0447\u0448\u0430\u0435\u0442 \u0441\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043D\u043D\u043E\u0441\u0442\u044C \u0441 \u0441\u043E\u0433\u043B\u0430\u0448\u0435\u043D\u0438\u044F\u043C\u0438 \u043E\u0431 \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u0438\u0438 \u043A\u043E\u043D\u0441\u0442\u0430\u043D\u0442. \u041F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043E\u043A\u0440\u0443\u0436\u0435\u043D\u0438\u044F \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044E \u0431\u044B\u0442\u044C \u0431\u043E\u043B\u0435\u0435 \u0433\u0438\u0431\u043A\u0438\u043C, \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u044F\u0441\u044C \u043D\u0430 \u043B\u044E\u0431\u043E\u043C \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E\u043C \u043F\u043E\u0440\u0442\u0443, \u0443\u043A\u0430\u0437\u0430\u043D\u043D\u043E\u043C \u0441 \u043F\u043E\u043C\u043E\u0449\u044C\u044E \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043E\u043A\u0440\u0443\u0436\u0435\u043D\u0438\u044F process.env.PORT."
+  commitDescription: "\u041F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u0430\u044F port \u0442\u0435\u043F\u0435\u0440\u044C \u043D\u0430\u0437\u044B\u0432\u0430\u0435\u0442\u0441\u044F PORT, \u0447\u0442\u043E \u0443\u043B\u0443\u0447\u0448\u0430\u0435\u0442 \u0441\u043E\u0433\u043B\u0430\u0441\u043E\u0432\u0430\u043D\u043D\u043E\u0441\u0442\u044C \u0441 \u0441\u043E\u0433\u043B\u0430\u0448\u0435\u043D\u0438\u044F\u043C\u0438 \u043E\u0431 \u0438\u043C\u0435\u043D\u043E\u0432\u0430\u043D\u0438\u0438 \u043A\u043E\u043D\u0441\u0442\u0430\u043D\u0442. \u041F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043E\u043A\u0440\u0443\u0436\u0435\u043D\u0438\u044F \u043F\u043E\u0437\u0432\u043E\u043B\u044F\u0435\u0442 \u043F\u0440\u0438\u043B\u043E\u0436\u0435\u043D\u0438\u044E \u0431\u044B\u0442\u044C \u0431\u043E\u043B\u0435\u0435 \u0433\u0438\u0431\u043A\u0438\u043C, \u0437\u0430\u043F\u0443\u0441\u043A\u0430\u044F\u0441\u044C \u043D\u0430 \u043B\u044E\u0431\u043E\u043C \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u043E\u043C \u043F\u043E\u0440\u0442\u0443, \u0443\u043A\u0430\u0437\u0430\u043D\u043D\u043E\u043C \u0441 \u043F\u043E\u043C\u043E\u0449\u044C\u044E \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043E\u043A\u0440\u0443\u0436\u0435\u043D\u0438\u044F process.env.PORT.",
+  commitFixOmitScope: "fix: \u0438\u0437\u043C\u0435\u043D\u0435\u043D\u0438\u0435 \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043F\u043E\u0440\u0442\u0430 \u0441 \u043D\u0438\u0436\u043D\u0435\u0433\u043E \u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0430 port \u043D\u0430 \u0432\u0435\u0440\u0445\u043D\u0438\u0439 \u0440\u0435\u0433\u0438\u0441\u0442\u0440 PORT",
+  commitFeatOmitScope: "feat: \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0430 \u043F\u043E\u0434\u0434\u0435\u0440\u0436\u043A\u0430 \u043F\u0435\u0440\u0435\u043C\u0435\u043D\u043D\u043E\u0439 \u043E\u043A\u0440\u0443\u0436\u0435\u043D\u0438\u044F process.env.PORT"
 };
 
 // src/i18n/sv.json
@@ -48965,7 +48991,9 @@ var sv_default = {
   localLanguage: "svenska",
   commitFix: "fixa(server.ts): \xE4ndra variabelnamnet f\xF6r port fr\xE5n sm\xE5 bokst\xE4ver till stora bokst\xE4ver PORT",
   commitFeat: "nyhet(server.ts): l\xE4gg till st\xF6d f\xF6r process.env.PORT milj\xF6variabel",
-  commitDescription: "Variabeln som inneh\xE5ller portnumret heter nu PORT vilket f\xF6rb\xE4ttrar konsekvensen med namngivningskonventionerna eftersom PORT \xE4r en konstant. St\xF6d f\xF6r en milj\xF6variabel g\xF6r att applikationen kan vara mer flexibel d\xE5 den nu kan k\xF6ras p\xE5 vilken port som helst som specificeras via milj\xF6variabeln process.env.PORT."
+  commitDescription: "Variabeln som inneh\xE5ller portnumret heter nu PORT vilket f\xF6rb\xE4ttrar konsekvensen med namngivningskonventionerna eftersom PORT \xE4r en konstant. St\xF6d f\xF6r en milj\xF6variabel g\xF6r att applikationen kan vara mer flexibel d\xE5 den nu kan k\xF6ras p\xE5 vilken port som helst som specificeras via milj\xF6variabeln process.env.PORT.",
+  commitFixOmitScope: "fixa: \xE4ndra variabelnamnet f\xF6r port fr\xE5n sm\xE5 bokst\xE4ver till stora bokst\xE4ver PORT",
+  commitFeatOmitScope: "nyhet: l\xE4gg till st\xF6d f\xF6r process.env.PORT milj\xF6variabel"
 };
 
 // src/i18n/th.json
@@ -48973,7 +49001,9 @@ var th_default = {
   localLanguage: "\u0E44\u0E17\u0E22",
   commitFix: "fix(server.ts): \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E15\u0E31\u0E27\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E02\u0E2D\u0E07\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23 \u0E08\u0E32\u0E01\u0E15\u0E31\u0E27\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E40\u0E25\u0E47\u0E01 port \u0E40\u0E1B\u0E47\u0E19\u0E15\u0E31\u0E27\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E43\u0E2B\u0E0D\u0E48 PORT",
   commitFeat: "feat(server.ts): \u0E40\u0E1E\u0E34\u0E48\u0E21\u0E01\u0E32\u0E23\u0E23\u0E2D\u0E07\u0E23\u0E31\u0E1A\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E2A\u0E20\u0E32\u0E1E\u0E41\u0E27\u0E14\u0E25\u0E49\u0E2D\u0E21 process.env.PORT",
-  commitDescription: "\u0E15\u0E2D\u0E19\u0E19\u0E35\u0E49\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E21\u0E35\u0E0A\u0E37\u0E48\u0E2D\u0E27\u0E48\u0E32 PORT, \u0E0B\u0E36\u0E48\u0E07\u0E1B\u0E23\u0E31\u0E1A\u0E1B\u0E23\u0E38\u0E07\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E2D\u0E14\u0E04\u0E25\u0E49\u0E2D\u0E07\u0E01\u0E31\u0E1A\u0E2B\u0E25\u0E31\u0E01\u0E01\u0E32\u0E23\u0E15\u0E31\u0E49\u0E07\u0E0A\u0E37\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07\u0E08\u0E32\u0E01 PORT \u0E40\u0E1B\u0E47\u0E19\u0E04\u0E48\u0E32\u0E04\u0E07\u0E17\u0E35\u0E48. \u0E01\u0E32\u0E23\u0E2A\u0E19\u0E31\u0E1A\u0E2A\u0E19\u0E38\u0E19\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E2A\u0E20\u0E32\u0E1E\u0E41\u0E27\u0E14\u0E25\u0E49\u0E2D\u0E21 \u0E0A\u0E48\u0E27\u0E22\u0E43\u0E2B\u0E49\u0E41\u0E2D\u0E1B\u0E1E\u0E25\u0E34\u0E40\u0E04\u0E0A\u0E31\u0E19\u0E21\u0E35\u0E04\u0E27\u0E32\u0E21\u0E22\u0E37\u0E14\u0E2B\u0E22\u0E38\u0E48\u0E19\u0E21\u0E32\u0E01\u0E02\u0E36\u0E49\u0E19\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07\u0E08\u0E32\u0E01 \u0E2A\u0E32\u0E21\u0E32\u0E23\u0E16\u0E17\u0E33\u0E07\u0E32\u0E19\u0E1A\u0E19\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E43\u0E14 \u0E46 \u0E15\u0E32\u0E21\u0E17\u0E35\u0E48\u0E01\u0E33\u0E2B\u0E19\u0E14 \u0E0B\u0E36\u0E48\u0E07\u0E23\u0E30\u0E1A\u0E38\u0E1C\u0E48\u0E32\u0E19\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E2A\u0E20\u0E32\u0E1E\u0E41\u0E27\u0E14\u0E25\u0E49\u0E2D\u0E21 process.env.PORT"
+  commitDescription: "\u0E15\u0E2D\u0E19\u0E19\u0E35\u0E49\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E21\u0E35\u0E0A\u0E37\u0E48\u0E2D\u0E27\u0E48\u0E32 PORT, \u0E0B\u0E36\u0E48\u0E07\u0E1B\u0E23\u0E31\u0E1A\u0E1B\u0E23\u0E38\u0E07\u0E04\u0E27\u0E32\u0E21\u0E2A\u0E2D\u0E14\u0E04\u0E25\u0E49\u0E2D\u0E07\u0E01\u0E31\u0E1A\u0E2B\u0E25\u0E31\u0E01\u0E01\u0E32\u0E23\u0E15\u0E31\u0E49\u0E07\u0E0A\u0E37\u0E48\u0E2D\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07\u0E08\u0E32\u0E01 PORT \u0E40\u0E1B\u0E47\u0E19\u0E04\u0E48\u0E32\u0E04\u0E07\u0E17\u0E35\u0E48. \u0E01\u0E32\u0E23\u0E2A\u0E19\u0E31\u0E1A\u0E2A\u0E19\u0E38\u0E19\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E2A\u0E20\u0E32\u0E1E\u0E41\u0E27\u0E14\u0E25\u0E49\u0E2D\u0E21 \u0E0A\u0E48\u0E27\u0E22\u0E43\u0E2B\u0E49\u0E41\u0E2D\u0E1B\u0E1E\u0E25\u0E34\u0E40\u0E04\u0E0A\u0E31\u0E19\u0E21\u0E35\u0E04\u0E27\u0E32\u0E21\u0E22\u0E37\u0E14\u0E2B\u0E22\u0E38\u0E48\u0E19\u0E21\u0E32\u0E01\u0E02\u0E36\u0E49\u0E19\u0E40\u0E19\u0E37\u0E48\u0E2D\u0E07\u0E08\u0E32\u0E01 \u0E2A\u0E32\u0E21\u0E32\u0E23\u0E16\u0E17\u0E33\u0E07\u0E32\u0E19\u0E1A\u0E19\u0E1E\u0E2D\u0E23\u0E4C\u0E15\u0E43\u0E14 \u0E46 \u0E15\u0E32\u0E21\u0E17\u0E35\u0E48\u0E01\u0E33\u0E2B\u0E19\u0E14 \u0E0B\u0E36\u0E48\u0E07\u0E23\u0E30\u0E1A\u0E38\u0E1C\u0E48\u0E32\u0E19\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E2A\u0E20\u0E32\u0E1E\u0E41\u0E27\u0E14\u0E25\u0E49\u0E2D\u0E21 process.env.PORT",
+  commitFixOmitScope: "fix: \u0E40\u0E1B\u0E25\u0E35\u0E48\u0E22\u0E19\u0E15\u0E31\u0E27\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E02\u0E2D\u0E07\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23 \u0E08\u0E32\u0E01\u0E15\u0E31\u0E27\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E40\u0E25\u0E47\u0E01 port \u0E40\u0E1B\u0E47\u0E19\u0E15\u0E31\u0E27\u0E1E\u0E34\u0E21\u0E1E\u0E4C\u0E43\u0E2B\u0E0D\u0E48 PORT",
+  commitFeatOmitScope: "feat: \u0E40\u0E1E\u0E34\u0E48\u0E21\u0E01\u0E32\u0E23\u0E23\u0E2D\u0E07\u0E23\u0E31\u0E1A\u0E2A\u0E33\u0E2B\u0E23\u0E31\u0E1A\u0E15\u0E31\u0E27\u0E41\u0E1B\u0E23\u0E2A\u0E20\u0E32\u0E1E\u0E41\u0E27\u0E14\u0E25\u0E49\u0E2D\u0E21 process.env.PORT"
 };
 
 // src/i18n/tr.json
@@ -48981,7 +49011,9 @@ var tr_default = {
   localLanguage: "Turkish",
   commitFix: "fix(server.ts): port de\u011Fi\u015Fkeni k\xFC\xE7\xFCk harfli porttan b\xFCy\xFCk harfli PORT'a de\u011Fi\u015Ftirildi",
   commitFeat: "feat(server.ts): process.env.PORT ortam de\u011Fi\u015Fkeni i\xE7in destek eklendi.",
-  commitDescription: "Ba\u011Flant\u0131 noktas\u0131 de\u011Fi\u015Fkeni art\u0131k PORT olarak adland\u0131r\u0131ld\u0131 ve PORT bir sabit de\u011Fi\u015Fken oldu\u011Fu i\xE7in bu adland\u0131rma tutarl\u0131l\u0131\u011F\u0131 art\u0131r\u0131r. Ortam de\u011Fi\u015Fkeni deste\u011Fi, art\u0131k process.env.PORT ortam de\u011Fi\u015Fkeni arac\u0131l\u0131\u011F\u0131yla belirtilen herhangi bir kullan\u0131labilir ba\u011Flant\u0131 noktas\u0131nda \xE7al\u0131\u015Fabilece\u011Finden uygulaman\u0131n daha esnek olmas\u0131n\u0131 sa\u011Flar."
+  commitDescription: "Ba\u011Flant\u0131 noktas\u0131 de\u011Fi\u015Fkeni art\u0131k PORT olarak adland\u0131r\u0131ld\u0131 ve PORT bir sabit de\u011Fi\u015Fken oldu\u011Fu i\xE7in bu adland\u0131rma tutarl\u0131l\u0131\u011F\u0131 art\u0131r\u0131r. Ortam de\u011Fi\u015Fkeni deste\u011Fi, art\u0131k process.env.PORT ortam de\u011Fi\u015Fkeni arac\u0131l\u0131\u011F\u0131yla belirtilen herhangi bir kullan\u0131labilir ba\u011Flant\u0131 noktas\u0131nda \xE7al\u0131\u015Fabilece\u011Finden uygulaman\u0131n daha esnek olmas\u0131n\u0131 sa\u011Flar.",
+  commitFixOmitScope: "fix: port de\u011Fi\u015Fkeni k\xFC\xE7\xFCk harfli porttan b\xFCy\xFCk harfli PORT'a de\u011Fi\u015Ftirildi",
+  commitFeatOmitScope: "feat: process.env.PORT ortam de\u011Fi\u015Fkeni i\xE7in destek eklendi."
 };
 
 // src/i18n/vi_VN.json
@@ -48989,7 +49021,9 @@ var vi_VN_default = {
   localLanguage: "vietnamese",
   commitFix: "fix(server.ts): thay \u0111\u1ED5i ch\u1EEF vi\u1EBFt th\u01B0\u1EDDng c\u1EE7a bi\u1EBFn port th\xE0nh ch\u1EEF vi\u1EBFt hoa PORT",
   commitFeat: "feat(server.ts): th\xEAm h\u1ED7 tr\u1EE3 cho bi\u1EBFn m\xF4i tr\u01B0\u1EDDng process.env.PORT",
-  commitDescription: "Bi\u1EBFn port \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1ED5i t\xEAn th\xE0nh PORT, gi\xFAp c\u1EA3i thi\u1EC7n t\xEDnh nh\u1EA5t qu\xE1n trong vi\u1EC7c \u0111\u1EB7t t\xEAn theo quy \u01B0\u1EDBc v\xEC PORT l\xE0 m\u1ED9t h\u1EB1ng s\u1ED1. H\u1ED7 tr\u1EE3 cho bi\u1EBFn m\xF4i tr\u01B0\u1EDDng cho ph\xE9p \u1EE9ng d\u1EE5ng linh ho\u1EA1t h\u01A1n khi c\xF3 th\u1EC3 ch\u1EA1y tr\xEAn b\u1EA5t k\u1EF3 c\u1ED5ng n\xE0o \u0111\u01B0\u1EE3c ch\u1EC9 \u0111\u1ECBnh th\xF4ng qua bi\u1EBFn m\xF4i tr\u01B0\u1EDDng process.env.PORT."
+  commitDescription: "Bi\u1EBFn port \u0111\xE3 \u0111\u01B0\u1EE3c \u0111\u1ED5i t\xEAn th\xE0nh PORT, gi\xFAp c\u1EA3i thi\u1EC7n t\xEDnh nh\u1EA5t qu\xE1n trong vi\u1EC7c \u0111\u1EB7t t\xEAn theo quy \u01B0\u1EDBc v\xEC PORT l\xE0 m\u1ED9t h\u1EB1ng s\u1ED1. H\u1ED7 tr\u1EE3 cho bi\u1EBFn m\xF4i tr\u01B0\u1EDDng cho ph\xE9p \u1EE9ng d\u1EE5ng linh ho\u1EA1t h\u01A1n khi c\xF3 th\u1EC3 ch\u1EA1y tr\xEAn b\u1EA5t k\u1EF3 c\u1ED5ng n\xE0o \u0111\u01B0\u1EE3c ch\u1EC9 \u0111\u1ECBnh th\xF4ng qua bi\u1EBFn m\xF4i tr\u01B0\u1EDDng process.env.PORT.",
+  commitFixOmitScope: "fix: thay \u0111\u1ED5i ch\u1EEF vi\u1EBFt th\u01B0\u1EDDng c\u1EE7a bi\u1EBFn port th\xE0nh ch\u1EEF vi\u1EBFt hoa PORT",
+  commitFeatOmitScope: "feat: th\xEAm h\u1ED7 tr\u1EE3 cho bi\u1EBFn m\xF4i tr\u01B0\u1EDDng process.env.PORT"
 };
 
 // src/i18n/zh_CN.json
@@ -48997,7 +49031,9 @@ var zh_CN_default = {
   localLanguage: "\u7B80\u4F53\u4E2D\u6587",
   commitFix: "fix(server.ts)\uFF1A\u5C06\u7AEF\u53E3\u53D8\u91CF\u4ECE\u5C0F\u5199port\u6539\u4E3A\u5927\u5199PORT",
   commitFeat: "feat(server.ts)\uFF1A\u6DFB\u52A0\u5BF9process.env.PORT\u73AF\u5883\u53D8\u91CF\u7684\u652F\u6301",
-  commitDescription: "\u73B0\u5728\u7AEF\u53E3\u53D8\u91CF\u88AB\u547D\u540D\u4E3APORT\uFF0C\u8FD9\u63D0\u9AD8\u4E86\u547D\u540D\u7EA6\u5B9A\u7684\u4E00\u81F4\u6027\uFF0C\u56E0\u4E3APORT\u662F\u4E00\u4E2A\u5E38\u91CF\u3002\u73AF\u5883\u53D8\u91CF\u7684\u652F\u6301\u4F7F\u5E94\u7528\u7A0B\u5E8F\u66F4\u52A0\u7075\u6D3B\uFF0C\u56E0\u4E3A\u5B83\u73B0\u5728\u53EF\u4EE5\u901A\u8FC7process.env.PORT\u73AF\u5883\u53D8\u91CF\u5728\u4EFB\u4F55\u53EF\u7528\u7AEF\u53E3\u4E0A\u8FD0\u884C\u3002"
+  commitDescription: "\u73B0\u5728\u7AEF\u53E3\u53D8\u91CF\u88AB\u547D\u540D\u4E3APORT\uFF0C\u8FD9\u63D0\u9AD8\u4E86\u547D\u540D\u7EA6\u5B9A\u7684\u4E00\u81F4\u6027\uFF0C\u56E0\u4E3APORT\u662F\u4E00\u4E2A\u5E38\u91CF\u3002\u73AF\u5883\u53D8\u91CF\u7684\u652F\u6301\u4F7F\u5E94\u7528\u7A0B\u5E8F\u66F4\u52A0\u7075\u6D3B\uFF0C\u56E0\u4E3A\u5B83\u73B0\u5728\u53EF\u4EE5\u901A\u8FC7process.env.PORT\u73AF\u5883\u53D8\u91CF\u5728\u4EFB\u4F55\u53EF\u7528\u7AEF\u53E3\u4E0A\u8FD0\u884C\u3002",
+  commitFixOmitScope: "fix\uFF1A\u5C06\u7AEF\u53E3\u53D8\u91CF\u4ECE\u5C0F\u5199port\u6539\u4E3A\u5927\u5199PORT",
+  commitFeatOmitScope: "feat\uFF1A\u6DFB\u52A0\u5BF9process.env.PORT\u73AF\u5883\u53D8\u91CF\u7684\u652F\u6301"
 };
 
 // src/i18n/zh_TW.json
@@ -49005,7 +49041,9 @@ var zh_TW_default = {
   localLanguage: "\u7E41\u9AD4\u4E2D\u6587",
   commitFix: "\u4FEE\u6B63(server.ts)\uFF1A\u5C07\u7AEF\u53E3\u8B8A\u6578\u5F9E\u5C0F\u5BEB\u7AEF\u53E3\u6539\u70BA\u5927\u5BEBPORT",
   commitFeat: "\u529F\u80FD(server.ts)\uFF1A\u65B0\u589E\u5C0Dprocess.env.PORT\u74B0\u5883\u8B8A\u6578\u7684\u652F\u63F4",
-  commitDescription: "\u73FE\u5728port\u8B8A\u6578\u5DF2\u66F4\u540D\u70BAPORT\uFF0C\u4EE5\u7B26\u5408\u547D\u540D\u6163\u4F8B\uFF0C\u56E0\u70BAPORT\u662F\u4E00\u500B\u5E38\u91CF\u3002\u652F\u63F4\u74B0\u5883\u8B8A\u6578\u53EF\u4EE5\u4F7F\u61C9\u7528\u7A0B\u5E8F\u66F4\u9748\u6D3B\uFF0C\u56E0\u70BA\u5B83\u73FE\u5728\u53EF\u4EE5\u901A\u904Eprocess.env.PORT\u74B0\u5883\u8B8A\u6578\u904B\u884C\u5728\u4EFB\u4F55\u53EF\u7528\u7AEF\u53E3\u4E0A\u3002"
+  commitDescription: "\u73FE\u5728port\u8B8A\u6578\u5DF2\u66F4\u540D\u70BAPORT\uFF0C\u4EE5\u7B26\u5408\u547D\u540D\u6163\u4F8B\uFF0C\u56E0\u70BAPORT\u662F\u4E00\u500B\u5E38\u91CF\u3002\u652F\u63F4\u74B0\u5883\u8B8A\u6578\u53EF\u4EE5\u4F7F\u61C9\u7528\u7A0B\u5E8F\u66F4\u9748\u6D3B\uFF0C\u56E0\u70BA\u5B83\u73FE\u5728\u53EF\u4EE5\u901A\u904Eprocess.env.PORT\u74B0\u5883\u8B8A\u6578\u904B\u884C\u5728\u4EFB\u4F55\u53EF\u7528\u7AEF\u53E3\u4E0A\u3002",
+  commitFixOmitScope: "\u4FEE\u6B63\uFF1A\u5C07\u7AEF\u53E3\u8B8A\u6578\u5F9E\u5C0F\u5BEB\u7AEF\u53E3\u6539\u70BA\u5927\u5BEBPORT",
+  commitFeatOmitScope: "\u529F\u80FD\uFF1A\u65B0\u589E\u5C0Dprocess.env.PORT\u74B0\u5883\u8B8A\u6578\u7684\u652F\u63F4"
 };
 
 // src/i18n/index.ts
@@ -49153,7 +49191,8 @@ var MODEL_LIST = {
     "mistral-embed",
     "mistral-moderation-2411",
     "mistral-moderation-latest"
-  ]
+  ],
+  deepseek: ["deepseek-chat", "deepseek-reasoner"]
 };
 var getDefaultModel = (provider) => {
   switch (provider) {
@@ -49169,6 +49208,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.groq[0];
     case "mistral":
       return MODEL_LIST.mistral[0];
+    case "deepseek":
+      return MODEL_LIST.deepseek[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -49194,7 +49235,7 @@ var configValidators = {
     validateConfig(
       "OCO_API_KEY",
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -49227,6 +49268,14 @@ var configValidators = {
   ["OCO_EMOJI" /* OCO_EMOJI */](value) {
     validateConfig(
       "OCO_EMOJI" /* OCO_EMOJI */,
+      typeof value === "boolean",
+      "Must be boolean: true or false"
+    );
+    return value;
+  },
+  ["OCO_OMIT_SCOPE" /* OCO_OMIT_SCOPE */](value) {
+    validateConfig(
+      "OCO_OMIT_SCOPE" /* OCO_OMIT_SCOPE */,
       typeof value === "boolean",
       "Must be boolean: true or false"
     );
@@ -49300,9 +49349,10 @@ var configValidators = {
         "azure",
         "test",
         "flowise",
-        "groq"
+        "groq",
+        "deepseek"
       ].includes(value) || value.startsWith("ollama"),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek' or 'openai' (default)`
     );
     return value;
   },
@@ -49344,6 +49394,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["GROQ"] = "groq";
   OCO_AI_PROVIDER_ENUM2["MISTRAL"] = "mistral";
   OCO_AI_PROVIDER_ENUM2["MLX"] = "mlx";
+  OCO_AI_PROVIDER_ENUM2["DEEPSEEK"] = "deepseek";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -49361,6 +49412,7 @@ var DEFAULT_CONFIG = {
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: "commit-message",
   OCO_WHY: false,
+  OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true
 };
 var initGlobalConfig = (configPath = defaultConfigPath) => {
@@ -49392,6 +49444,7 @@ var getEnvConfig = (envPath) => {
     OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE,
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
+    OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
   };
 };
@@ -59438,8 +59491,12 @@ var OllamaEngine = class {
         this.client.getUri(this.config),
         params
       );
-      const message = response.data.message;
-      return message?.content;
+      const { message } = response.data;
+      let content = message?.content;
+      if (content && content.includes("<think>")) {
+        return content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+      }
+      return content;
     } catch (err) {
       const message = err.response?.data?.error ?? err.message;
       throw new Error(`Ollama provider error: ${message}`);
@@ -63830,6 +63887,41 @@ var MLXEngine = class {
   }
 };
 
+// src/engine/deepseek.ts
+var DeepseekEngine = class extends OpenAiEngine {
+  constructor(config7) {
+    super({
+      ...config7,
+      baseURL: "https://api.deepseek.com/v1"
+    });
+    this.generateCommitMessage = async (messages) => {
+      const params = {
+        model: this.config.model,
+        messages,
+        temperature: 0,
+        top_p: 0.1,
+        max_tokens: this.config.maxTokensOutput
+      };
+      try {
+        const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
+        if (REQUEST_TOKENS > this.config.maxTokensInput - this.config.maxTokensOutput)
+          throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
+        const completion = await this.client.chat.completions.create(params);
+        const message = completion.choices[0].message;
+        return message?.content;
+      } catch (error) {
+        const err = error;
+        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+          const openAiError = error.response.data.error;
+          if (openAiError)
+            throw new Error(openAiError.message);
+        }
+        throw err;
+      }
+    };
+  }
+};
+
 // src/utils/engine.ts
 function getEngine() {
   const config7 = getConfig();
@@ -63860,6 +63952,8 @@ function getEngine() {
       return new MistralAiEngine(DEFAULT_CONFIG2);
     case "mlx" /* MLX */:
       return new MLXEngine(DEFAULT_CONFIG2);
+    case "deepseek" /* DEEPSEEK */:
+      return new DeepseekEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
@@ -63960,7 +64054,10 @@ var inferPromptsFromCommitlintConfig = (config7) => {
     (ruleName) => getPrompt(ruleName, rules[ruleName], prompt)
   ).filter((prompt2) => prompt2 !== null);
 };
-var STRUCTURE_OF_COMMIT = `
+var STRUCTURE_OF_COMMIT = config2.OCO_OMIT_SCOPE ? `
+- Header of commit is composed of type and subject: <type-of-commit>: <subject-of-commit>
+- Description of commit is composed of body and footer (optional): <body-of-commit>
+<footer(s)-of-commit>` : `
 - Header of commit is composed of type, scope, subject: <type-of-commit>(<scope-of-commit>): <subject-of-commit>
 - Description of commit is composed of body and footer (optional): <body-of-commit>
 <footer(s)-of-commit>`;
@@ -63974,7 +64071,7 @@ Here are the specific requirements and conventions that should be strictly follo
 Commit Message Conventions:
 - The commit message consists of three parts: Header, Body, and Footer.
 - Header: 
-  - Format: \`<type>(<scope>): <subject>\`
+  - Format: ${config2.OCO_OMIT_SCOPE ? "`<type>: <subject>`" : "`<type>(<scope>): <subject>`"}
 - ${prompts.join("\n- ")}
 
 JSON Output Format:
@@ -63982,8 +64079,10 @@ JSON Output Format:
 \`\`\`json
 {
   "localLanguage": "${translation.localLanguage}",
-  "commitFix": "<Header of commit for bug fix>",
-  "commitFeat": "<Header of commit for feature>",
+  "commitFix": "<Header of commit for bug fix with scope>",
+  "commitFeat": "<Header of commit for feature with scope>",
+  "commitFixOmitScope": "<Header of commit for bug fix without scope>",
+  "commitFeatOmitScope": "<Header of commit for feature without scope>",
   "commitDescription": "<Description of commit for both the bug fix and the feature>"
 }
 \`\`\`
@@ -63991,8 +64090,8 @@ JSON Output Format:
 - Description should not be more than 74 characters.
 
 Additional Details:
-- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix. 
-- Allowing the server to listen on a port specified through the environment variable is considered a new feature. 
+- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix.
+- Allowing the server to listen on a port specified through the environment variable is considered a new feature.
 
 Example Git Diff is to follow:`
   },
@@ -64005,7 +64104,7 @@ ${config2.OCO_EMOJI ? "Use GitMoji convention to preface the commit." : "Do not 
 ${config2.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message."}
 Use the present tense. Use ${language} to answer.
 ${config2.OCO_ONE_LINE_COMMIT ? "Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change." : ""}
-    
+${config2.OCO_OMIT_SCOPE ? "Do not include a scope in the commit message format. Use the format: <type>: <subject>" : ""}
 You will strictly follow the following conventions to generate the content of the commit message:
 - ${prompts.join("\n- ")}
 
@@ -64241,6 +64340,7 @@ var CONVENTIONAL_COMMIT_KEYWORDS = "Do not preface the commit with anything, exc
 var getCommitConvention = (fullGitMojiSpec) => config4.OCO_EMOJI ? fullGitMojiSpec ? FULL_GITMOJI_SPEC : GITMOJI_HELP : CONVENTIONAL_COMMIT_KEYWORDS;
 var getDescriptionInstruction = () => config4.OCO_DESCRIPTION ? `Add a short description of WHY the changes are done after the commit message. Don't start it with "This commit", just describe the changes.` : "Don't add any descriptions to the commit, only commit message.";
 var getOneLineCommitInstruction = () => config4.OCO_ONE_LINE_COMMIT ? "Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change." : "";
+var getScopeInstruction = () => config4.OCO_OMIT_SCOPE ? "Do not include a scope in the commit message format. Use the format: <type>: <subject>" : "";
 var userInputCodeContext = (context) => {
   if (context !== "" && context !== " ") {
     return `Additional context provided by the user: <context>${context}</context>
@@ -64257,6 +64357,7 @@ var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec, context) => ({
     const conventionGuidelines = getCommitConvention(fullGitMojiSpec);
     const descriptionGuideline = getDescriptionInstruction();
     const oneLineCommitGuideline = getOneLineCommitInstruction();
+    const scopeInstruction = getScopeInstruction();
     const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
     const userInputContext = userInputCodeContext(context);
     return `${missionStatement}
@@ -64264,6 +64365,7 @@ ${diffInstruction}
 ${conventionGuidelines}
 ${descriptionGuideline}
 ${oneLineCommitGuideline}
+${scopeInstruction}
 ${generalGuidelines}
 ${userInputContext}`;
   })()
@@ -64296,8 +64398,17 @@ var INIT_DIFF_PROMPT = {
                 });`
 };
 var getContent = (translation4) => {
-  const fix = config4.OCO_EMOJI ? `\u{1F41B} ${removeConventionalCommitWord(translation4.commitFix)}` : translation4.commitFix;
-  const feat = config4.OCO_EMOJI ? `\u2728 ${removeConventionalCommitWord(translation4.commitFeat)}` : translation4.commitFeat;
+  const getCommitString = (commitWithScope, commitWithoutScope) => {
+    if (config4.OCO_OMIT_SCOPE && commitWithoutScope) {
+      return config4.OCO_EMOJI ? `\u{1F41B} ${removeConventionalCommitWord(commitWithoutScope)}` : commitWithoutScope;
+    }
+    return config4.OCO_EMOJI ? `\u{1F41B} ${removeConventionalCommitWord(commitWithScope)}` : commitWithScope;
+  };
+  const fix = getCommitString(
+    translation4.commitFix,
+    translation4.commitFixOmitScope
+  );
+  const feat = config4.OCO_OMIT_SCOPE && translation4.commitFeatOmitScope ? config4.OCO_EMOJI ? `\u2728 ${removeConventionalCommitWord(translation4.commitFeatOmitScope)}` : translation4.commitFeatOmitScope : config4.OCO_EMOJI ? `\u2728 ${removeConventionalCommitWord(translation4.commitFeat)}` : translation4.commitFeat;
   const description = config4.OCO_DESCRIPTION ? translation4.commitDescription : "";
   return `${fix}
 ${feat}
