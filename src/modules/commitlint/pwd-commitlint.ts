@@ -4,7 +4,8 @@ import path from 'path';
 const findModulePath = (moduleName: string) => {
   const searchPaths = [
     path.join('node_modules', moduleName),
-    path.join('node_modules', '.pnpm')
+    path.join('node_modules', '.pnpm'),
+    path.resolve(__dirname, '../..')
   ];
 
   for (const basePath of searchPaths) {
