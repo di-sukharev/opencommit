@@ -25,6 +25,10 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
+  OCO_ENABLE_LOGGING = 'OCO_ENABLE_LOGGING',
+  OCO_ENABLE_CACHE = 'OCO_ENABLE_CACHE',
+  OCO_CACHE_DIR = 'OCO_CACHE_DIR',
+  OCO_LOG_DIR = 'OCO_LOG_DIR'
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH' // todo: deprecate
 }
@@ -392,6 +396,10 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
+  [CONFIG_KEYS.OCO_ENABLE_LOGGING]?: boolean;
+  [CONFIG_KEYS.OCO_ENABLE_CACHE]?: boolean;
+  [CONFIG_KEYS.OCO_CACHE_DIR]?: string;
+  [CONFIG_KEYS.OCO_LOG_DIR]?: string;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -438,6 +446,10 @@ export const DEFAULT_CONFIG = {
   OCO_ONE_LINE_COMMIT: false,
   OCO_TEST_MOCK_TYPE: 'commit-message',
   OCO_WHY: false,
+  OCO_ENABLE_LOGGING: true,
+  OCO_ENABLE_CACHE: true,
+  OCO_CACHE_DIR: '',
+  OCO_LOG_DIR: ''
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true // todo: deprecate
 };
@@ -479,7 +491,11 @@ const getEnvConfig = (envPath: string) => {
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
 
-    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
+    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH),
+    OCO_ENABLE_LOGGING: parseConfigVarValue(process.env.OCO_ENABLE_LOGGING),
+    OCO_ENABLE_CACHE: parseConfigVarValue(process.env.OCO_ENABLE_CACHE),
+    OCO_CACHE_DIR: parseConfigVarValue(process.env.OCO_CACHE_DIR),
+    OCO_LOG_DIR: parseConfigVarValue(process.env.OCO_LOG_DIR)
   };
 };
 
