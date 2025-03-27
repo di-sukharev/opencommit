@@ -183,43 +183,45 @@ export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessagePara
                 });`
 };
 
-const getContent = (translation: ConsistencyPrompt) => {
-  const getCommitString = (commitWithScope: string, commitWithoutScope?: string) => {
-    if (config.OCO_OMIT_SCOPE && commitWithoutScope) {
-      return config.OCO_EMOJI
-        ? `🐛 ${removeConventionalCommitWord(commitWithoutScope)}`
-        : commitWithoutScope;
-    }
-    return config.OCO_EMOJI
-      ? `🐛 ${removeConventionalCommitWord(commitWithScope)}`
-      : commitWithScope;
-  };
+const COMMIT_TYPES = {
+  fix: '🐛',
+  feat: '✨'
+} as const;
 
-  const fix = getCommitString(
-    translation.commitFix,
-    translation.commitFixOmitScope
-  );
+const generateCommitString = (
+  type: keyof typeof COMMIT_TYPES,
+  message: string
+): string => {
+  const cleanMessage = removeConventionalCommitWord(message);
+  return config.OCO_EMOJI
+    ? `${COMMIT_TYPES[type]} ${cleanMessage}`
+    : message;
+};
 
-  const feat = config.OCO_OMIT_SCOPE && translation.commitFeatOmitScope
-    ? (config.OCO_EMOJI
-      ? `✨ ${removeConventionalCommitWord(translation.commitFeatOmitScope)}`
-      : translation.commitFeatOmitScope)
-    : (config.OCO_EMOJI
-      ? `✨ ${removeConventionalCommitWord(translation.commitFeat)}`
-      : translation.commitFeat);
+const getConsistencyContent = (translation: ConsistencyPrompt) => {
+  const fixMessage = config.OCO_OMIT_SCOPE && translation.commitFixOmitScope
+    ? translation.commitFixOmitScope
+    : translation.commitFix;
+
+  const featMessage = config.OCO_OMIT_SCOPE && translation.commitFeatOmitScope
+    ? translation.commitFeatOmitScope
+    : translation.commitFeat;
+
+  const fix = generateCommitString('fix', fixMessage);
+  const feat = generateCommitString('feat', featMessage);
 
   const description = config.OCO_DESCRIPTION
     ? translation.commitDescription
     : '';
 
-  return `${fix}\n${feat}\n${description}`;
+  return [fix, feat, description].filter(Boolean).join('\n');
 };
 
 const INIT_CONSISTENCY_PROMPT = (
   translation: ConsistencyPrompt
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
   role: 'assistant',
-  content: getContent(translation)
+  content: getConsistencyContent(translation)
 });
 
 export const getMainCommitPrompt = async (
