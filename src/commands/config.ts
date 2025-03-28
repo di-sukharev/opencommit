@@ -155,8 +155,8 @@ const getDefaultModel = (provider: string | undefined): string => {
 };
 
 export enum DEFAULT_TOKEN_LIMITS {
-  DEFAULT_MAX_TOKENS_INPUT = 40960,
-  DEFAULT_MAX_TOKENS_OUTPUT = 4096
+  DEFAULT_MAX_TOKENS_INPUT = 4096,
+  DEFAULT_MAX_TOKENS_OUTPUT = 500
 }
 
 const validateConfig = (
