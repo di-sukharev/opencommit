@@ -2,7 +2,7 @@ import axios from 'axios';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
-import { OpenAiEngine, OpenAiConfig } from './openAI';
+import { OpenAiEngine, OpenAiConfig } from './openAi';
 
 export interface DeepseekConfig extends OpenAiConfig {}
 

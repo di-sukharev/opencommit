@@ -1,6 +1,5 @@
 import chalk from 'chalk';
 import { OpenAI } from 'openai';
-
 import { outro } from '@clack/prompts';
 import {
   PromptConfig,
@@ -11,16 +10,29 @@ import {
 
 import { getConfig } from '../../commands/config';
 import { i18n, I18nLocals } from '../../i18n';
-import { IDENTITY, INIT_DIFF_PROMPT } from '../../prompts';
+import {
+  INIT_DIFF_PROMPT,
+  getConsistencyContent,
+  getSharedGuidelines,
+  SharedGuidelines
+} from '../../prompts';
 
 const config = getConfig();
 const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
 
+// Types
 type DeepPartial<T> = {
   [P in keyof T]?: {
     [K in keyof T[P]]?: T[P][K];
   };
 };
+
+interface PromptTemplateVars {
+  rules: string;
+  requirements: string;
+  referenceStyle: string;
+  gitDiff: string;
+}
 
 type PromptFunction = (
   applicable: string,
@@ -35,51 +47,34 @@ type PromptResolverFunction = (
   prompt?: DeepPartial<PromptConfig>
 ) => string;
 
-/**
- * Extracts more contexte for each type-enum.
- * IDEA: replicate the concept for scopes and refactor to a generic feature.
- */
+// Rule description helpers
 const getTypeRuleExtraDescription = (
   type: string,
   prompt?: DeepPartial<PromptConfig>
 ) => prompt?.questions?.type?.enum?.[type]?.description;
 
-/*
-IDEA: Compress llm readable prompt for each section of commit message: one line for header, one line for scope, etc.
-  - The type must be in lowercase and should be one of the following values: featuring, fixing, documenting, styling, refactoring, testing, chores, perf, build, ci, revert.
-  - The scope should not be empty and provide context for the change (e.g., module or file changed).
-  - The subject should not be empty, should not end with a period, and should provide a concise description of the change. It should not be in sentence-case, start-case, pascal-case, or upper-case.
-*/
-const llmReadableRules: {
-  [ruleName: string]: PromptResolverFunction;
-} = {
+// Rule formatters
+const llmReadableRules: Record<string, PromptResolverFunction> = {
   blankline: (key, applicable) =>
     `There should ${applicable} be a blank line at the beginning of the ${key}.`,
   caseRule: (key, applicable, value: string | Array<string>) =>
-    `The ${key} should ${applicable} be in ${
-      Array.isArray(value)
-        ? `one of the following case: 
-  - ${value.join('\n  - ')}.`
-        : `${value} case.`
-    }`,
-  emptyRule: (key, applicable) => `The ${key} should ${applicable} be empty.`,
+    `The ${key} should ${applicable} be in ${Array.isArray(value)
+      ? `one of the following case:\n  - ${value.join('\n  - ')}.`
+      : `${value} case.`}`,
+  emptyRule: (key, applicable) =>
+    `The ${key} should ${applicable} be empty.`,
   enumRule: (key, applicable, value: string | Array<string>) =>
-    `The ${key} should ${applicable} be one of the following values: 
-  - ${Array.isArray(value) ? value.join('\n  - ') : value}.`,
+    `The ${key} should ${applicable} be one of the following values:\n  - ${Array.isArray(value) ? value.join('\n  - ') : value}.`,
   enumTypeRule: (key, applicable, value: string | Array<string>, prompt) =>
-    `The ${key} should ${applicable} be one of the following values: 
-  - ${
-    Array.isArray(value)
+    `The ${key} should ${applicable} be one of the following values:\n  - ${Array.isArray(value)
       ? value
-          .map((v) => {
-            const description = getTypeRuleExtraDescription(v, prompt);
-            if (description) {
-              return `${v} (${description})`;
-            } else return v;
-          })
-          .join('\n  - ')
+        .map(v => {
+          const description = getTypeRuleExtraDescription(v, prompt);
+          return description ? `${v} (${description})` : v;
+        })
+        .join('\n  - ')
       : value
-  }.`,
+    }.`,
   fullStopRule: (key, applicable, value: string) =>
     `The ${key} should ${applicable} end with '${value}'.`,
   maxLengthRule: (key, applicable, value: string) =>
@@ -88,92 +83,64 @@ const llmReadableRules: {
     `The ${key} should ${applicable} have ${value} characters or more.`
 };
 
-/**
- * TODO: Validate rules to every rule in the @commitlint configuration.
- * IDEA: Plugins can extend the list of rule. Provide user with a way to infer or extend when "No prompt handler for rule".
- */
-const rulesPrompts: {
-  [ruleName: string]: PromptFunction;
-} = {
-  'body-case': (applicable: string, value: string | Array<string>) =>
-    llmReadableRules.caseRule('body', applicable, value),
-  'body-empty': (applicable: string) =>
-    llmReadableRules.emptyRule('body', applicable, undefined),
-  'body-full-stop': (applicable: string, value: string) =>
-    llmReadableRules.fullStopRule('body', applicable, value),
-  'body-leading-blank': (applicable: string) =>
-    llmReadableRules.blankline('body', applicable, undefined),
-  'body-max-length': (applicable: string, value: string) =>
-    llmReadableRules.maxLengthRule('body', applicable, value),
-  'body-max-line-length': (applicable: string, value: string) =>
-    `Each line of the body should ${applicable} have ${value} characters or less.`,
-  'body-min-length': (applicable: string, value: string) =>
-    llmReadableRules.minLengthRule('body', applicable, value),
-  'footer-case': (applicable: string, value: string | Array<string>) =>
-    llmReadableRules.caseRule('footer', applicable, value),
-  'footer-empty': (applicable: string) =>
-    llmReadableRules.emptyRule('footer', applicable, undefined),
-  'footer-leading-blank': (applicable: string) =>
-    llmReadableRules.blankline('footer', applicable, undefined),
-  'footer-max-length': (applicable: string, value: string) =>
-    llmReadableRules.maxLengthRule('footer', applicable, value),
-  'footer-max-line-length': (applicable: string, value: string) =>
-    `Each line of the footer should ${applicable} have ${value} characters or less.`,
-  'footer-min-length': (applicable: string, value: string) =>
-    llmReadableRules.minLengthRule('footer', applicable, value),
-  'header-case': (applicable: string, value: string | Array<string>) =>
-    llmReadableRules.caseRule('header', applicable, value),
-  'header-full-stop': (applicable: string, value: string) =>
-    llmReadableRules.fullStopRule('header', applicable, value),
-  'header-max-length': (applicable: string, value: string) =>
-    llmReadableRules.maxLengthRule('header', applicable, value),
-  'header-min-length': (applicable: string, value: string) =>
-    llmReadableRules.minLengthRule('header', applicable, value),
-  'references-empty': (applicable: string) =>
-    llmReadableRules.emptyRule('references section', applicable, undefined),
-  'scope-case': (applicable: string, value: string | Array<string>) =>
-    llmReadableRules.caseRule('scope', applicable, value),
-  'scope-empty': (applicable: string) =>
-    llmReadableRules.emptyRule('scope', applicable, undefined),
-  'scope-enum': (applicable: string, value: string | Array<string>) =>
-    llmReadableRules.enumRule('type', applicable, value),
-  'scope-max-length': (applicable: string, value: string) =>
-    llmReadableRules.maxLengthRule('scope', applicable, value),
-  'scope-min-length': (applicable: string, value: string) =>
-    llmReadableRules.minLengthRule('scope', applicable, value),
-  'signed-off-by': (applicable: string, value: string) =>
-    `The commit message should ${applicable} have a "Signed-off-by" line with the value "${value}".`,
-  'subject-case': (applicable: string, value: string | Array<string>) =>
-    llmReadableRules.caseRule('subject', applicable, value),
-  'subject-empty': (applicable: string) =>
-    llmReadableRules.emptyRule('subject', applicable, undefined),
-  'subject-full-stop': (applicable: string, value: string) =>
-    llmReadableRules.fullStopRule('subject', applicable, value),
-  'subject-max-length': (applicable: string, value: string) =>
-    llmReadableRules.maxLengthRule('subject', applicable, value),
-  'subject-min-length': (applicable: string, value: string) =>
-    llmReadableRules.minLengthRule('subject', applicable, value),
-  'type-case': (applicable: string, value: string | Array<string>) =>
-    llmReadableRules.caseRule('type', applicable, value),
-  'type-empty': (applicable: string) =>
-    llmReadableRules.emptyRule('type', applicable, undefined),
-  'type-enum': (applicable: string, value: string | Array<string>, prompt) =>
-    llmReadableRules.enumTypeRule('type', applicable, value, prompt),
-  'type-max-length': (applicable: string, value: string) =>
-    llmReadableRules.maxLengthRule('type', applicable, value),
-  'type-min-length': (applicable: string, value: string) =>
-    llmReadableRules.minLengthRule('type', applicable, value)
+// Commitlint rule handlers
+const rulesPrompts: Record<string, PromptFunction> = {
+  // Body rules
+  'body-case': (applicable, value) => llmReadableRules.caseRule('body', applicable, value),
+  'body-empty': (applicable) => llmReadableRules.emptyRule('body', applicable, undefined),
+  'body-full-stop': (applicable, value) => llmReadableRules.fullStopRule('body', applicable, value),
+  'body-leading-blank': (applicable) => llmReadableRules.blankline('body', applicable, undefined),
+  'body-max-length': (applicable, value) => llmReadableRules.maxLengthRule('body', applicable, value),
+  'body-max-line-length': (applicable, value) => `Each line of the body should ${applicable} have ${value} characters or less.`,
+  'body-min-length': (applicable, value) => llmReadableRules.minLengthRule('body', applicable, value),
+
+  // Footer rules
+  'footer-case': (applicable, value) => llmReadableRules.caseRule('footer', applicable, value),
+  'footer-empty': (applicable) => llmReadableRules.emptyRule('footer', applicable, undefined),
+  'footer-leading-blank': (applicable) => llmReadableRules.blankline('footer', applicable, undefined),
+  'footer-max-length': (applicable, value) => llmReadableRules.maxLengthRule('footer', applicable, value),
+  'footer-max-line-length': (applicable, value) => `Each line of the footer should ${applicable} have ${value} characters or less.`,
+  'footer-min-length': (applicable, value) => llmReadableRules.minLengthRule('footer', applicable, value),
+
+  // Header rules
+  'header-case': (applicable, value) => llmReadableRules.caseRule('header', applicable, value),
+  'header-full-stop': (applicable, value) => llmReadableRules.fullStopRule('header', applicable, value),
+  'header-max-length': (applicable, value) => llmReadableRules.maxLengthRule('header', applicable, value),
+  'header-min-length': (applicable, value) => llmReadableRules.minLengthRule('header', applicable, value),
+
+  // Scope rules
+  'scope-case': (applicable, value) => llmReadableRules.caseRule('scope', applicable, value),
+  'scope-empty': (applicable) => llmReadableRules.emptyRule('scope', applicable, undefined),
+  'scope-enum': (applicable, value) => llmReadableRules.enumRule('type', applicable, value),
+  'scope-max-length': (applicable, value) => llmReadableRules.maxLengthRule('scope', applicable, value),
+  'scope-min-length': (applicable, value) => llmReadableRules.minLengthRule('scope', applicable, value),
+
+  // Subject rules
+  'subject-case': (applicable, value) => llmReadableRules.caseRule('subject', applicable, value),
+  'subject-empty': (applicable) => llmReadableRules.emptyRule('subject', applicable, undefined),
+  'subject-full-stop': (applicable, value) => llmReadableRules.fullStopRule('subject', applicable, value),
+  'subject-max-length': (applicable, value) => llmReadableRules.maxLengthRule('subject', applicable, value),
+  'subject-min-length': (applicable, value) => llmReadableRules.minLengthRule('subject', applicable, value),
+
+  // Type rules
+  'type-case': (applicable, value) => llmReadableRules.caseRule('type', applicable, value),
+  'type-empty': (applicable) => llmReadableRules.emptyRule('type', applicable, undefined),
+  'type-enum': (applicable, value, prompt) => llmReadableRules.enumTypeRule('type', applicable, value, prompt),
+  'type-max-length': (applicable, value) => llmReadableRules.maxLengthRule('type', applicable, value),
+  'type-min-length': (applicable, value) => llmReadableRules.minLengthRule('type', applicable, value),
+
+  // Other rules
+  'references-empty': (applicable) => llmReadableRules.emptyRule('references section', applicable, undefined),
+  'signed-off-by': (applicable, value) => `The commit message should ${applicable} have a "Signed-off-by" line with the value "${value}".`
 };
 
+// Rule processing
 const getPrompt = (
   ruleName: string,
   ruleConfig: RuleConfigTuple<unknown>,
   prompt: DeepPartial<PromptConfig>
 ) => {
   const [severity, applicable, value] = ruleConfig;
-
-  // Should we exclude "Disabled" properties?
-  // Is this used to disable a subjacent rule when extending presets?
   if (severity === RuleConfigSeverity.Disabled) return null;
 
   const promptFn = rulesPrompts[ruleName];
@@ -181,12 +148,70 @@ const getPrompt = (
     return promptFn(applicable, value, prompt);
   }
 
-  // Plugins may add their custom rules.
-  // We might want to call OpenAI to build this rule's llm-readable prompt.
   outro(`${chalk.red('✖')} No prompt handler for rule "${ruleName}".`);
   return `Please manualy set the prompt for rule "${ruleName}".`;
 };
 
+// Template generation
+const replaceTemplateVars = (template: string, vars: PromptTemplateVars): string => {
+  return template
+    .replace(/\${rules}/g, vars.rules)
+    .replace(/\${requirements}/g, vars.requirements)
+    .replace(/\${referenceStyle}/g, vars.referenceStyle)
+    .replace(/\${gitDiff}/g, vars.gitDiff);
+};
+
+const SYSTEM_REFINE_COMMIT_TEMPLATE = (language: string) => {
+  const guidelines: SharedGuidelines = getSharedGuidelines(language, true, false);
+
+  return `${guidelines.missionBase} and maintains the style of the reference message.
+
+Here are the specific requirements and conventions that should be strictly followed:
+
+Message Structure:
+${guidelines.structure}
+
+${guidelines.guidelinesSection}
+
+Commit Rules:
+\${rules}
+
+Additional Requirements:
+\${requirements}
+
+Output Format:
+- Generate a single commit message that:
+  1. Follows all commitlint rules above
+  2. Maintains the style and features of the reference message
+  3. Follows the specific requirements above
+- The message should be a complete, valid commit message that would pass commitlint validation
+- Do not include any JSON formatting or additional text
+- The message should be ready to use as a git commit message`;
+};
+
+const INIT_MAIN_SYSTEM_TEMPLATE = (language: string) => {
+  const guidelines: SharedGuidelines = getSharedGuidelines(language, true, true);
+
+  return `${guidelines.missionBase}
+
+Message Structure:
+${guidelines.structure}
+
+${guidelines.guidelinesSection}
+
+Commit Rules:
+\${rules}`;
+};
+
+const USER_COMMIT_EXAMPLE_TEMPLATE = `Example Git Diff is to follow:
+\`\`\`
+\${gitDiff}
+\`\`\`
+
+Reference Message Style:
+\${referenceStyle}`;
+
+// Public exports
 export const inferPromptsFromCommitlintConfig = (
   config: QualifiedConfig
 ): string[] => {
@@ -199,103 +224,58 @@ export const inferPromptsFromCommitlintConfig = (
     .filter((prompt) => prompt !== null) as string[];
 };
 
-/**
- * Breaking down commit message structure for conventional commit, and mapping bits with
- * ubiquitous language from @commitlint.
- * While gpt-4 does this on it self, gpt-3.5 can't map this on his own atm.
- */
-const STRUCTURE_OF_COMMIT = config.OCO_OMIT_SCOPE
-  ? `
-- Header of commit is composed of type and subject: <type-of-commit>: <subject-of-commit>
-- Description of commit is composed of body and footer (optional): <body-of-commit>\n<footer(s)-of-commit>`
-  : `
-- Header of commit is composed of type, scope, subject: <type-of-commit>(<scope-of-commit>): <subject-of-commit>
-- Description of commit is composed of body and footer (optional): <body-of-commit>\n<footer(s)-of-commit>`;
-
-// Prompt to generate LLM-readable rules based on @commitlint rules.
-const GEN_COMMITLINT_CONSISTENCY_PROMPT = (
-  prompts: string[]
-): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => [
-  {
-    role: 'system',
-    content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages for two different changes in a single codebase and output them in the provided JSON format: one for a bug fix and another for a new feature.
-
-Here are the specific requirements and conventions that should be strictly followed:
-
-Commit Message Conventions:
-- The commit message consists of three parts: Header, Body, and Footer.
-- Header: 
-  - Format: ${config.OCO_OMIT_SCOPE ? '`<type>: <subject>`' : '`<type>(<scope>): <subject>`'}
-- ${prompts.join('\n- ')}
-
-JSON Output Format:
-- The JSON output should contain the commit messages for a bug fix and a new feature in the following format:
-\`\`\`json
-{
-  "localLanguage": "${translation.localLanguage}",
-  "commitFix": "<Header of commit for bug fix with scope>",
-  "commitFeat": "<Header of commit for feature with scope>",
-  "commitFixOmitScope": "<Header of commit for bug fix without scope>",
-  "commitFeatOmitScope": "<Header of commit for feature without scope>",
-  "commitDescription": "<Description of commit for both the bug fix and the feature>"
-}
-\`\`\`
-- The "commitDescription" should not include the commit message’s header, only the description.
-- Description should not be more than 74 characters.
-
-Additional Details:
-- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix.
-- Allowing the server to listen on a port specified through the environment variable is considered a new feature.
-
-Example Git Diff is to follow:`
-  },
-  INIT_DIFF_PROMPT
-];
-
-/**
- * Prompt to have LLM generate a message using @commitlint rules.
- *
- * @param language
- * @param prompts
- * @returns
- */
-const INIT_MAIN_PROMPT = (
-  language: string,
-  prompts: string[]
-): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
-  role: 'system',
-  content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes ${
-    config.OCO_WHY ? 'and WHY the changes were done' : ''
-  }. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
-${
-  config.OCO_EMOJI
-    ? 'Use GitMoji convention to preface the commit.'
-    : 'Do not preface the commit with anything.'
-}
-${
-  config.OCO_DESCRIPTION
-    ? 'Add a short description of WHY the changes are done after the commit message. Don\'t start it with "This commit", just describe the changes.'
-    : "Don't add any descriptions to the commit, only commit message."
-}
-Use the present tense. Use ${language} to answer.
-${
-  config.OCO_ONE_LINE_COMMIT
-    ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
-    : ''
-}
-${
-  config.OCO_OMIT_SCOPE
-    ? 'Do not include a scope in the commit message format. Use the format: <type>: <subject>'
-    : ''
-}
-You will strictly follow the following conventions to generate the content of the commit message:
-- ${prompts.join('\n- ')}
-
-The conventions refers to the following structure of commit message:
-${STRUCTURE_OF_COMMIT}`
-});
-
 export const commitlintPrompts = {
-  INIT_MAIN_PROMPT,
-  GEN_COMMITLINT_CONSISTENCY_PROMPT
+  INIT_MAIN_PROMPT: (
+    language: string,
+    prompts: string[]
+  ): OpenAI.Chat.Completions.ChatCompletionMessageParam => {
+    const rules = prompts.map(p => `- ${p}`).join('\n');
+    const templateVars: PromptTemplateVars = {
+      rules,
+      requirements: '',
+      referenceStyle: '',
+      gitDiff: ''
+    };
+
+    return {
+      role: 'system',
+      content: replaceTemplateVars(INIT_MAIN_SYSTEM_TEMPLATE(language), templateVars)
+    };
+  },
+
+  GEN_COMMITLINT_CONSISTENCY_PROMPT: (
+    prompts: string[]
+  ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => {
+    const defaultContent = getConsistencyContent(translation);
+    const dynamicRequirements = [
+      config.OCO_OMIT_SCOPE
+        ? '- Do not include scope in the commit message'
+        : '- Include appropriate scope in the commit message',
+      config.OCO_DESCRIPTION
+        ? '- Include a description explaining the changes'
+        : '- Do not include a description',
+      config.OCO_EMOJI
+        ? '- Use appropriate emoji at the start of the message'
+        : '- Do not use emoji'
+    ].join('\n');
+
+    const rules = prompts.map(p => `- ${p}`).join('\n');
+    const templateVars: PromptTemplateVars = {
+      rules,
+      requirements: dynamicRequirements,
+      referenceStyle: defaultContent,
+      gitDiff: String(INIT_DIFF_PROMPT.content || '')
+    };
+
+    return [
+      {
+        role: 'system',
+        content: replaceTemplateVars(SYSTEM_REFINE_COMMIT_TEMPLATE(translation.localLanguage), templateVars)
+      },
+      {
+        role: 'user',
+        content: replaceTemplateVars(USER_COMMIT_EXAMPLE_TEMPLATE, templateVars)
+      }
+    ];
+  }
 };

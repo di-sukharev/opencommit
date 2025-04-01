@@ -53,7 +53,7 @@ export const configureCommitlintIntegration = async (force = false) => {
 
   spin.start('Generating consistency with given @commitlint rules');
 
-  const prompts = inferPromptsFromCommitlintConfig(commitLintConfig);
+  const prompts = inferPromptsFromCommitlintConfig(commitLintConfig as any);
 
   const consistencyPrompts =
     commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
@@ -65,24 +65,26 @@ export const configureCommitlintIntegration = async (force = false) => {
   // );
 
   const engine = getEngine();
-  let consistency =
-    (await engine.generateCommitMessage(consistencyPrompts)) || '{}';
+  let consistency = (await engine.generateCommitMessage(consistencyPrompts)) || '';
 
   // Cleanup the consistency answer. Sometimes 'gpt-3.5-turbo' sends rule's back.
   prompts.forEach((prompt) => (consistency = consistency.replace(prompt, '')));
 
-  // sometimes consistency is preceded by explanatory text like "Here is your JSON:"
-  consistency = utils.getJSONBlock(consistency);
-
-  // ... remaining might be extra set of "\n"
-  consistency = utils.removeDoubleNewlines(consistency);
+  // Cleanup any potential extra text or formatting
+  consistency = consistency.trim();
 
   const commitlintLLMConfig: CommitlintLLMConfig = {
     hash,
     prompts,
     consistency: {
       [translation.localLanguage]: {
-        ...JSON.parse(consistency as string)
+        commitMessage: consistency,
+        // Store config settings that were used to generate this message
+        config: {
+          OCO_OMIT_SCOPE: config.OCO_OMIT_SCOPE,
+          OCO_DESCRIPTION: config.OCO_DESCRIPTION,
+          OCO_EMOJI: config.OCO_EMOJI
+        }
       }
     }
   };

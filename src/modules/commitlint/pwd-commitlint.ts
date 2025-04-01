@@ -60,7 +60,7 @@ export const getCommitLintPWDConfig =
          * ES Module (commitlint@v19.x.x. <= )
          * Directory import is not supported in ES Module resolution, so import the file directly
          */
-        modulePath = await findModulePath('@commitlint/load/lib/load.js');
+        modulePath = findModulePath('@commitlint/load/lib/load.js');
         load = (await import(modulePath)).default;
         break;
     }
