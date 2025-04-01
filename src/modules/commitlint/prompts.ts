@@ -11,7 +11,7 @@ import {
 
 import { getConfig } from '../../commands/config';
 import { i18n, I18nLocals } from '../../i18n';
-import { IDENTITY, INIT_DIFF_PROMPT } from '../../prompts';
+import { IDENTITY, INIT_DIFF_PROMPT, getConsistencyContent } from '../../prompts';
 
 const config = getConfig();
 const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
@@ -213,10 +213,27 @@ const STRUCTURE_OF_COMMIT = config.OCO_OMIT_SCOPE
 // Prompt to generate LLM-readable rules based on @commitlint rules.
 const GEN_COMMITLINT_CONSISTENCY_PROMPT = (
   prompts: string[]
-): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => [
+): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => {
+  // Get the default content as reference
+  const defaultContent = getConsistencyContent(translation);
+
+  // Build dynamic requirements based on config
+  const dynamicRequirements = [
+    config.OCO_OMIT_SCOPE
+      ? '- Do not include scope in the commit message'
+      : '- Include appropriate scope in the commit message',
+    config.OCO_DESCRIPTION
+      ? '- Include a description explaining the changes'
+      : '- Do not include a description',
+    config.OCO_EMOJI
+      ? '- Use appropriate emoji at the start of the message'
+      : '- Do not use emoji'
+  ].join('\n');
+
+  return [
     {
       role: 'system',
-      content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages for two different changes in a single codebase and output them in the provided JSON format: one for a bug fix and another for a new feature.
+      content: `${IDENTITY} Your mission is to create a clean and comprehensive commit message that follows both the commitlint rules and maintains the style of the reference message.
 
 Here are the specific requirements and conventions that should be strictly followed:
 
@@ -226,29 +243,25 @@ Commit Message Conventions:
   - Format: ${config.OCO_OMIT_SCOPE ? '`<type>: <subject>`' : '`<type>(<scope>): <subject>`'}
 - ${prompts.join('\n- ')}
 
-JSON Output Format:
-- The JSON output should contain the commit messages for a bug fix and a new feature in the following format:
-\`\`\`json
-{
-  "localLanguage": "${translation.localLanguage}",
-  "commitFix": "<Header of commit for bug fix with scope>",
-  "commitFeat": "<Header of commit for feature with scope>",
-  "commitFixOmitScope": "<Header of commit for bug fix without scope>",
-  "commitFeatOmitScope": "<Header of commit for feature without scope>",
-  "commitDescription": "<Description of commit for both the bug fix and the feature>"
-}
-\`\`\`
-- The "commitDescription" should not include the commit message’s header, only the description.
-- Description should not be more than 74 characters.
+${dynamicRequirements}
 
-Additional Details:
-- Changing the variable 'port' to uppercase 'PORT' is considered a bug fix.
-- Allowing the server to listen on a port specified through the environment variable is considered a new feature.
+Reference Message Style:
+${defaultContent}
+
+Output Format:
+- Generate a single commit message that:
+  1. Follows all commitlint rules above
+  2. Maintains the style and features of the reference message
+  3. Follows the specific requirements above
+- The message should be a complete, valid commit message that would pass commitlint validation
+- Do not include any JSON formatting or additional text
+- The message should be ready to use as a git commit message
 
 Example Git Diff is to follow:`
     },
     INIT_DIFF_PROMPT
   ];
+};
 
 /**
  * Prompt to have LLM generate a message using @commitlint rules.
@@ -283,9 +296,7 @@ ${config.OCO_OMIT_SCOPE
     }
 You will strictly follow the following conventions to generate the content of the commit message:
 - ${prompts.join('\n- ')}
-
-The conventions refers to the following structure of commit message:
-${STRUCTURE_OF_COMMIT}`
+`
 });
 
 export const commitlintPrompts = {
