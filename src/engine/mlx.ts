@@ -37,8 +37,13 @@ export class MLXEngine implements AiEngine {
                 
                 const choices = response.data.choices;
                 const message = choices[0].message;
+                let content = message?.content;
+
+                if (content && content.includes('<think>')) {
+                    return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+                }
                 
-                return message?.content;
+                return content;
             } catch (err: any) {
                 const message = err.response?.data?.error ?? err.message;
                 throw new Error(`MLX provider error: ${message}`);

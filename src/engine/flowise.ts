@@ -36,7 +36,13 @@ export class FlowiseEngine implements AiEngine {
     try {
       const response = await this.client.post('', payload);
       const message = response.data;
-      return message?.text;
+      let content = message?.text;
+
+      if (content && content.includes('<think>')) {
+        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+
+      return content;
     } catch (err: any) {
       const message = err.response?.data?.error ?? err.message;
       throw new Error('local model issues. details: ' + message);

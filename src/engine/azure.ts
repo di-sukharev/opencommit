@@ -52,7 +52,14 @@ export class AzureEngine implements AiEngine {
       if (message?.content === null) {
         return undefined;
       }
-      return message?.content;
+      
+      let content = message?.content;
+      
+      if (content && content.includes('<think>')) {
+        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+      
+      return content;
     } catch (error) {
       outro(`${chalk.red('✖')} ${this.config.model}`);
 

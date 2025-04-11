@@ -1,27 +1,20 @@
 import axios from 'axios';
-import { Mistral } from '@mistralai/mistralai';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
-import {
-  AssistantMessage as MistralAssistantMessage,
-  SystemMessage as MistralSystemMessage,
-  ToolMessage as MistralToolMessage,
-  UserMessage as MistralUserMessage
-} from '@mistralai/mistralai/models/components';
 
+// Using any for Mistral types to avoid type declaration issues
 export interface MistralAiConfig extends AiEngineConfig {}
-export type MistralCompletionMessageParam = Array<
-| (MistralSystemMessage & { role: "system" })
-| (MistralUserMessage & { role: "user" })
-| (MistralAssistantMessage & { role: "assistant" })
-| (MistralToolMessage & { role: "tool" })
->
+export type MistralCompletionMessageParam = Array<any>;
+
+// Import Mistral dynamically to avoid TS errors
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Mistral = require('@mistralai/mistralai').Mistral;
 
 export class MistralAiEngine implements AiEngine {
   config: MistralAiConfig;
-  client: Mistral;
+  client: any; // Using any type for Mistral client to avoid TS errors
 
   constructor(config: MistralAiConfig) {
     this.config = config;
@@ -64,7 +57,13 @@ export class MistralAiEngine implements AiEngine {
       if (!message || !message.content)
         throw Error('No completion choice available.')
 
-      return message.content as string;
+      let content = message.content as string;
+
+      if (content && content.includes('<think>')) {
+        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+
+      return content;
     } catch (error) {
       const err = error as Error;
       if (

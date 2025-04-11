@@ -54,8 +54,13 @@ export class AnthropicEngine implements AiEngine {
       const data = await this.client.messages.create(params);
 
       const message = data?.content[0].text;
+      let content = message;
 
-      return message;
+      if (content && content.includes('<think>')) {
+        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+
+      return content;
     } catch (error) {
       const err = error as Error;
       outro(`${chalk.red('✖')} ${err?.message || err}`);
