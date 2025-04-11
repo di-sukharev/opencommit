@@ -34,7 +34,11 @@ export class FlowiseEngine implements AiEngine {
       history: messages.slice(1, -1)
     };
     try {
-      const response = await this.client.post('', payload);
+      const response = await this.client.post(
+        this.client.getUri(this.config),
+        payload
+      );
+      
       const message = response.data;
       return message?.text;
     } catch (err: any) {
