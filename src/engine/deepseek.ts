@@ -2,7 +2,7 @@ import axios from 'axios';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { tokenCount } from '../utils/tokenCount';
-import { OpenAiEngine, OpenAiConfig } from './openAI';
+import { OpenAiEngine, OpenAiConfig } from './openAi';
 
 export interface DeepseekConfig extends OpenAiConfig {}
 
@@ -41,8 +41,13 @@ export class DeepseekEngine extends OpenAiEngine {
       const completion = await this.client.chat.completions.create(params);
 
       const message = completion.choices[0].message;
+      let content = message?.content;
 
-      return message?.content;
+      if (content && content.includes('<think>')) {
+        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+
+      return content;
     } catch (error) {
       const err = error as Error;
       if (

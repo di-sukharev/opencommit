@@ -71,7 +71,13 @@ export class GeminiEngine implements AiEngine {
         }
       });
 
-      return result.response.text();
+      const content = result.response.text();
+
+      if (content && content.includes('<think>')) {
+        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
+
+      return content;
     } catch (error) {
       const err = error as Error;
       if (
