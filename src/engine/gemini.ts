@@ -7,6 +7,7 @@ import {
 } from '@google/generative-ai';
 import axios from 'axios';
 import { OpenAI } from 'openai';
+import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
 interface GeminiConfig extends AiEngineConfig {}
@@ -72,12 +73,7 @@ export class GeminiEngine implements AiEngine {
       });
 
       const content = result.response.text();
-
-      if (content && content.includes('<think>')) {
-        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      }
-
-      return content;
+      return removeContentTags(content, 'think');
     } catch (error) {
       const err = error as Error;
       if (

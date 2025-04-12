@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -58,12 +59,7 @@ export class MistralAiEngine implements AiEngine {
         throw Error('No completion choice available.')
 
       let content = message.content as string;
-
-      if (content && content.includes('<think>')) {
-        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      }
-
-      return content;
+      return removeContentTags(content, 'think');
     } catch (error) {
       const err = error as Error;
       if (

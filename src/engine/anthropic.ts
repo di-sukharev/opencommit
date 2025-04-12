@@ -8,6 +8,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -55,12 +56,7 @@ export class AnthropicEngine implements AiEngine {
 
       const message = data?.content[0].text;
       let content = message;
-
-      if (content && content.includes('<think>')) {
-        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      }
-
-      return content;
+      return removeContentTags(content, 'think');
     } catch (error) {
       const err = error as Error;
       outro(`${chalk.red('✖')} ${err?.message || err}`);

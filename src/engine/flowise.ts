@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
+import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
 interface FlowiseAiConfig extends AiEngineConfig {}
@@ -37,12 +38,7 @@ export class FlowiseEngine implements AiEngine {
       const response = await this.client.post('', payload);
       const message = response.data;
       let content = message?.text;
-
-      if (content && content.includes('<think>')) {
-        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      }
-
-      return content;
+      return removeContentTags(content, 'think');
     } catch (err: any) {
       const message = err.response?.data?.error ?? err.message;
       throw new Error('local model issues. details: ' + message);
