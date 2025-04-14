@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
+import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
 interface OllamaConfig extends AiEngineConfig {}
@@ -35,12 +36,7 @@ export class OllamaEngine implements AiEngine {
 
       const { message } = response.data;
       let content = message?.content;
-
-      if (content && content.includes('<think>')) {
-        return content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      }
-
-      return content;
+      return removeContentTags(content, 'think');
     } catch (err: any) {
       const message = err.response?.data?.error ?? err.message;
       throw new Error(`Ollama provider error: ${message}`);

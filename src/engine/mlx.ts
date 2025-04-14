@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
+import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
-import { chown } from 'fs';
 
 interface MLXConfig extends AiEngineConfig {}
 
@@ -37,8 +37,8 @@ export class MLXEngine implements AiEngine {
                 
                 const choices = response.data.choices;
                 const message = choices[0].message;
-                
-                return message?.content;
+                let content = message?.content;
+                return removeContentTags(content, 'think');
             } catch (err: any) {
                 const message = err.response?.data?.error ?? err.message;
                 throw new Error(`MLX provider error: ${message}`);

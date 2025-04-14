@@ -8,6 +8,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -54,8 +55,8 @@ export class AnthropicEngine implements AiEngine {
       const data = await this.client.messages.create(params);
 
       const message = data?.content[0].text;
-
-      return message;
+      let content = message;
+      return removeContentTags(content, 'think');
     } catch (error) {
       const err = error as Error;
       outro(`${chalk.red('✖')} ${err?.message || err}`);
