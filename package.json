@@ -44,7 +44,7 @@
     "ollama:start": "OCO_AI_PROVIDER='ollama' node ./out/cli.cjs",
     "dev": "ts-node ./src/cli.ts",
     "dev:gemini": "OCO_AI_PROVIDER='gemini' ts-node ./src/cli.ts",
-    "build": "rimraf out && node esbuild.config.js",
+    "build": "npx rimraf out && node esbuild.config.js",
     "build:push": "npm run build && git add . && git commit -m 'build' && git push",
     "deploy": "npm publish --tag latest",
     "deploy:build": "npm run build:push && git push --tags && npm run deploy",
@@ -75,6 +75,7 @@
     "eslint": "^9.24.0",
     "jest": "^29.7.0",
     "prettier": "^2.8.4",
+    "rimraf": "^5.0.5",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.1",
     "typescript": "^4.9.3"
