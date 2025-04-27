@@ -118,6 +118,10 @@ OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
+OCO_ENABLE_LOGGING=<boolean, enable/disable logging, default: true>
+OCO_ENABLE_CACHE=<boolean, enable/disable commit message caching, default: true>
+OCO_CACHE_DIR=<custom directory for storing commit message cache>
+OCO_LOG_DIR=<custom directory for storing log files>
 ```
 
 Global configs are same as local configs, but they are stored in the global `~/.opencommit` config file and set with `oco config set` command, e.g. `oco config set OCO_MODEL=gpt-4o`.
@@ -205,6 +209,52 @@ oco config set OCO_LANGUAGE=française
 The default language setting is **English**
 All available languages are currently listed in the [i18n](https://github.com/di-sukharev/opencommit/tree/master/src/i18n) folder
 
+### Logging and Caching Configuration
+
+OpenCommit provides options to control logging and caching behavior. These features help with debugging, performance optimization, and pre-commit hook integration.
+
+#### Logging Configuration
+
+You can enable/disable logging and customize the log directory:
+
+```sh
+# Disable logging
+oco config set OCO_ENABLE_LOGGING=false
+
+# Set custom log directory
+oco config set OCO_LOG_DIR=/path/to/custom/logs
+```
+
+By default:
+- Logs are stored in `~/.cache/opencommit/logs/` directory
+- Logs include commit generation process, errors, and pre-commit hook results
+- Each log entry is timestamped and categorized by level (INFO, ERROR, etc.)
+
+#### Caching Configuration
+
+OpenCommit caches commit messages to improve performance and provide better suggestions, especially useful during pre-commit hook operations:
+
+```sh
+# Disable commit message caching
+oco config set OCO_ENABLE_CACHE=false
+
+# Set custom cache directory
+oco config set OCO_CACHE_DIR=/path/to/custom/cache
+```
+
+By default:
+- Caching is enabled
+- Cache files are stored in `~/.cache/opencommit/` directory
+- Cache entries expire after 7 days
+- Each repository has its own cache file
+- Cache includes successful commit messages and their associated file changes
+- Cache is automatically cleared after successful commits
+- Cache helps speed up pre-commit hook operations by reusing recent commit messages
+
+The cache system is cross-platform compatible and follows XDG Base Directory specifications on Linux systems.
+
+> Note: When using pre-commit hooks, logging and caching are particularly useful for debugging issues and improving performance. The log files contain detailed information about hook execution and any failures that might occur.
+
 ### Push to git (gonna be deprecated)
 
 A prompt for pushing to git is on by default but if you would like to turn it off just use:
@@ -280,7 +330,7 @@ git commit -m "${generatedMessage}" --no-verify
 To include a message in the generated message, you can utilize the template function, for instance:
 
 ```sh
-oco '#205: $msg’
+oco '#205: $msg'
 ```
 
 > opencommit examines placeholders in the parameters, allowing you to append additional information before and after the placeholders, such as the relevant Issue or Pull Request. Similarly, you have the option to customize the OCO_MESSAGE_TEMPLATE_PLACEHOLDER configuration item, for example, simplifying it to $m!"
@@ -306,7 +356,7 @@ This line is responsible for replacing the placeholder in the `messageTemplate` 
 
 #### Usage
 
-For instance, using the command `oco '$msg #205’`, users can leverage this feature. The provided code represents the backend mechanics of such commands, ensuring that the placeholder is replaced with the appropriate commit message.
+For instance, using the command `oco '$msg #205'`, users can leverage this feature. The provided code represents the backend mechanics of such commands, ensuring that the placeholder is replaced with the appropriate commit message.
 
 #### Committing with the Message
 
