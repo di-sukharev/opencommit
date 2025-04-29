@@ -14,11 +14,34 @@ export class OpenAiEngine implements AiEngine {
   constructor(config: OpenAiConfig) {
     this.config = config;
 
-    if (!config.baseURL) {
-      this.client = new OpenAI({ apiKey: config.apiKey });
-    } else {
-      this.client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+    // Configuration options for the OpenAI client
+    const clientOptions: any = {
+      apiKey: config.apiKey
+    };
+    
+    // Add baseURL if present
+    if (config.baseURL) {
+      clientOptions.baseURL = config.baseURL;
     }
+    
+    // Add custom headers if present
+    if (config.customHeaders) {
+      try {
+        let headers = config.customHeaders;
+        // If the headers are a string, try to parse them as JSON
+        if (typeof config.customHeaders === 'string') {
+          headers = JSON.parse(config.customHeaders);
+        }
+        
+        if (headers && typeof headers === 'object' && Object.keys(headers).length > 0) {
+          clientOptions.defaultHeaders = headers;
+        }
+      } catch (error) {
+        // Silently ignore parsing errors
+      }
+    }
+    
+    this.client = new OpenAI(clientOptions);
   }
 
   public generateCommitMessage = async (
@@ -42,7 +65,7 @@ export class OpenAiEngine implements AiEngine {
         this.config.maxTokensInput - this.config.maxTokensOutput
       )
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
-
+      
       const completion = await this.client.chat.completions.create(params);
 
       const message = completion.choices[0].message;

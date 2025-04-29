@@ -122,6 +122,30 @@ describe('config', () => {
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
       expect(config.OCO_OMIT_SCOPE).toEqual(true);
     });
+    
+    it('should handle custom HTTP headers correctly', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_API_CUSTOM_HEADERS: '{"X-Global-Header": "global-value"}'
+      });
+
+      envConfigFile = await generateConfig('.env', {
+        OCO_API_CUSTOM_HEADERS: '{"Authorization": "Bearer token123", "X-Custom-Header": "test-value"}'
+      });
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config).not.toEqual(null);
+      expect(config.OCO_API_CUSTOM_HEADERS).toEqual('{"Authorization": "Bearer token123", "X-Custom-Header": "test-value"}');
+      
+      // Verify that the JSON can be parsed correctly
+      const parsedHeaders = JSON.parse(config.OCO_API_CUSTOM_HEADERS);
+      expect(parsedHeaders).toHaveProperty('Authorization', 'Bearer token123');
+      expect(parsedHeaders).toHaveProperty('X-Custom-Header', 'test-value');
+      expect(parsedHeaders).not.toHaveProperty('X-Global-Header');
+    });
 
     it('should handle empty local config correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {

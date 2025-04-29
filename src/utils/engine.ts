@@ -16,12 +16,29 @@ export function getEngine(): AiEngine {
   const config = getConfig();
   const provider = config.OCO_AI_PROVIDER;
 
+  // Parse custom headers if provided
+  let customHeaders = {};
+  if (config.OCO_API_CUSTOM_HEADERS) {
+    try {
+      // If it's already an object, no need to parse it
+      if (typeof config.OCO_API_CUSTOM_HEADERS === 'object' && !Array.isArray(config.OCO_API_CUSTOM_HEADERS)) {
+        customHeaders = config.OCO_API_CUSTOM_HEADERS;
+      } else {
+        // Try to parse as JSON
+        customHeaders = JSON.parse(config.OCO_API_CUSTOM_HEADERS);
+      }
+    } catch (error) {
+      console.warn('Invalid OCO_API_CUSTOM_HEADERS format, ignoring custom headers');
+    }
+  }
+
   const DEFAULT_CONFIG = {
     model: config.OCO_MODEL!,
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
     baseURL: config.OCO_API_URL!,
-    apiKey: config.OCO_API_KEY!
+    apiKey: config.OCO_API_KEY!,
+    customHeaders // Add custom headers to the configuration
   };
 
   switch (provider) {

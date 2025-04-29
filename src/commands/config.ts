@@ -25,6 +25,7 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
+  OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH' // todo: deprecate
 }
@@ -204,6 +205,22 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS](value) {
+    try {
+      // Custom headers must be a valid JSON string
+      if (typeof value === 'string') {
+        JSON.parse(value);
+      }
+      return value;
+    } catch (error) {
+      validateConfig(
+        CONFIG_KEYS.OCO_API_CUSTOM_HEADERS,
+        false,
+        'Must be a valid JSON string of headers'
+      );
+    }
+  },
+
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT](value: any) {
     value = parseInt(value);
     validateConfig(
@@ -380,6 +397,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
   [CONFIG_KEYS.OCO_API_URL]?: string;
+  [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS]?: string;
   [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
   [CONFIG_KEYS.OCO_WHY]: boolean;
@@ -462,6 +480,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_API_URL: process.env.OCO_API_URL,
     OCO_API_KEY: process.env.OCO_API_KEY,
+    OCO_API_CUSTOM_HEADERS: process.env.OCO_API_CUSTOM_HEADERS,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
 
     OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),

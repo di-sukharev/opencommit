@@ -11,6 +11,7 @@ export interface AiEngineConfig {
   maxTokensOutput: number;
   maxTokensInput: number;
   baseURL?: string;
+  customHeaders?: Record<string, string>;
 }
 
 type Client =
