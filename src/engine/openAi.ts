@@ -14,21 +14,17 @@ export class OpenAiEngine implements AiEngine {
   constructor(config: OpenAiConfig) {
     this.config = config;
 
-    // Configuration options for the OpenAI client
-    const clientOptions: any = {
+    const clientOptions: OpenAI.ClientOptions = {
       apiKey: config.apiKey
     };
     
-    // Add baseURL if present
     if (config.baseURL) {
       clientOptions.baseURL = config.baseURL;
     }
     
-    // Add custom headers if present
     if (config.customHeaders) {
       try {
         let headers = config.customHeaders;
-        // If the headers are a string, try to parse them as JSON
         if (typeof config.customHeaders === 'string') {
           headers = JSON.parse(config.customHeaders);
         }
@@ -37,7 +33,6 @@ export class OpenAiEngine implements AiEngine {
           clientOptions.defaultHeaders = headers;
         }
       } catch (error) {
-        // Silently ignore parsing errors
       }
     }
     
