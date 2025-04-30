@@ -12,7 +12,7 @@ import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
 
-function parseCustomHeaders(headers: any): Record<string, string> {
+export function parseCustomHeaders(headers: any): Record<string, string> {
   let parsedHeaders = {};
   
   if (!headers) {

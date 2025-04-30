@@ -138,10 +138,10 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_API_CUSTOM_HEADERS).toEqual('{"Authorization": "Bearer token123", "X-Custom-Header": "test-value"}');
+      expect(config.OCO_API_CUSTOM_HEADERS).toEqual({"Authorization": "Bearer token123", "X-Custom-Header": "test-value"});
       
-      // Verify that the JSON can be parsed correctly
-      const parsedHeaders = JSON.parse(config.OCO_API_CUSTOM_HEADERS);
+      // No need to parse JSON again since it's already an object
+      const parsedHeaders = config.OCO_API_CUSTOM_HEADERS;
       expect(parsedHeaders).toHaveProperty('Authorization', 'Bearer token123');
       expect(parsedHeaders).toHaveProperty('X-Custom-Header', 'test-value');
       expect(parsedHeaders).not.toHaveProperty('X-Global-Header');

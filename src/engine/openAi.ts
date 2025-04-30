@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { parseCustomHeaders } from '../utils/engine';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -23,16 +24,9 @@ export class OpenAiEngine implements AiEngine {
     }
     
     if (config.customHeaders) {
-      try {
-        let headers = config.customHeaders;
-        if (typeof config.customHeaders === 'string') {
-          headers = JSON.parse(config.customHeaders);
-        }
-        
-        if (headers && typeof headers === 'object' && Object.keys(headers).length > 0) {
-          clientOptions.defaultHeaders = headers;
-        }
-      } catch (error) {
+      const headers = parseCustomHeaders(config.customHeaders);
+      if (Object.keys(headers).length > 0) {
+        clientOptions.defaultHeaders = headers;
       }
     }
     
