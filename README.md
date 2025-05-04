@@ -132,6 +132,18 @@ Simply set any of the variables above like this:
 oco config set OCO_MODEL=gpt-4o-mini
 ```
 
+To see all available configuration parameters and their accepted values:
+
+```sh
+oco config describe
+```
+
+To see details for a specific parameter:
+
+```sh
+oco config describe OCO_MODEL
+```
+
 Configure [GitMoji](https://gitmoji.dev/) to preface a message.
 
 ```sh

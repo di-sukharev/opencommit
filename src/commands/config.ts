@@ -31,7 +31,8 @@ export enum CONFIG_KEYS {
 
 export enum CONFIG_MODES {
   get = 'get',
-  set = 'set'
+  set = 'set',
+  describe = 'describe'
 }
 
 export const MODEL_LIST = {
@@ -603,28 +604,154 @@ export const setConfig = (
   outro(`${chalk.green('✔')} config successfully set`);
 };
 
+// --- HELP MESSAGE GENERATION ---
+function getConfigKeyDetails(key) {
+  switch (key) {
+    case CONFIG_KEYS.OCO_MODEL:
+      return {
+        description: 'The AI model to use for generating commit messages',
+        values: MODEL_LIST
+      };
+    case CONFIG_KEYS.OCO_AI_PROVIDER:
+      return {
+        description: 'The AI provider to use',
+        values: Object.values(OCO_AI_PROVIDER_ENUM)
+      };
+    case CONFIG_KEYS.OCO_PROMPT_MODULE:
+      return {
+        description: 'The prompt module to use for commit message generation',
+        values: Object.values(OCO_PROMPT_MODULE_ENUM)
+      };
+    case CONFIG_KEYS.OCO_LANGUAGE:
+      return {
+        description: 'The language to use for commit messages',
+        values: Object.keys(i18n)
+      };
+    case CONFIG_KEYS.OCO_TEST_MOCK_TYPE:
+      return {
+        description: 'The type of test mock to use',
+        values: ['commit-message', 'prompt-module-commitlint-config']
+      };
+    case CONFIG_KEYS.OCO_DESCRIPTION:
+    case CONFIG_KEYS.OCO_EMOJI:
+    case CONFIG_KEYS.OCO_WHY:
+    case CONFIG_KEYS.OCO_ONE_LINE_COMMIT:
+    case CONFIG_KEYS.OCO_OMIT_SCOPE:
+    case CONFIG_KEYS.OCO_GITPUSH:
+      return {
+        description: 'Boolean flag',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_TOKENS_MAX_INPUT:
+    case CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT:
+      return {
+        description: 'Integer number',
+        values: ['Any positive integer']
+      };
+    case CONFIG_KEYS.OCO_API_KEY:
+      return {
+        description: 'API key for the selected provider',
+        values: ['String (required for most providers)']
+      };
+    case CONFIG_KEYS.OCO_API_URL:
+      return {
+        description: 'Custom API URL',
+        values: ["URL string (must start with 'http://' or 'https://')"]
+      };
+    case CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
+      return {
+        description: 'Template placeholder for commit messages',
+        values: ["String (must start with $)"]
+      };
+    default:
+      return {
+        description: 'String value',
+        values: ['Any string']
+      };
+  }
+}
+
+function printConfigKeyHelp(param) {
+  if (!Object.values(CONFIG_KEYS).includes(param)) {
+    console.log(chalk.red(`Unknown config parameter: ${param}`));
+    return;
+  }
+
+  const details = getConfigKeyDetails(param as CONFIG_KEYS);
+  
+  console.log(chalk.bold(`\n${param}:`));
+  console.log(chalk.gray(`  Description: ${details.description}`));
+  
+  if (Array.isArray(details.values)) {
+    console.log(chalk.gray('  Accepted values:'));
+    details.values.forEach(value => {
+      console.log(chalk.gray(`    - ${value}`));
+    });
+  } else {
+    console.log(chalk.gray('  Accepted values by provider:'));
+    Object.entries(details.values).forEach(([provider, values]) => {
+      console.log(chalk.gray(`    ${provider}:`));
+      (values as string[]).forEach(value => {
+        console.log(chalk.gray(`      - ${value}`));
+      });
+    });
+  }
+}
+
+function printAllConfigHelp() {
+  console.log(chalk.bold('Available config parameters:'));
+  for (const key of Object.values(CONFIG_KEYS)) {
+    printConfigKeyHelp(key);
+  }
+  console.log(chalk.gray('\nFor more help, see https://github.com/di-sukharev/opencommit'));
+}
+
 export const configCommand = command(
   {
     name: COMMANDS.config,
-    parameters: ['<mode>', '<key=values...>']
+    parameters: ['<mode>', '[key=values...]'],
+    help: {
+      description: 'Configure opencommit settings',
+      examples: [
+        'Describe all config parameters: oco config describe',
+        'Describe a specific parameter: oco config describe OCO_MODEL',
+        'Get a config value: oco config get OCO_MODEL',
+        'Set a config value: oco config set OCO_MODEL=gpt-4'
+      ]
+    }
   },
   async (argv) => {
     try {
       const { mode, keyValues } = argv._;
       intro(`COMMAND: config ${mode} ${keyValues}`);
 
-      if (mode === CONFIG_MODES.get) {
+      if (mode === CONFIG_MODES.describe) {
+        if (!keyValues || keyValues.length === 0) {
+          printAllConfigHelp();
+        } else {
+          for (const key of keyValues) {
+            printConfigKeyHelp(key);
+          }
+        }
+        process.exit(0);
+      } else if (mode === CONFIG_MODES.get) {
+        if (!keyValues || keyValues.length === 0) {
+          throw new Error('No config keys specified for get mode');
+        }
         const config = getConfig() || {};
         for (const key of keyValues) {
           outro(`${key}=${config[key as keyof typeof config]}`);
         }
       } else if (mode === CONFIG_MODES.set) {
+        if (!keyValues || keyValues.length === 0) {
+          throw new Error('No config keys specified for set mode');
+        }
         await setConfig(
           keyValues.map((keyValue) => keyValue.split('=') as [string, string])
         );
       } else {
         throw new Error(
-          `Unsupported mode: ${mode}. Valid modes are: "set" and "get"`
+          `Unsupported mode: ${mode}. Valid modes are: "set", "get", and "describe"`
         );
       }
     } catch (error) {
