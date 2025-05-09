@@ -624,7 +624,7 @@ function getConfigKeyDetails(key) {
       };
     case CONFIG_KEYS.OCO_LANGUAGE:
       return {
-        description: 'The language to use for commit messages',
+        description: 'The locale to use for commit messages',
         values: Object.keys(i18n)
       };
     case CONFIG_KEYS.OCO_TEST_MOCK_TYPE:
@@ -632,20 +632,44 @@ function getConfigKeyDetails(key) {
         description: 'The type of test mock to use',
         values: ['commit-message', 'prompt-module-commitlint-config']
       };
-    case CONFIG_KEYS.OCO_DESCRIPTION:
-    case CONFIG_KEYS.OCO_EMOJI:
-    case CONFIG_KEYS.OCO_WHY:
     case CONFIG_KEYS.OCO_ONE_LINE_COMMIT:
+      return {
+        description: 'One line commit message',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_DESCRIPTION:
+      return {
+        description: 'Postface a message with ~3 sentences description of the changes',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_EMOJI:
+      return {
+        description: 'Preface a message with GitMoji',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_WHY:
+      return {
+        description: 'Output a short description of why the changes were done after the commit message (default: false)',
+        values: ['true', 'false']
+      }
     case CONFIG_KEYS.OCO_OMIT_SCOPE:
+      return {
+        description: 'Do not include a scope in the commit message',
+        values: ['true', 'false']
+      };
     case CONFIG_KEYS.OCO_GITPUSH:
       return {
-        description: 'Boolean flag',
+        description: 'Push to git after commit (deprecated). If false, oco will exit after committing',
         values: ['true', 'false']
       };
     case CONFIG_KEYS.OCO_TOKENS_MAX_INPUT:
+      return {
+        description: 'Max model token limit',
+        values: ['Any positive integer']
+      };
     case CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT:
       return {
-        description: 'Integer number',
+        description: 'Max response tokens',
         values: ['Any positive integer']
       };
     case CONFIG_KEYS.OCO_API_KEY:
@@ -655,12 +679,12 @@ function getConfigKeyDetails(key) {
       };
     case CONFIG_KEYS.OCO_API_URL:
       return {
-        description: 'Custom API URL',
+        description: 'Custom API URL - may be used to set proxy path to OpenAI API',
         values: ["URL string (must start with 'http://' or 'https://')"]
       };
     case CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       return {
-        description: 'Template placeholder for commit messages',
+        description: 'Message template placeholder',
         values: ["String (must start with $)"]
       };
     default:
@@ -678,10 +702,25 @@ function printConfigKeyHelp(param) {
   }
 
   const details = getConfigKeyDetails(param as CONFIG_KEYS);
-  
+
+  let desc = details.description;
+  let defaultValue = undefined;
+  if (param in DEFAULT_CONFIG) {
+    defaultValue = DEFAULT_CONFIG[param];
+  }
+
+
   console.log(chalk.bold(`\n${param}:`));
-  console.log(chalk.gray(`  Description: ${details.description}`));
-  
+  console.log(chalk.gray(`  Description: ${desc}`));
+  if (defaultValue !== undefined) {
+    // Print booleans and numbers as-is, strings without quotes
+    if (typeof defaultValue === 'string') {
+      console.log(chalk.gray(`  Default: ${defaultValue}`));
+    } else {
+      console.log(chalk.gray(`  Default: ${defaultValue}`));
+    }
+  }
+
   if (Array.isArray(details.values)) {
     console.log(chalk.gray('  Accepted values:'));
     details.values.forEach(value => {
@@ -700,10 +739,25 @@ function printConfigKeyHelp(param) {
 
 function printAllConfigHelp() {
   console.log(chalk.bold('Available config parameters:'));
-  for (const key of Object.values(CONFIG_KEYS)) {
-    printConfigKeyHelp(key);
+  for (const key of Object.values(CONFIG_KEYS).sort()) {
+    const details = getConfigKeyDetails(key);
+    // Try to get the default value from DEFAULT_CONFIG
+    let defaultValue = undefined;
+    if (key in DEFAULT_CONFIG) {
+      defaultValue = DEFAULT_CONFIG[key];
+    }
+    
+    console.log(chalk.bold(`\n${key}:`));
+    console.log(chalk.gray(`  Description: ${details.description}`));
+    if (defaultValue !== undefined) {
+      if (typeof defaultValue === 'string') {
+        console.log(chalk.gray(`  Default: ${defaultValue}`));
+      } else {
+        console.log(chalk.gray(`  Default: ${defaultValue}`));
+      }
+    }
   }
-  console.log(chalk.gray('\nFor more help, see https://github.com/di-sukharev/opencommit'));
+  console.log(chalk.yellow('\nUse "oco config describe [PARAMETER]" to see accepted values and more details for a specific config parameter.'));
 }
 
 export const configCommand = command(
