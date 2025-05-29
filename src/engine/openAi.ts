@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { parseCustomHeaders } from '../utils/engine';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -14,11 +15,22 @@ export class OpenAiEngine implements AiEngine {
   constructor(config: OpenAiConfig) {
     this.config = config;
 
-    if (!config.baseURL) {
-      this.client = new OpenAI({ apiKey: config.apiKey });
-    } else {
-      this.client = new OpenAI({ apiKey: config.apiKey, baseURL: config.baseURL });
+    const clientOptions: OpenAI.ClientOptions = {
+      apiKey: config.apiKey
+    };
+    
+    if (config.baseURL) {
+      clientOptions.baseURL = config.baseURL;
     }
+    
+    if (config.customHeaders) {
+      const headers = parseCustomHeaders(config.customHeaders);
+      if (Object.keys(headers).length > 0) {
+        clientOptions.defaultHeaders = headers;
+      }
+    }
+    
+    this.client = new OpenAI(clientOptions);
   }
 
   public generateCommitMessage = async (
@@ -42,7 +54,7 @@ export class OpenAiEngine implements AiEngine {
         this.config.maxTokensInput - this.config.maxTokensOutput
       )
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
-
+      
       const completion = await this.client.chat.completions.create(params);
 
       const message = completion.choices[0].message;

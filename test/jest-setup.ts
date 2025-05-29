@@ -1,13 +1,6 @@
-// Using Node.js module interop for ESM/CommonJS compatibility
-import { createRequire } from 'module';
-
-// Create a require function scoped to this module
-const moduleRequire = createRequire(import.meta.url);
-
-// Use the scoped require to import CommonJS modules
-moduleRequire('cli-testing-library/extend-expect');
-import { configure } from 'cli-testing-library';
 import { jest } from '@jest/globals';
+import 'cli-testing-library/extend-expect';
+import { configure } from 'cli-testing-library';
 
 // Make Jest available globally
 global.jest = jest;

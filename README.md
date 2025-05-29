@@ -109,6 +109,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, gemini, flowise, deepseek>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
+OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
 OCO_TOKENS_MAX_INPUT=<max model token limit (default: 4096)>
 OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>

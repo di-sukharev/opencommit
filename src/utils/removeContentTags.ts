@@ -43,9 +43,9 @@ export function removeContentTags<T extends string | null | undefined>(content: 
       result += content[i];
     }
   }
-  
-  // Normalize spaces (replace multiple spaces with a single space)
-  result = result.replace(/\s+/g, ' ').trim();
-  
+
+  // Normalize multiple spaces/tabs into a single space (preserves newlines), then trim.
+  result = result.replace(/[ \t]+/g, ' ').trim();
+
   return result as unknown as T;
 }
