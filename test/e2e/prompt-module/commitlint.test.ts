@@ -5,8 +5,8 @@ import { prepareEnvironment, wait } from '../utils';
 import path from 'path';
 
 function getAbsolutePath(relativePath: string) {
-  const scriptDir = path.dirname(__filename);
-  return path.resolve(scriptDir, relativePath);
+  // Use process.cwd() which should be the project root during test execution
+  return path.resolve(process.cwd(), 'test/e2e/prompt-module', relativePath);
 }
 async function setupCommitlint(dir: string, ver: 9 | 18 | 19) {
   let packagePath, packageJsonPath, configPath;
@@ -47,7 +47,7 @@ describe('cli flow to run "oco commitlint force"', () => {
       `
       OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
       OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test'  \
+      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
       node ${resolve('./out/cli.cjs')} commitlint force \
     `,
       [],
@@ -83,7 +83,7 @@ describe('cli flow to run "oco commitlint force"', () => {
       `
       OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
       OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test'  \
+      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
       node ${resolve('./out/cli.cjs')} commitlint force \
     `,
       [],
@@ -119,7 +119,7 @@ describe('cli flow to run "oco commitlint force"', () => {
       `
       OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
       OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test'  \
+      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
       node ${resolve('./out/cli.cjs')} commitlint force \
     `,
       [],
@@ -160,7 +160,7 @@ describe('cli flow to generate commit message using @commitlint prompt-module', 
       `
       OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
       OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test'  \
+      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
       node ${resolve('./out/cli.cjs')} commitlint force \
     `,
       [],
@@ -175,7 +175,7 @@ describe('cli flow to generate commit message using @commitlint prompt-module', 
       `
       OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
       OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test'  \
+      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
       node ${resolve('./out/cli.cjs')} commitlint get \
     `,
       [],
@@ -193,7 +193,7 @@ describe('cli flow to generate commit message using @commitlint prompt-module', 
       `
       OCO_TEST_MOCK_TYPE='commit-message' \
       OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test' \
+      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
       node ${resolve('./out/cli.cjs')} \
     `,
       [],
