@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 import 'cli-testing-library/extend-expect';
 import { configure } from 'cli-testing-library';
 
+// Make Jest available globally
 global.jest = jest;
 
 /**

@@ -125,7 +125,7 @@ describe('cli flow to push git branch', () => {
     await render('git', ['add index.ts'], { cwd: gitDir });
 
     const { queryByText, findByText, userEvent } = await render(
-      `OCO_AI_PROVIDER='test' node`,
+      `OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`,
       [resolve('./out/cli.cjs')],
       { cwd: gitDir }
     );
@@ -158,7 +158,7 @@ describe('cli flow to push git branch', () => {
     await render('git', ['add index.ts'], { cwd: gitDir });
 
     const { findByText, userEvent } = await render(
-      `OCO_AI_PROVIDER='test' node`,
+      `OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`,
       [resolve('./out/cli.cjs')],
       { cwd: gitDir }
     );
@@ -186,7 +186,7 @@ describe('cli flow to push git branch', () => {
     await render('git', ['add index.ts'], { cwd: gitDir });
 
     const { findByText, userEvent } = await render(
-      `OCO_AI_PROVIDER='test' node`,
+      `OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`,
       [resolve('./out/cli.cjs')],
       { cwd: gitDir }
     );
