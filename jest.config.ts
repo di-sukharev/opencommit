@@ -16,8 +16,7 @@ const config: Config = {
   // Tell Jest to ignore the specific duplicate package.json files
   // that are causing Haste module naming collisions
   modulePathIgnorePatterns: [
-    '<rootDir>/test/e2e/prompt-module/data/commitlint_18/',
-    '<rootDir>/test/e2e/prompt-module/data/commitlint_19/'
+    '<rootDir>/test/e2e/prompt-module/data/'
   ],
   transformIgnorePatterns: [
     'node_modules/(?!(cli-testing-library|@clack|cleye)/.*)'
@@ -35,10 +34,6 @@ const config: Config = {
       }
     ]
   },
-  // Fix Haste module naming collision
-  modulePathIgnorePatterns: [
-    '<rootDir>/test/e2e/prompt-module/data/'
-  ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
   }
