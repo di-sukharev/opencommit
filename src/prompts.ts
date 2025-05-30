@@ -108,7 +108,7 @@ const getDescriptionInstruction = () =>
 
 const getOneLineCommitInstruction = () =>
   config.OCO_ONE_LINE_COMMIT
-    ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
+    ? 'Craft a concise, single sentence, commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in one single message.'
     : '';
 
 const getScopeInstruction = () =>
@@ -208,7 +208,9 @@ const getConsistencyContent = (translation: ConsistencyPrompt) => {
     : translation.commitFeat;
 
   const fix = generateCommitString('fix', fixMessage);
-  const feat = generateCommitString('feat', featMessage);
+  const feat = config.OCO_ONE_LINE_COMMIT
+    ? ''
+    : generateCommitString('feat', featMessage);
 
   const description = config.OCO_DESCRIPTION
     ? translation.commitDescription
