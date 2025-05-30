@@ -19,7 +19,11 @@ cli(
     name: 'opencommit',
     commands: [configCommand, hookCommand, commitlintConfigCommand],
     flags: {
-      fgm: Boolean,
+      fgm: {
+        type: Boolean,
+        description: 'Use full GitMoji specification',
+        default: false
+      },
       context: {
         type: String,
         alias: 'c',
