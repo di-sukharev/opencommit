@@ -414,7 +414,7 @@ export type ConfigType = {
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
-export const defaultEnvPath = pathResolve(process.cwd(), '.env');
+export const defaultEnvPath = pathResolve(process.cwd(), '.opencommit.env');
 
 const assertConfigsAreValid = (config: Record<string, any>) => {
   for (const [key, value] of Object.entries(config)) {
