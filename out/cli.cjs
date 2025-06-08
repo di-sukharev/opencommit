@@ -47672,7 +47672,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.2.7",
+  version: "3.2.8",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -66936,7 +66936,7 @@ var gitAdd = async ({ files }) => {
   const gitAddSpinner = le();
   gitAddSpinner.start("Adding files to commit");
   await execa("git", ["add", ...files]);
-  gitAddSpinner.stop(`Done adding ${files.length} files`);
+  gitAddSpinner.stop(`Staged ${files.length} files`);
 };
 var getDiff = async ({ files }) => {
   const lockFiles = files.filter(
