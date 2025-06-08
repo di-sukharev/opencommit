@@ -80,7 +80,7 @@ export const gitAdd = async ({ files }: { files: string[] }) => {
 
   await execa('git', ['add', ...files]);
 
-  gitAddSpinner.stop(`Done adding ${files.length} files`);
+  gitAddSpinner.stop(`Staged ${files.length} files`);
 };
 
 export const getDiff = async ({ files }: { files: string[] }) => {
