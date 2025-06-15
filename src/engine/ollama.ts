@@ -11,13 +11,13 @@ export class OllamaEngine implements AiEngine {
 
   constructor(config) {
     this.config = config;
-    
+
     // Combine base headers with custom headers
-    const headers = { 
+    const headers = {
       'Content-Type': 'application/json',
-      ...config.customHeaders 
+      ...config.customHeaders
     };
-    
+
     this.client = axios.create({
       url: config.baseURL
         ? `${config.baseURL}/${config.apiKey}`

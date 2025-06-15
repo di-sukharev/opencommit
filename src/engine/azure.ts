@@ -53,7 +53,7 @@ export class AzureEngine implements AiEngine {
       if (message?.content === null) {
         return undefined;
       }
-      
+
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
