@@ -23,7 +23,10 @@ export class MistralAiEngine implements AiEngine {
     if (!config.baseURL) {
       this.client = new Mistral({ apiKey: config.apiKey });
     } else {
-      this.client = new Mistral({ apiKey: config.apiKey, serverURL: config.baseURL });
+      this.client = new Mistral({
+        apiKey: config.apiKey,
+        serverURL: config.baseURL
+      });
     }
   }
 
@@ -50,13 +53,12 @@ export class MistralAiEngine implements AiEngine {
 
       const completion = await this.client.chat.complete(params);
 
-      if (!completion.choices)
-        throw Error('No completion choice available.')
-      
+      if (!completion.choices) throw Error('No completion choice available.');
+
       const message = completion.choices[0].message;
 
       if (!message || !message.content)
-        throw Error('No completion choice available.')
+        throw Error('No completion choice available.');
 
       let content = message.content as string;
       return removeContentTags(content, 'think');

@@ -18,18 +18,18 @@ export class OpenAiEngine implements AiEngine {
     const clientOptions: OpenAI.ClientOptions = {
       apiKey: config.apiKey
     };
-    
+
     if (config.baseURL) {
       clientOptions.baseURL = config.baseURL;
     }
-    
+
     if (config.customHeaders) {
       const headers = parseCustomHeaders(config.customHeaders);
       if (Object.keys(headers).length > 0) {
         clientOptions.defaultHeaders = headers;
       }
     }
-    
+
     this.client = new OpenAI(clientOptions);
   }
 
@@ -54,7 +54,7 @@ export class OpenAiEngine implements AiEngine {
         this.config.maxTokensInput - this.config.maxTokensOutput
       )
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
-      
+
       const completion = await this.client.chat.completions.create(params);
 
       const message = completion.choices[0].message;

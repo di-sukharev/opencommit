@@ -155,9 +155,9 @@ const INIT_MAIN_PROMPT = (
 });
 
 export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessageParam =
-{
-  role: 'user',
-  content: `diff --git a/src/server.ts b/src/server.ts
+  {
+    role: 'user',
+    content: `diff --git a/src/server.ts b/src/server.ts
     index ad4db42..f3b18a9 100644
     --- a/src/server.ts
     +++ b/src/server.ts
@@ -181,7 +181,7 @@ export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessagePara
                 +app.listen(process.env.PORT || PORT, () => {
                     +  console.log(\`Server listening on port \${PORT}\`);
                 });`
-};
+  };
 
 const COMMIT_TYPES = {
   fix: '🐛',
@@ -193,19 +193,19 @@ const generateCommitString = (
   message: string
 ): string => {
   const cleanMessage = removeConventionalCommitWord(message);
-  return config.OCO_EMOJI
-    ? `${COMMIT_TYPES[type]} ${cleanMessage}`
-    : message;
+  return config.OCO_EMOJI ? `${COMMIT_TYPES[type]} ${cleanMessage}` : message;
 };
 
 const getConsistencyContent = (translation: ConsistencyPrompt) => {
-  const fixMessage = config.OCO_OMIT_SCOPE && translation.commitFixOmitScope
-    ? translation.commitFixOmitScope
-    : translation.commitFix;
+  const fixMessage =
+    config.OCO_OMIT_SCOPE && translation.commitFixOmitScope
+      ? translation.commitFixOmitScope
+      : translation.commitFix;
 
-  const featMessage = config.OCO_OMIT_SCOPE && translation.commitFeatOmitScope
-    ? translation.commitFeatOmitScope
-    : translation.commitFeat;
+  const featMessage =
+    config.OCO_OMIT_SCOPE && translation.commitFeatOmitScope
+      ? translation.commitFeatOmitScope
+      : translation.commitFeat;
 
   const fix = generateCommitString('fix', fixMessage);
   const feat = config.OCO_ONE_LINE_COMMIT
@@ -250,7 +250,7 @@ export const getMainCommitPrompt = async (
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(
           commitLintConfig.consistency[
-          translation.localLanguage
+            translation.localLanguage
           ] as ConsistencyPrompt
         )
       ];
