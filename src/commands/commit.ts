@@ -1,5 +1,5 @@
 import {
-  confirm,
+  text,
   intro,
   isCancel,
   multiselect,
@@ -85,15 +85,27 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser =
-      skipCommitConfirmation ||
-      (await confirm({
-        message: 'Confirm the commit message?'
-      }));
+    const userAction = skipCommitConfirmation
+      ? 'Yes'
+      : await select({
+          message: 'Confirm the commit message?',
+          options: [
+            { value: 'Yes', label: 'Yes' },
+            { value: 'No', label: 'No' },
+            { value: 'Edit', label: 'Edit' }
+          ]
+        });
 
-    if (isCancel(isCommitConfirmedByUser)) process.exit(1);
+    if (isCancel(userAction)) process.exit(1);
 
-    if (isCommitConfirmedByUser) {
+    if (userAction === 'Edit') {
+      commitMessage = await text({
+        message: 'Please edit the commit message: (press Enter to continue)',
+        initialValue: commitMessage
+      });
+    }
+
+    if (userAction === 'Yes' || userAction === 'Edit') {
       const committingChangesSpinner = spinner();
       committingChangesSpinner.start('Committing the changes');
       const { stdout } = await execa('git', [
