@@ -56,9 +56,11 @@ export const prepareCommitMessageHook = async (
 
     const fileContent = await fs.readFile(messageFilePath);
 
+    const divider = '# ---------- [OpenCommit] ---------- #';
+
     await fs.writeFile(
       messageFilePath,
-      commitMessage + '\n' + fileContent.toString()
+      `# ${commitMessage}\n\n${divider}\n# Remove the # above to use this generated commit message.\n# To cancel the commit, just close this window without making any changes.\n\n${fileContent.toString()}`
     );
   } catch (error) {
     outro(`${chalk.red('✖')} ${error}`);
