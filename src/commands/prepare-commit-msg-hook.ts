@@ -60,7 +60,7 @@ export const prepareCommitMessageHook = async (
 
     await fs.writeFile(
       messageFilePath,
-      `# ${commitMessage}\n\n${divider}\n# Remove the # above to use this generated commit message.\n# To cancel the commit, just close this window without making any changes.\n\n${fileContent.toString()}`
+      `${config.OCO_HOOK_AUTO_UNCOMMENT ? '' : '# '}${commitMessage}\n\n${divider}\n# Remove the # above to use this generated commit message.\n# To cancel the commit, just close this window without making any changes.\n\n${fileContent.toString()}`
     );
   } catch (error) {
     outro(`${chalk.red('✖')} ${error}`);

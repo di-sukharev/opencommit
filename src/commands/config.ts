@@ -27,7 +27,8 @@ export enum CONFIG_KEYS {
   OCO_API_URL = 'OCO_API_URL',
   OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
-  OCO_GITPUSH = 'OCO_GITPUSH' // todo: deprecate
+  OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
+  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT'
 }
 
 export enum CONFIG_MODES {
@@ -711,6 +712,14 @@ export const configValidators = {
       'Must be true or false'
     );
     return value;
+  },
+
+  [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
   }
 };
 
@@ -747,6 +756,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_ONE_LINE_COMMIT]: boolean;
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
+  [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -794,7 +804,8 @@ export const DEFAULT_CONFIG = {
   OCO_TEST_MOCK_TYPE: 'commit-message',
   OCO_WHY: false,
   OCO_OMIT_SCOPE: false,
-  OCO_GITPUSH: true // todo: deprecate
+  OCO_GITPUSH: true, // todo: deprecate
+  OCO_HOOK_AUTO_UNCOMMENT: false
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
@@ -1045,6 +1056,11 @@ function getConfigKeyDetails(key) {
       return {
         description: 'Message template placeholder',
         values: ['String (must start with $)']
+      };
+    case CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT:
+      return {
+        description: 'Automatically uncomment the commit message in the hook',
+        values: ['true', 'false']
       };
     default:
       return {
