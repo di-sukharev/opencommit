@@ -43,7 +43,7 @@ export const runMigrations = async () => {
       OCO_AI_PROVIDER_ENUM.GROQ,
       OCO_AI_PROVIDER_ENUM.MISTRAL,
       OCO_AI_PROVIDER_ENUM.MLX,
-      OCO_AI_PROVIDER_ENUM.OPENROUTER,
+      OCO_AI_PROVIDER_ENUM.OPENROUTER
     ].includes(config.OCO_AI_PROVIDER)
   ) {
     return;
