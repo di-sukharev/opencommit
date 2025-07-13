@@ -86,6 +86,7 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "^6.0.1",
     "@anthropic-ai/sdk": "^0.19.2",
+    "@aws-sdk/client-bedrock-runtime": "^3.844.0",
     "@azure/openai": "^1.0.0-beta.12",
     "@clack/prompts": "^0.6.1",
     "@dqbd/tiktoken": "^1.0.2",
