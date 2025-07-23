@@ -1,5 +1,6 @@
 import {
   text,
+  confirm,
   intro,
   isCancel,
   multiselect,
@@ -99,10 +100,12 @@ ${chalk.grey('——————————————————')}`
     if (isCancel(userAction)) process.exit(1);
 
     if (userAction === 'Edit') {
-      commitMessage = await text({
+      const textResponse = await text({
         message: 'Please edit the commit message: (press Enter to continue)',
         initialValue: commitMessage
       });
+
+      commitMessage = textResponse.toString();
     }
 
     if (userAction === 'Yes' || userAction === 'Edit') {
