@@ -119,20 +119,36 @@ export class BedrockEngine implements AiEngine {
     // Prepare messages for the Converse API format
     const converseMessages = [];
     
-    // Add system message if present
+    // For Bedrock Converse API, we need to handle system messages differently
+    // as it doesn't support the 'system' role directly
+    let systemInstructions = "";
     if (systemMessage) {
-      converseMessages.push({
-        role: 'system',
-        content: [{ text: systemMessage }]
-      });
+      // Store system message to prepend to first user message
+      systemInstructions = systemMessage;
     }
     
     // Convert other messages
-    for (const message of messages) {
-      converseMessages.push({
-        role: message.role,
-        content: [{ text: message.content as string }]
-      });
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
+      
+      // Skip system messages
+      if (message.role === 'system') continue;
+      
+      // For the first user message, prepend system instructions if any
+      if (i === 0 && message.role === 'user' && systemInstructions) {
+        converseMessages.push({
+          role: 'user',
+          content: [{ text: `[System Instructions]: ${systemInstructions}\n\n[User Message]: ${message.content}` }]
+        });
+      } else {
+        // Map role to supported role (only 'user' and 'assistant' are supported)
+        const role = message.role === 'assistant' ? 'assistant' : 'user';
+        
+        converseMessages.push({
+          role: role,
+          content: [{ text: message.content as string }]
+        });
+      }
     }
     
     // Prepare converse command parameters

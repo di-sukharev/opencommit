@@ -31,6 +31,9 @@ export default function () {
   } else if (aiProvider === OCO_AI_PROVIDER_ENUM.FLOWISE) {
     apiKey = config['OCO_FLOWISE_API_KEY'];
     apiUrl = config['OCO_FLOWISE_ENDPOINT'];
+  } else if (aiProvider === OCO_AI_PROVIDER_ENUM.BEDROCK) {
+    apiKey = config['OCO_BEDROCK_API_KEY'];
+    apiUrl = config['OCO_BEDROCK_REGION'];
   } else {
     throw new Error(
       `Migration failed, set AI provider first. Run "oco config set OCO_AI_PROVIDER=<provider>", where <provider> is one of: ${Object.values(
