@@ -38,6 +38,58 @@ export enum CONFIG_MODES {
 }
 
 export const MODEL_LIST = {
+  bedrock: [
+    // Anthropic Claude models
+    "anthropic.claude-instant-v1",
+    "anthropic.claude-v2",
+    "anthropic.claude-v2:1",
+    "anthropic.claude-3-sonnet-20240229-v1:0",
+    "anthropic.claude-3-haiku-20240307-v1:0",
+    "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
+    // Amazon models
+    "amazon.titan-text-lite-v1",
+    "amazon.titan-text-express-v1",
+    "amazon.titan-text-premier-v1:0",
+    "amazon.nova-lite-v1:0",
+    "amazon.nova-pro-v1:0",
+    "amazon.nova-micro-v1:0",
+    "amazon.nova-premier-v1:0",
+    // Meta Llama models
+    "meta.llama3-8b-instruct-v1:0",
+    "meta.llama3-70b-instruct-v1:0",
+    "meta.llama3-1-8b-instruct-v1:0",
+    "meta.llama3-1-70b-instruct-v1:0",
+    "meta.llama3-2-11b-instruct-v1:0",
+    "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
+    "meta.llama4-scout-17b-instruct-v1:0",
+    "meta.llama4-maverick-17b-instruct-v1:0",
+    // AI21 models
+    "ai21.jamba-instruct-v1:0",
+    "ai21.jamba-1-5-large-v1:0",
+    "ai21.jamba-1-5-mini-v1:0",
+    // Cohere models
+    "cohere.command-text-v14",
+    "cohere.command-light-text-v14",
+    "cohere.command-r-v1:0",
+    "cohere.command-r-plus-v1:0",
+    // Mistral models
+    "mistral.mistral-7b-instruct-v0:2",
+    "mistral.mixtral-8x7b-instruct-v0:1",
+    "mistral.mistral-large-2402-v1:0",
+    "mistral.mistral-small-2402-v1:0",
+    "mistral.pixtral-large-2502-v1:0",
+    // Stability models
+    "stability.stable-diffusion-xl-v1",
+    // Deepseek models
+    "deepseek.r1-v1:0"
+  ],
   openai: [
     'gpt-4o-mini',
     'gpt-3.5-turbo',
@@ -486,6 +538,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.deepseek[0];
     case 'openrouter':
       return MODEL_LIST.openrouter[0];
+    case 'bedrock':
+      return MODEL_LIST.bedrock[6]; // Default to Claude 3.5 Sonnet which is a good balance
     default:
       return MODEL_LIST.openai[0];
   }
@@ -676,9 +730,10 @@ export const configValidators = {
         'flowise',
         'groq',
         'deepseek',
-        'openrouter'
+        'openrouter',
+        'bedrock'
       ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'bedrock' or 'openai' (default)`
     );
 
     return value;
@@ -735,7 +790,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   MISTRAL = 'mistral',
   MLX = 'mlx',
   DEEPSEEK = 'deepseek',
-  OPENROUTER = 'openrouter'
+  OPENROUTER = 'openrouter',
+  BEDROCK = 'bedrock'
 }
 
 export type ConfigType = {
