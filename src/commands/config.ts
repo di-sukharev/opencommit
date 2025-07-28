@@ -136,6 +136,111 @@ export const MODEL_LIST = {
 
   deepseek: ['deepseek-chat', 'deepseek-reasoner'],
 
+  // AI/ML API available chat-completion models
+  // https://api.aimlapi.com/v1/models
+  aimlapi: [
+    'openai/gpt-4o',
+    'gpt-4o-2024-08-06',
+    'gpt-4o-2024-05-13',
+    'gpt-4o-mini',
+    'gpt-4o-mini-2024-07-18',
+    'chatgpt-4o-latest',
+    'gpt-4-turbo',
+    'gpt-4-turbo-2024-04-09',
+    'gpt-4',
+    'gpt-4-0125-preview',
+    'gpt-4-1106-preview',
+    'gpt-3.5-turbo',
+    'gpt-3.5-turbo-0125',
+    'gpt-3.5-turbo-1106',
+    'o1-preview',
+    'o1-preview-2024-09-12',
+    'o1-mini',
+    'o1-mini-2024-09-12',
+    'o3-mini',
+    'gpt-4o-audio-preview',
+    'gpt-4o-mini-audio-preview',
+    'gpt-4o-search-preview',
+    'gpt-4o-mini-search-preview',
+    'openai/gpt-4.1-2025-04-14',
+    'openai/gpt-4.1-mini-2025-04-14',
+    'openai/gpt-4.1-nano-2025-04-14',
+    'openai/o4-mini-2025-04-16',
+    'openai/o3-2025-04-16',
+    'o1',
+    'openai/o3-pro',
+    'meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo',
+    'google/gemma-2-27b-it',
+    'meta-llama/Llama-Vision-Free',
+    'Qwen/Qwen2-72B-Instruct',
+    'mistralai/Mixtral-8x7B-Instruct-v0.1',
+    'nvidia/Llama-3.1-Nemotron-70B-Instruct-HF',
+    'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO',
+    'meta-llama/Llama-3.3-70B-Instruct-Turbo',
+    'meta-llama/Llama-3.2-3B-Instruct-Turbo',
+    'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo',
+    'meta-llama/Llama-Guard-3-11B-Vision-Turbo',
+    'Qwen/Qwen2.5-7B-Instruct-Turbo',
+    'Qwen/Qwen2.5-Coder-32B-Instruct',
+    'meta-llama/Meta-Llama-3-8B-Instruct-Lite',
+    'meta-llama/Llama-3-8b-chat-hf',
+    'meta-llama/Llama-3-70b-chat-hf',
+    'Qwen/Qwen2.5-72B-Instruct-Turbo',
+    'Qwen/QwQ-32B',
+    'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo',
+    'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
+    'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
+    'mistralai/Mistral-7B-Instruct-v0.2',
+    'meta-llama/LlamaGuard-2-8b',
+    'mistralai/Mistral-7B-Instruct-v0.1',
+    'mistralai/Mistral-7B-Instruct-v0.3',
+    'meta-llama/Meta-Llama-Guard-3-8B',
+    'meta-llama/llama-4-scout',
+    'meta-llama/llama-4-maverick',
+    'Qwen/Qwen3-235B-A22B-fp8-tput',
+    'claude-3-opus-20240229',
+    'claude-3-haiku-20240307',
+    'claude-3-5-sonnet-20240620',
+    'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022',
+    'claude-3-7-sonnet-20250219',
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
+    'google/gemini-2.0-flash-exp',
+    'google/gemini-2.0-flash',
+    'google/gemini-2.5-pro',
+    'google/gemini-2.5-flash',
+    'deepseek-chat',
+    'deepseek-reasoner',
+    'qwen-max',
+    'qwen-plus',
+    'qwen-turbo',
+    'qwen-max-2025-01-25',
+    'mistralai/mistral-tiny',
+    'mistralai/mistral-nemo',
+    'anthracite-org/magnum-v4-72b',
+    'nvidia/llama-3.1-nemotron-70b-instruct',
+    'cohere/command-r-plus',
+    'mistralai/codestral-2501',
+    'google/gemma-3-4b-it',
+    'google/gemma-3-12b-it',
+    'google/gemma-3-27b-it',
+    'google/gemini-2.5-flash-lite-preview',
+    'deepseek/deepseek-prover-v2',
+    'google/gemma-3n-e4b-it',
+    'cohere/command-a',
+    'MiniMax-Text-01',
+    'abab6.5s-chat',
+    'minimax/m1',
+    'bagoodex/bagoodex-search-v1',
+    'moonshot/kimi-k2-preview',
+    'perplexity/sonar',
+    'perplexity/sonar-pro',
+    'x-ai/grok-4-07-09',
+    'x-ai/grok-3-beta',
+    'x-ai/grok-3-mini-beta',
+  ],
+
   // OpenRouter available models
   // input_modalities: 'text'
   // output_modalities: 'text'
@@ -486,6 +591,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.deepseek[0];
     case 'openrouter':
       return MODEL_LIST.openrouter[0];
+    case 'aimlapi':
+      return MODEL_LIST.aimlapi[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -676,9 +783,10 @@ export const configValidators = {
         'flowise',
         'groq',
         'deepseek',
-        'openrouter'
+        'openrouter',
+        'aimlapi',
       ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
     );
 
     return value;
@@ -735,7 +843,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   MISTRAL = 'mistral',
   MLX = 'mlx',
   DEEPSEEK = 'deepseek',
-  OPENROUTER = 'openrouter'
+  OPENROUTER = 'openrouter',
+  AIMLAPI = 'aimlapi',
 }
 
 export type ConfigType = {
