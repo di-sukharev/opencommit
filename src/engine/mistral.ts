@@ -1,27 +1,21 @@
 import axios from 'axios';
-import { Mistral } from '@mistralai/mistralai';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
-import {
-  AssistantMessage as MistralAssistantMessage,
-  SystemMessage as MistralSystemMessage,
-  ToolMessage as MistralToolMessage,
-  UserMessage as MistralUserMessage
-} from '@mistralai/mistralai/models/components';
 
+// Using any for Mistral types to avoid type declaration issues
 export interface MistralAiConfig extends AiEngineConfig {}
-export type MistralCompletionMessageParam = Array<
-| (MistralSystemMessage & { role: "system" })
-| (MistralUserMessage & { role: "user" })
-| (MistralAssistantMessage & { role: "assistant" })
-| (MistralToolMessage & { role: "tool" })
->
+export type MistralCompletionMessageParam = Array<any>;
+
+// Import Mistral dynamically to avoid TS errors
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Mistral = require('@mistralai/mistralai').Mistral;
 
 export class MistralAiEngine implements AiEngine {
   config: MistralAiConfig;
-  client: Mistral;
+  client: any; // Using any type for Mistral client to avoid TS errors
 
   constructor(config: MistralAiConfig) {
     this.config = config;
@@ -29,7 +23,10 @@ export class MistralAiEngine implements AiEngine {
     if (!config.baseURL) {
       this.client = new Mistral({ apiKey: config.apiKey });
     } else {
-      this.client = new Mistral({ apiKey: config.apiKey, serverURL: config.baseURL });
+      this.client = new Mistral({
+        apiKey: config.apiKey,
+        serverURL: config.baseURL
+      });
     }
   }
 
@@ -56,15 +53,15 @@ export class MistralAiEngine implements AiEngine {
 
       const completion = await this.client.chat.complete(params);
 
-      if (!completion.choices)
-        throw Error('No completion choice available.')
-      
+      if (!completion.choices) throw Error('No completion choice available.');
+
       const message = completion.choices[0].message;
 
       if (!message || !message.content)
-        throw Error('No completion choice available.')
+        throw Error('No completion choice available.');
 
-      return message.content as string;
+      let content = message.content as string;
+      return removeContentTags(content, 'think');
     } catch (error) {
       const err = error as Error;
       if (

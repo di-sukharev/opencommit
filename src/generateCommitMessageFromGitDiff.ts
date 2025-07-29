@@ -14,7 +14,10 @@ const generateCommitMessageChatCompletionPrompt = async (
   fullGitMojiSpec: boolean,
   context: string
 ): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> => {
-  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec, context);
+  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(
+    fullGitMojiSpec,
+    context
+  );
 
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
 
@@ -38,7 +41,7 @@ const ADJUSTMENT_FACTOR = 20;
 export const generateCommitMessageByDiff = async (
   diff: string,
   fullGitMojiSpec: boolean = false,
-  context: string = ""
+  context: string = ''
 ): Promise<string> => {
   try {
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(
@@ -75,7 +78,7 @@ export const generateCommitMessageByDiff = async (
     const messages = await generateCommitMessageChatCompletionPrompt(
       diff,
       fullGitMojiSpec,
-      context,
+      context
     );
 
     const engine = getEngine();

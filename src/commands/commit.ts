@@ -1,4 +1,5 @@
 import {
+  text,
   confirm,
   intro,
   isCancel,
@@ -82,26 +83,37 @@ const generateCommitMessageFromGitDiff = async ({
     }
 
     commitGenerationSpinner.stop('📝 Commit message generated');
-    Logger.spinnerSuccess('Commit message generated');
 
-    const separator = '─'.repeat(50);
-    const messageBox = `Generated commit message:\n│ ${chalk.grey(separator)}\n│ ${commitMessage}\n│ ${chalk.grey(separator)}`;
-    outro(messageBox);
-    // Remove duplicate logging
-    Logger.debug('Generated commit message:', commitMessage);
+    outro(
+      `Generated commit message:
+${chalk.grey('——————————————————')}
+${commitMessage}
+${chalk.grey('——————————————————')}`
+    );
 
-    const isCommitConfirmedByUser =
-      skipCommitConfirmation ||
-      (await confirm({
-        message: `Confirm the commit message?`
-      }));
+    const userAction = skipCommitConfirmation
+      ? 'Yes'
+      : await select({
+          message: `Confirm the commit message?`,
+          options: [
+            { value: 'Yes', label: 'Yes' },
+            { value: 'No', label: 'No' },
+            { value: 'Edit', label: 'Edit' }
+          ]
+        });
 
-    if (isCancel(isCommitConfirmedByUser)) {
-      Logger.info('User cancelled commit');
-      process.exit(0);
+    if (isCancel(userAction)) process.exit(1);
+
+    if (userAction === 'Edit') {
+      const textResponse = await text({
+        message: 'Please edit the commit message: (press Enter to continue)',
+        initialValue: commitMessage
+      });
+
+      commitMessage = textResponse.toString();
     }
 
-    if (isCommitConfirmedByUser) {
+    if (userAction === 'Yes' || userAction === 'Edit') {
       Logger.info('User confirmed commit message');
       // Save commit message to cache before committing
       await CommitCache.saveCommitMessage(commitMessage);
@@ -157,36 +169,38 @@ const generateCommitMessageFromGitDiff = async ({
               remotes[0]
             ]);
 
-            pushSpinner.stop(
-              `│ ${chalk.green('✔')} Successfully pushed all commits to ${remotes[0]}`
-            );
+          pushSpinner.stop(
+            `${chalk.green('✔')} Successfully pushed all commits to ${
+              remotes[0]
+            }`
+          );
 
-            if (stdout) outro(`│\n│ ${stdout}\n│`);
-          } else {
-            outro('│\n│ `git push` aborted\n│');
-            process.exit(0);
-          }
+          if (stdout) outro(stdout);
         } else {
-          const skipOption = `don't push`
-          const selectedRemote = (await select({
-            message: 'Choose a remote to push to:',
-            options: [...remotes, skipOption].map((remote) => ({
-              value: remote,
-              label: remote
-            }))
-          })) as string;
+          outro('`git push` aborted');
+          process.exit(0);
+        }
+      } else {
+        const skipOption = `don't push`;
+        const selectedRemote = (await select({
+          message: 'Choose a remote to push to',
+          options: [...remotes, skipOption].map((remote) => ({
+            value: remote,
+            label: remote
+          }))
+        })) as string;
 
           if (isCancel(selectedRemote)) process.exit(1);
 
           if (selectedRemote !== skipOption) {
             const pushSpinner = spinner();
-    
+  
             pushSpinner.start(`Running 'git push ${selectedRemote}'`);
-    
+  
             const { stdout } = await execa('git', ['push', selectedRemote]);
-    
+  
             if (stdout) outro(`│\n│ ${stdout}\n│`);
-    
+  
             pushSpinner.stop(
               `│ ${chalk.green('✔')} Successfully pushed all commits to ${selectedRemote}`
             );
@@ -411,10 +425,10 @@ export async function commit(
 
       if (isCancel(isStageAllAndCommitConfirmedByUser)) process.exit(1);
 
-      if (isStageAllAndCommitConfirmedByUser) {
-        await commit(extraArgs, context, true, fullGitMojiSpec);
-        process.exit(1);
-      }
+    if (isStageAllAndCommitConfirmedByUser) {
+      await commit(extraArgs, context, true, fullGitMojiSpec);
+      process.exit(0);
+    }
 
       if (stagedFiles.length === 0 && changedFiles.length > 0) {
         const files = (await multiselect({
@@ -425,14 +439,14 @@ export async function commit(
           }))
         })) as string[];
 
-        if (isCancel(files)) process.exit(1);
+      if (isCancel(files)) process.exit(0);
 
         await gitAdd({ files });
       }
 
-      await commit(extraArgs, context, false, fullGitMojiSpec);
-      process.exit(1);
-    }
+    await commit(extraArgs, context, false, fullGitMojiSpec);
+    process.exit(0);
+  }
 
     stagedFilesSpinner.stop(
       `${stagedFiles.length} staged files:\n${stagedFiles
