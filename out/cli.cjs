@@ -1477,20 +1477,20 @@ var require_ini = __commonJS({
         let esc = false;
         let unesc = "";
         for (let i3 = 0, l3 = val.length; i3 < l3; i3++) {
-          const c3 = val.charAt(i3);
+          const c4 = val.charAt(i3);
           if (esc) {
-            if ("\\;#".indexOf(c3) !== -1) {
-              unesc += c3;
+            if ("\\;#".indexOf(c4) !== -1) {
+              unesc += c4;
             } else {
-              unesc += "\\" + c3;
+              unesc += "\\" + c4;
             }
             esc = false;
-          } else if (";#".indexOf(c3) !== -1) {
+          } else if (";#".indexOf(c4) !== -1) {
             break;
-          } else if (c3 === "\\") {
+          } else if (c4 === "\\") {
             esc = true;
           } else {
-            unesc += c3;
+            unesc += c4;
           }
         }
         if (esc) {
@@ -1697,9 +1697,9 @@ var require_lib = __commonJS({
     };
     exports2.ByteString = (value, options = {}) => {
       const x5 = exports2.DOMString(value, options);
-      let c3;
-      for (let i3 = 0; (c3 = x5.codePointAt(i3)) !== void 0; ++i3) {
-        if (c3 > 255) {
+      let c4;
+      for (let i3 = 0; (c4 = x5.codePointAt(i3)) !== void 0; ++i3) {
+        if (c4 > 255) {
           throw makeException(TypeError, "is not a valid ByteString", options);
         }
       }
@@ -1710,17 +1710,17 @@ var require_lib = __commonJS({
       const n2 = S6.length;
       const U7 = [];
       for (let i3 = 0; i3 < n2; ++i3) {
-        const c3 = S6.charCodeAt(i3);
-        if (c3 < 55296 || c3 > 57343) {
-          U7.push(String.fromCodePoint(c3));
-        } else if (56320 <= c3 && c3 <= 57343) {
+        const c4 = S6.charCodeAt(i3);
+        if (c4 < 55296 || c4 > 57343) {
+          U7.push(String.fromCodePoint(c4));
+        } else if (56320 <= c4 && c4 <= 57343) {
           U7.push(String.fromCodePoint(65533));
         } else if (i3 === n2 - 1) {
           U7.push(String.fromCodePoint(65533));
         } else {
           const d7 = S6.charCodeAt(i3 + 1);
           if (56320 <= d7 && d7 <= 57343) {
-            const a4 = c3 & 1023;
+            const a4 = c4 & 1023;
             const b7 = d7 & 1023;
             U7.push(String.fromCodePoint((2 << 15) + (2 << 9) * a4 + b7));
             ++i3;
@@ -2597,17 +2597,17 @@ var require_tr46 = __commonJS({
 var require_infra = __commonJS({
   "node_modules/whatwg-url/lib/infra.js"(exports2, module2) {
     "use strict";
-    function isASCIIDigit(c3) {
-      return c3 >= 48 && c3 <= 57;
+    function isASCIIDigit(c4) {
+      return c4 >= 48 && c4 <= 57;
     }
-    function isASCIIAlpha(c3) {
-      return c3 >= 65 && c3 <= 90 || c3 >= 97 && c3 <= 122;
+    function isASCIIAlpha(c4) {
+      return c4 >= 65 && c4 <= 90 || c4 >= 97 && c4 <= 122;
     }
-    function isASCIIAlphanumeric(c3) {
-      return isASCIIAlpha(c3) || isASCIIDigit(c3);
+    function isASCIIAlphanumeric(c4) {
+      return isASCIIAlpha(c4) || isASCIIDigit(c4);
     }
-    function isASCIIHex(c3) {
-      return isASCIIDigit(c3) || c3 >= 65 && c3 <= 70 || c3 >= 97 && c3 <= 102;
+    function isASCIIHex(c4) {
+      return isASCIIDigit(c4) || c4 >= 65 && c4 <= 70 || c4 >= 97 && c4 <= 102;
     }
     module2.exports = {
       isASCIIDigit,
@@ -2646,8 +2646,8 @@ var require_percent_encoding = __commonJS({
     function p4(char) {
       return char.codePointAt(0);
     }
-    function percentEncode(c3) {
-      let hex = c3.toString(16).toUpperCase();
+    function percentEncode(c4) {
+      let hex = c4.toString(16).toUpperCase();
       if (hex.length === 1) {
         hex = `0${hex}`;
       }
@@ -2674,35 +2674,35 @@ var require_percent_encoding = __commonJS({
       const bytes = utf8Encode(input);
       return percentDecodeBytes(bytes);
     }
-    function isC0ControlPercentEncode(c3) {
-      return c3 <= 31 || c3 > 126;
+    function isC0ControlPercentEncode(c4) {
+      return c4 <= 31 || c4 > 126;
     }
     var extraFragmentPercentEncodeSet = /* @__PURE__ */ new Set([p4(" "), p4('"'), p4("<"), p4(">"), p4("`")]);
-    function isFragmentPercentEncode(c3) {
-      return isC0ControlPercentEncode(c3) || extraFragmentPercentEncodeSet.has(c3);
+    function isFragmentPercentEncode(c4) {
+      return isC0ControlPercentEncode(c4) || extraFragmentPercentEncodeSet.has(c4);
     }
     var extraQueryPercentEncodeSet = /* @__PURE__ */ new Set([p4(" "), p4('"'), p4("#"), p4("<"), p4(">")]);
-    function isQueryPercentEncode(c3) {
-      return isC0ControlPercentEncode(c3) || extraQueryPercentEncodeSet.has(c3);
+    function isQueryPercentEncode(c4) {
+      return isC0ControlPercentEncode(c4) || extraQueryPercentEncodeSet.has(c4);
     }
-    function isSpecialQueryPercentEncode(c3) {
-      return isQueryPercentEncode(c3) || c3 === p4("'");
+    function isSpecialQueryPercentEncode(c4) {
+      return isQueryPercentEncode(c4) || c4 === p4("'");
     }
     var extraPathPercentEncodeSet = /* @__PURE__ */ new Set([p4("?"), p4("`"), p4("{"), p4("}"), p4("^")]);
-    function isPathPercentEncode(c3) {
-      return isQueryPercentEncode(c3) || extraPathPercentEncodeSet.has(c3);
+    function isPathPercentEncode(c4) {
+      return isQueryPercentEncode(c4) || extraPathPercentEncodeSet.has(c4);
     }
     var extraUserinfoPercentEncodeSet = /* @__PURE__ */ new Set([p4("/"), p4(":"), p4(";"), p4("="), p4("@"), p4("["), p4("\\"), p4("]"), p4("|")]);
-    function isUserinfoPercentEncode(c3) {
-      return isPathPercentEncode(c3) || extraUserinfoPercentEncodeSet.has(c3);
+    function isUserinfoPercentEncode(c4) {
+      return isPathPercentEncode(c4) || extraUserinfoPercentEncodeSet.has(c4);
     }
     var extraComponentPercentEncodeSet = /* @__PURE__ */ new Set([p4("$"), p4("%"), p4("&"), p4("+"), p4(",")]);
-    function isComponentPercentEncode(c3) {
-      return isUserinfoPercentEncode(c3) || extraComponentPercentEncodeSet.has(c3);
+    function isComponentPercentEncode(c4) {
+      return isUserinfoPercentEncode(c4) || extraComponentPercentEncodeSet.has(c4);
     }
     var extraURLEncodedPercentEncodeSet = /* @__PURE__ */ new Set([p4("!"), p4("'"), p4("("), p4(")"), p4("~")]);
-    function isURLEncodedPercentEncode(c3) {
-      return isComponentPercentEncode(c3) || extraURLEncodedPercentEncodeSet.has(c3);
+    function isURLEncodedPercentEncode(c4) {
+      return isComponentPercentEncode(c4) || extraURLEncodedPercentEncodeSet.has(c4);
     }
     function utf8PercentEncodeCodePointInternal(codePoint, percentEncodePredicate) {
       const bytes = utf8Encode(codePoint);
@@ -2780,8 +2780,8 @@ var require_url_state_machine = __commonJS({
       return [...str2].length;
     }
     function at2(input, idx) {
-      const c3 = input[idx];
-      return isNaN(c3) ? void 0 : String.fromCodePoint(c3);
+      const c4 = input[idx];
+      return isNaN(c4) ? void 0 : String.fromCodePoint(c4);
     }
     function isSingleDot(buffer) {
       return buffer === "." || buffer.toLowerCase() === "%2e";
@@ -2895,7 +2895,7 @@ var require_url_state_machine = __commonJS({
       let pieceIndex = 0;
       let compress = null;
       let pointer = 0;
-      input = Array.from(input, (c3) => c3.codePointAt(0));
+      input = Array.from(input, (c4) => c4.codePointAt(0));
       if (input[pointer] === p4(":")) {
         if (input[pointer + 1] !== p4(":")) {
           return failure;
@@ -3194,11 +3194,11 @@ var require_url_state_machine = __commonJS({
       this.atFlag = false;
       this.arrFlag = false;
       this.passwordTokenSeenFlag = false;
-      this.input = Array.from(this.input, (c3) => c3.codePointAt(0));
+      this.input = Array.from(this.input, (c4) => c4.codePointAt(0));
       for (; this.pointer <= this.input.length; ++this.pointer) {
-        const c3 = this.input[this.pointer];
-        const cStr = isNaN(c3) ? void 0 : String.fromCodePoint(c3);
-        const ret = this[`parse ${this.state}`](c3, cStr);
+        const c4 = this.input[this.pointer];
+        const cStr = isNaN(c4) ? void 0 : String.fromCodePoint(c4);
+        const ret = this[`parse ${this.state}`](c4, cStr);
         if (!ret) {
           break;
         } else if (ret === failure) {
@@ -3207,8 +3207,8 @@ var require_url_state_machine = __commonJS({
         }
       }
     }
-    URLStateMachine.prototype["parse scheme start"] = function parseSchemeStart(c3, cStr) {
-      if (infra.isASCIIAlpha(c3)) {
+    URLStateMachine.prototype["parse scheme start"] = function parseSchemeStart(c4, cStr) {
+      if (infra.isASCIIAlpha(c4)) {
         this.buffer += cStr.toLowerCase();
         this.state = "scheme";
       } else if (!this.stateOverride) {
@@ -3220,10 +3220,10 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse scheme"] = function parseScheme(c3, cStr) {
-      if (infra.isASCIIAlphanumeric(c3) || c3 === p4("+") || c3 === p4("-") || c3 === p4(".")) {
+    URLStateMachine.prototype["parse scheme"] = function parseScheme(c4, cStr) {
+      if (infra.isASCIIAlphanumeric(c4) || c4 === p4("+") || c4 === p4("-") || c4 === p4(".")) {
         this.buffer += cStr.toLowerCase();
-      } else if (c3 === p4(":")) {
+      } else if (c4 === p4(":")) {
         if (this.stateOverride) {
           if (isSpecial(this.url) && !isSpecialScheme(this.buffer)) {
             return false;
@@ -3272,10 +3272,10 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse no scheme"] = function parseNoScheme(c3) {
-      if (this.base === null || hasAnOpaquePath(this.base) && c3 !== p4("#")) {
+    URLStateMachine.prototype["parse no scheme"] = function parseNoScheme(c4) {
+      if (this.base === null || hasAnOpaquePath(this.base) && c4 !== p4("#")) {
         return failure;
-      } else if (hasAnOpaquePath(this.base) && c3 === p4("#")) {
+      } else if (hasAnOpaquePath(this.base) && c4 === p4("#")) {
         this.url.scheme = this.base.scheme;
         this.url.path = this.base.path;
         this.url.query = this.base.query;
@@ -3290,8 +3290,8 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse special relative or authority"] = function parseSpecialRelativeOrAuthority(c3) {
-      if (c3 === p4("/") && this.input[this.pointer + 1] === p4("/")) {
+    URLStateMachine.prototype["parse special relative or authority"] = function parseSpecialRelativeOrAuthority(c4) {
+      if (c4 === p4("/") && this.input[this.pointer + 1] === p4("/")) {
         this.state = "special authority ignore slashes";
         ++this.pointer;
       } else {
@@ -3301,8 +3301,8 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse path or authority"] = function parsePathOrAuthority(c3) {
-      if (c3 === p4("/")) {
+    URLStateMachine.prototype["parse path or authority"] = function parsePathOrAuthority(c4) {
+      if (c4 === p4("/")) {
         this.state = "authority";
       } else {
         this.state = "path";
@@ -3310,11 +3310,11 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse relative"] = function parseRelative(c3) {
+    URLStateMachine.prototype["parse relative"] = function parseRelative(c4) {
       this.url.scheme = this.base.scheme;
-      if (c3 === p4("/")) {
+      if (c4 === p4("/")) {
         this.state = "relative slash";
-      } else if (isSpecial(this.url) && c3 === p4("\\")) {
+      } else if (isSpecial(this.url) && c4 === p4("\\")) {
         this.parseError = true;
         this.state = "relative slash";
       } else {
@@ -3324,13 +3324,13 @@ var require_url_state_machine = __commonJS({
         this.url.port = this.base.port;
         this.url.path = this.base.path.slice();
         this.url.query = this.base.query;
-        if (c3 === p4("?")) {
+        if (c4 === p4("?")) {
           this.url.query = "";
           this.state = "query";
-        } else if (c3 === p4("#")) {
+        } else if (c4 === p4("#")) {
           this.url.fragment = "";
           this.state = "fragment";
-        } else if (!isNaN(c3)) {
+        } else if (!isNaN(c4)) {
           this.url.query = null;
           this.url.path.pop();
           this.state = "path";
@@ -3339,13 +3339,13 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse relative slash"] = function parseRelativeSlash(c3) {
-      if (isSpecial(this.url) && (c3 === p4("/") || c3 === p4("\\"))) {
-        if (c3 === p4("\\")) {
+    URLStateMachine.prototype["parse relative slash"] = function parseRelativeSlash(c4) {
+      if (isSpecial(this.url) && (c4 === p4("/") || c4 === p4("\\"))) {
+        if (c4 === p4("\\")) {
           this.parseError = true;
         }
         this.state = "special authority ignore slashes";
-      } else if (c3 === p4("/")) {
+      } else if (c4 === p4("/")) {
         this.state = "authority";
       } else {
         this.url.username = this.base.username;
@@ -3357,8 +3357,8 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse special authority slashes"] = function parseSpecialAuthoritySlashes(c3) {
-      if (c3 === p4("/") && this.input[this.pointer + 1] === p4("/")) {
+    URLStateMachine.prototype["parse special authority slashes"] = function parseSpecialAuthoritySlashes(c4) {
+      if (c4 === p4("/") && this.input[this.pointer + 1] === p4("/")) {
         this.state = "special authority ignore slashes";
         ++this.pointer;
       } else {
@@ -3368,8 +3368,8 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse special authority ignore slashes"] = function parseSpecialAuthorityIgnoreSlashes(c3) {
-      if (c3 !== p4("/") && c3 !== p4("\\")) {
+    URLStateMachine.prototype["parse special authority ignore slashes"] = function parseSpecialAuthorityIgnoreSlashes(c4) {
+      if (c4 !== p4("/") && c4 !== p4("\\")) {
         this.state = "authority";
         --this.pointer;
       } else {
@@ -3377,8 +3377,8 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse authority"] = function parseAuthority(c3, cStr) {
-      if (c3 === p4("@")) {
+    URLStateMachine.prototype["parse authority"] = function parseAuthority(c4, cStr) {
+      if (c4 === p4("@")) {
         this.parseError = true;
         if (this.atFlag) {
           this.buffer = `%40${this.buffer}`;
@@ -3399,7 +3399,7 @@ var require_url_state_machine = __commonJS({
           }
         }
         this.buffer = "";
-      } else if (isNaN(c3) || c3 === p4("/") || c3 === p4("?") || c3 === p4("#") || isSpecial(this.url) && c3 === p4("\\")) {
+      } else if (isNaN(c4) || c4 === p4("/") || c4 === p4("?") || c4 === p4("#") || isSpecial(this.url) && c4 === p4("\\")) {
         if (this.atFlag && this.buffer === "") {
           this.parseError = true;
           return failure;
@@ -3412,11 +3412,11 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse hostname"] = URLStateMachine.prototype["parse host"] = function parseHostName(c3, cStr) {
+    URLStateMachine.prototype["parse hostname"] = URLStateMachine.prototype["parse host"] = function parseHostName(c4, cStr) {
       if (this.stateOverride && this.url.scheme === "file") {
         --this.pointer;
         this.state = "file host";
-      } else if (c3 === p4(":") && !this.arrFlag) {
+      } else if (c4 === p4(":") && !this.arrFlag) {
         if (this.buffer === "") {
           this.parseError = true;
           return failure;
@@ -3431,7 +3431,7 @@ var require_url_state_machine = __commonJS({
         this.url.host = host;
         this.buffer = "";
         this.state = "port";
-      } else if (isNaN(c3) || c3 === p4("/") || c3 === p4("?") || c3 === p4("#") || isSpecial(this.url) && c3 === p4("\\")) {
+      } else if (isNaN(c4) || c4 === p4("/") || c4 === p4("?") || c4 === p4("#") || isSpecial(this.url) && c4 === p4("\\")) {
         --this.pointer;
         if (isSpecial(this.url) && this.buffer === "") {
           this.parseError = true;
@@ -3451,19 +3451,19 @@ var require_url_state_machine = __commonJS({
           return false;
         }
       } else {
-        if (c3 === p4("[")) {
+        if (c4 === p4("[")) {
           this.arrFlag = true;
-        } else if (c3 === p4("]")) {
+        } else if (c4 === p4("]")) {
           this.arrFlag = false;
         }
         this.buffer += cStr;
       }
       return true;
     };
-    URLStateMachine.prototype["parse port"] = function parsePort(c3, cStr) {
-      if (infra.isASCIIDigit(c3)) {
+    URLStateMachine.prototype["parse port"] = function parsePort(c4, cStr) {
+      if (infra.isASCIIDigit(c4)) {
         this.buffer += cStr;
-      } else if (isNaN(c3) || c3 === p4("/") || c3 === p4("?") || c3 === p4("#") || isSpecial(this.url) && c3 === p4("\\") || this.stateOverride) {
+      } else if (isNaN(c4) || c4 === p4("/") || c4 === p4("?") || c4 === p4("#") || isSpecial(this.url) && c4 === p4("\\") || this.stateOverride) {
         if (this.buffer !== "") {
           const port = parseInt(this.buffer);
           if (port > 2 ** 16 - 1) {
@@ -3489,11 +3489,11 @@ var require_url_state_machine = __commonJS({
       const length = input.length - pointer;
       return length >= 2 && isWindowsDriveLetterCodePoints(input[pointer], input[pointer + 1]) && (length === 2 || fileOtherwiseCodePoints.has(input[pointer + 2]));
     }
-    URLStateMachine.prototype["parse file"] = function parseFile(c3) {
+    URLStateMachine.prototype["parse file"] = function parseFile(c4) {
       this.url.scheme = "file";
       this.url.host = "";
-      if (c3 === p4("/") || c3 === p4("\\")) {
-        if (c3 === p4("\\")) {
+      if (c4 === p4("/") || c4 === p4("\\")) {
+        if (c4 === p4("\\")) {
           this.parseError = true;
         }
         this.state = "file slash";
@@ -3501,13 +3501,13 @@ var require_url_state_machine = __commonJS({
         this.url.host = this.base.host;
         this.url.path = this.base.path.slice();
         this.url.query = this.base.query;
-        if (c3 === p4("?")) {
+        if (c4 === p4("?")) {
           this.url.query = "";
           this.state = "query";
-        } else if (c3 === p4("#")) {
+        } else if (c4 === p4("#")) {
           this.url.fragment = "";
           this.state = "fragment";
-        } else if (!isNaN(c3)) {
+        } else if (!isNaN(c4)) {
           this.url.query = null;
           if (!startsWithWindowsDriveLetter(this.input, this.pointer)) {
             shortenPath(this.url);
@@ -3524,9 +3524,9 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse file slash"] = function parseFileSlash(c3) {
-      if (c3 === p4("/") || c3 === p4("\\")) {
-        if (c3 === p4("\\")) {
+    URLStateMachine.prototype["parse file slash"] = function parseFileSlash(c4) {
+      if (c4 === p4("/") || c4 === p4("\\")) {
+        if (c4 === p4("\\")) {
           this.parseError = true;
         }
         this.state = "file host";
@@ -3542,8 +3542,8 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse file host"] = function parseFileHost(c3, cStr) {
-      if (isNaN(c3) || c3 === p4("/") || c3 === p4("\\") || c3 === p4("?") || c3 === p4("#")) {
+    URLStateMachine.prototype["parse file host"] = function parseFileHost(c4, cStr) {
+      if (isNaN(c4) || c4 === p4("/") || c4 === p4("\\") || c4 === p4("?") || c4 === p4("#")) {
         --this.pointer;
         if (!this.stateOverride && isWindowsDriveLetterString(this.buffer)) {
           this.parseError = true;
@@ -3574,24 +3574,24 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse path start"] = function parsePathStart(c3) {
+    URLStateMachine.prototype["parse path start"] = function parsePathStart(c4) {
       if (isSpecial(this.url)) {
-        if (c3 === p4("\\")) {
+        if (c4 === p4("\\")) {
           this.parseError = true;
         }
         this.state = "path";
-        if (c3 !== p4("/") && c3 !== p4("\\")) {
+        if (c4 !== p4("/") && c4 !== p4("\\")) {
           --this.pointer;
         }
-      } else if (!this.stateOverride && c3 === p4("?")) {
+      } else if (!this.stateOverride && c4 === p4("?")) {
         this.url.query = "";
         this.state = "query";
-      } else if (!this.stateOverride && c3 === p4("#")) {
+      } else if (!this.stateOverride && c4 === p4("#")) {
         this.url.fragment = "";
         this.state = "fragment";
-      } else if (c3 !== void 0) {
+      } else if (c4 !== void 0) {
         this.state = "path";
-        if (c3 !== p4("/")) {
+        if (c4 !== p4("/")) {
           --this.pointer;
         }
       } else if (this.stateOverride && this.url.host === null) {
@@ -3599,17 +3599,17 @@ var require_url_state_machine = __commonJS({
       }
       return true;
     };
-    URLStateMachine.prototype["parse path"] = function parsePath(c3) {
-      if (isNaN(c3) || c3 === p4("/") || isSpecial(this.url) && c3 === p4("\\") || !this.stateOverride && (c3 === p4("?") || c3 === p4("#"))) {
-        if (isSpecial(this.url) && c3 === p4("\\")) {
+    URLStateMachine.prototype["parse path"] = function parsePath(c4) {
+      if (isNaN(c4) || c4 === p4("/") || isSpecial(this.url) && c4 === p4("\\") || !this.stateOverride && (c4 === p4("?") || c4 === p4("#"))) {
+        if (isSpecial(this.url) && c4 === p4("\\")) {
           this.parseError = true;
         }
         if (isDoubleDot(this.buffer)) {
           shortenPath(this.url);
-          if (c3 !== p4("/") && !(isSpecial(this.url) && c3 === p4("\\"))) {
+          if (c4 !== p4("/") && !(isSpecial(this.url) && c4 === p4("\\"))) {
             this.url.path.push("");
           }
-        } else if (isSingleDot(this.buffer) && c3 !== p4("/") && !(isSpecial(this.url) && c3 === p4("\\"))) {
+        } else if (isSingleDot(this.buffer) && c4 !== p4("/") && !(isSpecial(this.url) && c4 === p4("\\"))) {
           this.url.path.push("");
         } else if (!isSingleDot(this.buffer)) {
           if (this.url.scheme === "file" && this.url.path.length === 0 && isWindowsDriveLetterString(this.buffer)) {
@@ -3618,30 +3618,30 @@ var require_url_state_machine = __commonJS({
           this.url.path.push(this.buffer);
         }
         this.buffer = "";
-        if (c3 === p4("?")) {
+        if (c4 === p4("?")) {
           this.url.query = "";
           this.state = "query";
         }
-        if (c3 === p4("#")) {
+        if (c4 === p4("#")) {
           this.url.fragment = "";
           this.state = "fragment";
         }
       } else {
-        if (c3 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
+        if (c4 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
-        this.buffer += utf8PercentEncodeCodePoint(c3, isPathPercentEncode);
+        this.buffer += utf8PercentEncodeCodePoint(c4, isPathPercentEncode);
       }
       return true;
     };
-    URLStateMachine.prototype["parse opaque path"] = function parseOpaquePath(c3) {
-      if (c3 === p4("?")) {
+    URLStateMachine.prototype["parse opaque path"] = function parseOpaquePath(c4) {
+      if (c4 === p4("?")) {
         this.url.query = "";
         this.state = "query";
-      } else if (c3 === p4("#")) {
+      } else if (c4 === p4("#")) {
         this.url.fragment = "";
         this.state = "fragment";
-      } else if (c3 === p4(" ")) {
+      } else if (c4 === p4(" ")) {
         const remaining = this.input[this.pointer + 1];
         if (remaining === p4("?") || remaining === p4("#")) {
           this.url.path += "%20";
@@ -3649,44 +3649,44 @@ var require_url_state_machine = __commonJS({
           this.url.path += " ";
         }
       } else {
-        if (!isNaN(c3) && c3 !== p4("%")) {
+        if (!isNaN(c4) && c4 !== p4("%")) {
           this.parseError = true;
         }
-        if (c3 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
+        if (c4 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
-        if (!isNaN(c3)) {
-          this.url.path += utf8PercentEncodeCodePoint(c3, isC0ControlPercentEncode);
+        if (!isNaN(c4)) {
+          this.url.path += utf8PercentEncodeCodePoint(c4, isC0ControlPercentEncode);
         }
       }
       return true;
     };
-    URLStateMachine.prototype["parse query"] = function parseQuery(c3, cStr) {
+    URLStateMachine.prototype["parse query"] = function parseQuery(c4, cStr) {
       if (!isSpecial(this.url) || this.url.scheme === "ws" || this.url.scheme === "wss") {
         this.encodingOverride = "utf-8";
       }
-      if (!this.stateOverride && c3 === p4("#") || isNaN(c3)) {
+      if (!this.stateOverride && c4 === p4("#") || isNaN(c4)) {
         const queryPercentEncodePredicate = isSpecial(this.url) ? isSpecialQueryPercentEncode : isQueryPercentEncode;
         this.url.query += utf8PercentEncodeString(this.buffer, queryPercentEncodePredicate);
         this.buffer = "";
-        if (c3 === p4("#")) {
+        if (c4 === p4("#")) {
           this.url.fragment = "";
           this.state = "fragment";
         }
-      } else if (!isNaN(c3)) {
-        if (c3 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
+      } else if (!isNaN(c4)) {
+        if (c4 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
         this.buffer += cStr;
       }
       return true;
     };
-    URLStateMachine.prototype["parse fragment"] = function parseFragment(c3) {
-      if (!isNaN(c3)) {
-        if (c3 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
+    URLStateMachine.prototype["parse fragment"] = function parseFragment(c4) {
+      if (!isNaN(c4)) {
+        if (c4 === p4("%") && (!infra.isASCIIHex(this.input[this.pointer + 1]) || !infra.isASCIIHex(this.input[this.pointer + 2]))) {
           this.parseError = true;
         }
-        this.url.fragment += utf8PercentEncodeCodePoint(c3, isFragmentPercentEncode);
+        this.url.fragment += utf8PercentEncodeCodePoint(c4, isFragmentPercentEncode);
       }
       return true;
     };
@@ -6366,7 +6366,7 @@ function n(e3, t2) {
 function u2(e3) {
   return new a3(e3);
 }
-function c2(e3) {
+function c3(e3) {
   return l2(e3);
 }
 function d6(e3) {
@@ -6396,7 +6396,7 @@ function g3(e3, t2, r3) {
 }
 function w6(e3, t2, r3) {
   try {
-    return c2(g3(e3, t2, r3));
+    return c3(g3(e3, t2, r3));
   } catch (e4) {
     return d6(e4);
   }
@@ -6496,7 +6496,7 @@ function G5(e3, t2, r3) {
 function X4(e3) {
   return e3._reader._readRequests.length;
 }
-function J4(e3) {
+function J5(e3) {
   const t2 = e3._reader;
   return void 0 !== t2 && !!K5(t2);
 }
@@ -6559,7 +6559,7 @@ function be(e3) {
     if ("readable" !== t3._state) return false;
     if (e4._closeRequested) return false;
     if (!e4._started) return false;
-    if (J4(t3) && X4(t3) > 0) return true;
+    if (J5(t3) && X4(t3) > 0) return true;
     if (Le(t3) && ze(t3) > 0) return true;
     if (ke(e4) > 0) return true;
     return false;
@@ -6670,11 +6670,11 @@ function Oe(e3, t2, r3) {
   const o3 = Object.create(ReadableByteStreamController.prototype);
   let n2, a4, i3;
   n2 = void 0 !== t2.start ? () => t2.start(o3) : () => {
-  }, a4 = void 0 !== t2.pull ? () => t2.pull(o3) : () => c2(void 0), i3 = void 0 !== t2.cancel ? (e4) => t2.cancel(e4) : () => c2(void 0);
+  }, a4 = void 0 !== t2.pull ? () => t2.pull(o3) : () => c3(void 0), i3 = void 0 !== t2.cancel ? (e4) => t2.cancel(e4) : () => c3(void 0);
   const l3 = t2.autoAllocateChunkSize;
   if (0 === l3) throw new TypeError("autoAllocateChunkSize must be greater than 0");
   !function(e4, t3, r4, o4, n3, a5, i4) {
-    t3._controlledReadableByteStream = e4, t3._pullAgain = false, t3._pulling = false, t3._byobRequest = null, t3._queue = t3._queueTotalSize = void 0, ce2(t3), t3._closeRequested = false, t3._started = false, t3._strategyHWM = a5, t3._pullAlgorithm = o4, t3._cancelAlgorithm = n3, t3._autoAllocateChunkSize = i4, t3._pendingPullIntos = new S5(), e4._readableStreamController = t3, b6(c2(r4()), () => (t3._started = true, be(t3), null), (e5) => (Pe(t3, e5), null));
+    t3._controlledReadableByteStream = e4, t3._pullAgain = false, t3._pulling = false, t3._byobRequest = null, t3._queue = t3._queueTotalSize = void 0, ce2(t3), t3._closeRequested = false, t3._started = false, t3._strategyHWM = a5, t3._pullAlgorithm = o4, t3._cancelAlgorithm = n3, t3._autoAllocateChunkSize = i4, t3._pendingPullIntos = new S5(), e4._readableStreamController = t3, b6(c3(r4()), () => (t3._started = true, be(t3), null), (e5) => (Pe(t3, e5), null));
   }(e3, o3, n2, a4, i3, r3, l3);
 }
 function Be(e3) {
@@ -6743,10 +6743,10 @@ function Xe(e3) {
 }
 function Je(e3, t2) {
   var r3;
-  if ("closed" === e3._state || "errored" === e3._state) return c2(void 0);
+  if ("closed" === e3._state || "errored" === e3._state) return c3(void 0);
   e3._writableStreamController._abortReason = t2, null === (r3 = e3._writableStreamController._abortController) || void 0 === r3 || r3.abort(t2);
   const o3 = e3._state;
-  if ("closed" === o3 || "errored" === o3) return c2(void 0);
+  if ("closed" === o3 || "errored" === o3) return c3(void 0);
   if (void 0 !== e3._pendingAbortRequest) return e3._pendingAbortRequest._promise;
   let n2 = false;
   "erroring" === o3 && (n2 = true, t2 = void 0);
@@ -6926,7 +6926,7 @@ function kt(e3, t2, r3, o3, n2, a4) {
       const e4 = u2((e5, t3) => {
         !function r4(o4) {
           o4 ? e5() : f3(function() {
-            if (w7) return c2(true);
+            if (w7) return c3(true);
             return f3(l3.ready, () => f3(i3.read(), (e6) => !!e6.done || (E4 = l3.write(e6.value), m4(E4), false)));
           }(), r4, t3);
         }(false);
@@ -6934,7 +6934,7 @@ function kt(e3, t2, r3, o3, n2, a4) {
       m4(e4);
     }
     function B3() {
-      return v5 = "closed", r3 ? L7() : z6(() => (Ge(t2) && (T6 = rt(t2), R7 = t2._state), T6 || "closed" === R7 ? c2(void 0) : "erroring" === R7 || "errored" === R7 ? d6(_7) : (T6 = true, l3.close())), false, void 0), null;
+      return v5 = "closed", r3 ? L7() : z6(() => (Ge(t2) && (T6 = rt(t2), R7 = t2._state), T6 || "closed" === R7 ? c3(void 0) : "erroring" === R7 || "errored" === R7 ? d6(_7) : (T6 = true, l3.close())), false, void 0), null;
     }
     function A5(e4) {
       return w7 || (v5 = "errored", s2 = e4, o3 ? L7(true, e4) : z6(() => l3.abort(e4), true, e4)), null;
@@ -6944,7 +6944,7 @@ function kt(e3, t2, r3, o3, n2, a4) {
     }
     if (void 0 !== a4 && (k7 = () => {
       const e4 = void 0 !== a4.reason ? a4.reason : new Wt("Aborted", "AbortError"), t3 = [];
-      o3 || t3.push(() => "writable" === R7 ? l3.abort(e4) : c2(void 0)), n2 || t3.push(() => "readable" === v5 ? i3.cancel(e4) : c2(void 0)), z6(() => Promise.all(t3.map((e5) => e5())), true, e4);
+      o3 || t3.push(() => "writable" === R7 ? l3.abort(e4) : c3(void 0)), n2 || t3.push(() => "readable" === v5 ? i3.cancel(e4) : c3(void 0)), z6(() => Promise.all(t3.map((e5) => e5())), true, e4);
     }, a4.aborted ? k7() : a4.addEventListener("abort", k7)), Vt(e3) && (v5 = e3._state, s2 = e3._storedError), Ge(t2) && (R7 = t2._state, _7 = t2._storedError, T6 = rt(t2)), Vt(e3) && Ge(t2) && (q6 = true, g4()), "errored" === v5) A5(s2);
     else if ("erroring" === R7 || "errored" === R7) j4(_7);
     else if ("closed" === v5) B3();
@@ -6956,7 +6956,7 @@ function kt(e3, t2, r3, o3, n2, a4) {
       function o4() {
         return "writable" !== R7 || T6 ? n3() : h3(function() {
           let e5;
-          return c2(function t4() {
+          return c3(function t4() {
             if (e5 !== E4) return e5 = E4, p3(E4, t4, t4);
           }());
         }(), n3), null;
@@ -6999,26 +6999,26 @@ function Ot(e3, t2) {
         var t4, r4;
         if (d7 = false, f4 = false, e5.done) return h4 || o3.close(), p4 || n2.close(), null === (t4 = o3.byobRequest) || void 0 === t4 || t4.respond(0), null === (r4 = n2.byobRequest) || void 0 === r4 || r4.respond(0), h4 && p4 || a4(void 0), null;
         const l4 = e5.value, u3 = l4;
-        let c3 = l4;
+        let c4 = l4;
         if (!h4 && !p4) try {
-          c3 = le2(l4);
+          c4 = le2(l4);
         } catch (e6) {
           return o3.error(e6), n2.error(e6), a4(i3.cancel(e6)), null;
         }
-        return h4 || o3.enqueue(u3), p4 || n2.enqueue(c3), s2 = false, d7 ? S6() : f4 && v5(), null;
+        return h4 || o3.enqueue(u3), p4 || n2.enqueue(c4), s2 = false, d7 ? S6() : f4 && v5(), null;
       }, () => (s2 = false, null));
     }
     function w7(t4, r4) {
       l3 || (i3.releaseLock(), i3 = e4.getReader({ mode: "byob" }), y6(i3), l3 = true);
-      const u3 = r4 ? n2 : o3, c3 = r4 ? o3 : n2;
+      const u3 = r4 ? n2 : o3, c4 = r4 ? o3 : n2;
       b6(i3.read(t4), (e5) => {
         var t5;
         d7 = false, f4 = false;
         const o4 = r4 ? p4 : h4, n3 = r4 ? h4 : p4;
         if (e5.done) {
-          o4 || u3.close(), n3 || c3.close();
+          o4 || u3.close(), n3 || c4.close();
           const r5 = e5.value;
-          return void 0 !== r5 && (o4 || u3.byobRequest.respondWithNewView(r5), n3 || null === (t5 = c3.byobRequest) || void 0 === t5 || t5.respond(0)), o4 && n3 || a4(void 0), null;
+          return void 0 !== r5 && (o4 || u3.byobRequest.respondWithNewView(r5), n3 || null === (t5 = c4.byobRequest) || void 0 === t5 || t5.respond(0)), o4 && n3 || a4(void 0), null;
         }
         const l4 = e5.value;
         if (n3) o4 || u3.byobRequest.respondWithNewView(l4);
@@ -7027,24 +7027,24 @@ function Ot(e3, t2) {
           try {
             e6 = le2(l4);
           } catch (e7) {
-            return u3.error(e7), c3.error(e7), a4(i3.cancel(e7)), null;
+            return u3.error(e7), c4.error(e7), a4(i3.cancel(e7)), null;
           }
-          o4 || u3.byobRequest.respondWithNewView(l4), c3.enqueue(e6);
+          o4 || u3.byobRequest.respondWithNewView(l4), c4.enqueue(e6);
         }
         return s2 = false, d7 ? S6() : f4 && v5(), null;
       }, () => (s2 = false, null));
     }
     function S6() {
-      if (s2) return d7 = true, c2(void 0);
+      if (s2) return d7 = true, c3(void 0);
       s2 = true;
       const e5 = o3.byobRequest;
-      return null === e5 ? g4() : w7(e5.view, false), c2(void 0);
+      return null === e5 ? g4() : w7(e5.view, false), c3(void 0);
     }
     function v5() {
-      if (s2) return f4 = true, c2(void 0);
+      if (s2) return f4 = true, c3(void 0);
       s2 = true;
       const e5 = n2.byobRequest;
-      return null === e5 ? g4() : w7(e5.view, true), c2(void 0);
+      return null === e5 ? g4() : w7(e5.view, true), c3(void 0);
     }
     function R7(e5) {
       if (h4 = true, t3 = e5, p4) {
@@ -7073,11 +7073,11 @@ function Ot(e3, t2) {
       l3 = e5;
     });
     function m5() {
-      return s2 ? (d7 = true, c2(void 0)) : (s2 = true, b6(r3.read(), (e5) => {
+      return s2 ? (d7 = true, c3(void 0)) : (s2 = true, b6(r3.read(), (e5) => {
         if (d7 = false, e5.done) return f4 || a4.close(), h4 || i3.close(), f4 && h4 || l3(void 0), null;
         const t4 = e5.value, r4 = t4, o4 = t4;
         return f4 || a4.enqueue(r4), h4 || i3.enqueue(o4), s2 = false, d7 && m5(), null;
-      }, () => (s2 = false, null)), c2(void 0));
+      }, () => (s2 = false, null)), c3(void 0));
     }
     function y6(e5) {
       if (f4 = true, o3 = e5, h4) {
@@ -7136,8 +7136,8 @@ function It(e3, t2, r3, o3) {
   const n2 = Object.create(ReadableStreamDefaultController.prototype);
   let a4, i3, l3;
   a4 = void 0 !== t2.start ? () => t2.start(n2) : () => {
-  }, i3 = void 0 !== t2.pull ? () => t2.pull(n2) : () => c2(void 0), l3 = void 0 !== t2.cancel ? (e4) => t2.cancel(e4) : () => c2(void 0), function(e4, t3, r4, o4, n3, a5, i4) {
-    t3._controlledReadableStream = e4, t3._queue = void 0, t3._queueTotalSize = void 0, ce2(t3), t3._started = false, t3._closeRequested = false, t3._pullAgain = false, t3._pulling = false, t3._strategySizeAlgorithm = i4, t3._strategyHWM = a5, t3._pullAlgorithm = o4, t3._cancelAlgorithm = n3, e4._readableStreamController = t3, b6(c2(r4()), () => (t3._started = true, At(t3), null), (e5) => (zt(t3, e5), null));
+  }, i3 = void 0 !== t2.pull ? () => t2.pull(n2) : () => c3(void 0), l3 = void 0 !== t2.cancel ? (e4) => t2.cancel(e4) : () => c3(void 0), function(e4, t3, r4, o4, n3, a5, i4) {
+    t3._controlledReadableStream = e4, t3._queue = void 0, t3._queueTotalSize = void 0, ce2(t3), t3._started = false, t3._closeRequested = false, t3._pullAgain = false, t3._pulling = false, t3._strategySizeAlgorithm = i4, t3._strategyHWM = a5, t3._pullAlgorithm = o4, t3._cancelAlgorithm = n3, e4._readableStreamController = t3, b6(c3(r4()), () => (t3._started = true, At(t3), null), (e5) => (zt(t3, e5), null));
   }(e3, n2, a4, i3, l3, r3, o3);
 }
 function Dt(e3) {
@@ -7192,7 +7192,7 @@ function Ut(e3) {
   return void 0 !== e3._reader;
 }
 function Gt(e3, r3) {
-  if (e3._disturbed = true, "closed" === e3._state) return c2(void 0);
+  if (e3._disturbed = true, "closed" === e3._state) return c3(void 0);
   if ("errored" === e3._state) return d6(e3._storedError);
   Xt(e3);
   const o3 = e3._reader;
@@ -7345,7 +7345,7 @@ var init_ponyfill = __esm({
     y5 = (e3) => {
       if ("function" == typeof queueMicrotask) y5 = queueMicrotask;
       else {
-        const e4 = c2(void 0);
+        const e4 = c3(void 0);
         y5 = (t2) => f3(e4, t2);
       }
       return y5(e3);
@@ -7455,7 +7455,7 @@ var init_ponyfill = __esm({
           const r3 = t2.cancel(e3);
           return t2.releaseLock(), p3(r3, () => ({ value: e3, done: true }));
         }
-        return t2.releaseLock(), c2({ value: e3, done: true });
+        return t2.releaseLock(), c3({ value: e3, done: true });
       }
     };
     re2 = { next() {
@@ -7563,7 +7563,7 @@ var init_ponyfill = __esm({
             const t4 = e4._pendingPullIntos.peek();
             t4.buffer, 0, Re(e4), t4.buffer = t4.buffer, "none" === t4.readerType && ge(e4, t4);
           }
-          if (J4(r3)) if (function(e5) {
+          if (J5(r3)) if (function(e5) {
             const t4 = e5._controlledReadableByteStream._reader;
             for (; t4._readRequests.length > 0; ) {
               if (0 === e5._queueTotalSize) return;
@@ -7688,9 +7688,9 @@ var init_ponyfill = __esm({
           let a5, i3, l3, s2;
           a5 = void 0 !== t3.start ? () => t3.start(n3) : () => {
           };
-          i3 = void 0 !== t3.write ? (e5) => t3.write(e5, n3) : () => c2(void 0);
-          l3 = void 0 !== t3.close ? () => t3.close() : () => c2(void 0);
-          s2 = void 0 !== t3.abort ? (e5) => t3.abort(e5) : () => c2(void 0);
+          i3 = void 0 !== t3.write ? (e5) => t3.write(e5, n3) : () => c3(void 0);
+          l3 = void 0 !== t3.close ? () => t3.close() : () => c3(void 0);
+          s2 = void 0 !== t3.abort ? (e5) => t3.abort(e5) : () => c3(void 0);
           !function(e5, t4, r5, o5, n4, a6, i4, l4) {
             t4._controlledWritableStream = e5, e5._writableStreamController = t4, t4._queue = void 0, t4._queueTotalSize = void 0, ce2(t4), t4._abortReason = void 0, t4._abortController = function() {
               if (Ue) return new AbortController();
@@ -7698,7 +7698,7 @@ var init_ponyfill = __esm({
             const s3 = bt(t4);
             nt(e5, s3);
             const u3 = r5();
-            b6(c2(u3), () => (t4._started = true, dt(t4), null), (r6) => (t4._started = true, Ze(e5, r6), null));
+            b6(c3(u3), () => (t4._started = true, dt(t4), null), (r6) => (t4._started = true, Ze(e5, r6), null));
           }(e4, n3, a5, i3, l3, s2, r4, o4);
         }(this, o3, $e(r3, 1), a4);
       }
@@ -8042,7 +8042,7 @@ var init_ponyfill = __esm({
           }
           function s3(t4) {
             return function(e5, t5) {
-              return cr(e5, t5), c2(void 0);
+              return cr(e5, t5), c3(void 0);
             }(e4, t4);
           }
           function u3() {
@@ -8062,7 +8062,7 @@ var init_ponyfill = __esm({
             }(e4);
           }
           function f5(t4) {
-            return dr(e4, t4), c2(void 0);
+            return dr(e4, t4), c3(void 0);
           }
           e4._writableState = "writable", e4._writableStoredError = void 0, e4._writableHasInFlightOperation = false, e4._writableStarted = false, e4._writable = function(e5, t4, r5, o5, n4, a6, i5) {
             return new WritableStream({ start(r6) {
@@ -8110,12 +8110,12 @@ var init_ponyfill = __esm({
           let o4, n3;
           o4 = void 0 !== t3.transform ? (e5) => t3.transform(e5, r4) : (e5) => {
             try {
-              return _r(r4, e5), c2(void 0);
+              return _r(r4, e5), c3(void 0);
             } catch (e6) {
               return d6(e6);
             }
           };
-          n3 = void 0 !== t3.flush ? () => t3.flush(r4) : () => c2(void 0);
+          n3 = void 0 !== t3.flush ? () => t3.flush(r4) : () => c3(void 0);
           !function(e5, t4, r5, o5) {
             t4._controlledTransformStream = e5, e5._transformStreamController = t4, t4._transformAlgorithm = r5, t4._flushAlgorithm = o5;
           }(e4, r4, o4, n3);
@@ -23779,8 +23779,8 @@ var require_browser = __commonJS({
       if (!this.useColors) {
         return;
       }
-      const c3 = "color: " + this.color;
-      args.splice(1, 0, c3, "color: inherit");
+      const c4 = "color: " + this.color;
+      args.splice(1, 0, c4, "color: inherit");
       let index = 0;
       let lastC = 0;
       args[0].replace(/%[a-zA-Z%]/g, (match) => {
@@ -23792,7 +23792,7 @@ var require_browser = __commonJS({
           lastC = index;
         }
       });
-      args.splice(lastC, 0, c3);
+      args.splice(lastC, 0, c4);
     }
     exports2.log = console.debug || console.log || (() => {
     });
@@ -24076,8 +24076,8 @@ var require_node = __commonJS({
     function formatArgs(args) {
       const { namespace: name, useColors: useColors2 } = this;
       if (useColors2) {
-        const c3 = this.color;
-        const colorCode = "\x1B[3" + (c3 < 8 ? c3 : "8;5;" + c3);
+        const c4 = this.color;
+        const colorCode = "\x1B[3" + (c4 < 8 ? c4 : "8;5;" + c4);
         const prefix = `  ${colorCode};1m${name} \x1B[0m`;
         args[0] = prefix + args[0].split("\n").join("\n" + prefix);
         args.push(colorCode + "m+" + module2.exports.humanize(this.diff) + "\x1B[0m");
@@ -26820,8 +26820,8 @@ var require_object_inspect = __commonJS({
       var s2 = $replace.call($replace.call(str2, /(['\\])/g, "\\$1"), /[\x00-\x1f]/g, lowbyte);
       return wrapQuotes(s2, "single", opts);
     }
-    function lowbyte(c3) {
-      var n2 = c3.charCodeAt(0);
+    function lowbyte(c4) {
+      var n2 = c4.charCodeAt(0);
       var x5 = {
         8: "b",
         9: "t",
@@ -27182,26 +27182,26 @@ var require_utils2 = __commonJS({
         var segment = string.length >= limit ? string.slice(j4, j4 + limit) : string;
         var arr = [];
         for (var i3 = 0; i3 < segment.length; ++i3) {
-          var c3 = segment.charCodeAt(i3);
-          if (c3 === 45 || c3 === 46 || c3 === 95 || c3 === 126 || c3 >= 48 && c3 <= 57 || c3 >= 65 && c3 <= 90 || c3 >= 97 && c3 <= 122 || format === formats.RFC1738 && (c3 === 40 || c3 === 41)) {
+          var c4 = segment.charCodeAt(i3);
+          if (c4 === 45 || c4 === 46 || c4 === 95 || c4 === 126 || c4 >= 48 && c4 <= 57 || c4 >= 65 && c4 <= 90 || c4 >= 97 && c4 <= 122 || format === formats.RFC1738 && (c4 === 40 || c4 === 41)) {
             arr[arr.length] = segment.charAt(i3);
             continue;
           }
-          if (c3 < 128) {
-            arr[arr.length] = hexTable[c3];
+          if (c4 < 128) {
+            arr[arr.length] = hexTable[c4];
             continue;
           }
-          if (c3 < 2048) {
-            arr[arr.length] = hexTable[192 | c3 >> 6] + hexTable[128 | c3 & 63];
+          if (c4 < 2048) {
+            arr[arr.length] = hexTable[192 | c4 >> 6] + hexTable[128 | c4 & 63];
             continue;
           }
-          if (c3 < 55296 || c3 >= 57344) {
-            arr[arr.length] = hexTable[224 | c3 >> 12] + hexTable[128 | c3 >> 6 & 63] + hexTable[128 | c3 & 63];
+          if (c4 < 55296 || c4 >= 57344) {
+            arr[arr.length] = hexTable[224 | c4 >> 12] + hexTable[128 | c4 >> 6 & 63] + hexTable[128 | c4 & 63];
             continue;
           }
           i3 += 1;
-          c3 = 65536 + ((c3 & 1023) << 10 | segment.charCodeAt(i3) & 1023);
-          arr[arr.length] = hexTable[240 | c3 >> 18] + hexTable[128 | c3 >> 12 & 63] + hexTable[128 | c3 >> 6 & 63] + hexTable[128 | c3 & 63];
+          c4 = 65536 + ((c4 & 1023) << 10 | segment.charCodeAt(i3) & 1023);
+          arr[arr.length] = hexTable[240 | c4 >> 18] + hexTable[128 | c4 >> 12 & 63] + hexTable[128 | c4 >> 6 & 63] + hexTable[128 | c4 & 63];
         }
         out += arr.join("");
       }
@@ -32184,7 +32184,7 @@ var require_base64 = __commonJS({
       return btoa(String.fromCodePoint(...u8arr));
     }
     function bytesFromBase64(encoded) {
-      return Uint8Array.from(atob(encoded), (c3) => c3.charCodeAt(0));
+      return Uint8Array.from(atob(encoded), (c4) => c4.charCodeAt(0));
     }
     function stringToBytes(str2) {
       return new TextEncoder().encode(str2);
@@ -47085,10 +47085,10 @@ var $ = (t2, { onFlag: n2, onArgument: r3 }) => {
     if (a4) {
       if (o3(), !n2) continue;
       const [l3, f4, g4] = a4;
-      if (g4) for (let c3 = 0; c3 < l3.length; c3 += 1) {
+      if (g4) for (let c4 = 0; c4 < l3.length; c4 += 1) {
         o3();
-        const u3 = c3 === l3.length - 1;
-        e3 = n2(l3[c3], u3 ? f4 : void 0, [s2, c3 + 1, u3]);
+        const u3 = c4 === l3.length - 1;
+        e3 = n2(l3[c4], u3 ? f4 : void 0, [s2, c4 + 1, u3]);
       }
       else e3 = n2(l3, f4, [s2]);
     } else o3(i3, [s2]) && r3?.([i3], [s2]);
@@ -47114,8 +47114,8 @@ var U = (t2, n2 = process.argv.slice(2), { ignore: r3 } = {}) => {
     const g4 = w(o3, a4);
     if (!r3?.(g4 ? V : k, a4, l3)) {
       if (g4) {
-        const [c3, u3] = o3[a4], y6 = d(u3, l3), p4 = (P4, A5) => {
-          e3.push(f4), A5 && e3.push(A5), c3.push(m(u3, P4 || ""));
+        const [c4, u3] = o3[a4], y6 = d(u3, l3), p4 = (P4, A5) => {
+          e3.push(f4), A5 && e3.push(A5), c4.push(m(u3, P4 || ""));
         };
         return y6 === void 0 ? p4 : p4(y6);
       }
@@ -47621,19 +47621,19 @@ function x2(t2, e3, r3, n2) {
     console.log(e3.version);
   };
   if (i3 && l3.flags.version === true) return f4(), process.exit(0);
-  const p4 = new M2(), O5 = o3 && s2?.render ? s2.render : (c3) => p4.render(c3), u3 = (c3) => {
-    const m5 = U3({ ...e3, ...c3 ? { help: c3 } : {}, flags: a4 });
+  const p4 = new M2(), O5 = o3 && s2?.render ? s2.render : (c4) => p4.render(c4), u3 = (c4) => {
+    const m5 = U3({ ...e3, ...c4 ? { help: c4 } : {}, flags: a4 });
     console.log(O5(m5, p4));
   };
   if (o3 && l3.flags.help === true) return u3(), process.exit(0);
   if (e3.parameters) {
-    let { parameters: c3 } = e3, m5 = l3._;
-    const g4 = c3.indexOf("--"), v5 = c3.slice(g4 + 1), h4 = /* @__PURE__ */ Object.create(null);
+    let { parameters: c4 } = e3, m5 = l3._;
+    const g4 = c4.indexOf("--"), v5 = c4.slice(g4 + 1), h4 = /* @__PURE__ */ Object.create(null);
     if (g4 > -1 && v5.length > 0) {
-      c3 = c3.slice(0, g4);
+      c4 = c4.slice(0, g4);
       const E4 = l3._["--"];
-      m5 = m5.slice(0, -E4.length || void 0), b3(h4, w3(c3), m5, u3), b3(h4, w3(v5), E4, u3);
-    } else b3(h4, w3(c3), m5, u3);
+      m5 = m5.slice(0, -E4.length || void 0), b3(h4, w3(c4), m5, u3), b3(h4, w3(v5), E4, u3);
+    } else b3(h4, w3(c4), m5, u3);
     Object.assign(l3._, h4);
   }
   const $6 = { ...l3, showVersion: f4, showHelp: u3 };
@@ -47672,7 +47672,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.2.9",
+  version: "3.2.10",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -47723,6 +47723,7 @@ var package_default = {
     "deploy:patch": "npm version patch && npm run deploy:build",
     lint: "eslint src --ext ts && tsc --noEmit",
     format: "prettier --write src",
+    "format:check": "prettier --check src",
     test: "node --no-warnings --experimental-vm-modules $( [ -f ./node_modules/.bin/jest ] && echo ./node_modules/.bin/jest || which jest ) test/unit",
     "test:all": "npm run test:unit:docker && npm run test:e2e:docker",
     "test:docker-build": "docker build -t oco-test -f test/Dockerfile .",
@@ -47788,6 +47789,7 @@ var import_node_process = require("node:process");
 var f = __toESM(require("node:readline"), 1);
 var import_node_readline = __toESM(require("node:readline"), 1);
 var import_node_tty = require("node:tty");
+var import_picocolors = __toESM(require_picocolors(), 1);
 function q3({ onlyFirst: t2 = false } = {}) {
   const u3 = ["[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)", "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-ntqry=><~]))"].join("|");
   return new RegExp(u3, t2 ? void 0 : "g");
@@ -48149,6 +48151,25 @@ var yD = class extends x3 {
     this.value = this._value.value;
   }
 };
+var SD = Object.defineProperty;
+var jD = (t2, u3, F5) => u3 in t2 ? SD(t2, u3, { enumerable: true, configurable: true, writable: true, value: F5 }) : t2[u3] = F5;
+var MD = (t2, u3, F5) => (jD(t2, typeof u3 != "symbol" ? u3 + "" : u3, F5), F5);
+var TD = class extends x3 {
+  constructor(u3) {
+    super(u3), MD(this, "valueWithCursor", ""), this.on("finalize", () => {
+      this.value || (this.value = u3.defaultValue), this.valueWithCursor = this.value;
+    }), this.on("value", () => {
+      if (this.cursor >= this.value.length) this.valueWithCursor = `${this.value}${import_picocolors.default.inverse(import_picocolors.default.hidden("_"))}`;
+      else {
+        const F5 = this.value.slice(0, this.cursor), e3 = this.value.slice(this.cursor);
+        this.valueWithCursor = `${F5}${import_picocolors.default.inverse(e3[0])}${e3.slice(1)}`;
+      }
+    });
+  }
+  get cursor() {
+    return this._cursor;
+  }
+};
 var PD = globalThis.process.platform.startsWith("win");
 function WD({ input: t2 = import_node_process.stdin, output: u3 = import_node_process.stdout, overwrite: F5 = true, hideCursor: e3 = true } = {}) {
   const s2 = f.createInterface({ input: t2, output: u3, prompt: "", tabSize: 1 });
@@ -48169,7 +48190,7 @@ function WD({ input: t2 = import_node_process.stdin, output: u3 = import_node_pr
 
 // node_modules/@clack/prompts/dist/index.mjs
 var import_node_process2 = __toESM(require("node:process"), 1);
-var import_picocolors = __toESM(require_picocolors(), 1);
+var import_picocolors2 = __toESM(require_picocolors(), 1);
 var import_sisteransi2 = __toESM(require_src(), 1);
 function N4() {
   return import_node_process2.default.platform !== "win32" ? import_node_process2.default.env.TERM !== "linux" : Boolean(import_node_process2.default.env.CI) || Boolean(import_node_process2.default.env.WT_SESSION) || Boolean(import_node_process2.default.env.TERMINUS_SUBLIME) || import_node_process2.default.env.ConEmuTask === "{cmd::Cmder}" || import_node_process2.default.env.TERM_PROGRAM === "Terminus-Sublime" || import_node_process2.default.env.TERM_PROGRAM === "vscode" || import_node_process2.default.env.TERM === "xterm-256color" || import_node_process2.default.env.TERM === "alacritty" || import_node_process2.default.env.TERMINAL_EMULATOR === "JetBrains-JediTerm";
@@ -48201,30 +48222,51 @@ var h2 = (r3) => {
   switch (r3) {
     case "initial":
     case "active":
-      return import_picocolors.default.cyan(W4);
+      return import_picocolors2.default.cyan(W4);
     case "cancel":
-      return import_picocolors.default.red(D3);
+      return import_picocolors2.default.red(D3);
     case "error":
-      return import_picocolors.default.yellow(F3);
+      return import_picocolors2.default.yellow(F3);
     case "submit":
-      return import_picocolors.default.green(f2);
+      return import_picocolors2.default.green(f2);
   }
 };
+var J4 = (r3) => new TD({ validate: r3.validate, placeholder: r3.placeholder, defaultValue: r3.defaultValue, initialValue: r3.initialValue, render() {
+  const n2 = `${import_picocolors2.default.gray(a2)}
+${h2(this.state)}  ${r3.message}
+`, s2 = r3.placeholder ? import_picocolors2.default.inverse(r3.placeholder[0]) + import_picocolors2.default.dim(r3.placeholder.slice(1)) : import_picocolors2.default.inverse(import_picocolors2.default.hidden("_")), t2 = this.value ? this.valueWithCursor : s2;
+  switch (this.state) {
+    case "error":
+      return `${n2.trim()}
+${import_picocolors2.default.yellow(a2)}  ${t2}
+${import_picocolors2.default.yellow(o)}  ${import_picocolors2.default.yellow(this.error)}
+`;
+    case "submit":
+      return `${n2}${import_picocolors2.default.gray(a2)}  ${import_picocolors2.default.dim(this.value || r3.placeholder)}`;
+    case "cancel":
+      return `${n2}${import_picocolors2.default.gray(a2)}  ${import_picocolors2.default.strikethrough(import_picocolors2.default.dim(this.value ?? ""))}${this.value?.trim() ? `
+` + import_picocolors2.default.gray(a2) : ""}`;
+    default:
+      return `${n2}${import_picocolors2.default.cyan(a2)}  ${t2}
+${import_picocolors2.default.cyan(o)}
+`;
+  }
+} }).prompt();
 var Q3 = (r3) => {
   const n2 = r3.active ?? "Yes", s2 = r3.inactive ?? "No";
   return new xD2({ active: n2, inactive: s2, initialValue: r3.initialValue ?? true, render() {
-    const t2 = `${import_picocolors.default.gray(a2)}
+    const t2 = `${import_picocolors2.default.gray(a2)}
 ${h2(this.state)}  ${r3.message}
 `, i3 = this.value ? n2 : s2;
     switch (this.state) {
       case "submit":
-        return `${t2}${import_picocolors.default.gray(a2)}  ${import_picocolors.default.dim(i3)}`;
+        return `${t2}${import_picocolors2.default.gray(a2)}  ${import_picocolors2.default.dim(i3)}`;
       case "cancel":
-        return `${t2}${import_picocolors.default.gray(a2)}  ${import_picocolors.default.strikethrough(import_picocolors.default.dim(i3))}
-${import_picocolors.default.gray(a2)}`;
+        return `${t2}${import_picocolors2.default.gray(a2)}  ${import_picocolors2.default.strikethrough(import_picocolors2.default.dim(i3))}
+${import_picocolors2.default.gray(a2)}`;
       default:
-        return `${t2}${import_picocolors.default.cyan(a2)}  ${this.value ? `${import_picocolors.default.green(w5)} ${n2}` : `${import_picocolors.default.dim(S4)} ${import_picocolors.default.dim(n2)}`} ${import_picocolors.default.dim("/")} ${this.value ? `${import_picocolors.default.dim(S4)} ${import_picocolors.default.dim(s2)}` : `${import_picocolors.default.green(w5)} ${s2}`}
-${import_picocolors.default.cyan(o)}
+        return `${t2}${import_picocolors2.default.cyan(a2)}  ${this.value ? `${import_picocolors2.default.green(w5)} ${n2}` : `${import_picocolors2.default.dim(S4)} ${import_picocolors2.default.dim(n2)}`} ${import_picocolors2.default.dim("/")} ${this.value ? `${import_picocolors2.default.dim(S4)} ${import_picocolors2.default.dim(s2)}` : `${import_picocolors2.default.green(w5)} ${s2}`}
+${import_picocolors2.default.cyan(o)}
 `;
     }
   } }).prompt();
@@ -48232,22 +48274,22 @@ ${import_picocolors.default.cyan(o)}
 var ee = (r3) => {
   const n2 = (s2, t2) => {
     const i3 = s2.label ?? String(s2.value);
-    return t2 === "active" ? `${import_picocolors.default.green(w5)} ${i3} ${s2.hint ? import_picocolors.default.dim(`(${s2.hint})`) : ""}` : t2 === "selected" ? `${import_picocolors.default.dim(i3)}` : t2 === "cancelled" ? `${import_picocolors.default.strikethrough(import_picocolors.default.dim(i3))}` : `${import_picocolors.default.dim(S4)} ${import_picocolors.default.dim(i3)}`;
+    return t2 === "active" ? `${import_picocolors2.default.green(w5)} ${i3} ${s2.hint ? import_picocolors2.default.dim(`(${s2.hint})`) : ""}` : t2 === "selected" ? `${import_picocolors2.default.dim(i3)}` : t2 === "cancelled" ? `${import_picocolors2.default.strikethrough(import_picocolors2.default.dim(i3))}` : `${import_picocolors2.default.dim(S4)} ${import_picocolors2.default.dim(i3)}`;
   };
   return new yD({ options: r3.options, initialValue: r3.initialValue, render() {
-    const s2 = `${import_picocolors.default.gray(a2)}
+    const s2 = `${import_picocolors2.default.gray(a2)}
 ${h2(this.state)}  ${r3.message}
 `;
     switch (this.state) {
       case "submit":
-        return `${s2}${import_picocolors.default.gray(a2)}  ${n2(this.options[this.cursor], "selected")}`;
+        return `${s2}${import_picocolors2.default.gray(a2)}  ${n2(this.options[this.cursor], "selected")}`;
       case "cancel":
-        return `${s2}${import_picocolors.default.gray(a2)}  ${n2(this.options[this.cursor], "cancelled")}
-${import_picocolors.default.gray(a2)}`;
+        return `${s2}${import_picocolors2.default.gray(a2)}  ${n2(this.options[this.cursor], "cancelled")}
+${import_picocolors2.default.gray(a2)}`;
       default:
-        return `${s2}${import_picocolors.default.cyan(a2)}  ${this.options.map((t2, i3) => n2(t2, i3 === this.cursor ? "active" : "inactive")).join(`
-${import_picocolors.default.cyan(a2)}  `)}
-${import_picocolors.default.cyan(o)}
+        return `${s2}${import_picocolors2.default.cyan(a2)}  ${this.options.map((t2, i3) => n2(t2, i3 === this.cursor ? "active" : "inactive")).join(`
+${import_picocolors2.default.cyan(a2)}  `)}
+${import_picocolors2.default.cyan(o)}
 `;
     }
   } }).prompt();
@@ -48255,42 +48297,42 @@ ${import_picocolors.default.cyan(o)}
 var re = (r3) => {
   const n2 = (s2, t2) => {
     const i3 = s2.label ?? String(s2.value);
-    return t2 === "active" ? `${import_picocolors.default.cyan(_5)} ${i3} ${s2.hint ? import_picocolors.default.dim(`(${s2.hint})`) : ""}` : t2 === "selected" ? `${import_picocolors.default.green(y4)} ${import_picocolors.default.dim(i3)}` : t2 === "cancelled" ? `${import_picocolors.default.strikethrough(import_picocolors.default.dim(i3))}` : t2 === "active-selected" ? `${import_picocolors.default.green(y4)} ${i3} ${s2.hint ? import_picocolors.default.dim(`(${s2.hint})`) : ""}` : t2 === "submitted" ? `${import_picocolors.default.dim(i3)}` : `${import_picocolors.default.dim(A3)} ${import_picocolors.default.dim(i3)}`;
+    return t2 === "active" ? `${import_picocolors2.default.cyan(_5)} ${i3} ${s2.hint ? import_picocolors2.default.dim(`(${s2.hint})`) : ""}` : t2 === "selected" ? `${import_picocolors2.default.green(y4)} ${import_picocolors2.default.dim(i3)}` : t2 === "cancelled" ? `${import_picocolors2.default.strikethrough(import_picocolors2.default.dim(i3))}` : t2 === "active-selected" ? `${import_picocolors2.default.green(y4)} ${i3} ${s2.hint ? import_picocolors2.default.dim(`(${s2.hint})`) : ""}` : t2 === "submitted" ? `${import_picocolors2.default.dim(i3)}` : `${import_picocolors2.default.dim(A3)} ${import_picocolors2.default.dim(i3)}`;
   };
   return new gD2({ options: r3.options, initialValues: r3.initialValues, required: r3.required ?? true, cursorAt: r3.cursorAt, validate(s2) {
     if (this.required && s2.length === 0) return `Please select at least one option.
-${import_picocolors.default.reset(import_picocolors.default.dim(`Press ${import_picocolors.default.gray(import_picocolors.default.bgWhite(import_picocolors.default.inverse(" space ")))} to select, ${import_picocolors.default.gray(import_picocolors.default.bgWhite(import_picocolors.default.inverse(" enter ")))} to submit`))}`;
+${import_picocolors2.default.reset(import_picocolors2.default.dim(`Press ${import_picocolors2.default.gray(import_picocolors2.default.bgWhite(import_picocolors2.default.inverse(" space ")))} to select, ${import_picocolors2.default.gray(import_picocolors2.default.bgWhite(import_picocolors2.default.inverse(" enter ")))} to submit`))}`;
   }, render() {
-    let s2 = `${import_picocolors.default.gray(a2)}
+    let s2 = `${import_picocolors2.default.gray(a2)}
 ${h2(this.state)}  ${r3.message}
 `;
     switch (this.state) {
       case "submit":
-        return `${s2}${import_picocolors.default.gray(a2)}  ${this.options.filter(({ value: t2 }) => this.value.includes(t2)).map((t2) => n2(t2, "submitted")).join(import_picocolors.default.dim(", ")) || import_picocolors.default.dim("none")}`;
+        return `${s2}${import_picocolors2.default.gray(a2)}  ${this.options.filter(({ value: t2 }) => this.value.includes(t2)).map((t2) => n2(t2, "submitted")).join(import_picocolors2.default.dim(", ")) || import_picocolors2.default.dim("none")}`;
       case "cancel": {
-        const t2 = this.options.filter(({ value: i3 }) => this.value.includes(i3)).map((i3) => n2(i3, "cancelled")).join(import_picocolors.default.dim(", "));
-        return `${s2}${import_picocolors.default.gray(a2)}  ${t2.trim() ? `${t2}
-${import_picocolors.default.gray(a2)}` : ""}`;
+        const t2 = this.options.filter(({ value: i3 }) => this.value.includes(i3)).map((i3) => n2(i3, "cancelled")).join(import_picocolors2.default.dim(", "));
+        return `${s2}${import_picocolors2.default.gray(a2)}  ${t2.trim() ? `${t2}
+${import_picocolors2.default.gray(a2)}` : ""}`;
       }
       case "error": {
         const t2 = this.error.split(`
-`).map((i3, c3) => c3 === 0 ? `${import_picocolors.default.yellow(o)}  ${import_picocolors.default.yellow(i3)}` : `   ${i3}`).join(`
+`).map((i3, c4) => c4 === 0 ? `${import_picocolors2.default.yellow(o)}  ${import_picocolors2.default.yellow(i3)}` : `   ${i3}`).join(`
 `);
-        return s2 + import_picocolors.default.yellow(a2) + "  " + this.options.map((i3, c3) => {
-          const l3 = this.value.includes(i3.value), $6 = c3 === this.cursor;
+        return s2 + import_picocolors2.default.yellow(a2) + "  " + this.options.map((i3, c4) => {
+          const l3 = this.value.includes(i3.value), $6 = c4 === this.cursor;
           return $6 && l3 ? n2(i3, "active-selected") : l3 ? n2(i3, "selected") : n2(i3, $6 ? "active" : "inactive");
         }).join(`
-${import_picocolors.default.yellow(a2)}  `) + `
+${import_picocolors2.default.yellow(a2)}  `) + `
 ` + t2 + `
 `;
       }
       default:
-        return `${s2}${import_picocolors.default.cyan(a2)}  ${this.options.map((t2, i3) => {
-          const c3 = this.value.includes(t2.value), l3 = i3 === this.cursor;
-          return l3 && c3 ? n2(t2, "active-selected") : c3 ? n2(t2, "selected") : n2(t2, l3 ? "active" : "inactive");
+        return `${s2}${import_picocolors2.default.cyan(a2)}  ${this.options.map((t2, i3) => {
+          const c4 = this.value.includes(t2.value), l3 = i3 === this.cursor;
+          return l3 && c4 ? n2(t2, "active-selected") : c4 ? n2(t2, "selected") : n2(t2, l3 ? "active" : "inactive");
         }).join(`
-${import_picocolors.default.cyan(a2)}  `)}
-${import_picocolors.default.cyan(o)}
+${import_picocolors2.default.cyan(a2)}  `)}
+${import_picocolors2.default.cyan(o)}
 `;
     }
   } }).prompt();
@@ -48300,21 +48342,21 @@ var ie = (r3 = "", n2 = "") => {
   const s2 = `
 ${r3}
 `.split(`
-`), t2 = Math.max(s2.reduce((c3, l3) => (l3 = b5(l3), l3.length > c3 ? l3.length : c3), 0), b5(n2).length) + 2, i3 = s2.map((c3) => `${import_picocolors.default.gray(a2)}  ${import_picocolors.default.dim(c3)}${" ".repeat(t2 - b5(c3).length)}${import_picocolors.default.gray(a2)}`).join(`
+`), t2 = Math.max(s2.reduce((c4, l3) => (l3 = b5(l3), l3.length > c4 ? l3.length : c4), 0), b5(n2).length) + 2, i3 = s2.map((c4) => `${import_picocolors2.default.gray(a2)}  ${import_picocolors2.default.dim(c4)}${" ".repeat(t2 - b5(c4).length)}${import_picocolors2.default.gray(a2)}`).join(`
 `);
-  process.stdout.write(`${import_picocolors.default.gray(a2)}
-${import_picocolors.default.green(f2)}  ${import_picocolors.default.reset(n2)} ${import_picocolors.default.gray(R5.repeat(Math.max(t2 - n2.length - 1, 1)) + G4)}
+  process.stdout.write(`${import_picocolors2.default.gray(a2)}
+${import_picocolors2.default.green(f2)}  ${import_picocolors2.default.reset(n2)} ${import_picocolors2.default.gray(R5.repeat(Math.max(t2 - n2.length - 1, 1)) + G4)}
 ${i3}
-${import_picocolors.default.gray(H3 + R5.repeat(t2 + 2) + K4)}
+${import_picocolors2.default.gray(H3 + R5.repeat(t2 + 2) + K4)}
 `);
 };
 var ae = (r3 = "") => {
-  process.stdout.write(`${import_picocolors.default.gray(L5)}  ${r3}
+  process.stdout.write(`${import_picocolors2.default.gray(L5)}  ${r3}
 `);
 };
 var ce = (r3 = "") => {
-  process.stdout.write(`${import_picocolors.default.gray(a2)}
-${import_picocolors.default.gray(o)}  ${r3}
+  process.stdout.write(`${import_picocolors2.default.gray(a2)}
+${import_picocolors2.default.gray(o)}  ${r3}
 
 `);
 };
@@ -48323,18 +48365,18 @@ var le = () => {
   let r3, n2;
   const s2 = p2 ? 80 : 120;
   return { start(t2 = "") {
-    t2 = t2.replace(/\.?\.?\.$/, ""), r3 = WD(), process.stdout.write(`${import_picocolors.default.gray(a2)}
-${import_picocolors.default.magenta("\u25CB")}  ${t2}
+    t2 = t2.replace(/\.?\.?\.$/, ""), r3 = WD(), process.stdout.write(`${import_picocolors2.default.gray(a2)}
+${import_picocolors2.default.magenta("\u25CB")}  ${t2}
 `);
-    let i3 = 0, c3 = 0;
+    let i3 = 0, c4 = 0;
     n2 = setInterval(() => {
       let l3 = C3[i3];
-      process.stdout.write(import_sisteransi2.cursor.move(-999, -1)), process.stdout.write(`${import_picocolors.default.magenta(l3)}  ${t2}${Math.floor(c3) >= 1 ? ".".repeat(Math.floor(c3)).slice(0, 3) : ""}   
-`), i3 = i3 === C3.length - 1 ? 0 : i3 + 1, c3 = c3 === C3.length ? 0 : c3 + 0.125;
+      process.stdout.write(import_sisteransi2.cursor.move(-999, -1)), process.stdout.write(`${import_picocolors2.default.magenta(l3)}  ${t2}${Math.floor(c4) >= 1 ? ".".repeat(Math.floor(c4)).slice(0, 3) : ""}   
+`), i3 = i3 === C3.length - 1 ? 0 : i3 + 1, c4 = c4 === C3.length ? 0 : c4 + 0.125;
     }, s2);
   }, stop(t2 = "") {
-    process.stdout.write(import_sisteransi2.cursor.move(-999, -2)), process.stdout.write(import_sisteransi2.erase.down(2)), clearInterval(n2), process.stdout.write(`${import_picocolors.default.gray(a2)}
-${import_picocolors.default.green(f2)}  ${t2}
+    process.stdout.write(import_sisteransi2.cursor.move(-999, -2)), process.stdout.write(import_sisteransi2.erase.down(2)), clearInterval(n2), process.stdout.write(`${import_picocolors2.default.gray(a2)}
+${import_picocolors2.default.green(f2)}  ${t2}
 `), r3();
   } };
 };
@@ -50092,10 +50134,10 @@ var ja_default = {
 var ko_default = {
   localLanguage: "\uD55C\uAD6D\uC5B4",
   commitFix: "fix(server.ts): \uD3EC\uD2B8 \uBCC0\uC218\uB97C \uC18C\uBB38\uC790 port\uC5D0\uC11C \uB300\uBB38\uC790 PORT\uB85C \uBCC0\uACBD",
-  commitFeat: "\uD53C\uD2B8(server.ts): process.env.PORT \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0 \uCD94\uAC00",
+  commitFeat: "feat(server.ts): process.env.PORT \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0 \uCD94\uAC00",
   commitDescription: "\uD3EC\uD2B8 \uBCC0\uC218\uB294 \uC774\uC81C PORT\uB85C \uC774\uB984\uC774 \uC9C0\uC815\uB418\uC5B4 \uC0C1\uC218\uC778 PORT\uC640 \uC77C\uAD00\uC131 \uC788\uB294 \uC774\uB984 \uADDC\uCE59\uC744 \uB530\uB985\uB2C8\uB2E4. \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0\uC744 \uD1B5\uD574 \uC560\uD50C\uB9AC\uCF00\uC774\uC158\uC740 \uC774\uC81C process.env.PORT \uD658\uACBD \uBCC0\uC218\uB85C \uC9C0\uC815\uB41C \uC0AC\uC6A9 \uAC00\uB2A5\uD55C \uBAA8\uB4E0 \uD3EC\uD2B8\uC5D0\uC11C \uC2E4\uD589\uD560 \uC218 \uC788\uC73C\uBBC0\uB85C \uB354 \uC720\uC5F0\uD574\uC84C\uC2B5\uB2C8\uB2E4.",
   commitFixOmitScope: "fix: \uD3EC\uD2B8 \uBCC0\uC218\uB97C \uC18C\uBB38\uC790 port\uC5D0\uC11C \uB300\uBB38\uC790 PORT\uB85C \uBCC0\uACBD",
-  commitFeatOmitScope: "\uD53C\uD2B8: process.env.PORT \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0 \uCD94\uAC00"
+  commitFeatOmitScope: "feat: process.env.PORT \uD658\uACBD \uBCC0\uC218 \uC9C0\uC6D0 \uCD94\uAC00"
 };
 
 // src/i18n/nl.json
@@ -50270,6 +50312,7 @@ var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
   CONFIG_KEYS2["OCO_API_CUSTOM_HEADERS"] = "OCO_API_CUSTOM_HEADERS";
   CONFIG_KEYS2["OCO_OMIT_SCOPE"] = "OCO_OMIT_SCOPE";
   CONFIG_KEYS2["OCO_GITPUSH"] = "OCO_GITPUSH";
+  CONFIG_KEYS2["OCO_HOOK_AUTO_UNCOMMENT"] = "OCO_HOOK_AUTO_UNCOMMENT";
   return CONFIG_KEYS2;
 })(CONFIG_KEYS || {});
 var MODEL_LIST = {
@@ -50372,6 +50415,110 @@ var MODEL_LIST = {
     "mistral-moderation-latest"
   ],
   deepseek: ["deepseek-chat", "deepseek-reasoner"],
+  // AI/ML API available chat-completion models
+  // https://api.aimlapi.com/v1/models
+  aimlapi: [
+    "openai/gpt-4o",
+    "gpt-4o-2024-08-06",
+    "gpt-4o-2024-05-13",
+    "gpt-4o-mini",
+    "gpt-4o-mini-2024-07-18",
+    "chatgpt-4o-latest",
+    "gpt-4-turbo",
+    "gpt-4-turbo-2024-04-09",
+    "gpt-4",
+    "gpt-4-0125-preview",
+    "gpt-4-1106-preview",
+    "gpt-3.5-turbo",
+    "gpt-3.5-turbo-0125",
+    "gpt-3.5-turbo-1106",
+    "o1-preview",
+    "o1-preview-2024-09-12",
+    "o1-mini",
+    "o1-mini-2024-09-12",
+    "o3-mini",
+    "gpt-4o-audio-preview",
+    "gpt-4o-mini-audio-preview",
+    "gpt-4o-search-preview",
+    "gpt-4o-mini-search-preview",
+    "openai/gpt-4.1-2025-04-14",
+    "openai/gpt-4.1-mini-2025-04-14",
+    "openai/gpt-4.1-nano-2025-04-14",
+    "openai/o4-mini-2025-04-16",
+    "openai/o3-2025-04-16",
+    "o1",
+    "openai/o3-pro",
+    "meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo",
+    "google/gemma-2-27b-it",
+    "meta-llama/Llama-Vision-Free",
+    "Qwen/Qwen2-72B-Instruct",
+    "mistralai/Mixtral-8x7B-Instruct-v0.1",
+    "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF",
+    "NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO",
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "meta-llama/Llama-3.2-3B-Instruct-Turbo",
+    "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo",
+    "meta-llama/Llama-Guard-3-11B-Vision-Turbo",
+    "Qwen/Qwen2.5-7B-Instruct-Turbo",
+    "Qwen/Qwen2.5-Coder-32B-Instruct",
+    "meta-llama/Meta-Llama-3-8B-Instruct-Lite",
+    "meta-llama/Llama-3-8b-chat-hf",
+    "meta-llama/Llama-3-70b-chat-hf",
+    "Qwen/Qwen2.5-72B-Instruct-Turbo",
+    "Qwen/QwQ-32B",
+    "meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo",
+    "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+    "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
+    "mistralai/Mistral-7B-Instruct-v0.2",
+    "meta-llama/LlamaGuard-2-8b",
+    "mistralai/Mistral-7B-Instruct-v0.1",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "meta-llama/Meta-Llama-Guard-3-8B",
+    "meta-llama/llama-4-scout",
+    "meta-llama/llama-4-maverick",
+    "Qwen/Qwen3-235B-A22B-fp8-tput",
+    "claude-3-opus-20240229",
+    "claude-3-haiku-20240307",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-haiku-20241022",
+    "claude-3-7-sonnet-20250219",
+    "claude-sonnet-4-20250514",
+    "claude-opus-4-20250514",
+    "google/gemini-2.0-flash-exp",
+    "google/gemini-2.0-flash",
+    "google/gemini-2.5-pro",
+    "google/gemini-2.5-flash",
+    "deepseek-chat",
+    "deepseek-reasoner",
+    "qwen-max",
+    "qwen-plus",
+    "qwen-turbo",
+    "qwen-max-2025-01-25",
+    "mistralai/mistral-tiny",
+    "mistralai/mistral-nemo",
+    "anthracite-org/magnum-v4-72b",
+    "nvidia/llama-3.1-nemotron-70b-instruct",
+    "cohere/command-r-plus",
+    "mistralai/codestral-2501",
+    "google/gemma-3-4b-it",
+    "google/gemma-3-12b-it",
+    "google/gemma-3-27b-it",
+    "google/gemini-2.5-flash-lite-preview",
+    "deepseek/deepseek-prover-v2",
+    "google/gemma-3n-e4b-it",
+    "cohere/command-a",
+    "MiniMax-Text-01",
+    "abab6.5s-chat",
+    "minimax/m1",
+    "bagoodex/bagoodex-search-v1",
+    "moonshot/kimi-k2-preview",
+    "perplexity/sonar",
+    "perplexity/sonar-pro",
+    "x-ai/grok-4-07-09",
+    "x-ai/grok-3-beta",
+    "x-ai/grok-3-mini-beta"
+  ],
   // OpenRouter available models
   // input_modalities: 'text'
   // output_modalities: 'text'
@@ -50720,6 +50867,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.mistral[0];
     case "deepseek":
       return MODEL_LIST.deepseek[0];
+    case "aimlapi":
+      return MODEL_LIST.aimlapi[0];
     case "openrouter":
       return MODEL_LIST.openrouter[0];
     default:
@@ -50876,9 +51025,10 @@ var configValidators = {
         "flowise",
         "groq",
         "deepseek",
+        "aimlapi",
         "openrouter"
       ].includes(value) || value.startsWith("ollama"),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
     );
     return value;
   },
@@ -50907,6 +51057,13 @@ var configValidators = {
       "Must be true or false"
     );
     return value;
+  },
+  ["OCO_HOOK_AUTO_UNCOMMENT" /* OCO_HOOK_AUTO_UNCOMMENT */](value) {
+    validateConfig(
+      "OCO_HOOK_AUTO_UNCOMMENT" /* OCO_HOOK_AUTO_UNCOMMENT */,
+      typeof value === "boolean",
+      "Must be true or false"
+    );
   }
 };
 var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
@@ -50921,6 +51078,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["MISTRAL"] = "mistral";
   OCO_AI_PROVIDER_ENUM2["MLX"] = "mlx";
   OCO_AI_PROVIDER_ENUM2["DEEPSEEK"] = "deepseek";
+  OCO_AI_PROVIDER_ENUM2["AIMLAPI"] = "aimlapi";
   OCO_AI_PROVIDER_ENUM2["OPENROUTER"] = "openrouter";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
@@ -50945,8 +51103,9 @@ var DEFAULT_CONFIG = {
   OCO_TEST_MOCK_TYPE: "commit-message",
   OCO_WHY: false,
   OCO_OMIT_SCOPE: false,
-  OCO_GITPUSH: true
+  OCO_GITPUSH: true,
   // todo: deprecate
+  OCO_HOOK_AUTO_UNCOMMENT: false
 };
 var initGlobalConfig = (configPath = defaultConfigPath) => {
   (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(DEFAULT_CONFIG), "utf8");
@@ -51146,6 +51305,11 @@ function getConfigKeyDetails(key) {
       return {
         description: "Message template placeholder",
         values: ["String (must start with $)"]
+      };
+    case "OCO_HOOK_AUTO_UNCOMMENT" /* OCO_HOOK_AUTO_UNCOMMENT */:
+      return {
+        description: "Automatically uncomment the commit message in the hook",
+        values: ["true", "false"]
       };
     default:
       return {
@@ -52874,9 +53038,9 @@ function debug(action, ...args) {
   }
 }
 var uuid4 = () => {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c3) => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c4) => {
     const r3 = Math.random() * 16 | 0;
-    const v5 = c3 === "x" ? r3 : r3 & 3 | 8;
+    const v5 = c4 === "x" ? r3 : r3 & 3 | 8;
     return v5.toString(16);
   });
 };
@@ -56635,8 +56799,8 @@ var CancelToken = class _CancelToken {
    */
   static source() {
     let cancel;
-    const token = new _CancelToken(function executor(c3) {
-      cancel = c3;
+    const token = new _CancelToken(function executor(c4) {
+      cancel = c4;
     });
     return {
       token,
@@ -62886,9 +63050,9 @@ function debug2(action, ...args) {
   }
 }
 var uuid42 = () => {
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c3) => {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c4) => {
     const r3 = Math.random() * 16 | 0;
-    const v5 = c3 === "x" ? r3 : r3 & 3 | 8;
+    const v5 = c4 === "x" ? r3 : r3 & 3 | 8;
     return v5.toString(16);
   });
 };
@@ -63678,7 +63842,7 @@ var AbstractChatCompletionRunner = class extends EventStream {
     const finalFunctionCallResult = __classPrivateFieldGet10(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_getFinalFunctionCallResult).call(this);
     if (finalFunctionCallResult != null)
       this._emit("finalFunctionCallResult", finalFunctionCallResult);
-    if (this._chatCompletions.some((c3) => c3.usage)) {
+    if (this._chatCompletions.some((c4) => c4.usage)) {
       this._emit("totalUsage", __classPrivateFieldGet10(this, _AbstractChatCompletionRunner_instances, "m", _AbstractChatCompletionRunner_calculateTotalUsage).call(this));
     }
   }
@@ -66419,8 +66583,7 @@ var MistralAiEngine = class {
         if (REQUEST_TOKENS > this.config.maxTokensInput - this.config.maxTokensOutput)
           throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
         const completion = await this.client.chat.complete(params);
-        if (!completion.choices)
-          throw Error("No completion choice available.");
+        if (!completion.choices) throw Error("No completion choice available.");
         const message = completion.choices[0].message;
         if (!message || !message.content)
           throw Error("No completion choice available.");
@@ -66439,7 +66602,10 @@ var MistralAiEngine = class {
     if (!config7.baseURL) {
       this.client = new Mistral({ apiKey: config7.apiKey });
     } else {
-      this.client = new Mistral({ apiKey: config7.apiKey, serverURL: config7.baseURL });
+      this.client = new Mistral({
+        apiKey: config7.apiKey,
+        serverURL: config7.baseURL
+      });
     }
   }
 };
@@ -66518,6 +66684,40 @@ var DeepseekEngine = class extends OpenAiEngine {
         throw err;
       }
     };
+  }
+};
+
+// src/engine/aimlapi.ts
+var AimlApiEngine = class {
+  constructor(config7) {
+    this.config = config7;
+    this.generateCommitMessage = async (messages) => {
+      try {
+        const response = await this.client.post("", {
+          model: this.config.model,
+          messages
+        });
+        const message = response.data.choices?.[0]?.message;
+        return message?.content ?? null;
+      } catch (error) {
+        const err = error;
+        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
+          const apiError = error.response.data.error;
+          if (apiError) throw new Error(apiError.message);
+        }
+        throw err;
+      }
+    };
+    this.client = axios_default.create({
+      baseURL: config7.baseURL || "https://api.aimlapi.com/v1/chat/completions",
+      headers: {
+        Authorization: `Bearer ${config7.apiKey}`,
+        "HTTP-Referer": "https://github.com/di-sukharev/opencommit",
+        "X-Title": "opencommit",
+        "Content-Type": "application/json",
+        ...config7.customHeaders
+      }
+    });
   }
 };
 
@@ -66607,6 +66807,8 @@ function getEngine() {
       return new MLXEngine(DEFAULT_CONFIG2);
     case "deepseek" /* DEEPSEEK */:
       return new DeepseekEngine(DEFAULT_CONFIG2);
+    case "aimlapi" /* AIMLAPI */:
+      return new AimlApiEngine(DEFAULT_CONFIG2);
     case "openrouter" /* OPENROUTER */:
       return new OpenRouterEngine(DEFAULT_CONFIG2);
     default:
@@ -67120,7 +67322,10 @@ var config5 = getConfig();
 var MAX_TOKENS_INPUT = config5.OCO_TOKENS_MAX_INPUT;
 var MAX_TOKENS_OUTPUT = config5.OCO_TOKENS_MAX_OUTPUT;
 var generateCommitMessageChatCompletionPrompt = async (diff, fullGitMojiSpec, context) => {
-  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(fullGitMojiSpec, context);
+  const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(
+    fullGitMojiSpec,
+    context
+  );
   const chatContextAsCompletionRequest = [...INIT_MESSAGES_PROMPT];
   chatContextAsCompletionRequest.push({
     role: "user",
@@ -67259,6 +67464,7 @@ function delay3(ms) {
 // src/utils/git.ts
 var import_fs3 = require("fs");
 var import_ignore = __toESM(require_ignore(), 1);
+var import_path4 = require("path");
 var assertGitRepo = async () => {
   try {
     await execa("git", ["rev-parse"]);
@@ -67266,56 +67472,62 @@ var assertGitRepo = async () => {
     throw new Error(error);
   }
 };
-var getOpenCommitIgnore = () => {
+var getOpenCommitIgnore = async () => {
+  const gitDir = await getGitDir();
   const ig = (0, import_ignore.default)();
   try {
-    ig.add((0, import_fs3.readFileSync)(".opencommitignore").toString().split("\n"));
+    ig.add(
+      (0, import_fs3.readFileSync)((0, import_path4.join)(gitDir, ".opencommitignore")).toString().split("\n")
+    );
   } catch (e3) {
   }
   return ig;
 };
 var getCoreHooksPath = async () => {
-  const { stdout } = await execa("git", ["config", "core.hooksPath"]);
+  const gitDir = await getGitDir();
+  const { stdout } = await execa("git", ["config", "core.hooksPath"], {
+    cwd: gitDir
+  });
   return stdout;
 };
 var getStagedFiles = async () => {
-  const { stdout: gitDir } = await execa("git", [
-    "rev-parse",
-    "--show-toplevel"
-  ]);
-  const { stdout: files } = await execa("git", [
-    "diff",
-    "--name-only",
-    "--cached",
-    "--relative",
-    gitDir
-  ]);
+  const gitDir = await getGitDir();
+  const { stdout: files } = await execa(
+    "git",
+    ["diff", "--name-only", "--cached", "--relative"],
+    { cwd: gitDir }
+  );
   if (!files) return [];
   const filesList = files.split("\n");
-  const ig = getOpenCommitIgnore();
+  const ig = await getOpenCommitIgnore();
   const allowedFiles = filesList.filter((file) => !ig.ignores(file));
   if (!allowedFiles) return [];
   return allowedFiles.sort();
 };
 var getChangedFiles = async () => {
-  const { stdout: modified } = await execa("git", ["ls-files", "--modified"]);
-  const { stdout: others } = await execa("git", [
-    "ls-files",
-    "--others",
-    "--exclude-standard"
-  ]);
+  const gitDir = await getGitDir();
+  const { stdout: modified } = await execa("git", ["ls-files", "--modified"], {
+    cwd: gitDir
+  });
+  const { stdout: others } = await execa(
+    "git",
+    ["ls-files", "--others", "--exclude-standard"],
+    { cwd: gitDir }
+  );
   const files = [...modified.split("\n"), ...others.split("\n")].filter(
     (file) => !!file
   );
   return files.sort();
 };
 var gitAdd = async ({ files }) => {
+  const gitDir = await getGitDir();
   const gitAddSpinner = le();
   gitAddSpinner.start("Adding files to commit");
-  await execa("git", ["add", ...files]);
+  await execa("git", ["add", ...files], { cwd: gitDir });
   gitAddSpinner.stop(`Staged ${files.length} files`);
 };
 var getDiff = async ({ files }) => {
+  const gitDir = await getGitDir();
   const lockFiles = files.filter(
     (file) => file.includes(".lock") || file.includes("-lock.") || file.includes(".svg") || file.includes(".png") || file.includes(".jpg") || file.includes(".jpeg") || file.includes(".webp") || file.includes(".gif")
   );
@@ -67330,13 +67542,19 @@ ${lockFiles.join(
   const filesWithoutLocks = files.filter(
     (file) => !file.includes(".lock") && !file.includes("-lock.")
   );
-  const { stdout: diff } = await execa("git", [
-    "diff",
-    "--staged",
-    "--",
-    ...filesWithoutLocks
-  ]);
+  const { stdout: diff } = await execa(
+    "git",
+    ["diff", "--staged", "--", ...filesWithoutLocks],
+    { cwd: gitDir }
+  );
   return diff;
+};
+var getGitDir = async () => {
+  const { stdout: gitDir } = await execa("git", [
+    "rev-parse",
+    "--show-toplevel"
+  ]);
+  return gitDir;
 };
 
 // src/utils/trytm.ts
@@ -67395,11 +67613,23 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
 ${commitMessage}
 ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014")}`
     );
-    const isCommitConfirmedByUser = skipCommitConfirmation || await Q3({
-      message: "Confirm the commit message?"
+    const userAction = skipCommitConfirmation ? "Yes" : await ee({
+      message: "Confirm the commit message?",
+      options: [
+        { value: "Yes", label: "Yes" },
+        { value: "No", label: "No" },
+        { value: "Edit", label: "Edit" }
+      ]
     });
-    if (hD2(isCommitConfirmedByUser)) process.exit(1);
-    if (isCommitConfirmedByUser) {
+    if (hD2(userAction)) process.exit(1);
+    if (userAction === "Edit") {
+      const textResponse = await J4({
+        message: "Please edit the commit message: (press Enter to continue)",
+        initialValue: commitMessage
+      });
+      commitMessage = textResponse.toString();
+    }
+    if (userAction === "Yes" || userAction === "Edit") {
       const committingChangesSpinner = le();
       committingChangesSpinner.start("Committing the changes");
       const { stdout } = await execa("git", [
@@ -67583,13 +67813,13 @@ var commitlintConfigCommand = G3(
 // src/commands/githook.ts
 var import_fs4 = require("fs");
 var import_promises3 = __toESM(require("fs/promises"), 1);
-var import_path4 = __toESM(require("path"), 1);
+var import_path5 = __toESM(require("path"), 1);
 var HOOK_NAME = "prepare-commit-msg";
-var DEFAULT_SYMLINK_URL = import_path4.default.join(".git", "hooks", HOOK_NAME);
+var DEFAULT_SYMLINK_URL = import_path5.default.join(".git", "hooks", HOOK_NAME);
 var getHooksPath = async () => {
   try {
     const hooksPath = await getCoreHooksPath();
-    return import_path4.default.join(hooksPath, HOOK_NAME);
+    return import_path5.default.join(hooksPath, HOOK_NAME);
   } catch (error) {
     return DEFAULT_SYMLINK_URL;
   }
@@ -67629,7 +67859,7 @@ var hookCommand = G3(
             `Different ${HOOK_NAME} is already set. Remove it before setting opencommit as '${HOOK_NAME}' hook.`
           );
         }
-        await import_promises3.default.mkdir(import_path4.default.dirname(SYMLINK_URL), { recursive: true });
+        await import_promises3.default.mkdir(import_path5.default.dirname(SYMLINK_URL), { recursive: true });
         await import_promises3.default.symlink(HOOK_URL, SYMLINK_URL, "file");
         await import_promises3.default.chmod(SYMLINK_URL, 493);
         return ce(`${source_default.green("\u2714")} Hook set`);
@@ -67698,10 +67928,18 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
     );
     spin.stop("Done");
     const fileContent = await import_promises4.default.readFile(messageFilePath);
-    await import_promises4.default.writeFile(
-      messageFilePath,
-      commitMessage + "\n" + fileContent.toString()
-    );
+    const messageWithComment = `# ${commitMessage}
+
+# ---------- [OpenCommit] ---------- #
+# Remove the # above to use this generated commit message.
+# To cancel the commit, just close this window without making any changes.
+
+${fileContent.toString()}`;
+    const messageWithoutComment = `${commitMessage}
+
+${fileContent.toString()}`;
+    const message = config7.OCO_HOOK_AUTO_UNCOMMENT ? messageWithoutComment : messageWithComment;
+    await import_promises4.default.writeFile(messageFilePath, message);
   } catch (error) {
     ce(`${source_default.red("\u2716")} ${error}`);
     process.exit(1);
@@ -67741,7 +67979,7 @@ Current version: ${currentVersion}. Latest version: ${latestVersion}.
 // src/migrations/_run.ts
 var import_fs5 = __toESM(require("fs"), 1);
 var import_os2 = require("os");
-var import_path5 = require("path");
+var import_path6 = require("path");
 
 // src/migrations/00_use_single_api_key_and_url.ts
 function use_single_api_key_and_url_default() {
@@ -67832,7 +68070,7 @@ var migrations = [
 ];
 
 // src/migrations/_run.ts
-var migrationsFile = (0, import_path5.join)((0, import_os2.homedir)(), ".opencommit_migrations");
+var migrationsFile = (0, import_path6.join)((0, import_os2.homedir)(), ".opencommit_migrations");
 var getCompletedMigrations = () => {
   if (!import_fs5.default.existsSync(migrationsFile)) {
     return [];
@@ -67852,6 +68090,15 @@ var runMigrations = async () => {
   if (!getIsGlobalConfigFileExist()) return;
   const config7 = getConfig();
   if (config7.OCO_AI_PROVIDER === "test" /* TEST */) return;
+  if ([
+    "deepseek" /* DEEPSEEK */,
+    "groq" /* GROQ */,
+    "mistral" /* MISTRAL */,
+    "mlx" /* MLX */,
+    "openrouter" /* OPENROUTER */
+  ].includes(config7.OCO_AI_PROVIDER)) {
+    return;
+  }
   const completedMigrations = getCompletedMigrations();
   let isMigrated = false;
   for (const migration of migrations) {
