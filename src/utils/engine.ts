@@ -11,6 +11,7 @@ import { TestAi, TestMockType } from '../engine/testAi';
 import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
+import { AimlApiEngine } from '../engine/aimlapi';
 import { OpenRouterEngine } from '../engine/openrouter';
 
 export function parseCustomHeaders(headers: any): Record<string, string> {
@@ -80,6 +81,9 @@ export function getEngine(): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
       return new DeepseekEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.AIMLAPI:
+      return new AimlApiEngine(DEFAULT_CONFIG);
 
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return new OpenRouterEngine(DEFAULT_CONFIG);
