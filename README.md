@@ -109,11 +109,12 @@ Create a `.env` file and add OpenCommit config variables there like this:
 OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, gemini, flowise, deepseek, aimlapi>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
+OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
 OCO_TOKENS_MAX_INPUT=<max model token limit (default: 4096)>
 OCO_TOKENS_MAX_OUTPUT=<max response tokens (default: 500)>
 OCO_DESCRIPTION=<postface a message with ~3 sentences description of the changes>
 OCO_EMOJI=<boolean, add GitMoji>
-OCO_MODEL=<either 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo' (default), 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview' or any Anthropic or Ollama model or any string basically, but it should be a valid model name>
+OCO_MODEL=<either 'gpt-4o-mini' (default), 'gpt-4o', 'gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo', 'gpt-3.5-turbo-0125', 'gpt-4-1106-preview', 'gpt-4-turbo-preview' or 'gpt-4-0125-preview' or any Anthropic or Ollama model or any string basically, but it should be a valid model name>
 OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
@@ -130,6 +131,18 @@ Simply set any of the variables above like this:
 
 ```sh
 oco config set OCO_MODEL=gpt-4o-mini
+```
+
+To see all available configuration parameters and their accepted values:
+
+```sh
+oco config describe
+```
+
+To see details for a specific parameter:
+
+```sh
+oco config describe OCO_MODEL
 ```
 
 Configure [GitMoji](https://gitmoji.dev/) to preface a message.

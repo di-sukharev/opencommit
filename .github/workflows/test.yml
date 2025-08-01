@@ -1,6 +1,11 @@
 name: Testing
 
-on: [pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - main
 
 jobs:
   unit-test:
@@ -9,11 +14,12 @@ jobs:
       matrix:
         node-version: [20.x]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
+        cache: 'npm'
     - name: Install dependencies
       run: npm install
     - name: Run Unit Tests
@@ -24,11 +30,12 @@ jobs:
       matrix:
         node-version: [20.x]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
+        cache: 'npm'
     - name: Install git
       run: |
         sudo apt-get update
@@ -44,3 +51,21 @@ jobs:
       run: npm run build
     - name: Run E2E Tests
       run: npm run test:e2e
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+    - name: Install dependencies
+      run: npm ci
+    - name: Run Prettier
+      run: npm run format:check
+    - name: Prettier Output
+      if: failure()
+      run: |
+        echo "Prettier check failed. Please run 'npm run format' to fix formatting issues."
+        exit 1

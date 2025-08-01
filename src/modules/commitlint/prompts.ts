@@ -58,16 +58,16 @@ const llmReadableRules: {
   caseRule: (key, applicable, value: string | Array<string>) =>
     `The ${key} should ${applicable} be in ${
       Array.isArray(value)
-        ? `one of the following case: 
+        ? `one of the following case:
   - ${value.join('\n  - ')}.`
         : `${value} case.`
     }`,
   emptyRule: (key, applicable) => `The ${key} should ${applicable} be empty.`,
   enumRule: (key, applicable, value: string | Array<string>) =>
-    `The ${key} should ${applicable} be one of the following values: 
+    `The ${key} should ${applicable} be one of the following values:
   - ${Array.isArray(value) ? value.join('\n  - ') : value}.`,
   enumTypeRule: (key, applicable, value: string | Array<string>, prompt) =>
-    `The ${key} should ${applicable} be one of the following values: 
+    `The ${key} should ${applicable} be one of the following values:
   - ${
     Array.isArray(value)
       ? value
@@ -224,8 +224,12 @@ Here are the specific requirements and conventions that should be strictly follo
 
 Commit Message Conventions:
 - The commit message consists of three parts: Header, Body, and Footer.
-- Header: 
-  - Format: ${config.OCO_OMIT_SCOPE ? '`<type>: <subject>`' : '`<type>(<scope>): <subject>`'}
+- Header:
+  - Format: ${
+    config.OCO_OMIT_SCOPE
+      ? '`<type>: <subject>`'
+      : '`<type>(<scope>): <subject>`'
+  }
 - ${prompts.join('\n- ')}
 
 JSON Output Format:
@@ -240,7 +244,7 @@ JSON Output Format:
   "commitDescription": "<Description of commit for both the bug fix and the feature>"
 }
 \`\`\`
-- The "commitDescription" should not include the commit message’s header, only the description.
+- The "commitDescription" should not include the commit message's header, only the description.
 - Description should not be more than 74 characters.
 
 Additional Details:

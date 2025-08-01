@@ -4,7 +4,8 @@ import path from 'path';
 const findModulePath = (moduleName: string) => {
   const searchPaths = [
     path.join('node_modules', moduleName),
-    path.join('node_modules', '.pnpm')
+    path.join('node_modules', '.pnpm'),
+    path.resolve(__dirname, '../..')
   ];
 
   for (const basePath of searchPaths) {
@@ -59,7 +60,7 @@ export const getCommitLintPWDConfig =
          * ES Module (commitlint@v19.x.x. <= )
          * Directory import is not supported in ES Module resolution, so import the file directly
          */
-        modulePath = await findModulePath('@commitlint/load/lib/load.js');
+        modulePath = findModulePath('@commitlint/load/lib/load.js');
         load = (await import(modulePath)).default;
         break;
     }

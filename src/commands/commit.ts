@@ -1,4 +1,5 @@
 import {
+  text,
   confirm,
   intro,
   isCancel,
@@ -85,15 +86,29 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const isCommitConfirmedByUser =
-      skipCommitConfirmation ||
-      (await confirm({
-        message: 'Confirm the commit message?'
-      }));
+    const userAction = skipCommitConfirmation
+      ? 'Yes'
+      : await select({
+          message: 'Confirm the commit message?',
+          options: [
+            { value: 'Yes', label: 'Yes' },
+            { value: 'No', label: 'No' },
+            { value: 'Edit', label: 'Edit' }
+          ]
+        });
 
-    if (isCancel(isCommitConfirmedByUser)) process.exit(1);
+    if (isCancel(userAction)) process.exit(1);
 
-    if (isCommitConfirmedByUser) {
+    if (userAction === 'Edit') {
+      const textResponse = await text({
+        message: 'Please edit the commit message: (press Enter to continue)',
+        initialValue: commitMessage
+      });
+
+      commitMessage = textResponse.toString();
+    }
+
+    if (userAction === 'Yes' || userAction === 'Edit') {
       const committingChangesSpinner = spinner();
       committingChangesSpinner.start('Committing the changes');
       const { stdout } = await execa('git', [
@@ -138,7 +153,8 @@ ${chalk.grey('——————————————————')}`
           ]);
 
           pushSpinner.stop(
-            `${chalk.green('✔')} Successfully pushed all commits to ${remotes[0]
+            `${chalk.green('✔')} Successfully pushed all commits to ${
+              remotes[0]
             }`
           );
 
@@ -148,23 +164,26 @@ ${chalk.grey('——————————————————')}`
           process.exit(0);
         }
       } else {
-        const skipOption = `don't push`
+        const skipOption = `don't push`;
         const selectedRemote = (await select({
           message: 'Choose a remote to push to',
-          options: [...remotes, skipOption].map((remote) => ({ value: remote, label: remote })),
+          options: [...remotes, skipOption].map((remote) => ({
+            value: remote,
+            label: remote
+          }))
         })) as string;
 
         if (isCancel(selectedRemote)) process.exit(1);
 
         if (selectedRemote !== skipOption) {
           const pushSpinner = spinner();
-  
+
           pushSpinner.start(`Running 'git push ${selectedRemote}'`);
-  
+
           const { stdout } = await execa('git', ['push', selectedRemote]);
-  
+
           if (stdout) outro(stdout);
-  
+
           pushSpinner.stop(
             `${chalk.green(
               '✔'
@@ -235,8 +254,9 @@ export async function commit(
 
   stagedFilesSpinner.start('Counting staged files');
 
-  if (!stagedFiles.length) {
+  if (stagedFiles.length === 0) {
     stagedFilesSpinner.stop('No files are staged');
+
     const isStageAllAndCommitConfirmedByUser = await confirm({
       message: 'Do you want to stage all files and generate commit message?'
     });
@@ -245,7 +265,7 @@ export async function commit(
 
     if (isStageAllAndCommitConfirmedByUser) {
       await commit(extraArgs, context, true, fullGitMojiSpec);
-      process.exit(1);
+      process.exit(0);
     }
 
     if (stagedFiles.length === 0 && changedFiles.length > 0) {
@@ -257,13 +277,13 @@ export async function commit(
         }))
       })) as string[];
 
-      if (isCancel(files)) process.exit(1);
+      if (isCancel(files)) process.exit(0);
 
       await gitAdd({ files });
     }
 
     await commit(extraArgs, context, false, fullGitMojiSpec);
-    process.exit(1);
+    process.exit(0);
   }
 
   stagedFilesSpinner.stop(

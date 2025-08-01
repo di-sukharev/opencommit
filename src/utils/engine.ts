@@ -12,17 +12,43 @@ import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
 import { AimlApiEngine } from '../engine/aimlapi';
+import { OpenRouterEngine } from '../engine/openrouter';
+
+export function parseCustomHeaders(headers: any): Record<string, string> {
+  let parsedHeaders = {};
+
+  if (!headers) {
+    return parsedHeaders;
+  }
+
+  try {
+    if (typeof headers === 'object' && !Array.isArray(headers)) {
+      parsedHeaders = headers;
+    } else {
+      parsedHeaders = JSON.parse(headers);
+    }
+  } catch (error) {
+    console.warn(
+      'Invalid OCO_API_CUSTOM_HEADERS format, ignoring custom headers'
+    );
+  }
+
+  return parsedHeaders;
+}
 
 export function getEngine(): AiEngine {
   const config = getConfig();
   const provider = config.OCO_AI_PROVIDER;
+
+  const customHeaders = parseCustomHeaders(config.OCO_API_CUSTOM_HEADERS);
 
   const DEFAULT_CONFIG = {
     model: config.OCO_MODEL!,
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
     baseURL: config.OCO_API_URL!,
-    apiKey: config.OCO_API_KEY!
+    apiKey: config.OCO_API_KEY!,
+    customHeaders
   };
 
   switch (provider) {
@@ -58,6 +84,9 @@ export function getEngine(): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       return new AimlApiEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.OPENROUTER:
+      return new OpenRouterEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);
