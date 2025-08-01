@@ -11,6 +11,7 @@ import { TestAi, TestMockType } from '../engine/testAi';
 import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
+import { AimlApiEngine } from '../engine/aimlapi';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
@@ -54,6 +55,9 @@ export function getEngine(): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
       return new DeepseekEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.AIMLAPI:
+      return new AimlApiEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);
