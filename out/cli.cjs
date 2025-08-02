@@ -50131,6 +50131,7 @@ var CONFIG_KEYS = /* @__PURE__ */ ((CONFIG_KEYS2) => {
   CONFIG_KEYS2["OCO_OMIT_SCOPE"] = "OCO_OMIT_SCOPE";
   CONFIG_KEYS2["OCO_GITPUSH"] = "OCO_GITPUSH";
   CONFIG_KEYS2["OCO_HOOK_AUTO_UNCOMMENT"] = "OCO_HOOK_AUTO_UNCOMMENT";
+  CONFIG_KEYS2["OCO_CUSTOM_PROMPT"] = "OCO_CUSTOM_PROMPT";
   return CONFIG_KEYS2;
 })(CONFIG_KEYS || {});
 var MODEL_LIST = {
@@ -50882,6 +50883,15 @@ var configValidators = {
       typeof value === "boolean",
       "Must be true or false"
     );
+  },
+  ["OCO_CUSTOM_PROMPT" /* OCO_CUSTOM_PROMPT */](value) {
+    if (value === void 0 || value === null) return value;
+    validateConfig(
+      "OCO_CUSTOM_PROMPT" /* OCO_CUSTOM_PROMPT */,
+      typeof value === "string",
+      "Must be a string"
+    );
+    return value;
   }
 };
 var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
@@ -50923,7 +50933,8 @@ var DEFAULT_CONFIG = {
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true,
   // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT: false
+  OCO_HOOK_AUTO_UNCOMMENT: false,
+  OCO_CUSTOM_PROMPT: void 0
 };
 var initGlobalConfig = (configPath = defaultConfigPath) => {
   const configContent = Object.entries(DEFAULT_CONFIG).map(([key, value]) => `${key}=${value}`).join("\n");
@@ -50957,6 +50968,7 @@ var getEnvConfig = (envPath) => {
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
+    OCO_CUSTOM_PROMPT: process.env.OCO_CUSTOM_PROMPT,
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH)
     // todo: deprecate
   };
@@ -51000,7 +51012,8 @@ var getGlobalConfig = (configPath = defaultConfigPath) => {
       OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT) || DEFAULT_CONFIG.OCO_ONE_LINE_COMMIT,
       OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE) || DEFAULT_CONFIG.OCO_OMIT_SCOPE,
       OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || DEFAULT_CONFIG.OCO_TEST_MOCK_TYPE,
-      OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT) || DEFAULT_CONFIG.OCO_HOOK_AUTO_UNCOMMENT
+      OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT) || DEFAULT_CONFIG.OCO_HOOK_AUTO_UNCOMMENT,
+      OCO_CUSTOM_PROMPT: process.env.OCO_CUSTOM_PROMPT || DEFAULT_CONFIG.OCO_CUSTOM_PROMPT
     };
   }
   return globalConfig;
@@ -51157,6 +51170,11 @@ function getConfigKeyDetails(key) {
       return {
         description: "Automatically uncomment the commit message in the hook",
         values: ["true", "false"]
+      };
+    case "OCO_CUSTOM_PROMPT" /* OCO_CUSTOM_PROMPT */:
+      return {
+        description: "Custom prompt to use instead of the default prompt template",
+        values: ["Any string"]
       };
     default:
       return {
@@ -67053,6 +67071,11 @@ Consider this context when generating the commit message, incorporating relevant
 var INIT_MAIN_PROMPT2 = (language, fullGitMojiSpec, context) => ({
   role: "system",
   content: (() => {
+    if (config4.OCO_CUSTOM_PROMPT) {
+      const userInputContext2 = userInputCodeContext(context);
+      return userInputContext2 ? `${config4.OCO_CUSTOM_PROMPT}
+${userInputContext2}` : config4.OCO_CUSTOM_PROMPT;
+    }
     const commitConvention = fullGitMojiSpec ? "GitMoji specification" : "Conventional Commit Convention";
     const missionStatement = `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${commitConvention} and explain WHAT were the changes and mainly WHY the changes were done.`;
     const diffInstruction = "I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.";

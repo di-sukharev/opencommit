@@ -28,7 +28,8 @@ export enum CONFIG_KEYS {
   OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT'
+  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
+  OCO_CUSTOM_PROMPT = 'OCO_CUSTOM_PROMPT'
 }
 
 export enum CONFIG_MODES {
@@ -827,6 +828,18 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+  },
+
+  [CONFIG_KEYS.OCO_CUSTOM_PROMPT](value: any) {
+    if (value === undefined || value === null) return value;
+    
+    validateConfig(
+      CONFIG_KEYS.OCO_CUSTOM_PROMPT,
+      typeof value === 'string',
+      'Must be a string'
+    );
+    
+    return value;
   }
 };
 
@@ -865,6 +878,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
+  [CONFIG_KEYS.OCO_CUSTOM_PROMPT]?: string;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -913,7 +927,8 @@ export const DEFAULT_CONFIG = {
   OCO_WHY: false,
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true, // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT: false
+  OCO_HOOK_AUTO_UNCOMMENT: false,
+  OCO_CUSTOM_PROMPT: undefined
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
@@ -956,6 +971,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
+    OCO_CUSTOM_PROMPT: process.env.OCO_CUSTOM_PROMPT,
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
@@ -1016,7 +1032,8 @@ export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
       OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT) || DEFAULT_CONFIG.OCO_ONE_LINE_COMMIT,
       OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE) || DEFAULT_CONFIG.OCO_OMIT_SCOPE,
       OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || DEFAULT_CONFIG.OCO_TEST_MOCK_TYPE,
-      OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT) || DEFAULT_CONFIG.OCO_HOOK_AUTO_UNCOMMENT
+      OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT) || DEFAULT_CONFIG.OCO_HOOK_AUTO_UNCOMMENT,
+      OCO_CUSTOM_PROMPT: process.env.OCO_CUSTOM_PROMPT || DEFAULT_CONFIG.OCO_CUSTOM_PROMPT
     } as ConfigType;
   }
 
@@ -1208,6 +1225,11 @@ function getConfigKeyDetails(key) {
       return {
         description: 'Automatically uncomment the commit message in the hook',
         values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_CUSTOM_PROMPT:
+      return {
+        description: 'Custom prompt to use instead of the default prompt template',
+        values: ['Any string']
       };
     default:
       return {
