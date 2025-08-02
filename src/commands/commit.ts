@@ -86,7 +86,7 @@ ${commitMessage}
 ${chalk.grey('——————————————————')}`
     );
 
-    const userAction = skipCommitConfirmation
+    const userAction = skipCommitConfirmation || config.OCO_SKIP_COMMIT_CONFIRM
       ? 'Yes'
       : await select({
           message: 'Confirm the commit message?',
