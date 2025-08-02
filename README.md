@@ -327,12 +327,38 @@ Once users have generated their desired commit message, they can proceed to comm
 
 ### Ignore files
 
-You can remove files from being sent to OpenAI by creating a `.opencommitignore` file. For example:
+You can remove files from being sent to OpenAI by creating ignore files. OpenCommit supports both local and global ignore files:
+
+#### Local ignore file
+
+Create a `.opencommitignore` file in your project root:
 
 ```ignorelang
 path/to/large-asset.zip
 **/*.jpg
+docs/generated/
+*.generated.ts
 ```
+
+#### Global ignore file
+
+Create a global `.opencommitignore` file in your home directory (`~/.opencommitignore`) to ignore files across all projects:
+
+```ignorelang
+*.log
+*.tmp
+.DS_Store
+node_modules/
+.env
+.env.local
+dist/
+build/
+coverage/
+.vscode/
+.idea/
+```
+
+**Priority:** Local ignore rules are applied after global rules. Both files use [gitignore syntax](https://git-scm.com/docs/gitignore#_pattern_format).
 
 This helps prevent opencommit from uploading artifacts and large files.
 
