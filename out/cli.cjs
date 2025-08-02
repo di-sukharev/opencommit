@@ -1332,185 +1332,6 @@ var require_main = __commonJS({
   }
 });
 
-// node_modules/ini/lib/ini.js
-var require_ini = __commonJS({
-  "node_modules/ini/lib/ini.js"(exports2, module2) {
-    var { hasOwnProperty: hasOwnProperty2 } = Object.prototype;
-    var eol = typeof process !== "undefined" && process.platform === "win32" ? "\r\n" : "\n";
-    var encode3 = (obj, opt) => {
-      const children = [];
-      let out = "";
-      if (typeof opt === "string") {
-        opt = {
-          section: opt,
-          whitespace: false
-        };
-      } else {
-        opt = opt || /* @__PURE__ */ Object.create(null);
-        opt.whitespace = opt.whitespace === true;
-      }
-      const separator = opt.whitespace ? " = " : "=";
-      for (const k7 of Object.keys(obj)) {
-        const val = obj[k7];
-        if (val && Array.isArray(val)) {
-          for (const item of val) {
-            out += safe(k7 + "[]") + separator + safe(item) + eol;
-          }
-        } else if (val && typeof val === "object") {
-          children.push(k7);
-        } else {
-          out += safe(k7) + separator + safe(val) + eol;
-        }
-      }
-      if (opt.section && out.length) {
-        out = "[" + safe(opt.section) + "]" + eol + out;
-      }
-      for (const k7 of children) {
-        const nk = dotSplit(k7).join("\\.");
-        const section = (opt.section ? opt.section + "." : "") + nk;
-        const { whitespace } = opt;
-        const child = encode3(obj[k7], {
-          section,
-          whitespace
-        });
-        if (out.length && child.length) {
-          out += eol;
-        }
-        out += child;
-      }
-      return out;
-    };
-    var dotSplit = (str2) => str2.replace(/\1/g, "LITERAL\\1LITERAL").replace(/\\\./g, "").split(/\./).map((part) => part.replace(/\1/g, "\\.").replace(/\2LITERAL\\1LITERAL\2/g, ""));
-    var decode = (str2) => {
-      const out = /* @__PURE__ */ Object.create(null);
-      let p4 = out;
-      let section = null;
-      const re3 = /^\[([^\]]*)\]$|^([^=]+)(=(.*))?$/i;
-      const lines = str2.split(/[\r\n]+/g);
-      for (const line of lines) {
-        if (!line || line.match(/^\s*[;#]/)) {
-          continue;
-        }
-        const match = line.match(re3);
-        if (!match) {
-          continue;
-        }
-        if (match[1] !== void 0) {
-          section = unsafe(match[1]);
-          if (section === "__proto__") {
-            p4 = /* @__PURE__ */ Object.create(null);
-            continue;
-          }
-          p4 = out[section] = out[section] || /* @__PURE__ */ Object.create(null);
-          continue;
-        }
-        const keyRaw = unsafe(match[2]);
-        const isArray2 = keyRaw.length > 2 && keyRaw.slice(-2) === "[]";
-        const key = isArray2 ? keyRaw.slice(0, -2) : keyRaw;
-        if (key === "__proto__") {
-          continue;
-        }
-        const valueRaw = match[3] ? unsafe(match[4]) : true;
-        const value = valueRaw === "true" || valueRaw === "false" || valueRaw === "null" ? JSON.parse(valueRaw) : valueRaw;
-        if (isArray2) {
-          if (!hasOwnProperty2.call(p4, key)) {
-            p4[key] = [];
-          } else if (!Array.isArray(p4[key])) {
-            p4[key] = [p4[key]];
-          }
-        }
-        if (Array.isArray(p4[key])) {
-          p4[key].push(value);
-        } else {
-          p4[key] = value;
-        }
-      }
-      const remove = [];
-      for (const k7 of Object.keys(out)) {
-        if (!hasOwnProperty2.call(out, k7) || typeof out[k7] !== "object" || Array.isArray(out[k7])) {
-          continue;
-        }
-        const parts = dotSplit(k7);
-        p4 = out;
-        const l3 = parts.pop();
-        const nl = l3.replace(/\\\./g, ".");
-        for (const part of parts) {
-          if (part === "__proto__") {
-            continue;
-          }
-          if (!hasOwnProperty2.call(p4, part) || typeof p4[part] !== "object") {
-            p4[part] = /* @__PURE__ */ Object.create(null);
-          }
-          p4 = p4[part];
-        }
-        if (p4 === out && nl === l3) {
-          continue;
-        }
-        p4[nl] = out[k7];
-        remove.push(k7);
-      }
-      for (const del of remove) {
-        delete out[del];
-      }
-      return out;
-    };
-    var isQuoted = (val) => {
-      return val.startsWith('"') && val.endsWith('"') || val.startsWith("'") && val.endsWith("'");
-    };
-    var safe = (val) => {
-      if (typeof val !== "string" || val.match(/[=\r\n]/) || val.match(/^\[/) || val.length > 1 && isQuoted(val) || val !== val.trim()) {
-        return JSON.stringify(val);
-      }
-      return val.split(";").join("\\;").split("#").join("\\#");
-    };
-    var unsafe = (val, doUnesc) => {
-      val = (val || "").trim();
-      if (isQuoted(val)) {
-        if (val.charAt(0) === "'") {
-          val = val.slice(1, -1);
-        }
-        try {
-          val = JSON.parse(val);
-        } catch {
-        }
-      } else {
-        let esc = false;
-        let unesc = "";
-        for (let i3 = 0, l3 = val.length; i3 < l3; i3++) {
-          const c4 = val.charAt(i3);
-          if (esc) {
-            if ("\\;#".indexOf(c4) !== -1) {
-              unesc += c4;
-            } else {
-              unesc += "\\" + c4;
-            }
-            esc = false;
-          } else if (";#".indexOf(c4) !== -1) {
-            break;
-          } else if (c4 === "\\") {
-            esc = true;
-          } else {
-            unesc += c4;
-          }
-        }
-        if (esc) {
-          unesc += "\\";
-        }
-        return unesc.trim();
-      }
-      return val;
-    };
-    module2.exports = {
-      parse: decode,
-      decode,
-      stringify: encode3,
-      encode: encode3,
-      safe,
-      unsafe
-    };
-  }
-});
-
 // node_modules/webidl-conversions/lib/index.js
 var require_lib = __commonJS({
   "node_modules/webidl-conversions/lib/index.js"(exports2) {
@@ -47736,7 +47557,6 @@ var package_default = {
   },
   devDependencies: {
     "@commitlint/types": "^17.4.4",
-    "@types/ini": "^1.3.31",
     "@types/inquirer": "^9.0.3",
     "@types/jest": "^29.5.12",
     "@types/node": "^16.18.14",
@@ -47771,7 +47591,6 @@ var package_default = {
     crypto: "^1.0.1",
     execa: "^7.0.0",
     ignore: "^5.2.4",
-    ini: "^3.0.1",
     inquirer: "^9.1.4",
     openai: "^4.57.0",
     punycode: "^2.3.1",
@@ -50019,7 +49838,6 @@ var $4 = create$();
 // src/commands/config.ts
 var dotenv = __toESM(require_main(), 1);
 var import_fs = require("fs");
-var import_ini = __toESM(require_ini(), 1);
 var import_os = require("os");
 var import_path = require("path");
 
@@ -51108,7 +50926,8 @@ var DEFAULT_CONFIG = {
   OCO_HOOK_AUTO_UNCOMMENT: false
 };
 var initGlobalConfig = (configPath = defaultConfigPath) => {
-  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(DEFAULT_CONFIG), "utf8");
+  const configContent = Object.entries(DEFAULT_CONFIG).map(([key, value]) => `${key}=${value}`).join("\n");
+  (0, import_fs.writeFileSync)(configPath, configContent, "utf8");
   return DEFAULT_CONFIG;
 };
 var parseConfigVarValue = (value) => {
@@ -51143,7 +50962,16 @@ var getEnvConfig = (envPath) => {
   };
 };
 var setGlobalConfig = (config7, configPath = defaultConfigPath) => {
-  (0, import_fs.writeFileSync)(configPath, (0, import_ini.stringify)(config7), "utf8");
+  const configContent = Object.entries(config7).filter(([_7, value]) => value !== void 0 && value !== null).map(([key, value]) => {
+    if (typeof value === "string" && value.includes("\n")) {
+      return `${key}="${value.replace(/\n/g, "\\n")}"`;
+    }
+    if (typeof value === "string" && (value.includes(" ") || value.includes('"') || value.includes("'"))) {
+      return `${key}="${value.replace(/"/g, '\\"')}"`;
+    }
+    return `${key}=${value}`;
+  }).join("\n");
+  (0, import_fs.writeFileSync)(configPath, configContent, "utf8");
 };
 var getIsGlobalConfigFileExist = (configPath = defaultConfigPath) => {
   return (0, import_fs.existsSync)(configPath);
@@ -51153,8 +50981,27 @@ var getGlobalConfig = (configPath = defaultConfigPath) => {
   const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
   else {
-    const configFile = (0, import_fs.readFileSync)(configPath, "utf8");
-    globalConfig = (0, import_ini.parse)(configFile);
+    dotenv.config({ path: configPath });
+    globalConfig = {
+      OCO_API_KEY: process.env.OCO_API_KEY,
+      OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT) || DEFAULT_CONFIG.OCO_TOKENS_MAX_INPUT,
+      OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_OUTPUT) || DEFAULT_CONFIG.OCO_TOKENS_MAX_OUTPUT,
+      OCO_API_URL: process.env.OCO_API_URL,
+      OCO_API_CUSTOM_HEADERS: process.env.OCO_API_CUSTOM_HEADERS,
+      OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION) || DEFAULT_CONFIG.OCO_DESCRIPTION,
+      OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI) || DEFAULT_CONFIG.OCO_EMOJI,
+      OCO_WHY: parseConfigVarValue(process.env.OCO_WHY) || DEFAULT_CONFIG.OCO_WHY,
+      OCO_MODEL: process.env.OCO_MODEL || DEFAULT_CONFIG.OCO_MODEL,
+      OCO_LANGUAGE: process.env.OCO_LANGUAGE || DEFAULT_CONFIG.OCO_LANGUAGE,
+      OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || DEFAULT_CONFIG.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+      OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE || DEFAULT_CONFIG.OCO_PROMPT_MODULE,
+      OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER || DEFAULT_CONFIG.OCO_AI_PROVIDER,
+      OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) || DEFAULT_CONFIG.OCO_GITPUSH,
+      OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT) || DEFAULT_CONFIG.OCO_ONE_LINE_COMMIT,
+      OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE) || DEFAULT_CONFIG.OCO_OMIT_SCOPE,
+      OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || DEFAULT_CONFIG.OCO_TEST_MOCK_TYPE,
+      OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT) || DEFAULT_CONFIG.OCO_HOOK_AUTO_UNCOMMENT
+    };
   }
   return globalConfig;
 };
