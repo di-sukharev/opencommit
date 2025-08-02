@@ -11,6 +11,7 @@ import {
 import chalk from 'chalk';
 import { execa } from 'execa';
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
+import { getMainCommitPrompt } from '../prompts';
 import {
   assertGitRepo,
   getChangedFiles,
@@ -224,7 +225,8 @@ export async function commit(
   context: string = '',
   isStageAllFlag: Boolean = false,
   fullGitMojiSpec: boolean = false,
-  skipCommitConfirmation: boolean = false
+  skipCommitConfirmation: boolean = false,
+  showPrompt: boolean = false
 ) {
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
@@ -242,6 +244,26 @@ export async function commit(
   if (!changedFiles?.length && !stagedFiles?.length) {
     outro(chalk.red('No changes detected'));
     process.exit(1);
+  }
+
+  // If showPrompt flag is set, display only the system prompt and exit
+  if (showPrompt) {
+    try {
+      const messages = await getMainCommitPrompt(fullGitMojiSpec, context);
+      const systemMessage = messages.find(msg => msg.role === 'system');
+      
+      if (systemMessage) {
+        console.log(systemMessage.content);
+      } else {
+        console.error('No system prompt found');
+      }
+      
+      process.exit(0);
+    } catch (error) {
+      const err = error as Error;
+      console.error(`Failed to generate prompt: ${err?.message || err}`);
+      process.exit(1);
+    }
   }
 
   intro('open-commit');

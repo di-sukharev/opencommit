@@ -67715,7 +67715,7 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
     process.exit(1);
   }
 };
-async function commit(extraArgs2 = [], context = "", isStageAllFlag = false, fullGitMojiSpec = false, skipCommitConfirmation = false) {
+async function commit(extraArgs2 = [], context = "", isStageAllFlag = false, fullGitMojiSpec = false, skipCommitConfirmation = false, showPrompt = false) {
   if (isStageAllFlag) {
     const changedFiles2 = await getChangedFiles();
     if (changedFiles2) await gitAdd({ files: changedFiles2 });
@@ -67729,6 +67729,22 @@ async function commit(extraArgs2 = [], context = "", isStageAllFlag = false, ful
   if (!changedFiles?.length && !stagedFiles?.length) {
     ce(source_default.red("No changes detected"));
     process.exit(1);
+  }
+  if (showPrompt) {
+    try {
+      const messages = await getMainCommitPrompt(fullGitMojiSpec, context);
+      const systemMessage = messages.find((msg) => msg.role === "system");
+      if (systemMessage) {
+        console.log(systemMessage.content);
+      } else {
+        console.error("No system prompt found");
+      }
+      process.exit(0);
+    } catch (error) {
+      const err = error;
+      console.error(`Failed to generate prompt: ${err?.message || err}`);
+      process.exit(1);
+    }
   }
   ae("open-commit");
   if (errorChangedFiles ?? errorStagedFiles) {
@@ -68151,6 +68167,11 @@ Z2(
         alias: "y",
         description: "Skip commit confirmation prompt",
         default: false
+      },
+      "show-prompt": {
+        type: Boolean,
+        description: "Show the instructional prompt that would be given to the LLM",
+        default: false
       }
     },
     ignoreArgv: (type2) => type2 === "unknown-flag" || type2 === "argument",
@@ -68162,7 +68183,7 @@ Z2(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
+      commit(extraArgs, flags.context, false, flags.fgm, flags.yes, flags["show-prompt"]);
     }
   },
   extraArgs
