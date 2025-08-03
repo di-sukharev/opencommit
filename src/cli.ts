@@ -35,6 +35,11 @@ cli(
         alias: 'y',
         description: 'Skip commit confirmation prompt',
         default: false
+      },
+      'show-prompt': {
+        type: Boolean,
+        description: 'Show the instructional prompt that would be given to the LLM',
+        default: false
       }
     },
     ignoreArgv: (type) => type === 'unknown-flag' || type === 'argument',
@@ -47,7 +52,7 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
-      commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
+      commit(extraArgs, flags.context, false, flags.fgm, flags.yes, flags['show-prompt']);
     }
   },
   extraArgs

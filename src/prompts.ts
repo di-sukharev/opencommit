@@ -137,6 +137,13 @@ const INIT_MAIN_PROMPT = (
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
   role: 'system',
   content: (() => {
+    // If a custom prompt is configured, use it instead of the default prompt
+    if (config.OCO_CUSTOM_PROMPT) {
+      const userInputContext = userInputCodeContext(context);
+      return userInputContext ? `${config.OCO_CUSTOM_PROMPT}\n${userInputContext}` : config.OCO_CUSTOM_PROMPT;
+    }
+
+    // Default prompt logic
     const commitConvention = fullGitMojiSpec
       ? 'GitMoji specification'
       : 'Conventional Commit Convention';
