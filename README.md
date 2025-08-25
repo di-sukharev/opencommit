@@ -74,6 +74,22 @@ oco config set OCO_API_URL='http://192.168.1.10:11434/api/chat'
 
 where 192.168.1.10 is example of endpoint URL, where you have ollama set up.
 
+#### Troubleshooting Ollama IPv6/IPv4 Connection Fix
+
+If you encounter issues with Ollama, such as the error
+
+```sh
+✖ local model issues. details: connect ECONNREFUSED ::1:11434
+```
+
+It's likely because Ollama is not listening on IPv6 by default. To fix this, you can set the OLLAMA_HOST environment variable to 0.0.0.0 before starting Ollama:
+
+```bash
+export OLLAMA_HOST=0.0.0.0
+```
+
+This will make Ollama listen on all interfaces, including IPv6 and IPv4, resolving the connection issue. You can add this line to your shell configuration file (like `.bashrc` or `.zshrc`) to make it persistent across sessions.
+
 ### Flags
 
 There are multiple optional flags that can be used with the `oco` command:
