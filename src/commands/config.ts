@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { command } from 'cleye';
 import * as dotenv from 'dotenv';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { parse as iniParse, stringify as iniStringify } from 'ini';
+// Removed ini import - now using dotenv format for global config
 import { homedir } from 'os';
 import { join as pathJoin, resolve as pathResolve } from 'path';
 import { COMMANDS } from './ENUMS';
@@ -28,7 +28,8 @@ export enum CONFIG_KEYS {
   OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT'
+  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
+  OCO_CUSTOM_PROMPT = 'OCO_CUSTOM_PROMPT'
 }
 
 export enum CONFIG_MODES {
@@ -827,6 +828,18 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+  },
+
+  [CONFIG_KEYS.OCO_CUSTOM_PROMPT](value: any) {
+    if (value === undefined || value === null) return value;
+    
+    validateConfig(
+      CONFIG_KEYS.OCO_CUSTOM_PROMPT,
+      typeof value === 'string',
+      'Must be a string'
+    );
+    
+    return value;
   }
 };
 
@@ -865,6 +878,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
+  [CONFIG_KEYS.OCO_CUSTOM_PROMPT]?: string;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -913,11 +927,15 @@ export const DEFAULT_CONFIG = {
   OCO_WHY: false,
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true, // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT: false
+  OCO_HOOK_AUTO_UNCOMMENT: false,
+  OCO_CUSTOM_PROMPT: undefined
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
-  writeFileSync(configPath, iniStringify(DEFAULT_CONFIG), 'utf8');
+  const configContent = Object.entries(DEFAULT_CONFIG)
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n');
+  writeFileSync(configPath, configContent, 'utf8');
   return DEFAULT_CONFIG;
 };
 
@@ -953,6 +971,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
+    OCO_CUSTOM_PROMPT: process.env.OCO_CUSTOM_PROMPT,
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
@@ -962,7 +981,21 @@ export const setGlobalConfig = (
   config: ConfigType,
   configPath: string = defaultConfigPath
 ) => {
-  writeFileSync(configPath, iniStringify(config), 'utf8');
+  const configContent = Object.entries(config)
+    .filter(([_, value]) => value !== undefined && value !== null)
+    .map(([key, value]) => {
+      // Handle multiline strings by escaping newlines
+      if (typeof value === 'string' && value.includes('\n')) {
+        return `${key}="${value.replace(/\n/g, '\\n')}"`;
+      }
+      // Handle strings with special characters
+      if (typeof value === 'string' && (value.includes(' ') || value.includes('"') || value.includes("'"))) {
+        return `${key}="${value.replace(/"/g, '\\"')}"`;
+      }
+      return `${key}=${value}`;
+    })
+    .join('\n');
+  writeFileSync(configPath, configContent, 'utf8');
 };
 
 export const getIsGlobalConfigFileExist = (
@@ -977,8 +1010,31 @@ export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
   const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
   else {
-    const configFile = readFileSync(configPath, 'utf8');
-    globalConfig = iniParse(configFile) as ConfigType;
+    // Use dotenv to parse the global config file
+    dotenv.config({ path: configPath });
+    
+    // Extract the config values from process.env
+    globalConfig = {
+      OCO_API_KEY: process.env.OCO_API_KEY,
+      OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT) || DEFAULT_CONFIG.OCO_TOKENS_MAX_INPUT,
+      OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_OUTPUT) || DEFAULT_CONFIG.OCO_TOKENS_MAX_OUTPUT,
+      OCO_API_URL: process.env.OCO_API_URL,
+      OCO_API_CUSTOM_HEADERS: process.env.OCO_API_CUSTOM_HEADERS,
+      OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION) || DEFAULT_CONFIG.OCO_DESCRIPTION,
+      OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI) || DEFAULT_CONFIG.OCO_EMOJI,
+      OCO_WHY: parseConfigVarValue(process.env.OCO_WHY) || DEFAULT_CONFIG.OCO_WHY,
+      OCO_MODEL: process.env.OCO_MODEL || DEFAULT_CONFIG.OCO_MODEL,
+      OCO_LANGUAGE: process.env.OCO_LANGUAGE || DEFAULT_CONFIG.OCO_LANGUAGE,
+      OCO_MESSAGE_TEMPLATE_PLACEHOLDER: process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER || DEFAULT_CONFIG.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+      OCO_PROMPT_MODULE: (process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM) || DEFAULT_CONFIG.OCO_PROMPT_MODULE,
+      OCO_AI_PROVIDER: (process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM) || DEFAULT_CONFIG.OCO_AI_PROVIDER,
+      OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) || DEFAULT_CONFIG.OCO_GITPUSH,
+      OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT) || DEFAULT_CONFIG.OCO_ONE_LINE_COMMIT,
+      OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE) || DEFAULT_CONFIG.OCO_OMIT_SCOPE,
+      OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE || DEFAULT_CONFIG.OCO_TEST_MOCK_TYPE,
+      OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT) || DEFAULT_CONFIG.OCO_HOOK_AUTO_UNCOMMENT,
+      OCO_CUSTOM_PROMPT: process.env.OCO_CUSTOM_PROMPT || DEFAULT_CONFIG.OCO_CUSTOM_PROMPT
+    } as ConfigType;
   }
 
   return globalConfig;
@@ -1169,6 +1225,11 @@ function getConfigKeyDetails(key) {
       return {
         description: 'Automatically uncomment the commit message in the hook',
         values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_CUSTOM_PROMPT:
+      return {
+        description: 'Custom prompt to use instead of the default prompt template',
+        values: ['Any string']
       };
     default:
       return {
