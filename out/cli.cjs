@@ -67923,9 +67923,15 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
     }
     const spin = le();
     spin.start("Generating commit message");
-    const commitMessage = await generateCommitMessageByDiff(
-      await getDiff({ files: staged })
-    );
+    let commitMessage;
+    try {
+      commitMessage = await generateCommitMessageByDiff(
+        await getDiff({ files: staged })
+      );
+    } catch (error) {
+      spin.stop("Done");
+      throw error;
+    }
     spin.stop("Done");
     const fileContent = await import_promises4.default.readFile(messageFilePath);
     const messageWithComment = `# ${commitMessage}
@@ -67941,8 +67947,24 @@ ${fileContent.toString()}`;
     const message = config7.OCO_HOOK_AUTO_UNCOMMENT ? messageWithoutComment : messageWithComment;
     await import_promises4.default.writeFile(messageFilePath, message);
   } catch (error) {
-    ce(`${source_default.red("\u2716")} ${error}`);
-    process.exit(1);
+    try {
+      ce(`${source_default.red("\u2716")} ${error}`);
+      const fileContent = await import_promises4.default.readFile(messageFilePath);
+      const commentedError = String(error).replace(new RegExp("^", "gm"), "# ");
+      const message = `
+
+# ---------- [OpenCommit] ---------- #
+# Failed to generate the commit message.
+# To cancel the commit, just close this window without making any changes.
+
+${commentedError}
+
+${fileContent.toString()}`;
+      await import_promises4.default.writeFile(messageFilePath, message);
+    } catch (error2) {
+      ce(`${source_default.red("\u2716")} ${error2}`);
+      process.exit(1);
+    }
   }
 };
 
