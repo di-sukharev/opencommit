@@ -32893,7 +32893,7 @@ var require_retries = __commonJS({
             retryInterval = initialInterval * Math.pow(x5, exponent) + Math.random() * 1e3;
           }
           const d7 = Math.min(retryInterval, maxInterval);
-          await delay4(d7);
+          await delay3(d7);
           x5++;
         }
       }
@@ -32914,8 +32914,8 @@ var require_retries = __commonJS({
       }
       return 0;
     }
-    async function delay4(delay5) {
-      return new Promise((resolve) => setTimeout(resolve, delay5));
+    async function delay3(delay4) {
+      return new Promise((resolve) => setTimeout(resolve, delay4));
     }
   }
 });
@@ -67357,11 +67357,7 @@ var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false, context 
         MAX_REQUEST_TOKENS,
         fullGitMojiSpec
       );
-      const commitMessages = [];
-      for (const promise of commitMessagePromises) {
-        commitMessages.push(await promise);
-        await delay3(2e3);
-      }
+      const commitMessages = await Promise.all(commitMessagePromises);
       return commitMessages.join("\n\n");
     }
     const messages = await generateCommitMessageChatCompletionPrompt(
@@ -67457,9 +67453,6 @@ var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength, fullGitMoji
   }
   return commitMessagePromises;
 };
-function delay3(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 // src/utils/git.ts
 var import_fs3 = require("fs");
