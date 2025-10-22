@@ -41,7 +41,7 @@ export class AnthropicEngine implements AiEngine {
     };
 
     // add top_p for non-4.5 models
-    if (!params.model.includes('-4-5')) {
+    if (!params.model.includes('-4-5') || !params.model.includes('claude')) {
       params.top_p = 0.1;
     }
 
