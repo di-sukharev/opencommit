@@ -32893,7 +32893,7 @@ var require_retries = __commonJS({
             retryInterval = initialInterval * Math.pow(x5, exponent) + Math.random() * 1e3;
           }
           const d7 = Math.min(retryInterval, maxInterval);
-          await delay4(d7);
+          await delay3(d7);
           x5++;
         }
       }
@@ -32914,8 +32914,8 @@ var require_retries = __commonJS({
       }
       return 0;
     }
-    async function delay4(delay5) {
-      return new Promise((resolve) => setTimeout(resolve, delay5));
+    async function delay3(delay4) {
+      return new Promise((resolve) => setTimeout(resolve, delay4));
     }
   }
 });
@@ -67357,11 +67357,7 @@ var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false, context 
         MAX_REQUEST_TOKENS,
         fullGitMojiSpec
       );
-      const commitMessages = [];
-      for (const promise of commitMessagePromises) {
-        commitMessages.push(await promise);
-        await delay3(2e3);
-      }
+      const commitMessages = await Promise.all(commitMessagePromises);
       return commitMessages.join("\n\n");
     }
     const messages = await generateCommitMessageChatCompletionPrompt(
@@ -67457,9 +67453,6 @@ var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength, fullGitMoji
   }
   return commitMessagePromises;
 };
-function delay3(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 // src/utils/git.ts
 var import_fs3 = require("fs");
@@ -67923,9 +67916,15 @@ var prepareCommitMessageHook = async (isStageAllFlag = false) => {
     }
     const spin = le();
     spin.start("Generating commit message");
-    const commitMessage = await generateCommitMessageByDiff(
-      await getDiff({ files: staged })
-    );
+    let commitMessage;
+    try {
+      commitMessage = await generateCommitMessageByDiff(
+        await getDiff({ files: staged })
+      );
+    } catch (error) {
+      spin.stop("Done");
+      throw error;
+    }
     spin.stop("Done");
     const fileContent = await import_promises4.default.readFile(messageFilePath);
     const messageWithComment = `# ${commitMessage}
@@ -67941,8 +67940,24 @@ ${fileContent.toString()}`;
     const message = config7.OCO_HOOK_AUTO_UNCOMMENT ? messageWithoutComment : messageWithComment;
     await import_promises4.default.writeFile(messageFilePath, message);
   } catch (error) {
-    ce(`${source_default.red("\u2716")} ${error}`);
-    process.exit(1);
+    try {
+      ce(`${source_default.red("\u2716")} ${error}`);
+      const fileContent = await import_promises4.default.readFile(messageFilePath);
+      const commentedError = String(error).replace(new RegExp("^", "gm"), "# ");
+      const message = `
+
+# ---------- [OpenCommit] ---------- #
+# Failed to generate the commit message.
+# To cancel the commit, just close this window without making any changes.
+
+${commentedError}
+
+${fileContent.toString()}`;
+      await import_promises4.default.writeFile(messageFilePath, message);
+    } catch (error2) {
+      ce(`${source_default.red("\u2716")} ${error2}`);
+      process.exit(1);
+    }
   }
 };
 
