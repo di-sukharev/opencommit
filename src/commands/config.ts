@@ -840,6 +840,7 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+    return value;
   },
 
   [CONFIG_KEYS.OCO_OLLAMA_THINK](value: any) {
@@ -848,7 +849,6 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
-    return value;
   }
 };
 
