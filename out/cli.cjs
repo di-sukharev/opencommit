@@ -67303,6 +67303,7 @@ var getMainCommitPrompt = async (fullGitMojiSpec, context) => {
 
 // src/utils/mergeDiffs.ts
 function mergeDiffs(arr, maxStringLength) {
+  if (arr.length === 0) return [];
   const mergedArr = [];
   let currentItem = arr[0];
   for (const item of arr.slice(1)) {
@@ -67355,7 +67356,8 @@ var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false, context 
       const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
         diff,
         MAX_REQUEST_TOKENS,
-        fullGitMojiSpec
+        fullGitMojiSpec,
+        context
       );
       const commitMessages = [];
       for (const promise of commitMessagePromises) {
@@ -67378,7 +67380,7 @@ var generateCommitMessageByDiff = async (diff, fullGitMojiSpec = false, context 
     throw error;
   }
 };
-function getMessagesPromisesByChangesInFile(fileDiff, separator, maxChangeLength, fullGitMojiSpec) {
+function getMessagesPromisesByChangesInFile(fileDiff, separator, maxChangeLength, fullGitMojiSpec, context) {
   const hunkHeaderSeparator = "@@ ";
   const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
   const mergedChanges = mergeDiffs(
@@ -67400,7 +67402,8 @@ function getMessagesPromisesByChangesInFile(fileDiff, separator, maxChangeLength
     async (lineDiff) => {
       const messages = await generateCommitMessageChatCompletionPrompt(
         separator + lineDiff,
-        fullGitMojiSpec
+        fullGitMojiSpec,
+        context
       );
       return engine.generateCommitMessage(messages);
     }
@@ -67432,9 +67435,21 @@ function splitDiff(diff, maxChangeLength) {
   }
   return splitDiffs;
 }
-var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength, fullGitMojiSpec) => {
+var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength, fullGitMojiSpec, context = "") => {
   const separator = "diff --git ";
   const diffByFiles = diff.split(separator).slice(1);
+  if (diffByFiles.length === 0) {
+    const engine = getEngine();
+    const chunks = splitDiff(diff, maxDiffLength);
+    return chunks.map(async (chunk) => {
+      const messages = await generateCommitMessageChatCompletionPrompt(
+        chunk,
+        fullGitMojiSpec,
+        context
+      );
+      return engine.generateCommitMessage(messages);
+    });
+  }
   const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
   const commitMessagePromises = [];
   for (const fileDiff of mergedFilesDiffs) {
@@ -67443,13 +67458,15 @@ var getCommitMsgsPromisesFromFileDiffs = async (diff, maxDiffLength, fullGitMoji
         fileDiff,
         separator,
         maxDiffLength,
-        fullGitMojiSpec
+        fullGitMojiSpec,
+        context
       );
       commitMessagePromises.push(...messagesPromises);
     } else {
       const messages = await generateCommitMessageChatCompletionPrompt(
         separator + fileDiff,
-        fullGitMojiSpec
+        fullGitMojiSpec,
+        context
       );
       const engine = getEngine();
       commitMessagePromises.push(engine.generateCommitMessage(messages));
@@ -67544,7 +67561,7 @@ ${lockFiles.join(
   );
   const { stdout: diff } = await execa(
     "git",
-    ["diff", "--staged", "--", ...filesWithoutLocks],
+    ["diff", "--staged", "--no-ext-diff", "--no-color", "--", ...filesWithoutLocks],
     { cwd: gitDir }
   );
   return diff;
