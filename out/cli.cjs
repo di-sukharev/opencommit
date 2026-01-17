@@ -53911,9 +53911,6 @@ var { AnthropicError: AnthropicError2, APIError: APIError2, APIConnectionError: 
 })(Anthropic || (Anthropic = {}));
 var sdk_default = Anthropic;
 
-// src/engine/anthropic.ts
-init_dist2();
-
 // node_modules/axios/lib/helpers/bind.js
 function bind(fn, thisArg) {
   return function wrap() {
@@ -57224,6 +57221,51 @@ var {
 } = axios_default;
 
 // src/utils/errors.ts
+var PROVIDER_BILLING_URLS = {
+  ["anthropic" /* ANTHROPIC */]: "https://console.anthropic.com/settings/plans",
+  ["openai" /* OPENAI */]: "https://platform.openai.com/settings/organization/billing",
+  ["gemini" /* GEMINI */]: "https://aistudio.google.com/app/plan",
+  ["groq" /* GROQ */]: "https://console.groq.com/settings/billing",
+  ["mistral" /* MISTRAL */]: "https://console.mistral.ai/billing/",
+  ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/usage",
+  ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/credits",
+  ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/billing",
+  ["azure" /* AZURE */]: "https://portal.azure.com/#view/Microsoft_Azure_CostManagement",
+  ["ollama" /* OLLAMA */]: null,
+  ["mlx" /* MLX */]: null,
+  ["flowise" /* FLOWISE */]: null,
+  ["test" /* TEST */]: null
+};
+var InsufficientCreditsError = class extends Error {
+  constructor(provider, message) {
+    super(message || `Insufficient credits or quota for provider '${provider}'`);
+    this.name = "InsufficientCreditsError";
+    this.provider = provider;
+  }
+};
+var RateLimitError3 = class extends Error {
+  constructor(provider, retryAfter, message) {
+    super(message || `Rate limit exceeded for provider '${provider}'`);
+    this.name = "RateLimitError";
+    this.provider = provider;
+    this.retryAfter = retryAfter;
+  }
+};
+var ServiceUnavailableError = class extends Error {
+  constructor(provider, statusCode = 503, message) {
+    super(message || `Service unavailable for provider '${provider}'`);
+    this.name = "ServiceUnavailableError";
+    this.provider = provider;
+    this.statusCode = statusCode;
+  }
+};
+var AuthenticationError3 = class extends Error {
+  constructor(provider, message) {
+    super(message || `Authentication failed for provider '${provider}'`);
+    this.name = "AuthenticationError";
+    this.provider = provider;
+  }
+};
 var ModelNotFoundError = class extends Error {
   constructor(modelName, provider, statusCode = 404) {
     super(`Model '${modelName}' not found for provider '${provider}'`);
@@ -57231,6 +57273,13 @@ var ModelNotFoundError = class extends Error {
     this.modelName = modelName;
     this.provider = provider;
     this.statusCode = statusCode;
+  }
+};
+var ApiKeyMissingError = class extends Error {
+  constructor(provider) {
+    super(`API key is missing for provider '${provider}'`);
+    this.name = "ApiKeyMissingError";
+    this.provider = provider;
   }
 };
 function isModelNotFoundError(error) {
@@ -57257,6 +57306,24 @@ function isModelNotFoundError(error) {
   }
   return false;
 }
+function isApiKeyError(error) {
+  if (error instanceof ApiKeyMissingError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("api key") || message.includes("apikey") || message.includes("authentication") || message.includes("unauthorized") || message.includes("invalid_api_key") || message.includes("incorrect api key")) {
+      return true;
+    }
+    if ("response" in error) {
+      const response = error.response;
+      if (response?.status === 401) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 function getSuggestedModels(provider, failedModel) {
   const providerKey = provider.toLowerCase();
   const models = MODEL_LIST[providerKey];
@@ -57264,6 +57331,276 @@ function getSuggestedModels(provider, failedModel) {
     return [];
   }
   return models.filter((m5) => m5 !== failedModel).slice(0, 5);
+}
+function isInsufficientCreditsError(error) {
+  if (error instanceof InsufficientCreditsError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("insufficient") || message.includes("credit") || message.includes("quota") || message.includes("balance") || message.includes("billing") || message.includes("payment") || message.includes("exceeded") || message.includes("limit reached") || message.includes("no remaining")) {
+      return true;
+    }
+    if ("status" in error && error.status === 402) {
+      return true;
+    }
+    if ("response" in error) {
+      const response = error.response;
+      if (response?.status === 402) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function isRateLimitError(error) {
+  if (error instanceof RateLimitError3) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("rate limit") || message.includes("rate_limit") || message.includes("too many requests") || message.includes("throttle")) {
+      return true;
+    }
+    if ("status" in error && error.status === 429) {
+      return true;
+    }
+    if ("response" in error) {
+      const response = error.response;
+      if (response?.status === 429) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function isServiceUnavailableError(error) {
+  if (error instanceof ServiceUnavailableError) {
+    return true;
+  }
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("service unavailable") || message.includes("server error") || message.includes("internal error") || message.includes("temporarily unavailable") || message.includes("overloaded")) {
+      return true;
+    }
+    const status = error.status || error.response?.status;
+    if (status && status >= 500 && status < 600) {
+      return true;
+    }
+  }
+  return false;
+}
+function formatUserFriendlyError(error, provider) {
+  const billingUrl = PROVIDER_BILLING_URLS[provider] || null;
+  if (error instanceof InsufficientCreditsError) {
+    return {
+      title: "Insufficient Credits",
+      message: `Your ${provider} account has insufficient credits or quota.`,
+      helpUrl: billingUrl,
+      suggestion: "Add credits to your account to continue using the service."
+    };
+  }
+  if (error instanceof RateLimitError3) {
+    const retryMsg = error.retryAfter ? `Please wait ${error.retryAfter} seconds before retrying.` : "Please wait a moment before retrying.";
+    return {
+      title: "Rate Limit Exceeded",
+      message: `You've made too many requests to ${provider}.`,
+      helpUrl: billingUrl,
+      suggestion: retryMsg
+    };
+  }
+  if (error instanceof ServiceUnavailableError) {
+    return {
+      title: "Service Unavailable",
+      message: `The ${provider} service is temporarily unavailable.`,
+      helpUrl: null,
+      suggestion: "Please try again in a few moments."
+    };
+  }
+  if (error instanceof AuthenticationError3) {
+    return {
+      title: "Authentication Failed",
+      message: `Your ${provider} API key is invalid or expired.`,
+      helpUrl: billingUrl,
+      suggestion: "Run `oco setup` to configure a valid API key."
+    };
+  }
+  if (error instanceof ModelNotFoundError) {
+    return {
+      title: "Model Not Found",
+      message: `The model '${error.modelName}' is not available for ${provider}.`,
+      helpUrl: null,
+      suggestion: "Run `oco setup` to select a valid model."
+    };
+  }
+  if (isInsufficientCreditsError(error)) {
+    return {
+      title: "Insufficient Credits",
+      message: `Your ${provider} account has insufficient credits or quota.`,
+      helpUrl: billingUrl,
+      suggestion: "Add credits to your account to continue using the service."
+    };
+  }
+  if (isRateLimitError(error)) {
+    return {
+      title: "Rate Limit Exceeded",
+      message: `You've made too many requests to ${provider}.`,
+      helpUrl: billingUrl,
+      suggestion: "Please wait a moment before retrying."
+    };
+  }
+  if (isServiceUnavailableError(error)) {
+    return {
+      title: "Service Unavailable",
+      message: `The ${provider} service is temporarily unavailable.`,
+      helpUrl: null,
+      suggestion: "Please try again in a few moments."
+    };
+  }
+  if (isApiKeyError(error)) {
+    return {
+      title: "Authentication Failed",
+      message: `Your ${provider} API key is invalid or expired.`,
+      helpUrl: billingUrl,
+      suggestion: "Run `oco setup` to configure a valid API key."
+    };
+  }
+  if (isModelNotFoundError(error)) {
+    const model = error.modelName || error.model || "unknown";
+    return {
+      title: "Model Not Found",
+      message: `The model '${model}' is not available for ${provider}.`,
+      helpUrl: null,
+      suggestion: "Run `oco setup` to select a valid model."
+    };
+  }
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  return {
+    title: "Error",
+    message: errorMessage,
+    helpUrl: null,
+    suggestion: "Run `oco setup` to reconfigure or check your settings."
+  };
+}
+function printFormattedError(formatted) {
+  let output = `
+${source_default.red("\u2716")} ${source_default.bold.red(formatted.title)}
+`;
+  output += `  ${formatted.message}
+`;
+  if (formatted.helpUrl) {
+    output += `
+  ${source_default.cyan("Help:")} ${source_default.underline(formatted.helpUrl)}
+`;
+  }
+  if (formatted.suggestion) {
+    output += `
+  ${source_default.yellow("Suggestion:")} ${formatted.suggestion}
+`;
+  }
+  return output;
+}
+
+// src/utils/engineErrorHandler.ts
+function getStatusCode(error) {
+  if (typeof error?.status === "number") {
+    return error.status;
+  }
+  if (axios_default.isAxiosError(error)) {
+    return error.response?.status ?? null;
+  }
+  if (typeof error?.response?.status === "number") {
+    return error.response.status;
+  }
+  return null;
+}
+function getRetryAfter(error) {
+  const headers = error?.response?.headers;
+  if (headers) {
+    const retryAfter = headers["retry-after"] || headers["Retry-After"];
+    if (retryAfter) {
+      const seconds = parseInt(retryAfter, 10);
+      if (!isNaN(seconds)) {
+        return seconds;
+      }
+    }
+  }
+  return void 0;
+}
+function extractErrorMessage(error) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  const apiError = error?.response?.data?.error;
+  if (apiError) {
+    if (typeof apiError === "string") {
+      return apiError;
+    }
+    if (apiError.message) {
+      return apiError.message;
+    }
+  }
+  const errorData = error?.error;
+  if (errorData) {
+    if (typeof errorData === "string") {
+      return errorData;
+    }
+    if (errorData.message) {
+      return errorData.message;
+    }
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return "An unknown error occurred";
+}
+function isModelNotFoundMessage(message) {
+  const lowerMessage = message.toLowerCase();
+  return lowerMessage.includes("model") && (lowerMessage.includes("not found") || lowerMessage.includes("does not exist") || lowerMessage.includes("invalid") || lowerMessage.includes("pull")) || lowerMessage.includes("does_not_exist");
+}
+function isInsufficientCreditsMessage(message) {
+  const lowerMessage = message.toLowerCase();
+  return lowerMessage.includes("insufficient") || lowerMessage.includes("credit") || lowerMessage.includes("quota") || lowerMessage.includes("balance too low") || lowerMessage.includes("billing") || lowerMessage.includes("payment required") || lowerMessage.includes("exceeded");
+}
+function normalizeEngineError(error, provider, model) {
+  if (error instanceof ModelNotFoundError || error instanceof AuthenticationError3 || error instanceof InsufficientCreditsError || error instanceof RateLimitError3 || error instanceof ServiceUnavailableError) {
+    return error;
+  }
+  const statusCode = getStatusCode(error);
+  const message = extractErrorMessage(error);
+  switch (statusCode) {
+    case 401:
+      return new AuthenticationError3(provider, message);
+    case 402:
+      return new InsufficientCreditsError(provider, message);
+    case 404:
+      if (isModelNotFoundMessage(message)) {
+        return new ModelNotFoundError(model, provider, 404);
+      }
+      return error instanceof Error ? error : new Error(message);
+    case 429:
+      const retryAfter = getRetryAfter(error);
+      return new RateLimitError3(provider, retryAfter, message);
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return new ServiceUnavailableError(provider, statusCode, message);
+  }
+  if (isModelNotFoundMessage(message)) {
+    return new ModelNotFoundError(model, provider, 404);
+  }
+  if (isInsufficientCreditsMessage(message)) {
+    return new InsufficientCreditsError(provider, message);
+  }
+  const lowerMessage = message.toLowerCase();
+  if (lowerMessage.includes("rate limit") || lowerMessage.includes("rate_limit") || lowerMessage.includes("too many requests")) {
+    return new RateLimitError3(provider, void 0, message);
+  }
+  if (lowerMessage.includes("unauthorized") || lowerMessage.includes("api key") || lowerMessage.includes("apikey") || lowerMessage.includes("authentication") || lowerMessage.includes("invalid_api_key")) {
+    return new AuthenticationError3(provider, message);
+  }
+  return error instanceof Error ? error : new Error(message);
 }
 
 // src/utils/removeContentTags.ts
@@ -57342,25 +57679,7 @@ var AnthropicEngine = class {
         let content = message;
         return removeContentTags(content, "think");
       } catch (error) {
-        const err = error;
-        if (err.message?.toLowerCase().includes("model") && (err.message?.toLowerCase().includes("not found") || err.message?.toLowerCase().includes("does not exist") || err.message?.toLowerCase().includes("invalid"))) {
-          throw new ModelNotFoundError(this.config.model, "anthropic", 404);
-        }
-        if ("status" in error && error.status === 404) {
-          throw new ModelNotFoundError(this.config.model, "anthropic", 404);
-        }
-        ce(`${source_default.red("\u2716")} ${err?.message || err}`);
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const anthropicAiError = error.response.data.error;
-          if (anthropicAiError?.message) ce(anthropicAiError.message);
-          ce(
-            "For help look into README https://github.com/di-sukharev/opencommit#setup"
-          );
-        }
-        if (axios_default.isAxiosError(error) && error.response?.status === 404) {
-          throw new ModelNotFoundError(this.config.model, "anthropic", 404);
-        }
-        throw err;
+        throw normalizeEngineError(error, "anthropic", this.config.model);
       }
     };
     this.config = config7;
@@ -61176,7 +61495,6 @@ var OpenAIClient = class {
 };
 
 // src/engine/azure.ts
-init_dist2();
 var AzureEngine = class {
   constructor(config7) {
     this.generateCommitMessage = async (messages) => {
@@ -61196,17 +61514,7 @@ var AzureEngine = class {
         let content = message?.content;
         return removeContentTags(content, "think");
       } catch (error) {
-        ce(`${source_default.red("\u2716")} ${this.config.model}`);
-        const err = error;
-        ce(`${source_default.red("\u2716")} ${JSON.stringify(error)}`);
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const openAiError = error.response.data.error;
-          if (openAiError?.message) ce(openAiError.message);
-          ce(
-            "For help look into README https://github.com/di-sukharev/opencommit#setup"
-          );
-        }
-        throw err;
+        throw normalizeEngineError(error, "azure", this.config.model);
       }
     };
     this.config = config7;
@@ -61240,9 +61548,8 @@ var FlowiseEngine = class {
       const message = response.data;
       let content = message?.text;
       return removeContentTags(content, "think");
-    } catch (err) {
-      const message = err.response?.data?.error ?? err.message;
-      throw new Error("local model issues. details: " + message);
+    } catch (error) {
+      throw normalizeEngineError(error, "flowise", this.config.model);
     }
   }
 };
@@ -62102,18 +62409,7 @@ var GeminiEngine = class {
       const content = result.response.text();
       return removeContentTags(content, "think");
     } catch (error) {
-      const err = error;
-      if (err.message?.toLowerCase().includes("model") && (err.message?.toLowerCase().includes("not found") || err.message?.toLowerCase().includes("does not exist") || err.message?.toLowerCase().includes("invalid"))) {
-        throw new ModelNotFoundError(this.config.model, "gemini", 404);
-      }
-      if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-        const geminiError = error.response.data.error;
-        if (geminiError) throw new Error(geminiError?.message);
-      }
-      if (axios_default.isAxiosError(error) && error.response?.status === 404) {
-        throw new ModelNotFoundError(this.config.model, "gemini", 404);
-      }
-      throw err;
+      throw normalizeEngineError(error, "gemini", this.config.model);
     }
   }
 };
@@ -62146,15 +62442,8 @@ var OllamaEngine = class {
       const { message } = response.data;
       let content = message?.content;
       return removeContentTags(content, "think");
-    } catch (err) {
-      const message = err.response?.data?.error ?? err.message;
-      if (message?.toLowerCase().includes("model") && (message?.toLowerCase().includes("not found") || message?.toLowerCase().includes("does not exist") || message?.toLowerCase().includes("pull"))) {
-        throw new ModelNotFoundError(this.config.model, "ollama", 404);
-      }
-      if (err.response?.status === 404) {
-        throw new ModelNotFoundError(this.config.model, "ollama", 404);
-      }
-      throw new Error(`Ollama provider error: ${message}`);
+    } catch (error) {
+      throw normalizeEngineError(error, "ollama", this.config.model);
     }
   }
 };
@@ -62166,7 +62455,7 @@ __export(error_exports2, {
   APIConnectionTimeoutError: () => APIConnectionTimeoutError3,
   APIError: () => APIError3,
   APIUserAbortError: () => APIUserAbortError3,
-  AuthenticationError: () => AuthenticationError3,
+  AuthenticationError: () => AuthenticationError4,
   BadRequestError: () => BadRequestError3,
   ConflictError: () => ConflictError3,
   ContentFilterFinishReasonError: () => ContentFilterFinishReasonError,
@@ -62175,7 +62464,7 @@ __export(error_exports2, {
   NotFoundError: () => NotFoundError3,
   OpenAIError: () => OpenAIError,
   PermissionDeniedError: () => PermissionDeniedError3,
-  RateLimitError: () => RateLimitError3,
+  RateLimitError: () => RateLimitError4,
   UnprocessableEntityError: () => UnprocessableEntityError3
 });
 
@@ -63447,7 +63736,7 @@ var APIError3 = class _APIError extends OpenAIError {
       return new BadRequestError3(status, error, message, headers);
     }
     if (status === 401) {
-      return new AuthenticationError3(status, error, message, headers);
+      return new AuthenticationError4(status, error, message, headers);
     }
     if (status === 403) {
       return new PermissionDeniedError3(status, error, message, headers);
@@ -63462,7 +63751,7 @@ var APIError3 = class _APIError extends OpenAIError {
       return new UnprocessableEntityError3(status, error, message, headers);
     }
     if (status === 429) {
-      return new RateLimitError3(status, error, message, headers);
+      return new RateLimitError4(status, error, message, headers);
     }
     if (status >= 500) {
       return new InternalServerError3(status, error, message, headers);
@@ -63495,7 +63784,7 @@ var BadRequestError3 = class extends APIError3 {
     this.status = 400;
   }
 };
-var AuthenticationError3 = class extends APIError3 {
+var AuthenticationError4 = class extends APIError3 {
   constructor() {
     super(...arguments);
     this.status = 401;
@@ -63525,7 +63814,7 @@ var UnprocessableEntityError3 = class extends APIError3 {
     this.status = 422;
   }
 };
-var RateLimitError3 = class extends APIError3 {
+var RateLimitError4 = class extends APIError3 {
   constructor() {
     super(...arguments);
     this.status = 429;
@@ -66834,15 +67123,15 @@ OpenAI.APIConnectionTimeoutError = APIConnectionTimeoutError3;
 OpenAI.APIUserAbortError = APIUserAbortError3;
 OpenAI.NotFoundError = NotFoundError3;
 OpenAI.ConflictError = ConflictError3;
-OpenAI.RateLimitError = RateLimitError3;
+OpenAI.RateLimitError = RateLimitError4;
 OpenAI.BadRequestError = BadRequestError3;
-OpenAI.AuthenticationError = AuthenticationError3;
+OpenAI.AuthenticationError = AuthenticationError4;
 OpenAI.InternalServerError = InternalServerError3;
 OpenAI.PermissionDeniedError = PermissionDeniedError3;
 OpenAI.UnprocessableEntityError = UnprocessableEntityError3;
 OpenAI.toFile = toFile2;
 OpenAI.fileFromPath = fileFromPath4;
-var { OpenAIError: OpenAIError2, APIError: APIError4, APIConnectionError: APIConnectionError4, APIConnectionTimeoutError: APIConnectionTimeoutError4, APIUserAbortError: APIUserAbortError4, NotFoundError: NotFoundError4, ConflictError: ConflictError4, RateLimitError: RateLimitError4, BadRequestError: BadRequestError4, AuthenticationError: AuthenticationError4, InternalServerError: InternalServerError4, PermissionDeniedError: PermissionDeniedError4, UnprocessableEntityError: UnprocessableEntityError4 } = error_exports2;
+var { OpenAIError: OpenAIError2, APIError: APIError4, APIConnectionError: APIConnectionError4, APIConnectionTimeoutError: APIConnectionTimeoutError4, APIUserAbortError: APIUserAbortError4, NotFoundError: NotFoundError4, ConflictError: ConflictError4, RateLimitError: RateLimitError5, BadRequestError: BadRequestError4, AuthenticationError: AuthenticationError5, InternalServerError: InternalServerError4, PermissionDeniedError: PermissionDeniedError4, UnprocessableEntityError: UnprocessableEntityError4 } = error_exports2;
 (function(OpenAI2) {
   OpenAI2.Page = Page;
   OpenAI2.CursorPage = CursorPage;
@@ -66883,21 +67172,7 @@ var OpenAiEngine = class {
         let content = message?.content;
         return removeContentTags(content, "think");
       } catch (error) {
-        const err = error;
-        if (err.message?.toLowerCase().includes("model") && (err.message?.toLowerCase().includes("not found") || err.message?.toLowerCase().includes("does not exist") || err.message?.toLowerCase().includes("invalid"))) {
-          throw new ModelNotFoundError(this.config.model, "openai", 404);
-        }
-        if ("status" in error && error.status === 404) {
-          throw new ModelNotFoundError(this.config.model, "openai", 404);
-        }
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const openAiError = error.response.data.error;
-          if (openAiError) throw new Error(openAiError.message);
-        }
-        if (axios_default.isAxiosError(error) && error.response?.status === 404) {
-          throw new ModelNotFoundError(this.config.model, "openai", 404);
-        }
-        throw err;
+        throw normalizeEngineError(error, "openai", this.config.model);
       }
     };
     this.config = config7;
@@ -66941,12 +67216,7 @@ var MistralAiEngine = class {
         let content = message.content;
         return removeContentTags(content, "think");
       } catch (error) {
-        const err = error;
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const mistralError = error.response.data.error;
-          if (mistralError) throw new Error(mistralError.message);
-        }
-        throw err;
+        throw normalizeEngineError(error, "mistral", this.config.model);
       }
     };
     this.config = config7;
@@ -66995,9 +67265,8 @@ var MLXEngine = class {
       const message = choices[0].message;
       let content = message?.content;
       return removeContentTags(content, "think");
-    } catch (err) {
-      const message = err.response?.data?.error ?? err.message;
-      throw new Error(`MLX provider error: ${message}`);
+    } catch (error) {
+      throw normalizeEngineError(error, "mlx", this.config.model);
     }
   }
 };
@@ -67027,12 +67296,7 @@ var DeepseekEngine = class extends OpenAiEngine {
         let content = message?.content;
         return removeContentTags(content, "think");
       } catch (error) {
-        const err = error;
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const openAiError = error.response.data.error;
-          if (openAiError) throw new Error(openAiError.message);
-        }
-        throw err;
+        throw normalizeEngineError(error, "deepseek", this.config.model);
       }
     };
   }
@@ -67051,12 +67315,7 @@ var AimlApiEngine = class {
         const message = response.data.choices?.[0]?.message;
         return message?.content ?? null;
       } catch (error) {
-        const err = error;
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const apiError = error.response.data.error;
-          if (apiError) throw new Error(apiError.message);
-        }
-        throw err;
+        throw normalizeEngineError(error, "aimlapi", this.config.model);
       }
     };
     this.client = axios_default.create({
@@ -67086,12 +67345,7 @@ var OpenRouterEngine = class {
         let content = message?.content;
         return removeContentTags(content, "think");
       } catch (error) {
-        const err = error;
-        if (axios_default.isAxiosError(error) && error.response?.status === 401) {
-          const openRouterError = error.response.data.error;
-          if (openRouterError) throw new Error(openRouterError.message);
-        }
-        throw err;
+        throw normalizeEngineError(error, "openrouter", this.config.model);
       }
     };
     this.client = axios_default.create({
@@ -68153,9 +68407,10 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
     commitGenerationSpinner.stop(
       `${source_default.red("\u2716")} Failed to generate the commit message`
     );
-    console.log(error);
-    const err = error;
-    ce(`${source_default.red("\u2716")} ${err?.message || err}`);
+    const errorConfig = getConfig();
+    const provider = errorConfig.OCO_AI_PROVIDER || "openai";
+    const formatted = formatUserFriendlyError(error, provider);
+    ce(printFormattedError(formatted));
     process.exit(1);
   }
 };

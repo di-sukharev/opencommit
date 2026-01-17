@@ -5,9 +5,8 @@ import {
   HarmCategory,
   Part
 } from '@google/generative-ai';
-import axios from 'axios';
 import { OpenAI } from 'openai';
-import { ModelNotFoundError } from '../utils/errors';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -76,30 +75,7 @@ export class GeminiEngine implements AiEngine {
       const content = result.response.text();
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-
-      // Check for model not found errors
-      if (err.message?.toLowerCase().includes('model') &&
-          (err.message?.toLowerCase().includes('not found') ||
-           err.message?.toLowerCase().includes('does not exist') ||
-           err.message?.toLowerCase().includes('invalid'))) {
-        throw new ModelNotFoundError(this.config.model, 'gemini', 404);
-      }
-
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const geminiError = error.response.data.error;
-        if (geminiError) throw new Error(geminiError?.message);
-      }
-
-      // Check axios 404 errors
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        throw new ModelNotFoundError(this.config.model, 'gemini', 404);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'gemini', this.config.model);
     }
   }
 }

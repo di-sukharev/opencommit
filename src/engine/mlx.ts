@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -39,9 +40,8 @@ export class MLXEngine implements AiEngine {
       const message = choices[0].message;
       let content = message?.content;
       return removeContentTags(content, 'think');
-    } catch (err: any) {
-      const message = err.response?.data?.error ?? err.message;
-      throw new Error(`MLX provider error: ${message}`);
+    } catch (error) {
+      throw normalizeEngineError(error, 'mlx', this.config.model);
     }
   }
 }

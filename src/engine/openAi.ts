@@ -1,8 +1,7 @@
-import axios from 'axios';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { parseCustomHeaders } from '../utils/engine';
-import { ModelNotFoundError } from '../utils/errors';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -62,36 +61,7 @@ export class OpenAiEngine implements AiEngine {
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-
-      // Check for model not found errors
-      if (err.message?.toLowerCase().includes('model') &&
-          (err.message?.toLowerCase().includes('not found') ||
-           err.message?.toLowerCase().includes('does not exist') ||
-           err.message?.toLowerCase().includes('invalid'))) {
-        throw new ModelNotFoundError(this.config.model, 'openai', 404);
-      }
-
-      // Check for 404 errors from API
-      if ('status' in (error as any) && (error as any).status === 404) {
-        throw new ModelNotFoundError(this.config.model, 'openai', 404);
-      }
-
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const openAiError = error.response.data.error;
-
-        if (openAiError) throw new Error(openAiError.message);
-      }
-
-      // Check axios 404 errors
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        throw new ModelNotFoundError(this.config.model, 'openai', 404);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'openai', this.config.model);
     }
   };
 }

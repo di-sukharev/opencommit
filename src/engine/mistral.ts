@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -63,17 +63,7 @@ export class MistralAiEngine implements AiEngine {
       let content = message.content as string;
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const mistralError = error.response.data.error;
-
-        if (mistralError) throw new Error(mistralError.message);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'mistral', this.config.model);
     }
   };
 }

@@ -12,6 +12,10 @@ import chalk from 'chalk';
 import { execa } from 'execa';
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import {
+  formatUserFriendlyError,
+  printFormattedError
+} from '../utils/errors';
+import {
   assertGitRepo,
   getChangedFiles,
   getDiff,
@@ -211,10 +215,11 @@ ${chalk.grey('——————————————————')}`
       `${chalk.red('✖')} Failed to generate the commit message`
     );
 
-    console.log(error);
+    const errorConfig = getConfig();
+    const provider = errorConfig.OCO_AI_PROVIDER || 'openai';
+    const formatted = formatUserFriendlyError(error, provider);
+    outro(printFormattedError(formatted));
 
-    const err = error as Error;
-    outro(`${chalk.red('✖')} ${err?.message || err}`);
     process.exit(1);
   }
 };
