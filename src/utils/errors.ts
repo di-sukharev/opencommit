@@ -3,7 +3,7 @@ import { MODEL_LIST, OCO_AI_PROVIDER_ENUM } from '../commands/config';
 
 // Provider billing/help URLs for common errors
 export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
-  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'https://console.anthropic.com/settings/plans',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'https://console.anthropic.com/settings/billing',
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/settings/organization/billing',
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'https://aistudio.google.com/app/plan',
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/settings/billing',

@@ -57222,7 +57222,7 @@ var {
 
 // src/utils/errors.ts
 var PROVIDER_BILLING_URLS = {
-  ["anthropic" /* ANTHROPIC */]: "https://console.anthropic.com/settings/plans",
+  ["anthropic" /* ANTHROPIC */]: "https://console.anthropic.com/settings/billing",
   ["openai" /* OPENAI */]: "https://platform.openai.com/settings/organization/billing",
   ["gemini" /* GEMINI */]: "https://aistudio.google.com/app/plan",
   ["groq" /* GROQ */]: "https://console.groq.com/settings/billing",
@@ -68713,9 +68713,97 @@ async function fetchOllamaModels(baseUrl = "http://localhost:11434") {
     return [];
   }
 }
-async function fetchModelsForProvider(provider, apiKey, baseUrl) {
+async function fetchAnthropicModels(apiKey) {
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/models", {
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01"
+      }
+    });
+    if (!response.ok) {
+      return MODEL_LIST.anthropic;
+    }
+    const data = await response.json();
+    const models = data.data?.map((m5) => m5.id).filter((id) => id.startsWith("claude-")).sort();
+    return models && models.length > 0 ? models : MODEL_LIST.anthropic;
+  } catch {
+    return MODEL_LIST.anthropic;
+  }
+}
+async function fetchMistralModels(apiKey) {
+  try {
+    const response = await fetch("https://api.mistral.ai/v1/models", {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+    if (!response.ok) {
+      return MODEL_LIST.mistral;
+    }
+    const data = await response.json();
+    const models = data.data?.map((m5) => m5.id).sort();
+    return models && models.length > 0 ? models : MODEL_LIST.mistral;
+  } catch {
+    return MODEL_LIST.mistral;
+  }
+}
+async function fetchGroqModels(apiKey) {
+  try {
+    const response = await fetch("https://api.groq.com/openai/v1/models", {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+    if (!response.ok) {
+      return MODEL_LIST.groq;
+    }
+    const data = await response.json();
+    const models = data.data?.map((m5) => m5.id).sort();
+    return models && models.length > 0 ? models : MODEL_LIST.groq;
+  } catch {
+    return MODEL_LIST.groq;
+  }
+}
+async function fetchOpenRouterModels(apiKey) {
+  try {
+    const response = await fetch("https://openrouter.ai/api/v1/models", {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+    if (!response.ok) {
+      return MODEL_LIST.openrouter;
+    }
+    const data = await response.json();
+    const models = data.data?.filter(
+      (m5) => m5.context_length && m5.context_length > 0
+    ).map((m5) => m5.id).sort();
+    return models && models.length > 0 ? models : MODEL_LIST.openrouter;
+  } catch {
+    return MODEL_LIST.openrouter;
+  }
+}
+async function fetchDeepSeekModels(apiKey) {
+  try {
+    const response = await fetch("https://api.deepseek.com/v1/models", {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+    if (!response.ok) {
+      return MODEL_LIST.deepseek;
+    }
+    const data = await response.json();
+    const models = data.data?.map((m5) => m5.id).sort();
+    return models && models.length > 0 ? models : MODEL_LIST.deepseek;
+  } catch {
+    return MODEL_LIST.deepseek;
+  }
+}
+async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = false) {
   const cache = readCache();
-  if (isCacheValid(cache) && cache.models[provider]) {
+  if (!forceRefresh && isCacheValid(cache) && cache.models[provider]) {
     return cache.models[provider];
   }
   let models = [];
@@ -68731,25 +68819,45 @@ async function fetchModelsForProvider(provider, apiKey, baseUrl) {
       models = await fetchOllamaModels(baseUrl);
       break;
     case "anthropic" /* ANTHROPIC */:
-      models = MODEL_LIST.anthropic;
+      if (apiKey) {
+        models = await fetchAnthropicModels(apiKey);
+      } else {
+        models = MODEL_LIST.anthropic;
+      }
       break;
     case "gemini" /* GEMINI */:
       models = MODEL_LIST.gemini;
       break;
     case "groq" /* GROQ */:
-      models = MODEL_LIST.groq;
+      if (apiKey) {
+        models = await fetchGroqModels(apiKey);
+      } else {
+        models = MODEL_LIST.groq;
+      }
       break;
     case "mistral" /* MISTRAL */:
-      models = MODEL_LIST.mistral;
+      if (apiKey) {
+        models = await fetchMistralModels(apiKey);
+      } else {
+        models = MODEL_LIST.mistral;
+      }
       break;
     case "deepseek" /* DEEPSEEK */:
-      models = MODEL_LIST.deepseek;
+      if (apiKey) {
+        models = await fetchDeepSeekModels(apiKey);
+      } else {
+        models = MODEL_LIST.deepseek;
+      }
       break;
     case "aimlapi" /* AIMLAPI */:
       models = MODEL_LIST.aimlapi;
       break;
     case "openrouter" /* OPENROUTER */:
-      models = MODEL_LIST.openrouter;
+      if (apiKey) {
+        models = await fetchOpenRouterModels(apiKey);
+      } else {
+        models = MODEL_LIST.openrouter;
+      }
       break;
     default:
       models = MODEL_LIST.openai;
@@ -68758,6 +68866,31 @@ async function fetchModelsForProvider(provider, apiKey, baseUrl) {
   existingCache[provider] = models;
   writeCache(existingCache);
   return models;
+}
+function clearModelCache() {
+  try {
+    if ((0, import_fs5.existsSync)(MODEL_CACHE_PATH)) {
+      (0, import_fs5.writeFileSync)(MODEL_CACHE_PATH, "{}", "utf8");
+    }
+  } catch {
+  }
+}
+function getCacheInfo() {
+  const cache = readCache();
+  if (!cache) {
+    return { timestamp: null, providers: [] };
+  }
+  return {
+    timestamp: cache.timestamp,
+    providers: Object.keys(cache.models || {})
+  };
+}
+function getCachedModels(provider) {
+  const cache = readCache();
+  if (!cache || !cache.models[provider]) {
+    return null;
+  }
+  return cache.models[provider];
 }
 
 // src/commands/setup.ts
@@ -68837,17 +68970,42 @@ ${source_default.dim(`  Get your key at: ${url2}`)}`;
     }
   });
 }
+function formatCacheAge(timestamp) {
+  if (!timestamp) return "";
+  const ageMs = Date.now() - timestamp;
+  const days = Math.floor(ageMs / (1e3 * 60 * 60 * 24));
+  const hours = Math.floor(ageMs / (1e3 * 60 * 60));
+  if (days > 0) {
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+  } else if (hours > 0) {
+    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  }
+  return "just now";
+}
 async function selectModel(provider, apiKey) {
+  const providerDisplayName = PROVIDER_DISPLAY_NAMES[provider]?.split(" (")[0] || provider;
   const loadingSpinner = le();
-  loadingSpinner.start("Fetching available models...");
+  loadingSpinner.start(`Fetching models from ${providerDisplayName}...`);
   let models = [];
+  let usedFallback = false;
   try {
     models = await fetchModelsForProvider(provider, apiKey);
   } catch {
+    usedFallback = true;
     const providerKey = provider.toLowerCase();
     models = MODEL_LIST[providerKey] || [];
   }
-  loadingSpinner.stop("Models loaded");
+  const cacheInfo = getCacheInfo();
+  const cacheAge = formatCacheAge(cacheInfo.timestamp);
+  if (usedFallback) {
+    loadingSpinner.stop(
+      source_default.yellow("Could not fetch models from API. Using default list.")
+    );
+  } else if (cacheAge) {
+    loadingSpinner.stop(`Models loaded ${source_default.dim(`(cached ${cacheAge})`)}`);
+  } else {
+    loadingSpinner.stop("Models loaded");
+  }
   if (models.length === 0) {
     if (NO_API_KEY_PROVIDERS.includes(provider)) {
       return await J4({
@@ -69099,6 +69257,116 @@ var setupCommand = G3(
   }
 );
 
+// src/commands/models.ts
+init_dist2();
+function formatCacheAge2(timestamp) {
+  if (!timestamp) return "never";
+  const ageMs = Date.now() - timestamp;
+  const days = Math.floor(ageMs / (1e3 * 60 * 60 * 24));
+  const hours = Math.floor(ageMs / (1e3 * 60 * 60));
+  const minutes = Math.floor(ageMs / (1e3 * 60));
+  if (days > 0) {
+    return `${days} day${days === 1 ? "" : "s"} ago`;
+  } else if (hours > 0) {
+    return `${hours} hour${hours === 1 ? "" : "s"} ago`;
+  } else if (minutes > 0) {
+    return `${minutes} minute${minutes === 1 ? "" : "s"} ago`;
+  }
+  return "just now";
+}
+async function listModels(provider, useCache = true) {
+  const config7 = getConfig();
+  const apiKey = config7.OCO_API_KEY;
+  const currentModel = config7.OCO_MODEL;
+  let models = [];
+  if (useCache) {
+    const cached = getCachedModels(provider);
+    if (cached) {
+      models = cached;
+    }
+  }
+  if (models.length === 0) {
+    const providerKey = provider.toLowerCase();
+    models = MODEL_LIST[providerKey] || [];
+  }
+  console.log(`
+${source_default.bold("Available models for")} ${source_default.cyan(provider)}:
+`);
+  if (models.length === 0) {
+    console.log(source_default.dim("  No models found"));
+  } else {
+    models.forEach((model) => {
+      const isCurrent = model === currentModel;
+      const prefix = isCurrent ? source_default.green("* ") : "  ";
+      const label = isCurrent ? source_default.green(model) : model;
+      console.log(`${prefix}${label}`);
+    });
+  }
+  console.log("");
+}
+async function refreshModels(provider) {
+  const config7 = getConfig();
+  const apiKey = config7.OCO_API_KEY;
+  const loadingSpinner = le();
+  loadingSpinner.start(`Fetching models from ${provider}...`);
+  clearModelCache();
+  try {
+    const models = await fetchModelsForProvider(provider, apiKey, void 0, true);
+    loadingSpinner.stop(`${source_default.green("+")} Fetched ${models.length} models`);
+    await listModels(provider, true);
+  } catch (error) {
+    loadingSpinner.stop(source_default.red("Failed to fetch models"));
+    console.error(source_default.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`));
+  }
+}
+var modelsCommand = G3(
+  {
+    name: "models" /* models */,
+    help: {
+      description: "List and manage cached models for your AI provider"
+    },
+    flags: {
+      refresh: {
+        type: Boolean,
+        alias: "r",
+        description: "Clear cache and re-fetch models from the provider",
+        default: false
+      },
+      provider: {
+        type: String,
+        alias: "p",
+        description: "Specify provider (defaults to current OCO_AI_PROVIDER)"
+      }
+    }
+  },
+  async ({ flags }) => {
+    const config7 = getConfig();
+    const provider = flags.provider || config7.OCO_AI_PROVIDER || "openai" /* OPENAI */;
+    ae(source_default.bgCyan(" OpenCommit Models "));
+    const cacheInfo = getCacheInfo();
+    if (cacheInfo.timestamp) {
+      console.log(
+        source_default.dim(`  Cache last updated: ${formatCacheAge2(cacheInfo.timestamp)}`)
+      );
+      if (cacheInfo.providers.length > 0) {
+        console.log(
+          source_default.dim(`  Cached providers: ${cacheInfo.providers.join(", ")}`)
+        );
+      }
+    } else {
+      console.log(source_default.dim("  No cached models"));
+    }
+    if (flags.refresh) {
+      await refreshModels(provider);
+    } else {
+      await listModels(provider);
+    }
+    ce(
+      `Run ${source_default.cyan("oco models --refresh")} to update the model list`
+    );
+  }
+);
+
 // src/utils/checkIsLatestVersion.ts
 init_dist2();
 
@@ -69291,7 +69559,7 @@ Z2(
   {
     version: package_default.version,
     name: "opencommit",
-    commands: [configCommand, hookCommand, commitlintConfigCommand, setupCommand],
+    commands: [configCommand, hookCommand, commitlintConfigCommand, setupCommand, modelsCommand],
     flags: {
       fgm: {
         type: Boolean,

@@ -16,7 +16,8 @@ import {
 } from './config';
 import {
   fetchModelsForProvider,
-  fetchOllamaModels
+  fetchOllamaModels,
+  getCacheInfo
 } from '../utils/modelCache';
 
 const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
@@ -108,24 +109,53 @@ async function getApiKey(provider: string): Promise<string | symbol> {
   });
 }
 
+function formatCacheAge(timestamp: number | null): string {
+  if (!timestamp) return '';
+  const ageMs = Date.now() - timestamp;
+  const days = Math.floor(ageMs / (1000 * 60 * 60 * 24));
+  const hours = Math.floor(ageMs / (1000 * 60 * 60));
+
+  if (days > 0) {
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  } else if (hours > 0) {
+    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  }
+  return 'just now';
+}
+
 async function selectModel(
   provider: string,
   apiKey?: string
 ): Promise<string | symbol> {
+  const providerDisplayName = PROVIDER_DISPLAY_NAMES[provider]?.split(' (')[0] || provider;
   const loadingSpinner = spinner();
-  loadingSpinner.start('Fetching available models...');
+  loadingSpinner.start(`Fetching models from ${providerDisplayName}...`);
 
   let models: string[] = [];
+  let usedFallback = false;
 
   try {
     models = await fetchModelsForProvider(provider, apiKey);
   } catch {
     // Fall back to hardcoded list
+    usedFallback = true;
     const providerKey = provider.toLowerCase() as keyof typeof MODEL_LIST;
     models = MODEL_LIST[providerKey] || [];
   }
 
-  loadingSpinner.stop('Models loaded');
+  // Check cache info for display
+  const cacheInfo = getCacheInfo();
+  const cacheAge = formatCacheAge(cacheInfo.timestamp);
+
+  if (usedFallback) {
+    loadingSpinner.stop(
+      chalk.yellow('Could not fetch models from API. Using default list.')
+    );
+  } else if (cacheAge) {
+    loadingSpinner.stop(`Models loaded ${chalk.dim(`(cached ${cacheAge})`)}`);
+  } else {
+    loadingSpinner.stop('Models loaded');
+  }
 
   if (models.length === 0) {
     // For Ollama/MLX, prompt for manual entry

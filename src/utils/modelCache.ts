@@ -87,15 +87,137 @@ export async function fetchOllamaModels(
   }
 }
 
+export async function fetchAnthropicModels(apiKey: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      }
+    });
+
+    if (!response.ok) {
+      return MODEL_LIST.anthropic;
+    }
+
+    const data = await response.json();
+    const models = data.data
+      ?.map((m: { id: string }) => m.id)
+      .filter((id: string) => id.startsWith('claude-'))
+      .sort();
+
+    return models && models.length > 0 ? models : MODEL_LIST.anthropic;
+  } catch {
+    return MODEL_LIST.anthropic;
+  }
+}
+
+export async function fetchMistralModels(apiKey: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.mistral.ai/v1/models', {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      return MODEL_LIST.mistral;
+    }
+
+    const data = await response.json();
+    const models = data.data
+      ?.map((m: { id: string }) => m.id)
+      .sort();
+
+    return models && models.length > 0 ? models : MODEL_LIST.mistral;
+  } catch {
+    return MODEL_LIST.mistral;
+  }
+}
+
+export async function fetchGroqModels(apiKey: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.groq.com/openai/v1/models', {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      return MODEL_LIST.groq;
+    }
+
+    const data = await response.json();
+    const models = data.data
+      ?.map((m: { id: string }) => m.id)
+      .sort();
+
+    return models && models.length > 0 ? models : MODEL_LIST.groq;
+  } catch {
+    return MODEL_LIST.groq;
+  }
+}
+
+export async function fetchOpenRouterModels(apiKey: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      return MODEL_LIST.openrouter;
+    }
+
+    const data = await response.json();
+    // Filter to text-capable models only (exclude image/audio models)
+    const models = data.data
+      ?.filter((m: { id: string; context_length?: number }) =>
+        m.context_length && m.context_length > 0
+      )
+      .map((m: { id: string }) => m.id)
+      .sort();
+
+    return models && models.length > 0 ? models : MODEL_LIST.openrouter;
+  } catch {
+    return MODEL_LIST.openrouter;
+  }
+}
+
+export async function fetchDeepSeekModels(apiKey: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.deepseek.com/v1/models', {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      return MODEL_LIST.deepseek;
+    }
+
+    const data = await response.json();
+    const models = data.data
+      ?.map((m: { id: string }) => m.id)
+      .sort();
+
+    return models && models.length > 0 ? models : MODEL_LIST.deepseek;
+  } catch {
+    return MODEL_LIST.deepseek;
+  }
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
-  baseUrl?: string
+  baseUrl?: string,
+  forceRefresh: boolean = false
 ): Promise<string[]> {
   const cache = readCache();
 
-  // Return cached models if valid
-  if (isCacheValid(cache) && cache!.models[provider]) {
+  // Return cached models if valid (unless force refresh)
+  if (!forceRefresh && isCacheValid(cache) && cache!.models[provider]) {
     return cache!.models[provider];
   }
 
@@ -115,23 +237,40 @@ export async function fetchModelsForProvider(
       break;
 
     case OCO_AI_PROVIDER_ENUM.ANTHROPIC:
-      models = MODEL_LIST.anthropic;
+      if (apiKey) {
+        models = await fetchAnthropicModels(apiKey);
+      } else {
+        models = MODEL_LIST.anthropic;
+      }
       break;
 
     case OCO_AI_PROVIDER_ENUM.GEMINI:
+      // Google's API doesn't easily list generative models, use hardcoded list
       models = MODEL_LIST.gemini;
       break;
 
     case OCO_AI_PROVIDER_ENUM.GROQ:
-      models = MODEL_LIST.groq;
+      if (apiKey) {
+        models = await fetchGroqModels(apiKey);
+      } else {
+        models = MODEL_LIST.groq;
+      }
       break;
 
     case OCO_AI_PROVIDER_ENUM.MISTRAL:
-      models = MODEL_LIST.mistral;
+      if (apiKey) {
+        models = await fetchMistralModels(apiKey);
+      } else {
+        models = MODEL_LIST.mistral;
+      }
       break;
 
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
-      models = MODEL_LIST.deepseek;
+      if (apiKey) {
+        models = await fetchDeepSeekModels(apiKey);
+      } else {
+        models = MODEL_LIST.deepseek;
+      }
       break;
 
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
@@ -139,7 +278,11 @@ export async function fetchModelsForProvider(
       break;
 
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
-      models = MODEL_LIST.openrouter;
+      if (apiKey) {
+        models = await fetchOpenRouterModels(apiKey);
+      } else {
+        models = MODEL_LIST.openrouter;
+      }
       break;
 
     default:
@@ -167,4 +310,23 @@ export function clearModelCache(): void {
   } catch {
     // Silently fail
   }
+}
+
+export function getCacheInfo(): { timestamp: number | null; providers: string[] } {
+  const cache = readCache();
+  if (!cache) {
+    return { timestamp: null, providers: [] };
+  }
+  return {
+    timestamp: cache.timestamp,
+    providers: Object.keys(cache.models || {})
+  };
+}
+
+export function getCachedModels(provider: string): string[] | null {
+  const cache = readCache();
+  if (!cache || !cache.models[provider]) {
+    return null;
+  }
+  return cache.models[provider];
 }

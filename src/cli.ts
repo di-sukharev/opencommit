@@ -14,6 +14,7 @@ import {
   runSetup,
   promptForMissingApiKey
 } from './commands/setup';
+import { modelsCommand } from './commands/models';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 import { runMigrations } from './migrations/_run.js';
 
@@ -23,7 +24,7 @@ cli(
   {
     version: packageJSON.version,
     name: 'opencommit',
-    commands: [configCommand, hookCommand, commitlintConfigCommand, setupCommand],
+    commands: [configCommand, hookCommand, commitlintConfigCommand, setupCommand, modelsCommand],
     flags: {
       fgm: {
         type: Boolean,

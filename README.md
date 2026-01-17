@@ -201,6 +201,28 @@ or for as a cheaper option:
 oco config set OCO_MODEL=gpt-3.5-turbo
 ```
 
+### Model Management
+
+OpenCommit automatically fetches available models from your provider when you run `oco setup`. Models are cached for 7 days to reduce API calls.
+
+To see available models for your current provider:
+
+```sh
+oco models
+```
+
+To refresh the model list (e.g., after new models are released):
+
+```sh
+oco models --refresh
+```
+
+To see models for a specific provider:
+
+```sh
+oco models --provider anthropic
+```
+
 ### Switch to other LLM providers with a custom URL
 
 By default OpenCommit uses [OpenAI](https://openai.com).
