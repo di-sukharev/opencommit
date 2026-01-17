@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
+import { ModelNotFoundError } from '../utils/errors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -46,6 +47,20 @@ export class OllamaEngine implements AiEngine {
       return removeContentTags(content, 'think');
     } catch (err: any) {
       const message = err.response?.data?.error ?? err.message;
+
+      // Check for model not found errors
+      if (message?.toLowerCase().includes('model') &&
+          (message?.toLowerCase().includes('not found') ||
+           message?.toLowerCase().includes('does not exist') ||
+           message?.toLowerCase().includes('pull'))) {
+        throw new ModelNotFoundError(this.config.model, 'ollama', 404);
+      }
+
+      // Check for 404 status
+      if (err.response?.status === 404) {
+        throw new ModelNotFoundError(this.config.model, 'ollama', 404);
+      }
+
       throw new Error(`Ollama provider error: ${message}`);
     }
   }

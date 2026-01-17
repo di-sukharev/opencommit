@@ -68,10 +68,11 @@ export const MODEL_LIST = {
   ],
 
   anthropic: [
-    'claude-3-5-sonnet-20240620',
-    'claude-3-opus-20240229',
-    'claude-3-sonnet-20240229',
-    'claude-3-haiku-20240307'
+    'claude-sonnet-4-20250514',
+    'claude-opus-4-20250514',
+    'claude-3-7-sonnet-20250219',
+    'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022'
   ],
 
   gemini: [
@@ -844,6 +845,33 @@ export enum OCO_AI_PROVIDER_ENUM {
   DEEPSEEK = 'deepseek',
   AIMLAPI = 'aimlapi',
   OPENROUTER = 'openrouter'
+}
+
+export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
+  [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/api-keys',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'https://console.anthropic.com/settings/keys',
+  [OCO_AI_PROVIDER_ENUM.GEMINI]: 'https://aistudio.google.com/app/apikey',
+  [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/keys',
+  [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/api-keys/',
+  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
+  [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
+  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
+  [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
+  [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
+  [OCO_AI_PROVIDER_ENUM.MLX]: null,
+  [OCO_AI_PROVIDER_ENUM.FLOWISE]: null,
+  [OCO_AI_PROVIDER_ENUM.TEST]: null
+};
+
+export const RECOMMENDED_MODELS: Record<string, string> = {
+  [OCO_AI_PROVIDER_ENUM.OPENAI]: 'gpt-4o-mini',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'claude-sonnet-4-20250514',
+  [OCO_AI_PROVIDER_ENUM.GEMINI]: 'gemini-1.5-flash',
+  [OCO_AI_PROVIDER_ENUM.GROQ]: 'llama3-70b-8192',
+  [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
+  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-chat',
+  [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
+  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 }
 
 export type ConfigType = {

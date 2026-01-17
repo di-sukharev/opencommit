@@ -1,7 +1,21 @@
+import { select, confirm, isCancel } from '@clack/prompts';
+import chalk from 'chalk';
 import { OpenAI } from 'openai';
-import { DEFAULT_TOKEN_LIMITS, getConfig } from './commands/config';
+import {
+  DEFAULT_TOKEN_LIMITS,
+  getConfig,
+  setGlobalConfig,
+  getGlobalConfig,
+  MODEL_LIST,
+  RECOMMENDED_MODELS
+} from './commands/config';
 import { getMainCommitPrompt } from './prompts';
 import { getEngine } from './utils/engine';
+import {
+  isModelNotFoundError,
+  getSuggestedModels,
+  ModelNotFoundError
+} from './utils/errors';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
 
@@ -36,13 +50,106 @@ export enum GenerateCommitMessageErrorEnum {
   outputTokensTooHigh = `Token limit exceeded, OCO_TOKENS_MAX_OUTPUT must not be much higher than the default ${DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT} tokens.`
 }
 
+async function handleModelNotFoundError(
+  error: Error,
+  provider: string,
+  currentModel: string
+): Promise<string | null> {
+  console.log(
+    chalk.red(`\n✖ Model '${currentModel}' not found\n`)
+  );
+
+  const suggestedModels = getSuggestedModels(provider, currentModel);
+  const recommended =
+    RECOMMENDED_MODELS[provider as keyof typeof RECOMMENDED_MODELS];
+
+  if (suggestedModels.length === 0) {
+    console.log(
+      chalk.yellow(
+        `No alternative models available. Run 'oco setup' to configure a different model.`
+      )
+    );
+    return null;
+  }
+
+  const options: Array<{ value: string; label: string }> = [];
+
+  // Add recommended first if available
+  if (recommended && suggestedModels.includes(recommended)) {
+    options.push({
+      value: recommended,
+      label: `${recommended} (Recommended)`
+    });
+  }
+
+  // Add other suggestions
+  suggestedModels
+    .filter((m) => m !== recommended)
+    .forEach((model) => {
+      options.push({ value: model, label: model });
+    });
+
+  options.push({ value: '__custom__', label: 'Enter custom model...' });
+
+  const selection = await select({
+    message: 'Select an alternative model:',
+    options
+  });
+
+  if (isCancel(selection)) {
+    return null;
+  }
+
+  let newModel: string;
+  if (selection === '__custom__') {
+    const { text } = await import('@clack/prompts');
+    const customModel = await text({
+      message: 'Enter model name:',
+      validate: (value) => {
+        if (!value || value.trim().length === 0) {
+          return 'Model name is required';
+        }
+        return undefined;
+      }
+    });
+
+    if (isCancel(customModel)) {
+      return null;
+    }
+    newModel = customModel as string;
+  } else {
+    newModel = selection as string;
+  }
+
+  // Ask if user wants to save as default
+  const saveAsDefault = await confirm({
+    message: 'Save as default model?'
+  });
+
+  if (!isCancel(saveAsDefault) && saveAsDefault) {
+    const existingConfig = getGlobalConfig();
+    setGlobalConfig({
+      ...existingConfig,
+      OCO_MODEL: newModel
+    } as any);
+    console.log(chalk.green('✔') + ' Model saved as default\n');
+  }
+
+  return newModel;
+}
+
 const ADJUSTMENT_FACTOR = 20;
 
 export const generateCommitMessageByDiff = async (
   diff: string,
   fullGitMojiSpec: boolean = false,
-  context: string = ''
+  context: string = '',
+  retryWithModel?: string
 ): Promise<string> => {
+  const currentConfig = getConfig();
+  const provider = currentConfig.OCO_AI_PROVIDER || 'openai';
+  const currentModel = retryWithModel || currentConfig.OCO_MODEL;
+
   try {
     const INIT_MESSAGES_PROMPT = await getMainCommitPrompt(
       fullGitMojiSpec,
@@ -89,6 +196,32 @@ export const generateCommitMessageByDiff = async (
 
     return commitMessage;
   } catch (error) {
+    // Handle model-not-found errors with interactive recovery
+    if (isModelNotFoundError(error)) {
+      const newModel = await handleModelNotFoundError(
+        error as Error,
+        provider,
+        currentModel
+      );
+
+      if (newModel) {
+        console.log(chalk.cyan(`Retrying with ${newModel}...\n`));
+        // Retry with the new model by updating config temporarily
+        const existingConfig = getGlobalConfig();
+        setGlobalConfig({
+          ...existingConfig,
+          OCO_MODEL: newModel
+        } as any);
+
+        return generateCommitMessageByDiff(
+          diff,
+          fullGitMojiSpec,
+          context,
+          newModel
+        );
+      }
+    }
+
     throw error;
   }
 };

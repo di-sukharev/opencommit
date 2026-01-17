@@ -8,6 +8,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { OpenAI } from 'openai';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { ModelNotFoundError } from '../utils/errors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -59,6 +60,20 @@ export class AnthropicEngine implements AiEngine {
       return removeContentTags(content, 'think');
     } catch (error) {
       const err = error as Error;
+
+      // Check for model not found errors
+      if (err.message?.toLowerCase().includes('model') &&
+          (err.message?.toLowerCase().includes('not found') ||
+           err.message?.toLowerCase().includes('does not exist') ||
+           err.message?.toLowerCase().includes('invalid'))) {
+        throw new ModelNotFoundError(this.config.model, 'anthropic', 404);
+      }
+
+      // Check for 404 errors
+      if ('status' in (error as any) && (error as any).status === 404) {
+        throw new ModelNotFoundError(this.config.model, 'anthropic', 404);
+      }
+
       outro(`${chalk.red('✖')} ${err?.message || err}`);
 
       if (
@@ -71,6 +86,11 @@ export class AnthropicEngine implements AiEngine {
         outro(
           'For help look into README https://github.com/di-sukharev/opencommit#setup'
         );
+      }
+
+      // Check axios 404 errors
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        throw new ModelNotFoundError(this.config.model, 'anthropic', 404);
       }
 
       throw err;

@@ -8,6 +8,12 @@ import { commitlintConfigCommand } from './commands/commitlint';
 import { configCommand } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
+import {
+  setupCommand,
+  isFirstRun,
+  runSetup,
+  promptForMissingApiKey
+} from './commands/setup';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 import { runMigrations } from './migrations/_run.js';
 
@@ -17,7 +23,7 @@ cli(
   {
     version: packageJSON.version,
     name: 'opencommit',
-    commands: [configCommand, hookCommand, commitlintConfigCommand],
+    commands: [configCommand, hookCommand, commitlintConfigCommand, setupCommand],
     flags: {
       fgm: {
         type: Boolean,
@@ -47,6 +53,20 @@ cli(
     if (await isHookCalled()) {
       prepareCommitMessageHook();
     } else {
+      // Check for first run and trigger setup wizard
+      if (isFirstRun()) {
+        const setupComplete = await runSetup();
+        if (!setupComplete) {
+          process.exit(1);
+        }
+      }
+
+      // Check for missing API key and prompt if needed
+      const hasApiKey = await promptForMissingApiKey();
+      if (!hasApiKey) {
+        process.exit(1);
+      }
+
       commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
     }
   },
