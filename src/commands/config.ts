@@ -28,7 +28,8 @@ export enum CONFIG_KEYS {
   OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT'
+  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
+  OCO_SKIP_COMMIT_CONFIRM = 'OCO_SKIP_COMMIT_CONFIRM'
 }
 
 export enum CONFIG_MODES {
@@ -827,6 +828,16 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_SKIP_COMMIT_CONFIRM](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_SKIP_COMMIT_CONFIRM,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+    return value;
   }
 };
 
@@ -865,6 +876,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
+  [CONFIG_KEYS.OCO_SKIP_COMMIT_CONFIRM]: boolean;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -913,7 +925,8 @@ export const DEFAULT_CONFIG = {
   OCO_WHY: false,
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true, // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT: false
+  OCO_HOOK_AUTO_UNCOMMENT: false,
+  OCO_SKIP_COMMIT_CONFIRM: false
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
@@ -954,7 +967,8 @@ const getEnvConfig = (envPath: string) => {
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
 
-    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
+    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH), // todo: deprecate
+    OCO_SKIP_COMMIT_CONFIRM: parseConfigVarValue(process.env.OCO_SKIP_COMMIT_CONFIRM)
   };
 };
 
@@ -1168,6 +1182,11 @@ function getConfigKeyDetails(key) {
     case CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT:
       return {
         description: 'Automatically uncomment the commit message in the hook',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_SKIP_COMMIT_CONFIRM:
+      return {
+        description: 'Skip the commit message confirmation prompt and auto-commit with generated message',
         values: ['true', 'false']
       };
     default:
