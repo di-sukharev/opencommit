@@ -51307,6 +51307,7 @@ var configValidators = {
       typeof value === "boolean",
       "Must be true or false"
     );
+    return value;
   }
 };
 var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
