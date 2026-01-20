@@ -982,7 +982,8 @@ const getEnvConfig = (envPath: string) => {
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
 
-    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
+    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH), // todo: deprecate
+    OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT)
   };
 };
 
