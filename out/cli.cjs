@@ -68272,6 +68272,24 @@ var getGitRemotes = async () => {
   const { stdout } = await execa("git", ["remote"]);
   return stdout.split("\n").filter((remote) => Boolean(remote.trim()));
 };
+var hasUpstreamBranch = async () => {
+  try {
+    await execa("git", ["rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"]);
+    return true;
+  } catch {
+    return false;
+  }
+};
+var getCurrentBranch = async () => {
+  const { stdout } = await execa("git", ["branch", "--show-current"]);
+  return stdout.trim();
+};
+var displayPushUrl = (stderr2) => {
+  const urlMatch = stderr2.match(/https?:\/\/\S+/);
+  if (urlMatch) {
+    ce(`${source_default.cyan("Create a pull request:")} ${urlMatch[0]}`);
+  }
+};
 var checkMessageTemplate = (extraArgs2) => {
   for (const key in extraArgs2) {
     if (extraArgs2[key].includes(config6.OCO_MESSAGE_TEMPLATE_PLACEHOLDER))
@@ -68343,8 +68361,13 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
       const remotes = await getGitRemotes();
       if (config6.OCO_GITPUSH === false) return;
       if (!remotes.length) {
-        const { stdout: stdout2 } = await execa("git", ["push"]);
+        const pushArgs = ["push"];
+        if (!await hasUpstreamBranch()) {
+          pushArgs.push("--set-upstream", "origin", await getCurrentBranch());
+        }
+        const { stdout: stdout2, stderr: stderr2 } = await execa("git", pushArgs);
         if (stdout2) ce(stdout2);
+        displayPushUrl(stderr2);
         process.exit(0);
       }
       if (remotes.length === 1) {
@@ -68355,15 +68378,16 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
         if (isPushConfirmedByUser) {
           const pushSpinner = le();
           pushSpinner.start(`Running 'git push ${remotes[0]}'`);
-          const { stdout: stdout2 } = await execa("git", [
-            "push",
-            "--verbose",
-            remotes[0]
-          ]);
+          const pushArgs = ["push", "--verbose", remotes[0]];
+          if (!await hasUpstreamBranch()) {
+            pushArgs.push("--set-upstream", await getCurrentBranch());
+          }
+          const { stdout: stdout2, stderr: stderr2 } = await execa("git", pushArgs);
           pushSpinner.stop(
             `${source_default.green("\u2714")} Successfully pushed all commits to ${remotes[0]}`
           );
           if (stdout2) ce(stdout2);
+          displayPushUrl(stderr2);
         } else {
           ce("`git push` aborted");
           process.exit(0);
@@ -68381,13 +68405,18 @@ ${source_default.grey("\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2
         if (selectedRemote !== skipOption) {
           const pushSpinner = le();
           pushSpinner.start(`Running 'git push ${selectedRemote}'`);
-          const { stdout: stdout2 } = await execa("git", ["push", selectedRemote]);
+          const pushArgs = ["push", selectedRemote];
+          if (!await hasUpstreamBranch()) {
+            pushArgs.push("--set-upstream", await getCurrentBranch());
+          }
+          const { stdout: stdout2, stderr: stderr2 } = await execa("git", pushArgs);
           if (stdout2) ce(stdout2);
           pushSpinner.stop(
             `${source_default.green(
               "\u2714"
             )} successfully pushed all commits to ${selectedRemote}`
           );
+          displayPushUrl(stderr2);
         }
       }
     } else {
