@@ -15,7 +15,10 @@ describe('config', () => {
 
   function resetEnv(env: NodeJS.ProcessEnv) {
     Object.keys(process.env).forEach((key) => {
-      if (!(key in env)) {
+      if (key.startsWith('OCO_')) {
+        // Don't restore OCO_ environment variables to avoid test interference
+        delete process.env[key];
+      } else if (!(key in env)) {
         delete process.env[key];
       } else {
         process.env[key] = env[key];
@@ -122,7 +125,7 @@ describe('config', () => {
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
       expect(config.OCO_OMIT_SCOPE).toEqual(true);
     });
-    
+
     it('should handle custom HTTP headers correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
         OCO_API_CUSTOM_HEADERS: '{"X-Global-Header": "global-value"}'
@@ -139,7 +142,7 @@ describe('config', () => {
 
       expect(config).not.toEqual(null);
       expect(config.OCO_API_CUSTOM_HEADERS).toEqual({"Authorization": "Bearer token123", "X-Custom-Header": "test-value"});
-      
+
       // No need to parse JSON again since it's already an object
       const parsedHeaders = config.OCO_API_CUSTOM_HEADERS;
       expect(parsedHeaders).toHaveProperty('Authorization', 'Bearer token123');
