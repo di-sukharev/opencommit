@@ -32,6 +32,27 @@ const getGitRemotes = async () => {
   return stdout.split('\n').filter((remote) => Boolean(remote.trim()));
 };
 
+const hasUpstreamBranch = async (): Promise<boolean> => {
+  try {
+    await execa('git', ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const getCurrentBranch = async (): Promise<string> => {
+  const { stdout } = await execa('git', ['branch', '--show-current']);
+  return stdout.trim();
+};
+
+const displayPushUrl = (stderr: string) => {
+  const urlMatch = stderr.match(/https?:\/\/\S+/);
+  if (urlMatch) {
+    outro(`${chalk.cyan('Create a pull request:')} ${urlMatch[0]}`);
+  }
+};
+
 // Check for the presence of message templates
 const checkMessageTemplate = (extraArgs: string[]): string | false => {
   for (const key in extraArgs) {
@@ -133,8 +154,13 @@ ${chalk.grey('——————————————————')}`
       if (config.OCO_GITPUSH === false) return;
 
       if (!remotes.length) {
-        const { stdout } = await execa('git', ['push']);
+        const pushArgs = ['push'];
+        if (!(await hasUpstreamBranch())) {
+          pushArgs.push('--set-upstream', 'origin', await getCurrentBranch());
+        }
+        const { stdout, stderr } = await execa('git', pushArgs);
         if (stdout) outro(stdout);
+        displayPushUrl(stderr);
         process.exit(0);
       }
 
@@ -150,11 +176,11 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.start(`Running 'git push ${remotes[0]}'`);
 
-          const { stdout } = await execa('git', [
-            'push',
-            '--verbose',
-            remotes[0]
-          ]);
+          const pushArgs = ['push', '--verbose', remotes[0]];
+          if (!(await hasUpstreamBranch())) {
+            pushArgs.push('--set-upstream', await getCurrentBranch());
+          }
+          const { stdout, stderr } = await execa('git', pushArgs);
 
           pushSpinner.stop(
             `${chalk.green('✔')} Successfully pushed all commits to ${
@@ -163,6 +189,7 @@ ${chalk.grey('——————————————————')}`
           );
 
           if (stdout) outro(stdout);
+          displayPushUrl(stderr);
         } else {
           outro('`git push` aborted');
           process.exit(0);
@@ -184,7 +211,11 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.start(`Running 'git push ${selectedRemote}'`);
 
-          const { stdout } = await execa('git', ['push', selectedRemote]);
+          const pushArgs = ['push', selectedRemote];
+          if (!(await hasUpstreamBranch())) {
+            pushArgs.push('--set-upstream', await getCurrentBranch());
+          }
+          const { stdout, stderr } = await execa('git', pushArgs);
 
           if (stdout) outro(stdout);
 
@@ -193,6 +224,8 @@ ${chalk.grey('——————————————————')}`
               '✔'
             )} successfully pushed all commits to ${selectedRemote}`
           );
+
+          displayPushUrl(stderr);
         }
       }
     } else {
