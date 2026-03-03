@@ -56,11 +56,10 @@ const generateCommitMessageFromGitDiff = async ({
   fullGitMojiSpec = false,
   skipCommitConfirmation = false
 }: GenerateCommitMessageFromGitDiffParams): Promise<void> => {
-  await assertGitRepo();
   const commitGenerationSpinner = spinner();
-  commitGenerationSpinner.start('Generating the commit message');
-
   try {
+    await assertGitRepo();
+    commitGenerationSpinner.start('Generating the commit message');
     let commitMessage = await generateCommitMessageByDiff(
       diff,
       fullGitMojiSpec,
@@ -231,6 +230,14 @@ export async function commit(
   fullGitMojiSpec: boolean = false,
   skipCommitConfirmation: boolean = false
 ) {
+  try {
+    await assertGitRepo();
+  } catch (error) {
+    const err = error as Error;
+    outro(`${chalk.red('✖')} ${err?.message || err}`);
+    process.exit(1);
+  }
+  
   if (isStageAllFlag) {
     const changedFiles = await getChangedFiles();
 
