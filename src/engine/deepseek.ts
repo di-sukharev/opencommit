@@ -10,9 +10,10 @@ export interface DeepseekConfig extends OpenAiConfig {}
 export class DeepseekEngine extends OpenAiEngine {
   constructor(config: DeepseekConfig) {
     // Call OpenAIEngine constructor with forced Deepseek baseURL
+    // Put baseURL first so user config can override it
     super({
-      ...config,
-      baseURL: 'https://api.deepseek.com/v1'
+      baseURL: 'https://api.deepseek.com/v1',
+      ...config
     });
   }
 
