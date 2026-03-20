@@ -185,6 +185,30 @@ export async function fetchOpenRouterModels(apiKey: string): Promise<string[]> {
   }
 }
 
+export async function fetchMiniMaxModels(apiKey: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.minimax.io/v1/models', {
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      return MODEL_LIST.minimax;
+    }
+
+    const data = await response.json();
+    const models = data.data
+      ?.map((m: { id: string }) => m.id)
+      .filter((id: string) => id.startsWith('MiniMax-'))
+      .sort();
+
+    return models && models.length > 0 ? models : MODEL_LIST.minimax;
+  } catch {
+    return MODEL_LIST.minimax;
+  }
+}
+
 export async function fetchDeepSeekModels(apiKey: string): Promise<string[]> {
   try {
     const response = await fetch('https://api.deepseek.com/v1/models', {
@@ -270,6 +294,14 @@ export async function fetchModelsForProvider(
         models = await fetchDeepSeekModels(apiKey);
       } else {
         models = MODEL_LIST.deepseek;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.MINIMAX:
+      if (apiKey) {
+        models = await fetchMiniMaxModels(apiKey);
+      } else {
+        models = MODEL_LIST.minimax;
       }
       break;
 

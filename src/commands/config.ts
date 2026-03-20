@@ -136,6 +136,8 @@ export const MODEL_LIST = {
   ],
   deepseek: ['deepseek-chat', 'deepseek-reasoner'],
 
+  minimax: ['MiniMax-M2.7', 'MiniMax-M2.5', 'MiniMax-M2.5-highspeed'],
+
   // AI/ML API available chat-completion models
   // https://api.aimlapi.com/v1/models
   aimlapi: [
@@ -593,6 +595,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.aimlapi[0];
     case 'openrouter':
       return MODEL_LIST.openrouter[0];
+    case 'minimax':
+      return MODEL_LIST.minimax[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -784,9 +788,10 @@ export const configValidators = {
         'groq',
         'deepseek',
         'aimlapi',
-        'openrouter'
+        'openrouter',
+        'minimax'
       ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'minimax' or 'openai' (default)`
     );
 
     return value;
@@ -844,7 +849,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   MLX = 'mlx',
   DEEPSEEK = 'deepseek',
   AIMLAPI = 'aimlapi',
-  OPENROUTER = 'openrouter'
+  OPENROUTER = 'openrouter',
+  MINIMAX = 'minimax'
 }
 
 export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
@@ -857,6 +863,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'https://platform.minimaxi.com/user-center/basic-information/interface-key',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
   [OCO_AI_PROVIDER_ENUM.MLX]: null,
   [OCO_AI_PROVIDER_ENUM.FLOWISE]: null,
@@ -871,7 +878,8 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-chat',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
-  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
+  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'MiniMax-M2.7'
 }
 
 export type ConfigType = {
