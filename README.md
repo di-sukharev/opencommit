@@ -122,7 +122,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, gemini, flowise, deepseek, aimlapi>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, gemini, flowise, deepseek, aimlapi, minimax>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -235,6 +235,8 @@ oco config set OCO_AI_PROVIDER=azure OCO_API_KEY=<your_azure_api_key> OCO_API_UR
 oco config set OCO_AI_PROVIDER=flowise OCO_API_KEY=<your_flowise_api_key> OCO_API_URL=<your_flowise_endpoint>
 
 oco config set OCO_AI_PROVIDER=ollama OCO_API_KEY=<your_ollama_api_key> OCO_API_URL=<your_ollama_endpoint>
+
+oco config set OCO_AI_PROVIDER=minimax OCO_API_KEY=<your_minimax_api_key>
 ```
 
 ### Locale configuration

@@ -12,6 +12,7 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/credits',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'https://platform.minimaxi.com/user-center/basic-information',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
   [OCO_AI_PROVIDER_ENUM.MLX]: null,
   [OCO_AI_PROVIDER_ENUM.FLOWISE]: null,
@@ -202,6 +203,8 @@ export function getRecommendedModel(provider: string): string | null {
       return 'openai/gpt-4o-mini';
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       return 'gpt-4o-mini';
+    case OCO_AI_PROVIDER_ENUM.MINIMAX:
+      return 'MiniMax-M2.7';
     default:
       return null;
   }
