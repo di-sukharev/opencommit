@@ -67277,8 +67277,8 @@ var MLXEngine = class {
 var DeepseekEngine = class extends OpenAiEngine {
   constructor(config7) {
     super({
-      ...config7,
-      baseURL: "https://api.deepseek.com/v1"
+      baseURL: "https://api.deepseek.com/v1",
+      ...config7
     });
     // Identical method from OpenAiEngine, re-implemented here
     this.generateCommitMessage = async (messages) => {
@@ -69561,7 +69561,13 @@ Z2(
   {
     version: package_default.version,
     name: "opencommit",
-    commands: [configCommand, hookCommand, commitlintConfigCommand, setupCommand, modelsCommand],
+    commands: [
+      configCommand,
+      hookCommand,
+      commitlintConfigCommand,
+      setupCommand,
+      modelsCommand
+    ],
     flags: {
       fgm: {
         type: Boolean,
@@ -69585,23 +69591,23 @@ Z2(
     help: { description: package_default.description }
   },
   async ({ flags }) => {
+    if (await isHookCalled()) {
+      await prepareCommitMessageHook();
+      return;
+    }
     await runMigrations();
     await checkIsLatestVersion();
-    if (await isHookCalled()) {
-      prepareCommitMessageHook();
-    } else {
-      if (isFirstRun()) {
-        const setupComplete = await runSetup();
-        if (!setupComplete) {
-          process.exit(1);
-        }
-      }
-      const hasApiKey = await promptForMissingApiKey();
-      if (!hasApiKey) {
+    if (isFirstRun()) {
+      const setupComplete = await runSetup();
+      if (!setupComplete) {
         process.exit(1);
       }
-      commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
     }
+    const hasApiKey = await promptForMissingApiKey();
+    if (!hasApiKey) {
+      process.exit(1);
+    }
+    commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
   },
   extraArgs
 );
