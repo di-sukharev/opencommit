@@ -6,6 +6,12 @@ import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
 
+const gpt5_models = [
+  "gpt-5",
+  "gpt-5-mini",
+  "gpt-5-nano"
+]
+
 export interface OpenAiConfig extends AiEngineConfig {}
 
 export class OpenAiEngine implements AiEngine {
@@ -39,7 +45,7 @@ export class OpenAiEngine implements AiEngine {
     const params = {
       model: this.config.model,
       messages,
-      temperature: 0,
+      temperature: gpt5_models.includes(this.config.model) ? 1 : 0,
       top_p: 0.1,
       max_tokens: this.config.maxTokensOutput
     };
