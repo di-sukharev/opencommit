@@ -24,7 +24,13 @@ cli(
   {
     version: packageJSON.version,
     name: 'opencommit',
-    commands: [configCommand, hookCommand, commitlintConfigCommand, setupCommand, modelsCommand],
+    commands: [
+      configCommand,
+      hookCommand,
+      commitlintConfigCommand,
+      setupCommand,
+      modelsCommand
+    ],
     flags: {
       fgm: {
         type: Boolean,
@@ -48,28 +54,29 @@ cli(
     help: { description: packageJSON.description }
   },
   async ({ flags }) => {
+    if (await isHookCalled()) {
+      await prepareCommitMessageHook();
+      return;
+    }
+
     await runMigrations();
     await checkIsLatestVersion();
 
-    if (await isHookCalled()) {
-      prepareCommitMessageHook();
-    } else {
-      // Check for first run and trigger setup wizard
-      if (isFirstRun()) {
-        const setupComplete = await runSetup();
-        if (!setupComplete) {
-          process.exit(1);
-        }
-      }
-
-      // Check for missing API key and prompt if needed
-      const hasApiKey = await promptForMissingApiKey();
-      if (!hasApiKey) {
+    // Check for first run and trigger setup wizard
+    if (isFirstRun()) {
+      const setupComplete = await runSetup();
+      if (!setupComplete) {
         process.exit(1);
       }
-
-      commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
     }
+
+    // Check for missing API key and prompt if needed
+    const hasApiKey = await promptForMissingApiKey();
+    if (!hasApiKey) {
+      process.exit(1);
+    }
+
+    commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
   },
   extraArgs
 );

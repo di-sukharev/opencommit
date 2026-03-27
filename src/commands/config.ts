@@ -849,7 +849,8 @@ export enum OCO_AI_PROVIDER_ENUM {
 
 export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/api-keys',
-  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'https://console.anthropic.com/settings/keys',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]:
+    'https://console.anthropic.com/settings/keys',
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'https://aistudio.google.com/app/apikey',
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/keys',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/api-keys/',
@@ -872,7 +873,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-chat',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
-}
+};
 
 export type ConfigType = {
   [CONFIG_KEYS.OCO_API_KEY]?: string;
