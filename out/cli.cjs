@@ -57238,7 +57238,9 @@ var PROVIDER_BILLING_URLS = {
 };
 var InsufficientCreditsError = class extends Error {
   constructor(provider, message) {
-    super(message || `Insufficient credits or quota for provider '${provider}'`);
+    super(
+      message || `Insufficient credits or quota for provider '${provider}'`
+    );
     this.name = "InsufficientCreditsError";
     this.provider = provider;
   }
@@ -57490,7 +57492,9 @@ ${source_default.red("\u2716")} ${source_default.bold.red(formatted.title)}
 `;
   if (formatted.helpUrl) {
     output += `
-  ${source_default.cyan("Help:")} ${source_default.underline(formatted.helpUrl)}
+  ${source_default.cyan("Help:")} ${source_default.underline(
+      formatted.helpUrl
+    )}
 `;
   }
   if (formatted.suggestion) {
@@ -67949,11 +67953,9 @@ var GenerateCommitMessageErrorEnum = ((GenerateCommitMessageErrorEnum2) => {
   return GenerateCommitMessageErrorEnum2;
 })(GenerateCommitMessageErrorEnum || {});
 async function handleModelNotFoundError(error, provider, currentModel) {
-  console.log(
-    source_default.red(`
+  console.log(source_default.red(`
 \u2716 Model '${currentModel}' not found
-`)
-  );
+`));
   const suggestedModels = getSuggestedModels(provider, currentModel);
   const recommended = RECOMMENDED_MODELS[provider];
   if (suggestedModels.length === 0) {
@@ -68926,6 +68928,11 @@ var OTHER_PROVIDERS = [
 ];
 var NO_API_KEY_PROVIDERS = [
   "ollama" /* OLLAMA */,
+  "mlx" /* MLX */,
+  "test" /* TEST */
+];
+var MODEL_REQUIRED_PROVIDERS = [
+  "ollama" /* OLLAMA */,
   "mlx" /* MLX */
 ];
 async function selectProvider() {
@@ -69202,20 +69209,24 @@ async function runSetup() {
   };
   setGlobalConfig(newConfig);
   ce(
-    `${source_default.green("\u2714")} Configuration saved to ~/.opencommit
+    `${source_default.green(
+      "\u2714"
+    )} Configuration saved to ~/.opencommit
 
-  Run ${source_default.cyan("oco")} to generate commit messages!`
+  Run ${source_default.cyan(
+      "oco"
+    )} to generate commit messages!`
   );
   return true;
 }
 function isFirstRun() {
-  if (!getIsGlobalConfigFileExist()) {
-    return true;
-  }
   const config7 = getConfig();
   const provider = config7.OCO_AI_PROVIDER || "openai" /* OPENAI */;
-  if (NO_API_KEY_PROVIDERS.includes(provider)) {
+  if (MODEL_REQUIRED_PROVIDERS.includes(provider)) {
     return !config7.OCO_MODEL;
+  }
+  if (provider === "test" /* TEST */) {
+    return false;
   }
   return !config7.OCO_API_KEY;
 }
@@ -69229,11 +69240,9 @@ async function promptForMissingApiKey() {
     return true;
   }
   console.log(
-    source_default.yellow(
-      `
+    source_default.yellow(`
 API key missing for ${provider}. Let's set it up.
-`
-    )
+`)
   );
   const apiKey = await getApiKey(provider);
   if (hD2(apiKey)) {
@@ -69291,9 +69300,11 @@ async function listModels(provider, useCache = true) {
     const providerKey = provider.toLowerCase();
     models = MODEL_LIST[providerKey] || [];
   }
-  console.log(`
+  console.log(
+    `
 ${source_default.bold("Available models for")} ${source_default.cyan(provider)}:
-`);
+`
+  );
   if (models.length === 0) {
     console.log(source_default.dim("  No models found"));
   } else {
@@ -69313,12 +69324,21 @@ async function refreshModels(provider) {
   loadingSpinner.start(`Fetching models from ${provider}...`);
   clearModelCache();
   try {
-    const models = await fetchModelsForProvider(provider, apiKey, void 0, true);
+    const models = await fetchModelsForProvider(
+      provider,
+      apiKey,
+      void 0,
+      true
+    );
     loadingSpinner.stop(`${source_default.green("+")} Fetched ${models.length} models`);
     await listModels(provider, true);
   } catch (error) {
     loadingSpinner.stop(source_default.red("Failed to fetch models"));
-    console.error(source_default.red(`Error: ${error instanceof Error ? error.message : "Unknown error"}`));
+    console.error(
+      source_default.red(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      )
+    );
   }
 }
 var modelsCommand = G3(
@@ -69348,7 +69368,9 @@ var modelsCommand = G3(
     const cacheInfo = getCacheInfo();
     if (cacheInfo.timestamp) {
       console.log(
-        source_default.dim(`  Cache last updated: ${formatCacheAge2(cacheInfo.timestamp)}`)
+        source_default.dim(
+          `  Cache last updated: ${formatCacheAge2(cacheInfo.timestamp)}`
+        )
       );
       if (cacheInfo.providers.length > 0) {
         console.log(
@@ -69363,9 +69385,7 @@ var modelsCommand = G3(
     } else {
       await listModels(provider);
     }
-    ce(
-      `Run ${source_default.cyan("oco models --refresh")} to update the model list`
-    );
+    ce(`Run ${source_default.cyan("oco models --refresh")} to update the model list`);
   }
 );
 

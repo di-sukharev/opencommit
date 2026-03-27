@@ -55,9 +55,7 @@ async function handleModelNotFoundError(
   provider: string,
   currentModel: string
 ): Promise<string | null> {
-  console.log(
-    chalk.red(`\n✖ Model '${currentModel}' not found\n`)
-  );
+  console.log(chalk.red(`\n✖ Model '${currentModel}' not found\n`));
 
   const suggestedModels = getSuggestedModels(provider, currentModel);
   const recommended =

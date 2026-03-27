@@ -2,11 +2,7 @@ import { intro, outro, spinner } from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
 import { COMMANDS } from './ENUMS';
-import {
-  MODEL_LIST,
-  OCO_AI_PROVIDER_ENUM,
-  getConfig
-} from './config';
+import { MODEL_LIST, OCO_AI_PROVIDER_ENUM, getConfig } from './config';
 import {
   fetchModelsForProvider,
   clearModelCache,
@@ -31,7 +27,10 @@ function formatCacheAge(timestamp: number | null): string {
   return 'just now';
 }
 
-async function listModels(provider: string, useCache: boolean = true): Promise<void> {
+async function listModels(
+  provider: string,
+  useCache: boolean = true
+): Promise<void> {
   const config = getConfig();
   const apiKey = config.OCO_API_KEY;
   const currentModel = config.OCO_MODEL;
@@ -52,7 +51,9 @@ async function listModels(provider: string, useCache: boolean = true): Promise<v
     models = MODEL_LIST[providerKey] || [];
   }
 
-  console.log(`\n${chalk.bold('Available models for')} ${chalk.cyan(provider)}:\n`);
+  console.log(
+    `\n${chalk.bold('Available models for')} ${chalk.cyan(provider)}:\n`
+  );
 
   if (models.length === 0) {
     console.log(chalk.dim('  No models found'));
@@ -79,14 +80,23 @@ async function refreshModels(provider: string): Promise<void> {
   clearModelCache();
 
   try {
-    const models = await fetchModelsForProvider(provider, apiKey, undefined, true);
+    const models = await fetchModelsForProvider(
+      provider,
+      apiKey,
+      undefined,
+      true
+    );
     loadingSpinner.stop(`${chalk.green('+')} Fetched ${models.length} models`);
 
     // List the models
     await listModels(provider, true);
   } catch (error) {
     loadingSpinner.stop(chalk.red('Failed to fetch models'));
-    console.error(chalk.red(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`));
+    console.error(
+      chalk.red(
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    );
   }
 }
 
@@ -112,7 +122,8 @@ export const modelsCommand = command(
   },
   async ({ flags }) => {
     const config = getConfig();
-    const provider = flags.provider || config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
+    const provider =
+      flags.provider || config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
 
     intro(chalk.bgCyan(' OpenCommit Models '));
 
@@ -120,7 +131,9 @@ export const modelsCommand = command(
     const cacheInfo = getCacheInfo();
     if (cacheInfo.timestamp) {
       console.log(
-        chalk.dim(`  Cache last updated: ${formatCacheAge(cacheInfo.timestamp)}`)
+        chalk.dim(
+          `  Cache last updated: ${formatCacheAge(cacheInfo.timestamp)}`
+        )
       );
       if (cacheInfo.providers.length > 0) {
         console.log(
@@ -137,8 +150,6 @@ export const modelsCommand = command(
       await listModels(provider);
     }
 
-    outro(
-      `Run ${chalk.cyan('oco models --refresh')} to update the model list`
-    );
+    outro(`Run ${chalk.cyan('oco models --refresh')} to update the model list`);
   }
 );
