@@ -25,6 +25,7 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
+  OCO_PROXY = 'OCO_PROXY',
   OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
@@ -727,6 +728,15 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_PROXY](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_PROXY,
+      typeof value === 'string',
+      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
+    );
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_MODEL](value: any, config: any = {}) {
     validateConfig(
       CONFIG_KEYS.OCO_MODEL,
@@ -880,6 +890,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
   [CONFIG_KEYS.OCO_API_URL]?: string;
+  [CONFIG_KEYS.OCO_PROXY]?: string;
   [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS]?: string;
   [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
@@ -964,6 +975,10 @@ const getEnvConfig = (envPath: string) => {
   return {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_API_URL: process.env.OCO_API_URL,
+    OCO_PROXY:
+      process.env.OCO_PROXY ||
+      process.env.HTTPS_PROXY ||
+      process.env.HTTP_PROXY,
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_API_CUSTOM_HEADERS: process.env.OCO_API_CUSTOM_HEADERS,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
@@ -1187,6 +1202,11 @@ function getConfigKeyDetails(key) {
       return {
         description:
           'Custom API URL - may be used to set proxy path to OpenAI API',
+        values: ["URL string (must start with 'http://' or 'https://')"]
+      };
+    case CONFIG_KEYS.OCO_PROXY:
+      return {
+        description: 'HTTP/HTTPS Proxy URL',
         values: ["URL string (must start with 'http://' or 'https://')"]
       };
     case CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER:

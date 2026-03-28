@@ -1,4 +1,5 @@
 import AnthropicClient from '@anthropic-ai/sdk';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import {
   MessageCreateParamsNonStreaming,
   MessageParam
@@ -18,7 +19,15 @@ export class AnthropicEngine implements AiEngine {
 
   constructor(config) {
     this.config = config;
-    this.client = new AnthropicClient({ apiKey: this.config.apiKey });
+    const clientOptions: any = { apiKey: this.config.apiKey };
+
+    const proxy =
+      config.proxy || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    if (proxy) {
+      clientOptions.httpAgent = new HttpsProxyAgent(proxy);
+    }
+
+    this.client = new AnthropicClient(clientOptions);
   }
 
   public generateCommitMessage = async (

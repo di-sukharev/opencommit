@@ -5,9 +5,10 @@ import { cli } from 'cleye';
 import packageJSON from '../package.json';
 import { commit } from './commands/commit';
 import { commitlintConfigCommand } from './commands/commitlint';
-import { configCommand } from './commands/config';
+import { configCommand, getConfig } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
+import { setupProxy } from './utils/proxy';
 import {
   setupCommand,
   isFirstRun,
@@ -17,6 +18,9 @@ import {
 import { modelsCommand } from './commands/models';
 import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 import { runMigrations } from './migrations/_run.js';
+
+const config = getConfig();
+setupProxy(config.OCO_PROXY);
 
 const extraArgs = process.argv.slice(2);
 
