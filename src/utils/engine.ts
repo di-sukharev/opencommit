@@ -47,6 +47,7 @@ export function getEngine(): AiEngine {
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
     baseURL: config.OCO_API_URL!,
+    proxy: config.OCO_PROXY!,
     apiKey: config.OCO_API_KEY!,
     customHeaders
   };

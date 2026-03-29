@@ -1,4 +1,5 @@
 import { OpenAI } from 'openai';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { parseCustomHeaders } from '../utils/engine';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
@@ -21,6 +22,12 @@ export class OpenAiEngine implements AiEngine {
 
     if (config.baseURL) {
       clientOptions.baseURL = config.baseURL;
+    }
+
+    const proxy =
+      config.proxy || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    if (proxy) {
+      clientOptions.httpAgent = new HttpsProxyAgent(proxy);
     }
 
     if (config.customHeaders) {
