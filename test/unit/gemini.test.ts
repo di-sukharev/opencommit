@@ -33,7 +33,7 @@ describe('Gemini', () => {
     process.env = { ...oldEnv };
 
     jest.mock('@google/generative-ai');
-    jest.mock('../../src/commands/config');
+    jest.mock('../src/commands/config');
 
     jest.mock('@clack/prompts', () => ({
       intro: jest.fn(),

@@ -51,10 +51,10 @@ export class OpenAiEngine implements AiEngine {
       ...(isReasoningModel
         ? { max_completion_tokens: this.config.maxTokensOutput }
         : {
-          temperature: 0,
-          top_p: 0.1,
-          max_tokens: this.config.maxTokensOutput
-        })
+            temperature: 0,
+            top_p: 0.1,
+            max_tokens: this.config.maxTokensOutput
+          })
     };
 
     try {
