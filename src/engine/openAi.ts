@@ -43,12 +43,18 @@ export class OpenAiEngine implements AiEngine {
   public generateCommitMessage = async (
     messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | null> => {
+    const isReasoningModel = /^(o[1-9]|gpt-5)/.test(this.config.model);
+
     const params = {
       model: this.config.model,
       messages,
-      temperature: 0,
-      top_p: 0.1,
-      max_tokens: this.config.maxTokensOutput
+      ...(isReasoningModel
+        ? { max_completion_tokens: this.config.maxTokensOutput }
+        : {
+            temperature: 0,
+            top_p: 0.1,
+            max_tokens: this.config.maxTokensOutput
+          })
     };
 
     try {
@@ -62,7 +68,9 @@ export class OpenAiEngine implements AiEngine {
       )
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
 
-      const completion = await this.client.chat.completions.create(params);
+      const completion = await this.client.chat.completions.create(
+        params as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
+      );
 
       const message = completion.choices[0].message;
       let content = message?.content;
