@@ -48509,7 +48509,7 @@ function G3(t2, e3) {
 // package.json
 var package_default = {
   name: "opencommit",
-  version: "3.2.14",
+  version: "3.2.15",
   description: "Auto-generate impressive commits in 1 second. Killing lame commits with AI \u{1F92F}\u{1F52B}",
   keywords: [
     "git",
@@ -48602,7 +48602,7 @@ var package_default = {
     "@mistralai/mistralai": "^1.3.5",
     "@octokit/webhooks-schemas": "^6.11.0",
     "@octokit/webhooks-types": "^6.11.0",
-    axios: "^1.3.4",
+    axios: "1.9.0",
     chalk: "^5.2.0",
     cleye: "^1.3.2",
     crypto: "^1.0.1",
