@@ -6,12 +6,19 @@ import { AiEngine, AiEngineConfig } from './Engine';
 
 interface OllamaConfig extends AiEngineConfig {}
 
+const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
+const OLLAMA_CHAT_PATH = '/api/chat';
+
 export class OllamaEngine implements AiEngine {
   config: OllamaConfig;
   client: AxiosInstance;
+  private chatUrl: string;
 
   constructor(config) {
     this.config = config;
+
+    const baseUrl = config.baseURL || DEFAULT_OLLAMA_URL;
+    this.chatUrl = `${baseUrl}${OLLAMA_CHAT_PATH}`;
 
     // Combine base headers with custom headers
     const headers = {
@@ -19,12 +26,7 @@ export class OllamaEngine implements AiEngine {
       ...config.customHeaders
     };
 
-    this.client = axios.create({
-      url: config.baseURL
-        ? `${config.baseURL}/${config.apiKey}`
-        : 'http://localhost:11434/api/chat',
-      headers
-    });
+    this.client = axios.create({ headers });
   }
 
   async generateCommitMessage(
@@ -37,10 +39,7 @@ export class OllamaEngine implements AiEngine {
       stream: false
     };
     try {
-      const response = await this.client.post(
-        this.client.getUri(this.config),
-        params
-      );
+      const response = await this.client.post(this.chatUrl, params);
 
       const { message } = response.data;
       let content = message?.content;

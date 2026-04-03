@@ -29,10 +29,15 @@ export class GeminiEngine implements AiEngine {
       .map((m) => m.content)
       .join('\n');
 
-    const gemini = this.client.getGenerativeModel({
-      model: this.config.model,
-      systemInstruction
-    });
+    const gemini = this.client.getGenerativeModel(
+      {
+        model: this.config.model,
+        systemInstruction
+      },
+      {
+        baseUrl: this.config.baseURL
+      }
+    );
 
     const contents = messages
       .filter((m) => m.role !== 'system')
