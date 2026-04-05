@@ -23,7 +23,8 @@ const config = getConfig();
 setupProxy(config.OCO_PROXY);
 
 const OCO_FLAGS_WITH_VALUE = new Set(['-c', '--context']);
-const OCO_EQUALS_PREFIXES = ['-c=', '--context='];
+const OCO_BOOLEAN_FLAGS = new Set(['-y', '--yes', '--fgm']);
+const OCO_EQUALS_PREFIXES = ['-c=', '--context=', '-y=', '--yes=', '--fgm='];
 
 const stripOcoFlags = (argv: string[]): string[] => {
   const out: string[] = [];
@@ -34,7 +35,11 @@ const stripOcoFlags = (argv: string[]): string[] => {
       i++; // skip the value token too
       continue;
     }
-    // Equals form: -c=…, --context=…
+    // Boolean flags: -y, --yes, --fgm
+    if (OCO_BOOLEAN_FLAGS.has(a)) {
+      continue;
+    }
+    // Equals form: -c=…, --context=…, -y=…, --yes=…, --fgm=…
     if (OCO_EQUALS_PREFIXES.some((prefix) => a.startsWith(prefix))) {
       continue;
     }
