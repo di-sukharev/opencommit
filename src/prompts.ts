@@ -95,11 +95,11 @@ const CONVENTIONAL_COMMIT_KEYWORDS =
   'Do not preface the commit with anything, except for the conventional commit keywords: fix, feat, build, chore, ci, docs, style, refactor, perf, test.';
 
 const getCommitConvention = (fullGitMojiSpec: boolean) =>
-  config.OCO_EMOJI
-    ? fullGitMojiSpec
-      ? FULL_GITMOJI_SPEC
-      : GITMOJI_HELP
-    : CONVENTIONAL_COMMIT_KEYWORDS;
+  fullGitMojiSpec
+    ? FULL_GITMOJI_SPEC
+    : config.OCO_EMOJI
+      ? GITMOJI_HELP
+      : CONVENTIONAL_COMMIT_KEYWORDS;
 
 const getDescriptionInstruction = () =>
   config.OCO_DESCRIPTION
