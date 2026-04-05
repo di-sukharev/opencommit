@@ -203,7 +203,9 @@ ${chalk.grey('——————————————————')}`
         await generateCommitMessageFromGitDiff({
           diff,
           extraArgs,
-          fullGitMojiSpec
+          context,
+          fullGitMojiSpec,
+          skipCommitConfirmation
         });
       }
     }
