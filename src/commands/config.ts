@@ -29,7 +29,8 @@ export enum CONFIG_KEYS {
   OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT'
+  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
+  OCO_OLLAMA_THINK = 'OCO_OLLAMA_THINK'
 }
 
 export enum CONFIG_MODES {
@@ -838,6 +839,15 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+  },
+
+  [CONFIG_KEYS.OCO_OLLAMA_THINK](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_OLLAMA_THINK,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
+    return value;
   }
 };
 
@@ -905,6 +915,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
+  [CONFIG_KEYS.OCO_OLLAMA_THINK]?: boolean;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');

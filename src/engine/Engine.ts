@@ -13,6 +13,7 @@ export interface AiEngineConfig {
   baseURL?: string;
   proxy?: string;
   customHeaders?: Record<string, string>;
+  ollamaThink?: boolean;
 }
 
 type Client =
