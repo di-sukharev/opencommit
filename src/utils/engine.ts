@@ -54,7 +54,10 @@ export function getEngine(): AiEngine {
 
   switch (provider) {
     case OCO_AI_PROVIDER_ENUM.OLLAMA:
-      return new OllamaEngine(DEFAULT_CONFIG);
+      return new OllamaEngine({
+        ...DEFAULT_CONFIG,
+        ollamaThink: config.OCO_OLLAMA_THINK
+      });
 
     case OCO_AI_PROVIDER_ENUM.ANTHROPIC:
       return new AnthropicEngine(DEFAULT_CONFIG);
