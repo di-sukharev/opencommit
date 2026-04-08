@@ -53,6 +53,12 @@ const OTHER_PROVIDERS = [
 
 const NO_API_KEY_PROVIDERS = [
   OCO_AI_PROVIDER_ENUM.OLLAMA,
+  OCO_AI_PROVIDER_ENUM.MLX,
+  OCO_AI_PROVIDER_ENUM.TEST
+];
+
+const MODEL_REQUIRED_PROVIDERS = [
+  OCO_AI_PROVIDER_ENUM.OLLAMA,
   OCO_AI_PROVIDER_ENUM.MLX
 ];
 
@@ -90,7 +96,8 @@ async function selectProvider(): Promise<string | symbol> {
 }
 
 async function getApiKey(provider: string): Promise<string | symbol> {
-  const url = PROVIDER_API_KEY_URLS[provider as keyof typeof PROVIDER_API_KEY_URLS];
+  const url =
+    PROVIDER_API_KEY_URLS[provider as keyof typeof PROVIDER_API_KEY_URLS];
 
   let message = `Enter your ${provider} API key:`;
   if (url) {
@@ -127,7 +134,8 @@ async function selectModel(
   provider: string,
   apiKey?: string
 ): Promise<string | symbol> {
-  const providerDisplayName = PROVIDER_DISPLAY_NAMES[provider]?.split(' (')[0] || provider;
+  const providerDisplayName =
+    PROVIDER_DISPLAY_NAMES[provider]?.split(' (')[0] || provider;
   const loadingSpinner = spinner();
   loadingSpinner.start(`Fetching models from ${providerDisplayName}...`);
 
@@ -178,7 +186,8 @@ async function selectModel(
   }
 
   // Get recommended model for this provider
-  const recommended = RECOMMENDED_MODELS[provider as keyof typeof RECOMMENDED_MODELS];
+  const recommended =
+    RECOMMENDED_MODELS[provider as keyof typeof RECOMMENDED_MODELS];
 
   // Build options with recommended first
   const options: Array<{ value: string; label: string }> = [];
@@ -191,9 +200,7 @@ async function selectModel(
   }
 
   // Add other models (first 10, excluding recommended)
-  const otherModels = models
-    .filter((m) => m !== recommended)
-    .slice(0, 10);
+  const otherModels = models.filter((m) => m !== recommended).slice(0, 10);
 
   otherModels.forEach((model) => {
     options.push({ value: model, label: model });
@@ -409,25 +416,29 @@ export async function runSetup(): Promise<boolean> {
   setGlobalConfig(newConfig as any);
 
   outro(
-    `${chalk.green('✔')} Configuration saved to ~/.opencommit\n\n  Run ${chalk.cyan('oco')} to generate commit messages!`
+    `${chalk.green(
+      '✔'
+    )} Configuration saved to ~/.opencommit\n\n  Run ${chalk.cyan(
+      'oco'
+    )} to generate commit messages!`
   );
 
   return true;
 }
 
 export function isFirstRun(): boolean {
-  if (!getIsGlobalConfigFileExist()) {
-    return true;
-  }
-
   const config = getConfig();
 
   // Check if API key is missing for providers that need it
   const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
 
-  if (NO_API_KEY_PROVIDERS.includes(provider as OCO_AI_PROVIDER_ENUM)) {
+  if (MODEL_REQUIRED_PROVIDERS.includes(provider as OCO_AI_PROVIDER_ENUM)) {
     // For Ollama/MLX, check if model is set
     return !config.OCO_MODEL;
+  }
+
+  if (provider === OCO_AI_PROVIDER_ENUM.TEST) {
+    return false;
   }
 
   // For other providers, check if API key is set
@@ -447,9 +458,7 @@ export async function promptForMissingApiKey(): Promise<boolean> {
   }
 
   console.log(
-    chalk.yellow(
-      `\nAPI key missing for ${provider}. Let's set it up.\n`
-    )
+    chalk.yellow(`\nAPI key missing for ${provider}. Let's set it up.\n`)
   );
 
   const apiKey = await getApiKey(provider);

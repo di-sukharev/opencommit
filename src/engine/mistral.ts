@@ -1,4 +1,5 @@
 import { OpenAI } from 'openai';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { removeContentTags } from '../utils/removeContentTags';

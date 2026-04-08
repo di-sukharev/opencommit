@@ -9,6 +9,11 @@ import { rm } from 'fs';
 const fsExec = promisify(exec);
 const fsRemove = promisify(rm);
 
+const waitForCommitConfirmation = async (findByText: any) => {
+  expect(await findByText('Generating the commit message')).toBeInTheConsole();
+  expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
+};
+
 /**
  * git remote -v
  *
@@ -97,7 +102,7 @@ describe('cli flow to push git branch', () => {
       [resolve('./out/cli.cjs')],
       { cwd: gitDir }
     );
-    expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
+    await waitForCommitConfirmation(findByText);
     userEvent.keyboard('[Enter]');
 
     expect(
@@ -129,7 +134,7 @@ describe('cli flow to push git branch', () => {
       [resolve('./out/cli.cjs')],
       { cwd: gitDir }
     );
-    expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
+    await waitForCommitConfirmation(findByText);
     userEvent.keyboard('[Enter]');
 
     expect(
@@ -162,7 +167,7 @@ describe('cli flow to push git branch', () => {
       [resolve('./out/cli.cjs')],
       { cwd: gitDir }
     );
-    expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
+    await waitForCommitConfirmation(findByText);
     userEvent.keyboard('[Enter]');
 
     expect(
@@ -190,7 +195,7 @@ describe('cli flow to push git branch', () => {
       [resolve('./out/cli.cjs')],
       { cwd: gitDir }
     );
-    expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
+    await waitForCommitConfirmation(findByText);
     userEvent.keyboard('[Enter]');
 
     expect(await findByText('Choose a remote to push to')).toBeInTheConsole();

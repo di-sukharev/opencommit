@@ -11,10 +11,7 @@ import {
 import chalk from 'chalk';
 import { execa } from 'execa';
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
-import {
-  formatUserFriendlyError,
-  printFormattedError
-} from '../utils/errors';
+import { formatUserFriendlyError, printFormattedError } from '../utils/errors';
 import {
   assertGitRepo,
   getChangedFiles,

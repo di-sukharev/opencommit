@@ -125,9 +125,7 @@ export async function fetchMistralModels(apiKey: string): Promise<string[]> {
     }
 
     const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .sort();
+    const models = data.data?.map((m: { id: string }) => m.id).sort();
 
     return models && models.length > 0 ? models : MODEL_LIST.mistral;
   } catch {
@@ -148,9 +146,7 @@ export async function fetchGroqModels(apiKey: string): Promise<string[]> {
     }
 
     const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .sort();
+    const models = data.data?.map((m: { id: string }) => m.id).sort();
 
     return models && models.length > 0 ? models : MODEL_LIST.groq;
   } catch {
@@ -173,8 +169,9 @@ export async function fetchOpenRouterModels(apiKey: string): Promise<string[]> {
     const data = await response.json();
     // Filter to text-capable models only (exclude image/audio models)
     const models = data.data
-      ?.filter((m: { id: string; context_length?: number }) =>
-        m.context_length && m.context_length > 0
+      ?.filter(
+        (m: { id: string; context_length?: number }) =>
+          m.context_length && m.context_length > 0
       )
       .map((m: { id: string }) => m.id)
       .sort();
@@ -198,9 +195,7 @@ export async function fetchDeepSeekModels(apiKey: string): Promise<string[]> {
     }
 
     const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .sort();
+    const models = data.data?.map((m: { id: string }) => m.id).sort();
 
     return models && models.length > 0 ? models : MODEL_LIST.deepseek;
   } catch {
@@ -312,7 +307,10 @@ export function clearModelCache(): void {
   }
 }
 
-export function getCacheInfo(): { timestamp: number | null; providers: string[] } {
+export function getCacheInfo(): {
+  timestamp: number | null;
+  providers: string[];
+} {
   const cache = readCache();
   if (!cache) {
     return { timestamp: null, providers: [] };

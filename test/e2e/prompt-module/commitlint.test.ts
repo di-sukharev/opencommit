@@ -3,6 +3,10 @@ import { render } from 'cli-testing-library';
 import 'cli-testing-library/extend-expect';
 import { prepareEnvironment, wait } from '../utils';
 import path from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 function getAbsolutePath(relativePath: string) {
   // Use process.cwd() which should be the project root during test execution
@@ -27,9 +31,10 @@ async function setupCommitlint(dir: string, ver: 9 | 18 | 19) {
       configPath = getAbsolutePath('./data/commitlint_19/commitlint.config.js');
       break;
   }
-  await render('cp', ['-r', packagePath, '.'], { cwd: dir });
-  await render('cp', [packageJsonPath, '.'], { cwd: dir });
-  await render('cp', [configPath, '.'], { cwd: dir });
+
+  await execFileAsync('cp', ['-R', packagePath, path.join(dir, 'node_modules')]);
+  await execFileAsync('cp', [packageJsonPath, path.join(dir, 'package.json')]);
+  await execFileAsync('cp', [configPath, path.join(dir, 'commitlint.config.js')]);
   await wait(3000); // Avoid flakiness by waiting
 }
 

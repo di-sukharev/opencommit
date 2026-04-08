@@ -237,6 +237,16 @@ oco config set OCO_AI_PROVIDER=flowise OCO_API_KEY=<your_flowise_api_key> OCO_AP
 oco config set OCO_AI_PROVIDER=ollama OCO_API_KEY=<your_ollama_api_key> OCO_API_URL=<your_ollama_endpoint>
 ```
 
+### Use with Proxy
+
+If you are behind a proxy, you can set it in the config:
+
+```sh
+oco config set OCO_PROXY=http://127.0.0.1:7890
+```
+
+Or it will automatically use `HTTPS_PROXY` or `HTTP_PROXY` environment variables.
+
 ### Locale configuration
 
 To globally specify the language used to generate commit messages:

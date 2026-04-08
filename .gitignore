@@ -1,4 +1,5 @@
 node_modules/
+out/
 coverage/
 temp/
 build/
