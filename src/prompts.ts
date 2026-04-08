@@ -95,11 +95,11 @@ const CONVENTIONAL_COMMIT_KEYWORDS =
   'Do not preface the commit with anything, except for the conventional commit keywords: fix, feat, build, chore, ci, docs, style, refactor, perf, test.';
 
 const getCommitConvention = (fullGitMojiSpec: boolean) =>
-  config.OCO_EMOJI
-    ? fullGitMojiSpec
-      ? FULL_GITMOJI_SPEC
-      : GITMOJI_HELP
-    : CONVENTIONAL_COMMIT_KEYWORDS;
+  fullGitMojiSpec
+    ? FULL_GITMOJI_SPEC
+    : config.OCO_EMOJI
+      ? GITMOJI_HELP
+      : CONVENTIONAL_COMMIT_KEYWORDS;
 
 const getDescriptionInstruction = () =>
   config.OCO_DESCRIPTION
@@ -123,36 +123,36 @@ const getScopeInstruction = () =>
  *  $ oco -- This is a context used to generate the commit message
  * @returns - The context of the user input
  */
-const userInputCodeContext = (context: string) => {
-  if (context !== '' && context !== ' ') {
-    return `Additional context provided by the user: <context>${context}</context>\nConsider this context when generating the commit message, incorporating relevant information when appropriate.`;
+const userInputCodeContext = (context: string | undefined | null) => {
+  const trimmed = (context ?? '').trim();
+  if (trimmed === '') {
+    return '';
   }
-  return '';
+  return `Additional context provided by the user: <context>${trimmed}</context>\nConsider this context when generating the commit message, incorporating relevant information when appropriate.`;
 };
 
 const INIT_MAIN_PROMPT = (
   language: string,
   fullGitMojiSpec: boolean,
   context: string
-): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
-  role: 'system',
-  content: (() => {
-    const commitConvention = fullGitMojiSpec
-      ? 'GitMoji specification'
-      : 'Conventional Commit Convention';
-    const missionStatement = `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${commitConvention} and explain WHAT were the changes and mainly WHY the changes were done.`;
-    const diffInstruction =
-      "I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.";
-    const conventionGuidelines = getCommitConvention(fullGitMojiSpec);
-    const descriptionGuideline = getDescriptionInstruction();
-    const oneLineCommitGuideline = getOneLineCommitInstruction();
-    const scopeInstruction = getScopeInstruction();
-    const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
-    const userInputContext = userInputCodeContext(context);
+): OpenAI.Chat.Completions.ChatCompletionMessageParam => {
+  const commitConvention = fullGitMojiSpec
+    ? 'GitMoji specification'
+    : 'Conventional Commit Convention';
+  const missionStatement = `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${commitConvention} and explain WHAT were the changes and mainly WHY the changes were done.`;
+  const diffInstruction =
+    "I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.";
+  const conventionGuidelines = getCommitConvention(fullGitMojiSpec);
+  const descriptionGuideline = getDescriptionInstruction();
+  const oneLineCommitGuideline = getOneLineCommitInstruction();
+  const scopeInstruction = getScopeInstruction();
+  const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
+  const userInputContext = userInputCodeContext(context);
 
-    return `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
-  })()
-});
+  const content = `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
+
+  return { role: 'system', content };
+};
 
 export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessageParam =
   {

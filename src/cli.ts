@@ -22,7 +22,34 @@ import { runMigrations } from './migrations/_run.js';
 const config = getConfig();
 setupProxy(config.OCO_PROXY);
 
-const extraArgs = process.argv.slice(2);
+const OCO_FLAGS_WITH_VALUE = new Set(['-c', '--context']);
+const OCO_BOOLEAN_FLAGS = new Set(['-y', '--yes', '--fgm']);
+const OCO_EQUALS_PREFIXES = ['-c=', '--context=', '-y=', '--yes=', '--fgm='];
+
+const stripOcoFlags = (argv: string[]): string[] => {
+  const out: string[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    // String flags with a separate value token: -c <val>, --context <val>
+    if (OCO_FLAGS_WITH_VALUE.has(a)) {
+      i++; // skip the value token too
+      continue;
+    }
+    // Boolean flags: -y, --yes, --fgm
+    if (OCO_BOOLEAN_FLAGS.has(a)) {
+      continue;
+    }
+    // Equals form: -c=…, --context=…, -y=…, --yes=…, --fgm=…
+    if (OCO_EQUALS_PREFIXES.some((prefix) => a.startsWith(prefix))) {
+      continue;
+    }
+    out.push(a);
+  }
+  return out;
+};
+
+const rawArgv = process.argv.slice(2);
+const extraArgs = stripOcoFlags(rawArgv);
 
 cli(
   {
@@ -82,5 +109,5 @@ cli(
 
     commit(extraArgs, flags.context, false, flags.fgm, flags.yes);
   },
-  extraArgs
+  rawArgv
 );
