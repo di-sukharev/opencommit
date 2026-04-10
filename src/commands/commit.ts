@@ -31,7 +31,12 @@ const getGitRemotes = async () => {
 
 const hasUpstreamBranch = async (): Promise<boolean> => {
   try {
-    await execa('git', ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']);
+    await execa('git', [
+      'rev-parse',
+      '--abbrev-ref',
+      '--symbolic-full-name',
+      '@{u}'
+    ]);
     return true;
   } catch {
     return false;
@@ -249,7 +254,9 @@ ${chalk.grey('——————————————————')}`
 
     const errorConfig = getConfig();
     const provider = errorConfig.OCO_AI_PROVIDER || 'openai';
-    const formatted = formatUserFriendlyError(error, provider);
+    const formatted = formatUserFriendlyError(error, provider, {
+      baseURL: errorConfig.OCO_API_URL
+    });
     outro(printFormattedError(formatted));
 
     process.exit(1);

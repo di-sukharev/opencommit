@@ -16,6 +16,7 @@ import {
   getSuggestedModels,
   ModelNotFoundError
 } from './utils/errors';
+import { GenerateCommitMessageErrorEnum } from './utils/generateCommitMessageErrors';
 import { mergeDiffs } from './utils/mergeDiffs';
 import { tokenCount } from './utils/tokenCount';
 
@@ -42,13 +43,6 @@ const generateCommitMessageChatCompletionPrompt = async (
 
   return chatContextAsCompletionRequest;
 };
-
-export enum GenerateCommitMessageErrorEnum {
-  tooMuchTokens = 'TOO_MUCH_TOKENS',
-  internalError = 'INTERNAL_ERROR',
-  emptyMessage = 'EMPTY_MESSAGE',
-  outputTokensTooHigh = `Token limit exceeded, OCO_TOKENS_MAX_OUTPUT must not be much higher than the default ${DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT} tokens.`
-}
 
 async function handleModelNotFoundError(
   error: Error,

@@ -1,26 +1,71 @@
-// Test the reasoning model detection regex used in OpenAiEngine.
-// Integration test with the engine is not possible because mistral.ts
-// uses require() which is unavailable in the ESM test environment.
-const REASONING_MODEL_RE = /^(o[1-9]|gpt-5)/;
+import { OpenAI } from 'openai';
+import { OpenAiEngine } from '../../src/engine/openAi';
 
-describe('OpenAiEngine reasoning model detection', () => {
-  it.each([
-    ['o1', true],
-    ['o1-preview', true],
-    ['o1-mini', true],
-    ['o3', true],
-    ['o3-mini', true],
-    ['o4-mini', true],
-    ['gpt-5', true],
-    ['gpt-5-nano', true],
-    ['gpt-4o', false],
-    ['gpt-4o-mini', false],
-    ['gpt-4', false],
-    ['gpt-3.5-turbo', false]
-  ])(
-    'model "%s" isReasoning=%s',
-    (model, expected) => {
-      expect(REASONING_MODEL_RE.test(model)).toBe(expected);
-    }
-  );
+describe('OpenAiEngine', () => {
+  const baseConfig = {
+    apiKey: 'test-openai-key',
+    maxTokensInput: 4096,
+    maxTokensOutput: 256
+  };
+
+  const messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam> = [
+    { role: 'system', content: 'system message' },
+    { role: 'user', content: 'diff --git a/file b/file' }
+  ];
+
+  it('uses max_completion_tokens for reasoning models', async () => {
+    const engine = new OpenAiEngine({
+      ...baseConfig,
+      model: 'o3-mini'
+    });
+
+    const create = jest
+      .spyOn(engine.client.chat.completions, 'create')
+      .mockResolvedValue({
+        choices: [{ message: { content: 'feat(openai): reasoning path' } }]
+      } as any);
+
+    await engine.generateCommitMessage(messages);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'o3-mini',
+        max_completion_tokens: 256
+      })
+    );
+    expect(create).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        max_tokens: expect.anything()
+      })
+    );
+  });
+
+  it('uses max_tokens and sampling params for non-reasoning models', async () => {
+    const engine = new OpenAiEngine({
+      ...baseConfig,
+      model: 'gpt-4o-mini'
+    });
+
+    const create = jest
+      .spyOn(engine.client.chat.completions, 'create')
+      .mockResolvedValue({
+        choices: [{ message: { content: 'feat(openai): standard path' } }]
+      } as any);
+
+    await engine.generateCommitMessage(messages);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'gpt-4o-mini',
+        max_tokens: 256,
+        temperature: 0,
+        top_p: 0.1
+      })
+    );
+    expect(create).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        max_completion_tokens: expect.anything()
+      })
+    );
+  });
 });

@@ -1,151 +1,145 @@
-import { resolve } from 'path';
-import { render } from 'cli-testing-library';
-import 'cli-testing-library/extend-expect';
-import { prepareEnvironment, wait } from '../utils';
+import { cpSync } from 'fs';
 import path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import 'cli-testing-library/extend-expect';
+import {
+  assertHeadCommit,
+  prepareEnvironment,
+  prepareRepo,
+  runCli,
+  waitForExit
+} from '../utils';
 
 const execFileAsync = promisify(execFile);
 
-function getAbsolutePath(relativePath: string) {
-  // Use process.cwd() which should be the project root during test execution
-  return path.resolve(process.cwd(), 'test/e2e/prompt-module', relativePath);
-}
-async function setupCommitlint(dir: string, ver: 9 | 18 | 19) {
-  let packagePath, packageJsonPath, configPath;
-  switch (ver) {
-    case 9:
-      packagePath = getAbsolutePath('./data/commitlint_9/node_modules');
-      packageJsonPath = getAbsolutePath('./data/commitlint_9/package.json');
-      configPath = getAbsolutePath('./data/commitlint_9/commitlint.config.js');
-      break;
-    case 18:
-      packagePath = getAbsolutePath('./data/commitlint_18/node_modules');
-      packageJsonPath = getAbsolutePath('./data/commitlint_18/package.json');
-      configPath = getAbsolutePath('./data/commitlint_18/commitlint.config.js');
-      break;
-    case 19:
-      packagePath = getAbsolutePath('./data/commitlint_19/node_modules');
-      packageJsonPath = getAbsolutePath('./data/commitlint_19/package.json');
-      configPath = getAbsolutePath('./data/commitlint_19/commitlint.config.js');
-      break;
-  }
+const getFixturePath = (version: 9 | 18 | 19, fileName: string) =>
+  path.resolve(
+    process.cwd(),
+    `test/e2e/prompt-module/data/commitlint_${version}/${fileName}`
+  );
 
-  await execFileAsync('cp', ['-R', packagePath, path.join(dir, 'node_modules')]);
-  await execFileAsync('cp', [packageJsonPath, path.join(dir, 'package.json')]);
-  await execFileAsync('cp', [configPath, path.join(dir, 'commitlint.config.js')]);
-  await wait(3000); // Avoid flakiness by waiting
+const getPromptModuleEnv = (
+  mockType: 'commit-message' | 'prompt-module-commitlint-config'
+): NodeJS.ProcessEnv => ({
+  OCO_TEST_MOCK_TYPE: mockType,
+  OCO_PROMPT_MODULE: '@commitlint',
+  OCO_AI_PROVIDER: 'test',
+  OCO_GITPUSH: 'true'
+});
+
+async function setupCommitlint(dir: string, version: 9 | 18 | 19) {
+  cpSync(getFixturePath(version, 'node_modules'), path.join(dir, 'node_modules'), {
+    recursive: true
+  });
+  cpSync(getFixturePath(version, 'package.json'), path.join(dir, 'package.json'));
+  cpSync(
+    getFixturePath(version, 'commitlint.config.js'),
+    path.join(dir, 'commitlint.config.js')
+  );
+}
+
+async function assertInstalledCommitlintVersion(
+  cwd: string,
+  version: string
+): Promise<void> {
+  const { stdout = '', stderr = '' } = await execFileAsync(
+    'npm',
+    ['list', '@commitlint/load'],
+    { cwd }
+  );
+  expect(`${stdout}\n${stderr}`).toContain(`@commitlint/load@${version}`);
 }
 
 describe('cli flow to run "oco commitlint force"', () => {
   it('on commitlint@9 using CJS', async () => {
     const { gitDir, cleanup } = await prepareEnvironment();
 
-    await setupCommitlint(gitDir, 9);
-    const npmList = await render('npm', ['list', '@commitlint/load'], {
-      cwd: gitDir
-    });
-    expect(await npmList.findByText('@commitlint/load@9')).toBeInTheConsole();
+    try {
+      await setupCommitlint(gitDir, 9);
+      await assertInstalledCommitlintVersion(gitDir, '9');
 
-    const { findByText } = await render(
-      `
-      OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
-      OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
-      node ${resolve('./out/cli.cjs')} commitlint force \
-    `,
-      [],
-      { cwd: gitDir }
-    );
+      const oco = await runCli(['commitlint', 'force'], {
+        cwd: gitDir,
+        env: getPromptModuleEnv('prompt-module-commitlint-config')
+      });
 
-    expect(
-      await findByText('opencommit — configure @commitlint')
-    ).toBeInTheConsole();
-    expect(
-      await findByText('Read @commitlint configuration')
-    ).toBeInTheConsole();
-
-    expect(
-      await findByText('Generating consistency with given @commitlint rules')
-    ).toBeInTheConsole();
-    expect(
-      await findByText('Done - please review contents of')
-    ).toBeInTheConsole();
-
-    await cleanup();
+      expect(
+        await oco.findByText('opencommit — configure @commitlint')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Read @commitlint configuration')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Generating consistency with given @commitlint rules')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Done - please review contents of')
+      ).toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+    } finally {
+      await cleanup();
+    }
   });
+
   it('on commitlint@18 using CJS', async () => {
     const { gitDir, cleanup } = await prepareEnvironment();
 
-    await setupCommitlint(gitDir, 18);
-    const npmList = await render('npm', ['list', '@commitlint/load'], {
-      cwd: gitDir
-    });
-    expect(await npmList.findByText('@commitlint/load@18')).toBeInTheConsole();
+    try {
+      await setupCommitlint(gitDir, 18);
+      await assertInstalledCommitlintVersion(gitDir, '18');
 
-    const { findByText } = await render(
-      `
-      OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
-      OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
-      node ${resolve('./out/cli.cjs')} commitlint force \
-    `,
-      [],
-      { cwd: gitDir }
-    );
+      const oco = await runCli(['commitlint', 'force'], {
+        cwd: gitDir,
+        env: getPromptModuleEnv('prompt-module-commitlint-config')
+      });
 
-    expect(
-      await findByText('opencommit — configure @commitlint')
-    ).toBeInTheConsole();
-    expect(
-      await findByText('Read @commitlint configuration')
-    ).toBeInTheConsole();
-
-    expect(
-      await findByText('Generating consistency with given @commitlint rules')
-    ).toBeInTheConsole();
-    expect(
-      await findByText('Done - please review contents of')
-    ).toBeInTheConsole();
-
-    await cleanup();
+      expect(
+        await oco.findByText('opencommit — configure @commitlint')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Read @commitlint configuration')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Generating consistency with given @commitlint rules')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Done - please review contents of')
+      ).toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+    } finally {
+      await cleanup();
+    }
   });
+
   it('on commitlint@19 using ESM', async () => {
     const { gitDir, cleanup } = await prepareEnvironment();
 
-    await setupCommitlint(gitDir, 19);
-    const npmList = await render('npm', ['list', '@commitlint/load'], {
-      cwd: gitDir
-    });
-    expect(await npmList.findByText('@commitlint/load@19')).toBeInTheConsole();
+    try {
+      await setupCommitlint(gitDir, 19);
+      await assertInstalledCommitlintVersion(gitDir, '19');
 
-    const { findByText } = await render(
-      `
-      OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
-      OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
-      node ${resolve('./out/cli.cjs')} commitlint force \
-    `,
-      [],
-      { cwd: gitDir }
-    );
+      const oco = await runCli(['commitlint', 'force'], {
+        cwd: gitDir,
+        env: getPromptModuleEnv('prompt-module-commitlint-config')
+      });
 
-    expect(
-      await findByText('opencommit — configure @commitlint')
-    ).toBeInTheConsole();
-    expect(
-      await findByText('Read @commitlint configuration')
-    ).toBeInTheConsole();
-
-    expect(
-      await findByText('Generating consistency with given @commitlint rules')
-    ).toBeInTheConsole();
-    expect(
-      await findByText('Done - please review contents of')
-    ).toBeInTheConsole();
-
-    await cleanup();
+      expect(
+        await oco.findByText('opencommit — configure @commitlint')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Read @commitlint configuration')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Generating consistency with given @commitlint rules')
+      ).toBeInTheConsole();
+      expect(
+        await oco.findByText('Done - please review contents of')
+      ).toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+    } finally {
+      await cleanup();
+    }
   });
 });
 
@@ -153,75 +147,57 @@ describe('cli flow to generate commit message using @commitlint prompt-module', 
   it('on commitlint@19 using ESM', async () => {
     const { gitDir, cleanup } = await prepareEnvironment();
 
-    // Setup commitlint@19
-    await setupCommitlint(gitDir, 19);
-    const npmList = await render('npm', ['list', '@commitlint/load'], {
-      cwd: gitDir
-    });
-    expect(await npmList.findByText('@commitlint/load@19')).toBeInTheConsole();
+    try {
+      await setupCommitlint(gitDir, 19);
+      await assertInstalledCommitlintVersion(gitDir, '19');
 
-    // Run `oco commitlint force`
-    const commitlintForce = await render(
-      `
-      OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
-      OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
-      node ${resolve('./out/cli.cjs')} commitlint force \
-    `,
-      [],
-      { cwd: gitDir }
-    );
-    expect(
-      await commitlintForce.findByText('Done - please review contents of')
-    ).toBeInTheConsole();
+      const commitlintForce = await runCli(['commitlint', 'force'], {
+        cwd: gitDir,
+        env: getPromptModuleEnv('prompt-module-commitlint-config')
+      });
+      expect(
+        await commitlintForce.findByText('Done - please review contents of')
+      ).toBeInTheConsole();
+      expect(await waitForExit(commitlintForce)).toBe(0);
 
-    // Run `oco commitlint get`
-    const commitlintGet = await render(
-      `
-      OCO_TEST_MOCK_TYPE='prompt-module-commitlint-config' \
-      OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
-      node ${resolve('./out/cli.cjs')} commitlint get \
-    `,
-      [],
-      { cwd: gitDir }
-    );
-    expect(await commitlintGet.findByText('consistency')).toBeInTheConsole();
+      const commitlintGet = await runCli(['commitlint', 'get'], {
+        cwd: gitDir,
+        env: getPromptModuleEnv('prompt-module-commitlint-config')
+      });
+      expect(await commitlintGet.findByText('consistency')).toBeInTheConsole();
+      expect(await waitForExit(commitlintGet)).toBe(0);
 
-    // Run 'oco' using .opencommit-commitlint
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
-    });
-    await render('git', ['add index.ts'], { cwd: gitDir });
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
 
-    const oco = await render(
-      `
-      OCO_TEST_MOCK_TYPE='commit-message' \
-      OCO_PROMPT_MODULE='@commitlint'  \
-      OCO_AI_PROVIDER='test' OCO_GITPUSH='true' \
-      node ${resolve('./out/cli.cjs')} \
-    `,
-      [],
-      { cwd: gitDir }
-    );
+      const oco = await runCli([], {
+        cwd: gitDir,
+        env: getPromptModuleEnv('commit-message')
+      });
 
-    expect(
-      await oco.findByText('Generating the commit message')
-    ).toBeInTheConsole();
-    expect(
-      await oco.findByText('Confirm the commit message?')
-    ).toBeInTheConsole();
-    oco.userEvent.keyboard('[Enter]');
+      expect(
+        await oco.findByText('Generating the commit message')
+      ).toBeInTheConsole();
+      expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+      oco.userEvent.keyboard('[Enter]');
 
-    expect(
-      await oco.findByText('Do you want to run `git push`?')
-    ).toBeInTheConsole();
-    oco.userEvent.keyboard('[Enter]');
+      expect(
+        await oco.findByText('Do you want to run `git push`?')
+      ).toBeInTheConsole();
+      oco.userEvent.keyboard('[Enter]');
 
-    expect(
-      await oco.findByText('Successfully pushed all commits to origin')
-    ).toBeInTheConsole();
-
-    await cleanup();
+      expect(
+        await oco.findByText('Successfully pushed all commits to origin')
+      ).toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+      await assertHeadCommit(gitDir, 'fix(testAi.ts): test commit message');
+    } finally {
+      await cleanup();
+    }
   });
 });

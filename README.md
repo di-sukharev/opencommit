@@ -245,7 +245,13 @@ If you are behind a proxy, you can set it in the config:
 oco config set OCO_PROXY=http://127.0.0.1:7890
 ```
 
-Or it will automatically use `HTTPS_PROXY` or `HTTP_PROXY` environment variables.
+If `OCO_PROXY` is unset, OpenCommit will automatically use `HTTPS_PROXY` or `HTTP_PROXY` environment variables.
+
+To explicitly disable proxy use for OpenCommit, even when those environment variables are set:
+
+```sh
+oco config set OCO_PROXY=null
+```
 
 ### Locale configuration
 

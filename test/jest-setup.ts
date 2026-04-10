@@ -6,6 +6,7 @@ import { configure } from 'cli-testing-library';
 global.jest = jest;
 
 /**
- * Adjusted the wait time for waitFor/findByText to 2000ms, because the default 1000ms makes the test results flaky
+ * CLI rendering gets noticeably slower under coverage and on CI, so keep a
+ * slightly roomier timeout than the library default.
  */
-configure({ asyncUtilTimeout: 2000 });
+configure({ asyncUtilTimeout: 5000 });

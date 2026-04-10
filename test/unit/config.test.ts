@@ -199,6 +199,48 @@ describe('config', () => {
       expect(config).not.toEqual(null);
       expect(config.OCO_API_KEY).toEqual(undefined);
     });
+
+    it('should not create a global config file when only reading defaults', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {});
+      rmSync(globalConfigFile.filePath);
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
+
+      expect(config.OCO_MODEL).toEqual(DEFAULT_CONFIG.OCO_MODEL);
+      expect(existsSync(globalConfigFile.filePath)).toBe(false);
+    });
+
+    it('should not materialize ambient proxy env vars into OCO_PROXY', async () => {
+      process.env.HTTPS_PROXY = 'http://127.0.0.1:7890';
+
+      globalConfigFile = await generateConfig('.opencommit', {});
+      envConfigFile = await generateConfig('.env', {});
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config.OCO_PROXY).toEqual(undefined);
+    });
+
+    it('should parse OCO_PROXY=null from local .env as explicit disable', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_PROXY: 'http://global-proxy:8080'
+      });
+      envConfigFile = await generateConfig('.env', {
+        OCO_PROXY: 'null'
+      });
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config.OCO_PROXY).toEqual(null);
+    });
   });
 
   describe('setConfig', () => {
@@ -324,6 +366,21 @@ describe('config', () => {
 
       const fileContent2 = readFileSync(globalConfigFile.filePath, 'utf8');
       expect(fileContent2).toContain('OCO_MODEL=gpt-4');
+    });
+
+    it('should persist OCO_PROXY=null as an explicit disable', async () => {
+      await setConfig(
+        [[CONFIG_KEYS.OCO_PROXY, null]],
+        globalConfigFile.filePath
+      );
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
+      const fileContent = readFileSync(globalConfigFile.filePath, 'utf8');
+
+      expect(config.OCO_PROXY).toEqual(null);
+      expect(fileContent).toContain('OCO_PROXY=null');
     });
   });
 });
