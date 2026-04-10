@@ -1,6 +1,5 @@
+import { Mistral } from '@mistralai/mistralai';
 import { OpenAI } from 'openai';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import { createRequire } from 'module';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
@@ -10,16 +9,6 @@ import { AiEngine, AiEngineConfig } from './Engine';
 // Using any for Mistral types to avoid type declaration issues
 export interface MistralAiConfig extends AiEngineConfig {}
 export type MistralCompletionMessageParam = Array<any>;
-
-let require: NodeRequire;
-
-try {
-  require = createRequire(__filename);
-} catch {
-  require = createRequire(import.meta.url);
-}
-
-const Mistral = require('@mistralai/mistralai').Mistral;
 
 export class MistralAiEngine implements AiEngine {
   config: MistralAiConfig;
