@@ -1,7 +1,8 @@
 import { OpenAI } from 'openai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { createRequire } from 'module';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -10,8 +11,14 @@ import { AiEngine, AiEngineConfig } from './Engine';
 export interface MistralAiConfig extends AiEngineConfig {}
 export type MistralCompletionMessageParam = Array<any>;
 
-// Import Mistral dynamically to avoid TS errors
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+let require: NodeRequire;
+
+try {
+  require = createRequire(__filename);
+} catch {
+  require = createRequire(import.meta.url);
+}
+
 const Mistral = require('@mistralai/mistralai').Mistral;
 
 export class MistralAiEngine implements AiEngine {

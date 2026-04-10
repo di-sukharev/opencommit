@@ -11,7 +11,7 @@ export interface AiEngineConfig {
   maxTokensOutput: number;
   maxTokensInput: number;
   baseURL?: string;
-  proxy?: string;
+  proxy?: string | null;
   customHeaders?: Record<string, string>;
   ollamaThink?: boolean;
 }

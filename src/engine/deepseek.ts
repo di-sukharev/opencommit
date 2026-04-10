@@ -1,6 +1,6 @@
 import { OpenAI } from 'openai';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { OpenAiEngine, OpenAiConfig } from './openAi';

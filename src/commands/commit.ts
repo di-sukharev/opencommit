@@ -249,7 +249,9 @@ ${chalk.grey('——————————————————')}`
 
     const errorConfig = getConfig();
     const provider = errorConfig.OCO_AI_PROVIDER || 'openai';
-    const formatted = formatUserFriendlyError(error, provider);
+    const formatted = formatUserFriendlyError(error, provider, {
+      baseURL: errorConfig.OCO_API_URL
+    });
     outro(printFormattedError(formatted));
 
     process.exit(1);

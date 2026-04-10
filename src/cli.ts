@@ -8,7 +8,7 @@ import { commitlintConfigCommand } from './commands/commitlint';
 import { configCommand, getConfig } from './commands/config';
 import { hookCommand, isHookCalled } from './commands/githook.js';
 import { prepareCommitMessageHook } from './commands/prepare-commit-msg-hook';
-import { setupProxy } from './utils/proxy';
+import { resolveProxy, setupProxy } from './utils/proxy';
 import {
   setupCommand,
   isFirstRun,
@@ -20,7 +20,7 @@ import { checkIsLatestVersion } from './utils/checkIsLatestVersion';
 import { runMigrations } from './migrations/_run.js';
 
 const config = getConfig();
-setupProxy(config.OCO_PROXY);
+setupProxy(resolveProxy(config.OCO_PROXY));
 
 const OCO_FLAGS_WITH_VALUE = new Set(['-c', '--context']);
 const OCO_BOOLEAN_FLAGS = new Set(['-y', '--yes', '--fgm']);

@@ -723,7 +723,8 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_API_URL](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_API_URL,
-      typeof value === 'string',
+      typeof value === 'string' &&
+        /^(https?:\/\/)/.test(value),
       `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
@@ -732,7 +733,8 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_PROXY](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_PROXY,
-      typeof value === 'string',
+      value === null ||
+        (typeof value === 'string' && /^(https?:\/\/)/.test(value)),
       `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
@@ -900,7 +902,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
   [CONFIG_KEYS.OCO_API_URL]?: string;
-  [CONFIG_KEYS.OCO_PROXY]?: string;
+  [CONFIG_KEYS.OCO_PROXY]?: string | null;
   [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS]?: string;
   [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
@@ -986,10 +988,7 @@ const getEnvConfig = (envPath: string) => {
   return {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_API_URL: process.env.OCO_API_URL,
-    OCO_PROXY:
-      process.env.OCO_PROXY ||
-      process.env.HTTPS_PROXY ||
-      process.env.HTTP_PROXY,
+    OCO_PROXY: process.env.OCO_PROXY,
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_API_CUSTOM_HEADERS: process.env.OCO_API_CUSTOM_HEADERS,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
@@ -1027,16 +1026,13 @@ export const getIsGlobalConfigFileExist = (
 };
 
 export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
-  let globalConfig: ConfigType;
-
   const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
-  if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
-  else {
-    const configFile = readFileSync(configPath, 'utf8');
-    globalConfig = iniParse(configFile) as ConfigType;
+  if (!isGlobalConfigFileExist) {
+    return { ...DEFAULT_CONFIG };
   }
 
-  return globalConfig;
+  const configFile = readFileSync(configPath, 'utf8');
+  return iniParse(configFile) as ConfigType;
 };
 
 /**
@@ -1049,7 +1045,10 @@ export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
 const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) => {
   const allKeys = new Set([...Object.keys(main), ...Object.keys(fallback)]);
   return Array.from(allKeys).reduce((acc, key) => {
-    acc[key] = parseConfigVarValue(main[key] ?? fallback[key]);
+    const mainValue = main[key];
+    acc[key] = parseConfigVarValue(
+      mainValue !== undefined ? mainValue : fallback[key]
+    );
     return acc;
   }, {} as ConfigType);
 };
@@ -1218,7 +1217,10 @@ function getConfigKeyDetails(key) {
     case CONFIG_KEYS.OCO_PROXY:
       return {
         description: 'HTTP/HTTPS Proxy URL',
-        values: ["URL string (must start with 'http://' or 'https://')"]
+        values: [
+          "URL string (must start with 'http://' or 'https://')",
+          'null (disable proxy even when HTTP_PROXY/HTTPS_PROXY are set)'
+        ]
       };
     case CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       return {

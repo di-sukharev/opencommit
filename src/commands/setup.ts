@@ -427,22 +427,23 @@ export async function runSetup(): Promise<boolean> {
 }
 
 export function isFirstRun(): boolean {
+  const hasGlobalConfig = getIsGlobalConfigFileExist();
   const config = getConfig();
 
-  // Check if API key is missing for providers that need it
   const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
-
-  if (MODEL_REQUIRED_PROVIDERS.includes(provider as OCO_AI_PROVIDER_ENUM)) {
-    // For Ollama/MLX, check if model is set
-    return !config.OCO_MODEL;
-  }
 
   if (provider === OCO_AI_PROVIDER_ENUM.TEST) {
     return false;
   }
 
-  // For other providers, check if API key is set
-  return !config.OCO_API_KEY;
+  const hasRequiredConfig = MODEL_REQUIRED_PROVIDERS.includes(
+    provider as OCO_AI_PROVIDER_ENUM
+  )
+    ? Boolean(config.OCO_MODEL)
+    : Boolean(config.OCO_API_KEY);
+
+  // Trigger the full setup wizard only when nothing usable was configured yet.
+  return !hasGlobalConfig && !hasRequiredConfig;
 }
 
 export async function promptForMissingApiKey(): Promise<boolean> {

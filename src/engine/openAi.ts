@@ -1,8 +1,8 @@
 import { OpenAI } from 'openai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
-import { parseCustomHeaders } from '../utils/engine';
+import { parseCustomHeaders } from '../utils/customHeaders';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -24,8 +24,7 @@ export class OpenAiEngine implements AiEngine {
       clientOptions.baseURL = config.baseURL;
     }
 
-    const proxy =
-      config.proxy || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    const proxy = config.proxy;
     if (proxy) {
       clientOptions.httpAgent = new HttpsProxyAgent(proxy);
     }

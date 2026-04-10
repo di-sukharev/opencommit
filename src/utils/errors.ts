@@ -349,10 +349,44 @@ export interface FormattedError {
   suggestion: string | null;
 }
 
+export interface ErrorFormattingContext {
+  baseURL?: string;
+}
+
+function getCustomEndpointLabel(baseURL?: string): string | null {
+  if (!baseURL) {
+    return null;
+  }
+
+  try {
+    return new URL(baseURL).host;
+  } catch {
+    return null;
+  }
+}
+
+function getServiceUnavailableMessage(
+  provider: string,
+  context?: ErrorFormattingContext
+): string {
+  const endpointLabel = getCustomEndpointLabel(context?.baseURL);
+
+  if (endpointLabel) {
+    return `The configured API endpoint (${endpointLabel}) is temporarily unavailable.`;
+  }
+
+  if (context?.baseURL) {
+    return 'The configured API endpoint is temporarily unavailable.';
+  }
+
+  return `The ${provider} service is temporarily unavailable.`;
+}
+
 // Format an error into a user-friendly structure
 export function formatUserFriendlyError(
   error: unknown,
-  provider: string
+  provider: string,
+  context?: ErrorFormattingContext
 ): FormattedError {
   const billingUrl = PROVIDER_BILLING_URLS[provider] || null;
 
@@ -381,7 +415,7 @@ export function formatUserFriendlyError(
   if (error instanceof ServiceUnavailableError) {
     return {
       title: 'Service Unavailable',
-      message: `The ${provider} service is temporarily unavailable.`,
+      message: getServiceUnavailableMessage(provider, context),
       helpUrl: null,
       suggestion: 'Please try again in a few moments.'
     };
@@ -427,7 +461,7 @@ export function formatUserFriendlyError(
   if (isServiceUnavailableError(error)) {
     return {
       title: 'Service Unavailable',
-      message: `The ${provider} service is temporarily unavailable.`,
+      message: getServiceUnavailableMessage(provider, context),
       helpUrl: null,
       suggestion: 'Please try again in a few moments.'
     };

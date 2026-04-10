@@ -5,8 +5,8 @@ import {
   MessageParam
 } from '@anthropic-ai/sdk/resources/messages.mjs';
 import { OpenAI } from 'openai';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -21,8 +21,7 @@ export class AnthropicEngine implements AiEngine {
     this.config = config;
     const clientOptions: any = { apiKey: this.config.apiKey };
 
-    const proxy =
-      config.proxy || process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    const proxy = config.proxy;
     if (proxy) {
       clientOptions.httpAgent = new HttpsProxyAgent(proxy);
     }
