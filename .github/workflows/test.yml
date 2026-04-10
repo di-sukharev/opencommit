@@ -11,52 +11,38 @@ jobs:
   linux-tests:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-    - name: Setup git
-      run: |
-        git config --global user.email "test@example.com"
-        git config --global user.name "Test User"
-    - name: Install dependencies
-      run: npm ci
-    - name: Run Unit Tests
-      run: npm run test:unit
-    - name: Run Core E2E Tests
-      run: npm run test:e2e:core
-    - name: Run Prompt Module E2E Tests
-      run: npm run test:e2e:prompt-module
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - name: Setup git
+        run: |
+          git config --global user.email "test@example.com"
+          git config --global user.name "Test User"
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Lint
+        run: npm run lint
+      - name: Run Format Check
+        run: npm run format:check
+      - name: Run Unit Tests
+        run: npm run test:unit
+      - name: Run Core E2E Tests
+        run: npm run test:e2e:core
+      - name: Run Prompt Module E2E Tests
+        run: npm run test:e2e:prompt-module
   macos-smoke:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-    - name: Install dependencies
-      run: npm ci
-    - name: Run Smoke E2E Tests
-      run: npm run test:e2e:smoke
-  prettier:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        cache: 'npm'
-    - name: Install dependencies
-      run: npm ci
-    - name: Run Prettier
-      run: npm run format:check
-    - name: Prettier Output
-      if: failure()
-      run: |
-        echo "Prettier check failed. Please run 'npm run format' to fix formatting issues."
-        exit 1
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Run Smoke E2E Tests
+        run: npm run test:e2e:smoke

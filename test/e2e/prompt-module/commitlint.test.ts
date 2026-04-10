@@ -29,10 +29,17 @@ const getPromptModuleEnv = (
 });
 
 async function setupCommitlint(dir: string, version: 9 | 18 | 19) {
-  cpSync(getFixturePath(version, 'node_modules'), path.join(dir, 'node_modules'), {
-    recursive: true
-  });
-  cpSync(getFixturePath(version, 'package.json'), path.join(dir, 'package.json'));
+  cpSync(
+    getFixturePath(version, 'node_modules'),
+    path.join(dir, 'node_modules'),
+    {
+      recursive: true
+    }
+  );
+  cpSync(
+    getFixturePath(version, 'package.json'),
+    path.join(dir, 'package.json')
+  );
   cpSync(
     getFixturePath(version, 'commitlint.config.js'),
     path.join(dir, 'commitlint.config.js')
@@ -71,7 +78,9 @@ describe('cli flow to run "oco commitlint force"', () => {
         await oco.findByText('Read @commitlint configuration')
       ).toBeInTheConsole();
       expect(
-        await oco.findByText('Generating consistency with given @commitlint rules')
+        await oco.findByText(
+          'Generating consistency with given @commitlint rules'
+        )
       ).toBeInTheConsole();
       expect(
         await oco.findByText('Done - please review contents of')
@@ -101,7 +110,9 @@ describe('cli flow to run "oco commitlint force"', () => {
         await oco.findByText('Read @commitlint configuration')
       ).toBeInTheConsole();
       expect(
-        await oco.findByText('Generating consistency with given @commitlint rules')
+        await oco.findByText(
+          'Generating consistency with given @commitlint rules'
+        )
       ).toBeInTheConsole();
       expect(
         await oco.findByText('Done - please review contents of')
@@ -131,7 +142,9 @@ describe('cli flow to run "oco commitlint force"', () => {
         await oco.findByText('Read @commitlint configuration')
       ).toBeInTheConsole();
       expect(
-        await oco.findByText('Generating consistency with given @commitlint rules')
+        await oco.findByText(
+          'Generating consistency with given @commitlint rules'
+        )
       ).toBeInTheConsole();
       expect(
         await oco.findByText('Done - please review contents of')
@@ -183,7 +196,9 @@ describe('cli flow to generate commit message using @commitlint prompt-module', 
       expect(
         await oco.findByText('Generating the commit message')
       ).toBeInTheConsole();
-      expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+      expect(
+        await oco.findByText('Confirm the commit message?')
+      ).toBeInTheConsole();
       oco.userEvent.keyboard('[Enter]');
 
       expect(

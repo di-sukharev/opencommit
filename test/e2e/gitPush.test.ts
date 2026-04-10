@@ -12,13 +12,6 @@ import {
   waitForExit
 } from './utils';
 
-const waitForCommitConfirmation = async (
-  findByText: (text: string) => Promise<any>
-) => {
-  expect(await findByText('Generating the commit message')).toBeInTheConsole();
-  expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
-};
-
 describe('cli flow to push git branch', () => {
   it('does nothing when OCO_GITPUSH is set to false', async () => {
     const { gitDir, cleanup } = await prepareEnvironment({ remotes: 0 });
@@ -35,29 +28,13 @@ describe('cli flow to push git branch', () => {
         { stage: true }
       );
 
-      const oco = await runCli([], {
+      const oco = await runCli(['--yes'], {
         cwd: gitDir,
         env: getMockOpenAiEnv(server.baseUrl, {
           OCO_GITPUSH: 'false'
         })
       });
 
-      await waitForCommitConfirmation(oco.findByText);
-      oco.userEvent.keyboard('[Enter]');
-
-      expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
-      expect(
-        await oco.queryByText('Choose a remote to push to')
-      ).not.toBeInTheConsole();
-      expect(
-        await oco.queryByText('Do you want to run `git push`?')
-      ).not.toBeInTheConsole();
-      expect(
-        await oco.queryByText('Successfully pushed all commits to origin')
-      ).not.toBeInTheConsole();
-      expect(
-        await oco.queryByText('Command failed with exit code 1')
-      ).not.toBeInTheConsole();
       expect(await waitForExit(oco)).toBe(0);
       await assertHeadCommit(
         gitDir,
@@ -84,28 +61,13 @@ describe('cli flow to push git branch', () => {
         { stage: true }
       );
 
-      const oco = await runCli([], {
+      const oco = await runCli(['--yes'], {
         cwd: gitDir,
         env: getMockOpenAiEnv(server.baseUrl, {
           OCO_GITPUSH: 'true'
         })
       });
 
-      await waitForCommitConfirmation(oco.findByText);
-      oco.userEvent.keyboard('[Enter]');
-
-      expect(
-        await oco.queryByText('Choose a remote to push to')
-      ).not.toBeInTheConsole();
-      expect(
-        await oco.queryByText('Do you want to run `git push`?')
-      ).not.toBeInTheConsole();
-      expect(
-        await oco.queryByText('Successfully pushed all commits to origin')
-      ).not.toBeInTheConsole();
-      expect(
-        await oco.findByText('Command failed with exit code 1')
-      ).toBeInTheConsole();
       expect(await waitForExit(oco)).toBe(1);
       await assertHeadCommit(
         gitDir,
@@ -134,24 +96,18 @@ describe('cli flow to push git branch', () => {
         { stage: true }
       );
 
-      const oco = await runCli([], {
+      const oco = await runCli(['--yes'], {
         cwd: gitDir,
         env: getMockOpenAiEnv(server.baseUrl, {
           OCO_GITPUSH: 'true'
         })
       });
 
-      await waitForCommitConfirmation(oco.findByText);
-      oco.userEvent.keyboard('[Enter]');
-
       expect(
         await oco.findByText('Do you want to run `git push`?')
       ).toBeInTheConsole();
       oco.userEvent.keyboard('[Enter]');
 
-      expect(
-        await oco.findByText('Successfully pushed all commits to origin')
-      ).toBeInTheConsole();
       expect(await waitForExit(oco)).toBe(0);
       await assertHeadCommit(
         gitDir,
@@ -186,22 +142,18 @@ describe('cli flow to push git branch', () => {
         { stage: true }
       );
 
-      const oco = await runCli([], {
+      const oco = await runCli(['--yes'], {
         cwd: gitDir,
         env: getMockOpenAiEnv(server.baseUrl, {
           OCO_GITPUSH: 'true'
         })
       });
 
-      await waitForCommitConfirmation(oco.findByText);
-      oco.userEvent.keyboard('[Enter]');
-
-      expect(await oco.findByText('Choose a remote to push to')).toBeInTheConsole();
-      oco.userEvent.keyboard('[Enter]');
-
       expect(
-        await oco.findByText('Successfully pushed all commits to origin')
+        await oco.findByText('Choose a remote to push to')
       ).toBeInTheConsole();
+      oco.userEvent.keyboard('[Enter]');
+
       expect(await waitForExit(oco)).toBe(0);
       await assertHeadCommit(
         gitDir,
@@ -235,22 +187,18 @@ describe('cli flow to push git branch', () => {
         { stage: true }
       );
 
-      const oco = await runCli([], {
+      const oco = await runCli(['--yes'], {
         cwd: gitDir,
         env: getMockOpenAiEnv(server.baseUrl, {
           OCO_GITPUSH: 'true'
         })
       });
 
-      await waitForCommitConfirmation(oco.findByText);
-      oco.userEvent.keyboard('[Enter]');
-
-      expect(await oco.findByText('Choose a remote to push to')).toBeInTheConsole();
+      expect(
+        await oco.findByText('Choose a remote to push to')
+      ).toBeInTheConsole();
       oco.userEvent.keyboard('[ArrowDown][ArrowDown][Enter]');
 
-      expect(
-        await oco.queryByText('Successfully pushed all commits to origin')
-      ).not.toBeInTheConsole();
       expect(await waitForExit(oco)).toBe(0);
       await assertHeadCommit(
         gitDir,

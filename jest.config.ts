@@ -15,9 +15,7 @@ const config: Config = {
   testRegex: ['.*\\.test\\.ts$'],
   // Tell Jest to ignore the specific duplicate package.json files
   // that are causing Haste module naming collisions
-  modulePathIgnorePatterns: [
-    '<rootDir>/test/e2e/prompt-module/data/'
-  ],
+  modulePathIgnorePatterns: ['<rootDir>/test/e2e/prompt-module/data/'],
   transformIgnorePatterns: [
     'node_modules/(?!(cli-testing-library|@clack|cleye|chalk)/.*)'
   ],

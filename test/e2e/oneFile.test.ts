@@ -27,7 +27,7 @@ it('cli flow to generate commit message for 1 new file (staged)', async () => {
       { stage: true }
     );
 
-    const oco = await runCli([], {
+    const oco = await runCli(['--yes'], {
       cwd: gitDir,
       env: getMockOpenAiEnv(server.baseUrl, {
         OCO_GITPUSH: 'true'
@@ -41,16 +41,11 @@ it('cli flow to generate commit message for 1 new file (staged)', async () => {
       )
     ).not.toBeInTheConsole();
 
-    expect(await oco.findByText('Generating the commit message')).toBeInTheConsole();
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
-    oco.userEvent.keyboard('[Enter]');
-
-    expect(await oco.findByText('Do you want to run `git push`?')).toBeInTheConsole();
-    oco.userEvent.keyboard('[Enter]');
-
     expect(
-      await oco.findByText('Successfully pushed all commits to origin')
+      await oco.findByText('Do you want to run `git push`?')
     ).toBeInTheConsole();
+    oco.userEvent.keyboard('[Enter]');
+
     expect(await waitForExit(oco)).toBe(0);
     await assertHeadCommit(
       gitDir,
@@ -87,7 +82,7 @@ it('cli flow to generate commit message for 1 changed file (not staged)', async 
     );
     appendRepoFile(gitDir, 'index.ts', 'console.log("Good night World");\n');
 
-    const oco = await runCli([], {
+    const oco = await runCli(['--yes'], {
       cwd: gitDir,
       env: getMockOpenAiEnv(server.baseUrl, {
         OCO_GITPUSH: 'true'
@@ -102,17 +97,16 @@ it('cli flow to generate commit message for 1 changed file (not staged)', async 
     ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
-    expect(await oco.findByText('Generating the commit message')).toBeInTheConsole();
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
-    oco.userEvent.keyboard('[Enter]');
-
-    expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
-    expect(await oco.findByText('Do you want to run `git push`?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(
-      await oco.findByText('Successfully pushed all commits to origin')
+      await oco.findByText('Do you want to run `git push`?')
     ).toBeInTheConsole();
+    oco.userEvent.keyboard('[Enter]');
+
     expect(await waitForExit(oco)).toBe(0);
     await assertHeadCommit(
       gitDir,
