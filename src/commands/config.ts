@@ -723,8 +723,7 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_API_URL](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_API_URL,
-      typeof value === 'string' &&
-        /^(https?:\/\/)/.test(value),
+      typeof value === 'string' && /^(https?:\/\/)/.test(value),
       `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;

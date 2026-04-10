@@ -1,10 +1,6 @@
 import axios from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import {
-  Agent,
-  ProxyAgent,
-  setGlobalDispatcher
-} from 'undici';
+import { Agent, ProxyAgent, setGlobalDispatcher } from 'undici';
 
 export type ProxySetting = string | null | undefined;
 

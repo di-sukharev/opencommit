@@ -31,7 +31,12 @@ const getGitRemotes = async () => {
 
 const hasUpstreamBranch = async (): Promise<boolean> => {
   try {
-    await execa('git', ['rev-parse', '--abbrev-ref', '--symbolic-full-name', '@{u}']);
+    await execa('git', [
+      'rev-parse',
+      '--abbrev-ref',
+      '--symbolic-full-name',
+      '@{u}'
+    ]);
     return true;
   } catch {
     return false;
