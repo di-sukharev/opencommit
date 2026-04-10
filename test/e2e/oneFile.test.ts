@@ -1,55 +1,125 @@
-import { resolve } from 'path'
-import { render } from 'cli-testing-library'
 import 'cli-testing-library/extend-expect';
-import { prepareEnvironment } from './utils';
+import {
+  assertHeadCommit,
+  getCurrentBranchName,
+  getMockOpenAiEnv,
+  getRemoteBranchHeadSubject,
+  prepareEnvironment,
+  prepareRepo,
+  runCli,
+  startMockOpenAiServer,
+  appendRepoFile,
+  waitForExit
+} from './utils';
 
 it('cli flow to generate commit message for 1 new file (staged)', async () => {
-  const { gitDir, cleanup } = await prepareEnvironment();
+  const { gitDir, remoteDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'feat(cli): commit one staged file through the CLI'
+  );
 
-  await render('echo' ,[`'console.log("Hello World");' > index.ts`], { cwd: gitDir });
-  await render('git' ,['add index.ts'], { cwd: gitDir });
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
 
-  const { queryByText, findByText, userEvent } = await render(`OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`, [resolve('./out/cli.cjs')], { cwd: gitDir });
-  expect(await queryByText('No files are staged')).not.toBeInTheConsole();
-  expect(await queryByText('Do you want to stage all files and generate commit message?')).not.toBeInTheConsole();
+    const oco = await runCli([], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl, {
+        OCO_GITPUSH: 'true'
+      })
+    });
 
-  expect(await findByText('Generating the commit message')).toBeInTheConsole();
-  expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
-  userEvent.keyboard('[Enter]');
+    expect(await oco.queryByText('No files are staged')).not.toBeInTheConsole();
+    expect(
+      await oco.queryByText(
+        'Do you want to stage all files and generate commit message?'
+      )
+    ).not.toBeInTheConsole();
 
-  expect(await findByText('Do you want to run `git push`?')).toBeInTheConsole();
-  userEvent.keyboard('[Enter]');
+    expect(await oco.findByText('Generating the commit message')).toBeInTheConsole();
+    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    oco.userEvent.keyboard('[Enter]');
 
-  expect(await findByText('Successfully pushed all commits to origin')).toBeInTheConsole();
+    expect(await oco.findByText('Do you want to run `git push`?')).toBeInTheConsole();
+    oco.userEvent.keyboard('[Enter]');
 
-  await cleanup();
+    expect(
+      await oco.findByText('Successfully pushed all commits to origin')
+    ).toBeInTheConsole();
+    expect(await waitForExit(oco)).toBe(0);
+    await assertHeadCommit(
+      gitDir,
+      'feat(cli): commit one staged file through the CLI'
+    );
+    expect(
+      await getRemoteBranchHeadSubject(
+        remoteDir!,
+        await getCurrentBranchName(gitDir)
+      )
+    ).toBe('feat(cli): commit one staged file through the CLI');
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
 });
 
 it('cli flow to generate commit message for 1 changed file (not staged)', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'fix(cli): stage modified files before committing'
+  );
 
-  await render('echo' ,[`'console.log("Hello World");' > index.ts`], { cwd: gitDir });
-  await render('git' ,['add index.ts'], { cwd: gitDir });
-  await render('git' ,[`commit -m 'add new file'`], { cwd: gitDir });
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      {
+        stage: true,
+        commitMessage: 'add new file'
+      }
+    );
+    appendRepoFile(gitDir, 'index.ts', 'console.log("Good night World");\n');
 
-  await render('echo' ,[`'console.log("Good night World");' >> index.ts`], { cwd: gitDir });
+    const oco = await runCli([], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl, {
+        OCO_GITPUSH: 'true'
+      })
+    });
 
-  const { findByText, userEvent } = await render(`OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`, [resolve('./out/cli.cjs')], { cwd: gitDir });
+    expect(await oco.findByText('No files are staged')).toBeInTheConsole();
+    expect(
+      await oco.findByText(
+        'Do you want to stage all files and generate commit message?'
+      )
+    ).toBeInTheConsole();
+    oco.userEvent.keyboard('[Enter]');
 
-  expect(await findByText('No files are staged')).toBeInTheConsole();
-  expect(await findByText('Do you want to stage all files and generate commit message?')).toBeInTheConsole();
-  userEvent.keyboard('[Enter]');
+    expect(await oco.findByText('Generating the commit message')).toBeInTheConsole();
+    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    oco.userEvent.keyboard('[Enter]');
 
-  expect(await findByText('Generating the commit message')).toBeInTheConsole();
-  expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
-  userEvent.keyboard('[Enter]');
+    expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
+    expect(await oco.findByText('Do you want to run `git push`?')).toBeInTheConsole();
+    oco.userEvent.keyboard('[Enter]');
 
-  expect(await findByText('Successfully committed')).toBeInTheConsole();
-
-  expect(await findByText('Do you want to run `git push`?')).toBeInTheConsole();
-  userEvent.keyboard('[Enter]');
-
-  expect(await findByText('Successfully pushed all commits to origin')).toBeInTheConsole();
-
-  await cleanup();
+    expect(
+      await oco.findByText('Successfully pushed all commits to origin')
+    ).toBeInTheConsole();
+    expect(await waitForExit(oco)).toBe(0);
+    await assertHeadCommit(
+      gitDir,
+      'fix(cli): stage modified files before committing'
+    );
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
 });

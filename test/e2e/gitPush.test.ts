@@ -1,210 +1,268 @@
-import path from 'path';
 import 'cli-testing-library/extend-expect';
-import { exec } from 'child_process';
-import { prepareTempDir } from './utils';
-import { promisify } from 'util';
-import { render } from 'cli-testing-library';
-import { resolve } from 'path';
-import { rm } from 'fs';
-const fsExec = promisify(exec);
-const fsRemove = promisify(rm);
+import {
+  assertHeadCommit,
+  getCurrentBranchName,
+  getMockOpenAiEnv,
+  getRemoteBranchHeadSubject,
+  prepareEnvironment,
+  prepareRepo,
+  remoteBranchExists,
+  runCli,
+  startMockOpenAiServer,
+  waitForExit
+} from './utils';
 
-const waitForCommitConfirmation = async (findByText: any) => {
+const waitForCommitConfirmation = async (
+  findByText: (text: string) => Promise<any>
+) => {
   expect(await findByText('Generating the commit message')).toBeInTheConsole();
   expect(await findByText('Confirm the commit message?')).toBeInTheConsole();
 };
 
-/**
- * git remote -v
- *
- * [no remotes]
- */
-const prepareNoRemoteGitRepository = async (): Promise<{
-  gitDir: string;
-  cleanup: () => Promise<void>;
-}> => {
-  const tempDir = await prepareTempDir();
-  await fsExec('git init test', { cwd: tempDir });
-  const gitDir = path.resolve(tempDir, 'test');
-
-  const cleanup = async () => {
-    return fsRemove(tempDir, { recursive: true });
-  };
-  return {
-    gitDir,
-    cleanup
-  };
-};
-
-/**
- * git remote -v
- *
- * origin  /tmp/remote.git (fetch)
- * origin  /tmp/remote.git (push)
- */
-const prepareOneRemoteGitRepository = async (): Promise<{
-  gitDir: string;
-  cleanup: () => Promise<void>;
-}> => {
-  const tempDir = await prepareTempDir();
-  await fsExec('git init --bare remote.git', { cwd: tempDir });
-  await fsExec('git clone remote.git test', { cwd: tempDir });
-  const gitDir = path.resolve(tempDir, 'test');
-
-  const cleanup = async () => {
-    return fsRemove(tempDir, { recursive: true });
-  };
-  return {
-    gitDir,
-    cleanup
-  };
-};
-
-/**
- * git remote -v
- *
- * origin  /tmp/remote.git (fetch)
- * origin  /tmp/remote.git (push)
- * other   ../remote2.git (fetch)
- * other   ../remote2.git (push)
- */
-const prepareTwoRemotesGitRepository = async (): Promise<{
-  gitDir: string;
-  cleanup: () => Promise<void>;
-}> => {
-  const tempDir = await prepareTempDir();
-  await fsExec('git init --bare remote.git', { cwd: tempDir });
-  await fsExec('git init --bare other.git', { cwd: tempDir });
-  await fsExec('git clone remote.git test', { cwd: tempDir });
-  const gitDir = path.resolve(tempDir, 'test');
-  await fsExec('git remote add other ../other.git', { cwd: gitDir });
-
-  const cleanup = async () => {
-    return fsRemove(tempDir, { recursive: true });
-  };
-  return {
-    gitDir,
-    cleanup
-  };
-};
-
 describe('cli flow to push git branch', () => {
-  it('do nothing when OCO_GITPUSH is set to false', async () => {
-    const { gitDir, cleanup } = await prepareNoRemoteGitRepository();
-
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
-    });
-    await render('git', ['add index.ts'], { cwd: gitDir });
-
-    const { queryByText, findByText, userEvent } = await render(
-      `OCO_AI_PROVIDER='test' OCO_GITPUSH='false' node`,
-      [resolve('./out/cli.cjs')],
-      { cwd: gitDir }
+  it('does nothing when OCO_GITPUSH is set to false', async () => {
+    const { gitDir, cleanup } = await prepareEnvironment({ remotes: 0 });
+    const server = await startMockOpenAiServer(
+      'fix(push): keep the commit local when push is disabled'
     );
-    await waitForCommitConfirmation(findByText);
-    userEvent.keyboard('[Enter]');
 
-    expect(
-      await queryByText('Choose a remote to push to')
-    ).not.toBeInTheConsole();
-    expect(
-      await queryByText('Do you want to run `git push`?')
-    ).not.toBeInTheConsole();
-    expect(
-      await queryByText('Successfully pushed all commits to origin')
-    ).not.toBeInTheConsole();
-    expect(
-      await queryByText('Command failed with exit code 1')
-    ).not.toBeInTheConsole();
+    try {
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
 
-    await cleanup();
+      const oco = await runCli([], {
+        cwd: gitDir,
+        env: getMockOpenAiEnv(server.baseUrl, {
+          OCO_GITPUSH: 'false'
+        })
+      });
+
+      await waitForCommitConfirmation(oco.findByText);
+      oco.userEvent.keyboard('[Enter]');
+
+      expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
+      expect(
+        await oco.queryByText('Choose a remote to push to')
+      ).not.toBeInTheConsole();
+      expect(
+        await oco.queryByText('Do you want to run `git push`?')
+      ).not.toBeInTheConsole();
+      expect(
+        await oco.queryByText('Successfully pushed all commits to origin')
+      ).not.toBeInTheConsole();
+      expect(
+        await oco.queryByText('Command failed with exit code 1')
+      ).not.toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+      await assertHeadCommit(
+        gitDir,
+        'fix(push): keep the commit local when push is disabled'
+      );
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
   });
 
-  it('push and cause error when there is no remote', async () => {
-    const { gitDir, cleanup } = await prepareNoRemoteGitRepository();
-
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
-    });
-    await render('git', ['add index.ts'], { cwd: gitDir });
-
-    const { queryByText, findByText, userEvent } = await render(
-      `OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`,
-      [resolve('./out/cli.cjs')],
-      { cwd: gitDir }
+  it('fails after committing when push is enabled but there is no remote', async () => {
+    const { gitDir, cleanup } = await prepareEnvironment({ remotes: 0 });
+    const server = await startMockOpenAiServer(
+      'fix(push): commit even when the push later fails'
     );
-    await waitForCommitConfirmation(findByText);
-    userEvent.keyboard('[Enter]');
 
-    expect(
-      await queryByText('Choose a remote to push to')
-    ).not.toBeInTheConsole();
-    expect(
-      await queryByText('Do you want to run `git push`?')
-    ).not.toBeInTheConsole();
-    expect(
-      await queryByText('Successfully pushed all commits to origin')
-    ).not.toBeInTheConsole();
+    try {
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
 
-    expect(
-      await findByText('Command failed with exit code 1')
-    ).toBeInTheConsole();
+      const oco = await runCli([], {
+        cwd: gitDir,
+        env: getMockOpenAiEnv(server.baseUrl, {
+          OCO_GITPUSH: 'true'
+        })
+      });
 
-    await cleanup();
+      await waitForCommitConfirmation(oco.findByText);
+      oco.userEvent.keyboard('[Enter]');
+
+      expect(
+        await oco.queryByText('Choose a remote to push to')
+      ).not.toBeInTheConsole();
+      expect(
+        await oco.queryByText('Do you want to run `git push`?')
+      ).not.toBeInTheConsole();
+      expect(
+        await oco.queryByText('Successfully pushed all commits to origin')
+      ).not.toBeInTheConsole();
+      expect(
+        await oco.findByText('Command failed with exit code 1')
+      ).toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(1);
+      await assertHeadCommit(
+        gitDir,
+        'fix(push): commit even when the push later fails'
+      );
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
   });
 
-  it('push when one remote is set', async () => {
-    const { gitDir, cleanup } = await prepareOneRemoteGitRepository();
-
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
+  it('pushes to the only configured remote', async () => {
+    const { gitDir, remoteDir, cleanup } = await prepareEnvironment({
+      remotes: 1
     });
-    await render('git', ['add index.ts'], { cwd: gitDir });
-
-    const { findByText, userEvent } = await render(
-      `OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`,
-      [resolve('./out/cli.cjs')],
-      { cwd: gitDir }
+    const server = await startMockOpenAiServer(
+      'feat(push): publish the commit to the only remote'
     );
-    await waitForCommitConfirmation(findByText);
-    userEvent.keyboard('[Enter]');
 
-    expect(
-      await findByText('Do you want to run `git push`?')
-    ).toBeInTheConsole();
-    userEvent.keyboard('[Enter]');
+    try {
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
 
-    expect(
-      await findByText('Successfully pushed all commits to origin')
-    ).toBeInTheConsole();
+      const oco = await runCli([], {
+        cwd: gitDir,
+        env: getMockOpenAiEnv(server.baseUrl, {
+          OCO_GITPUSH: 'true'
+        })
+      });
 
-    await cleanup();
+      await waitForCommitConfirmation(oco.findByText);
+      oco.userEvent.keyboard('[Enter]');
+
+      expect(
+        await oco.findByText('Do you want to run `git push`?')
+      ).toBeInTheConsole();
+      oco.userEvent.keyboard('[Enter]');
+
+      expect(
+        await oco.findByText('Successfully pushed all commits to origin')
+      ).toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+      await assertHeadCommit(
+        gitDir,
+        'feat(push): publish the commit to the only remote'
+      );
+      expect(
+        await getRemoteBranchHeadSubject(
+          remoteDir!,
+          await getCurrentBranchName(gitDir)
+        )
+      ).toBe('feat(push): publish the commit to the only remote');
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
   });
 
-  it('push when two remotes are set', async () => {
-    const { gitDir, cleanup } = await prepareTwoRemotesGitRepository();
-
-    await render('echo', [`'console.log("Hello World");' > index.ts`], {
-      cwd: gitDir
+  it('pushes to the selected remote when multiple remotes are configured', async () => {
+    const { gitDir, remoteDir, cleanup } = await prepareEnvironment({
+      remotes: 2
     });
-    await render('git', ['add index.ts'], { cwd: gitDir });
-
-    const { findByText, userEvent } = await render(
-      `OCO_AI_PROVIDER='test' OCO_GITPUSH='true' node`,
-      [resolve('./out/cli.cjs')],
-      { cwd: gitDir }
+    const server = await startMockOpenAiServer(
+      'feat(push): choose a remote explicitly when several exist'
     );
-    await waitForCommitConfirmation(findByText);
-    userEvent.keyboard('[Enter]');
 
-    expect(await findByText('Choose a remote to push to')).toBeInTheConsole();
-    userEvent.keyboard('[Enter]');
+    try {
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
 
-    expect(
-      await findByText('Successfully pushed all commits to origin')
-    ).toBeInTheConsole();
+      const oco = await runCli([], {
+        cwd: gitDir,
+        env: getMockOpenAiEnv(server.baseUrl, {
+          OCO_GITPUSH: 'true'
+        })
+      });
 
-    await cleanup();
+      await waitForCommitConfirmation(oco.findByText);
+      oco.userEvent.keyboard('[Enter]');
+
+      expect(await oco.findByText('Choose a remote to push to')).toBeInTheConsole();
+      oco.userEvent.keyboard('[Enter]');
+
+      expect(
+        await oco.findByText('Successfully pushed all commits to origin')
+      ).toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+      await assertHeadCommit(
+        gitDir,
+        'feat(push): choose a remote explicitly when several exist'
+      );
+      expect(
+        await getRemoteBranchHeadSubject(
+          remoteDir!,
+          await getCurrentBranchName(gitDir)
+        )
+      ).toBe('feat(push): choose a remote explicitly when several exist');
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
+  });
+
+  it("keeps the commit local when the user chooses 'don't push'", async () => {
+    const { gitDir, remoteDir, otherRemoteDir, cleanup } =
+      await prepareEnvironment({ remotes: 2 });
+    const server = await startMockOpenAiServer(
+      "fix(push): skip the remote step when the user chooses don't push"
+    );
+
+    try {
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
+
+      const oco = await runCli([], {
+        cwd: gitDir,
+        env: getMockOpenAiEnv(server.baseUrl, {
+          OCO_GITPUSH: 'true'
+        })
+      });
+
+      await waitForCommitConfirmation(oco.findByText);
+      oco.userEvent.keyboard('[Enter]');
+
+      expect(await oco.findByText('Choose a remote to push to')).toBeInTheConsole();
+      oco.userEvent.keyboard('[ArrowDown][ArrowDown][Enter]');
+
+      expect(
+        await oco.queryByText('Successfully pushed all commits to origin')
+      ).not.toBeInTheConsole();
+      expect(await waitForExit(oco)).toBe(0);
+      await assertHeadCommit(
+        gitDir,
+        "fix(push): skip the remote step when the user chooses don't push"
+      );
+
+      const branchName = await getCurrentBranchName(gitDir);
+      expect(await remoteBranchExists(remoteDir!, branchName)).toBe(false);
+      expect(await remoteBranchExists(otherRemoteDir!, branchName)).toBe(false);
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
   });
 });
