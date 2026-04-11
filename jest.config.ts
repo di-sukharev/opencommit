@@ -11,6 +11,8 @@ const config: Config = {
   moduleDirectories: ['node_modules', 'src'],
   preset: 'ts-jest/presets/default-esm',
   setupFilesAfterEnv: ['<rootDir>/test/jest-setup.ts'],
+  globalSetup: '<rootDir>/test/jest-global-setup.ts',
+  globalTeardown: '<rootDir>/test/jest-global-teardown.ts',
   testEnvironment: 'node',
   testRegex: ['.*\\.test\\.ts$'],
   // Tell Jest to ignore the specific duplicate package.json files
