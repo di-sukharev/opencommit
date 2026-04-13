@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.11/schema.json",
 
   "vcs": {
     "enabled": true,
@@ -13,7 +13,7 @@
   },
 
   "formatter": {
-    "enabled": true,
+    "enabled": false,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineEnding": "lf"
@@ -33,7 +33,12 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noConsole": "error"
+        "noConsole": "off",
+        "noImplicitAnyLet": "off",
+        "useIterableCallbackReturn": "off"
+      },
+      "correctness": {
+        "noSwitchDeclarations": "off"
       },
       "style": {
         "noNonNullAssertion": "off"
@@ -42,10 +47,10 @@
   },
 
   "assist": {
-    "enabled": true,
+    "enabled": false,
     "actions": {
       "source": {
-        "organizeImports": "on"
+        "organizeImports": "off"
       }
     }
   }

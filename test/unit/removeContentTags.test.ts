@@ -8,7 +8,8 @@ describe('removeContentTags', () => {
   });
 
   it('should handle multiple tag occurrences', () => {
-    const content = '<think>hidden</think> visible <think>also hidden</think> text';
+    const content =
+      '<think>hidden</think> visible <think>also hidden</think> text';
     const result = removeContentTags(content, 'think');
     expect(result).toBe('visible text');
   });
@@ -26,7 +27,8 @@ describe('removeContentTags', () => {
   });
 
   it('should work with different tag names', () => {
-    const content = 'This is <custom>something to hide</custom> visible content';
+    const content =
+      'This is <custom>something to hide</custom> visible content';
     const result = removeContentTags(content, 'custom');
     expect(result).toBe('This is visible content');
   });

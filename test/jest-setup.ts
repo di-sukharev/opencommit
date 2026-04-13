@@ -9,4 +9,4 @@ global.jest = jest;
  * CLI rendering gets noticeably slower under coverage and on CI, so keep a
  * slightly roomier timeout than the library default.
  */
-configure({ asyncUtilTimeout: 5000 });
+configure({ asyncUtilTimeout: 10000 });

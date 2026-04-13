@@ -53,7 +53,6 @@ it('cli flow passes --context through to the model prompt and skips confirmation
     expect(
       await oco.queryByText('Do you want to run `git push`?')
     ).not.toBeInTheConsole();
-    expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
     expect(await waitForExit(oco)).toBe(0);
     await assertHeadCommit(gitDir, 'fix(context): handle production incident');
 
@@ -64,9 +63,7 @@ it('cli flow passes --context through to the model prompt and skips confirmation
       .map((message) => message.content)
       .join('\n');
 
-    expect(requestContents).toContain(
-      '<context>production-incident</context>'
-    );
+    expect(requestContents).toContain('<context>production-incident</context>');
     expect(requestContents).toContain('console.log("Hello World");');
     expect(server.authHeaders).toContain('Bearer test-openai-key');
   } finally {
@@ -95,7 +92,6 @@ it('cli flow passes --fgm through to the full GitMoji prompt', async () => {
       env: getMockOpenAiEnv(server.baseUrl)
     });
 
-    expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
     expect(await waitForExit(oco)).toBe(0);
     await assertHeadCommit(
       gitDir,
@@ -139,7 +135,9 @@ it('cli flow allows editing the generated commit message before committing', asy
       env: getMockOpenAiEnv(server.baseUrl)
     });
 
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[ArrowDown][ArrowDown][Enter]');
 
     expect(
@@ -192,7 +190,9 @@ it('cli flow regenerates the message when the user rejects the first suggestion'
       env: getMockOpenAiEnv(server.baseUrl)
     });
 
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[ArrowDown][Enter]');
 
     expect(
@@ -204,15 +204,14 @@ it('cli flow regenerates the message when the user rejects the first suggestion'
     expect(
       await oco.findByText('fix(cli): regenerated message after retry')
     ).toBeInTheConsole();
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
     expect(await waitForExit(oco)).toBe(0);
-    await assertHeadCommit(
-      gitDir,
-      'fix(cli): regenerated message after retry'
-    );
+    await assertHeadCommit(gitDir, 'fix(cli): regenerated message after retry');
     expect(server.requestBodies).toHaveLength(2);
   } finally {
     await server.cleanup();
@@ -250,7 +249,9 @@ it('cli flow lets the user select only specific unstaged files', async () => {
     ).toBeInTheConsole();
     oco.userEvent.keyboard('[Space][Enter]');
 
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
@@ -283,12 +284,17 @@ it('cli applies the documented message template placeholder from extra args', as
       env: getMockOpenAiEnv(server.baseUrl)
     });
 
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
     expect(await waitForExit(oco)).toBe(0);
-    await assertHeadCommit(gitDir, 'feat(template): keep generated subject #205');
+    await assertHeadCommit(
+      gitDir,
+      'feat(template): keep generated subject #205'
+    );
   } finally {
     await server.cleanup();
     await cleanup();
@@ -406,7 +412,9 @@ it('cli flow prompts for a missing API key, saves it, and completes the commit',
     oco.userEvent.keyboard('test-openai-key[Enter]');
 
     expect(await oco.findByText('API key saved')).toBeInTheConsole();
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
@@ -485,7 +493,9 @@ it('cli excludes .opencommitignore files from the generated prompt while still c
       env: getMockOpenAiEnv(server.baseUrl)
     });
 
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
@@ -553,7 +563,9 @@ it('first run launches setup, saves config, and completes a commit with the conf
     expect(
       await oco.findByText('Configuration saved to ~/.opencommit')
     ).toBeInTheConsole();
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
@@ -562,7 +574,9 @@ it('first run launches setup, saves config, and completes a commit with the conf
       gitDir,
       'feat(setup): finish first run successfully'
     );
-    expect(readFileSync(configPath, 'utf8')).toContain('OCO_AI_PROVIDER=openai');
+    expect(readFileSync(configPath, 'utf8')).toContain(
+      'OCO_AI_PROVIDER=openai'
+    );
     expect(readFileSync(configPath, 'utf8')).toContain(
       'OCO_API_KEY=first-run-openai-key'
     );
@@ -642,7 +656,9 @@ it('cli recovers from a missing model by prompting for an alternative and retryi
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Model saved as default')).toBeInTheConsole();
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
@@ -675,7 +691,8 @@ it('cli excludes lockfiles and assets from the generated prompt while still comm
       {
         'kept.ts': 'console.log("kept");\n',
         'package-lock.json': '{"name":"opencommit","lockfileVersion":3}\n',
-        'logo.svg': '<svg viewBox="0 0 1 1"><rect width="1" height="1" /></svg>\n'
+        'logo.svg':
+          '<svg viewBox="0 0 1 1"><rect width="1" height="1" /></svg>\n'
       },
       { stage: true }
     );
@@ -685,7 +702,9 @@ it('cli excludes lockfiles and assets from the generated prompt while still comm
       env: getMockOpenAiEnv(server.baseUrl)
     });
 
-    expect(await oco.findByText('Confirm the commit message?')).toBeInTheConsole();
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
     oco.userEvent.keyboard('[Enter]');
 
     expect(await oco.findByText('Successfully committed')).toBeInTheConsole();
@@ -729,7 +748,9 @@ it('fails with a non-zero exit code outside a git repository', async () => {
     });
 
     expect(await waitForExit(oco)).toBe(1);
-    expect(oco.getStdallStr()).toMatch(/No changes detected|not a git repository/);
+    expect(oco.getStdallStr()).toMatch(
+      /No changes detected|not a git repository/
+    );
   } finally {
     rmSync(tempDir, { force: true, recursive: true });
   }

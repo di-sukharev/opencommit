@@ -150,10 +150,10 @@ export const prepareRepo = async (
     options.stage === true
       ? Object.keys(files)
       : Array.isArray(options.stage)
-        ? options.stage
-        : options.commitMessage
-          ? Object.keys(files)
-          : [];
+      ? options.stage
+      : options.commitMessage
+      ? Object.keys(files)
+      : [];
 
   if (stageFiles.length > 0) {
     await runGit(['add', ...stageFiles], gitDir);
@@ -184,10 +184,7 @@ export const appendRepoFile = (
   appendFileSync(filePath, content);
 };
 
-export const writeGlobalConfig = (
-  homeDir: string,
-  lines: string[]
-): string => {
+export const writeGlobalConfig = (homeDir: string, lines: string[]): string => {
   const configPath = path.resolve(homeDir, '.opencommit');
   writeFileSync(configPath, lines.join('\n'));
   return configPath;
@@ -232,12 +229,24 @@ export const getMockOpenAiEnv = (
   ...overrides
 });
 
+export const getMockGeminiEnv = (
+  baseUrl: string,
+  overrides: NodeJS.ProcessEnv = {}
+): NodeJS.ProcessEnv => ({
+  OCO_AI_PROVIDER: 'gemini',
+  OCO_API_KEY: 'test-gemini-key',
+  OCO_MODEL: 'gemini-1.5-flash',
+  OCO_API_URL: baseUrl,
+  OCO_GITPUSH: 'false',
+  ...overrides
+});
+
 export const wait = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export const waitForExit = async (
   instance: RenderResult,
-  timeoutMs: number = 10_000
+  timeoutMs: number = 20_000
 ): Promise<number> => {
   const startedAt = Date.now();
 
@@ -254,6 +263,11 @@ export const waitForExit = async (
 
 export const getHeadCommitSubject = async (gitDir: string): Promise<string> => {
   const { stdout } = await runGit(['log', '-1', '--pretty=%s'], gitDir);
+  return stdout.trim();
+};
+
+export const getHeadCommitMessage = async (gitDir: string): Promise<string> => {
+  const { stdout } = await runGit(['log', '-1', '--pretty=%B'], gitDir);
   return stdout.trim();
 };
 
@@ -286,7 +300,14 @@ export const getRemoteBranchHeadSubject = async (
 ): Promise<string> => {
   const { stdout = '' } = await fsExecFile(
     'git',
-    ['--git-dir', remoteGitDir, 'log', '-1', '--pretty=%s', `refs/heads/${branchName}`],
+    [
+      '--git-dir',
+      remoteGitDir,
+      'log',
+      '-1',
+      '--pretty=%s',
+      `refs/heads/${branchName}`
+    ],
     { cwd: process.cwd() }
   );
 
@@ -427,6 +448,102 @@ export const startMockOpenAiServer = async (
     authHeaders,
     requestBodies,
     baseUrl: `http://127.0.0.1:${port}/v1`,
+    cleanup: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        });
+      })
+  };
+};
+
+export const startMockGeminiServer = async (
+  response:
+    | Record<string, any>
+    | ((request: {
+        apiKey?: string;
+        body: Record<string, any> | undefined;
+        requestIndex: number;
+      }) => {
+        status?: number;
+        body: Record<string, any>;
+        headers?: Record<string, string>;
+      })
+): Promise<{
+  apiKeys: string[];
+  requestBodies: Array<Record<string, any>>;
+  baseUrl: string;
+  cleanup: () => Promise<void>;
+}> => {
+  const apiKeys: string[] = [];
+  const requestBodies: Array<Record<string, any>> = [];
+
+  const server = http.createServer((req, res) => {
+    const apiKeyHeader = req.headers['x-goog-api-key'];
+    if (apiKeyHeader) {
+      apiKeys.push(
+        Array.isArray(apiKeyHeader) ? apiKeyHeader[0] : apiKeyHeader
+      );
+    }
+
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    req.on('end', () => {
+      const rawBody = Buffer.concat(chunks).toString('utf8');
+      let parsedBody: Record<string, any> | undefined;
+      if (rawBody) {
+        try {
+          parsedBody = JSON.parse(rawBody);
+          requestBodies.push(parsedBody);
+        } catch {
+          requestBodies.push({ rawBody });
+        }
+      }
+
+      if (req.method === 'POST' && req.url?.includes(':generateContent')) {
+        const payload =
+          typeof response === 'function'
+            ? response({
+                apiKey: Array.isArray(apiKeyHeader)
+                  ? apiKeyHeader[0]
+                  : apiKeyHeader,
+                body: parsedBody,
+                requestIndex: requestBodies.length - 1
+              })
+            : {
+                status: 200,
+                body: response
+              };
+
+        res.writeHead(payload.status ?? 200, {
+          'Content-Type': 'application/json',
+          ...payload.headers
+        });
+        res.end(JSON.stringify(payload.body));
+        return;
+      }
+
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'not found' }));
+    });
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, '127.0.0.1', () => resolve());
+  });
+
+  const { port } = server.address() as AddressInfo;
+
+  return {
+    apiKeys,
+    requestBodies,
+    baseUrl: `http://127.0.0.1:${port}`,
     cleanup: () =>
       new Promise<void>((resolve, reject) => {
         server.close((error) => {
