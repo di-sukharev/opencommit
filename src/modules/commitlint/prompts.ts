@@ -12,9 +12,9 @@ import {
 import { getConfig } from '../../commands/config';
 import { i18n, I18nLocals } from '../../i18n';
 import { IDENTITY, INIT_DIFF_PROMPT } from '../../prompts';
+import { ConsistencyPrompt } from './types';
 
 const config = getConfig();
-const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
 
 type DeepPartial<T> = {
   [P in keyof T]?: {
@@ -214,7 +214,8 @@ const STRUCTURE_OF_COMMIT = config.OCO_OMIT_SCOPE
 
 // Prompt to generate LLM-readable rules based on @commitlint rules.
 const GEN_COMMITLINT_CONSISTENCY_PROMPT = (
-  prompts: string[]
+  prompts: string[],
+  translation: ConsistencyPrompt
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => [
   {
     role: 'system',
@@ -233,15 +234,17 @@ Commit Message Conventions:
 - ${prompts.join('\n- ')}
 
 JSON Output Format:
-- The JSON output should contain the commit messages for a bug fix and a new feature in the following format:
+- You MUST write all commit messages and descriptions in ${
+      translation.localLanguage
+    } and output them in the following JSON format. Use the exact language and writing style as shown in the example:
 \`\`\`json
 {
-  "localLanguage": "${translation.localLanguage}",
-  "commitFix": "<Header of commit for bug fix with scope>",
-  "commitFeat": "<Header of commit for feature with scope>",
-  "commitFixOmitScope": "<Header of commit for bug fix without scope>",
-  "commitFeatOmitScope": "<Header of commit for feature without scope>",
-  "commitDescription": "<Description of commit for both the bug fix and the feature>"
+  "localLanguage": ${JSON.stringify(translation.localLanguage)},
+  "commitFix": ${JSON.stringify(translation.commitFix)},
+  "commitFeat": ${JSON.stringify(translation.commitFeat)},
+  "commitFixOmitScope": ${JSON.stringify(translation.commitFixOmitScope)},
+  "commitFeatOmitScope": ${JSON.stringify(translation.commitFeatOmitScope)},
+  "commitDescription": ${JSON.stringify(translation.commitDescription)}
 }
 \`\`\`
 - The "commitDescription" should not include the commit message's header, only the description.
