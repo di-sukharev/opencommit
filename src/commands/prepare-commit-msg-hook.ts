@@ -77,7 +77,7 @@ export const prepareCommitMessageHook = async (
       const fileContent = await fs.readFile(messageFilePath);
 
       const commentedError = String(error).replace(new RegExp('^', 'gm'), '# ');
-      const message = `\n\n# ---------- [OpenCommit] ---------- #\n# Failed to generate the commit message.\n# To cancel the commit, just close this window without making any changes.\n\n${commentedError}\n\n${fileContent.toString()}`
+      const message = `\n\n# ---------- [OpenCommit] ---------- #\n# Failed to generate the commit message.\n# To cancel the commit, just close this window without making any changes.\n\n${commentedError}\n\n${fileContent.toString()}`;
 
       await fs.writeFile(messageFilePath, message);
     } catch (error) {
