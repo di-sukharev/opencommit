@@ -87,6 +87,23 @@ export async function fetchOllamaModels(
   }
 }
 
+export async function fetchLlamaCppModels(
+  baseUrl: string = 'http://localhost:8080'
+): Promise<string[]> {
+  try {
+    const response = await fetch(`${baseUrl}/v1/models`);
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return data.data?.map((m: { id: string }) => m.id) || [];
+  } catch {
+    return [];
+  }
+}
+
 export async function fetchAnthropicModels(apiKey: string): Promise<string[]> {
   try {
     const response = await fetch('https://api.anthropic.com/v1/models', {
@@ -229,6 +246,10 @@ export async function fetchModelsForProvider(
 
     case OCO_AI_PROVIDER_ENUM.OLLAMA:
       models = await fetchOllamaModels(baseUrl);
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.LLAMACPP:
+      models = await fetchLlamaCppModels(baseUrl);
       break;
 
     case OCO_AI_PROVIDER_ENUM.ANTHROPIC:
