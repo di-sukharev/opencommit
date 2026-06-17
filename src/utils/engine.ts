@@ -4,6 +4,7 @@ import { AzureEngine } from '../engine/azure';
 import { AiEngine } from '../engine/Engine';
 import { FlowiseEngine } from '../engine/flowise';
 import { GeminiEngine } from '../engine/gemini';
+import { LlamaCppEngine } from '../engine/llamacpp';
 import { OllamaEngine } from '../engine/ollama';
 import { OpenAiEngine } from '../engine/openAi';
 import { MistralAiEngine } from '../engine/mistral';
@@ -39,6 +40,9 @@ export function getEngine(): AiEngine {
         ...DEFAULT_CONFIG,
         ollamaThink: config.OCO_OLLAMA_THINK
       });
+
+    case OCO_AI_PROVIDER_ENUM.LLAMACPP:
+      return new LlamaCppEngine(DEFAULT_CONFIG);
 
     case OCO_AI_PROVIDER_ENUM.ANTHROPIC:
       return new AnthropicEngine(DEFAULT_CONFIG);

@@ -579,6 +579,8 @@ const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
     case 'ollama':
       return '';
+    case 'llamacpp':
+      return '';
     case 'mlx':
       return '';
     case 'anthropic':
@@ -797,8 +799,10 @@ export const configValidators = {
         'deepseek',
         'aimlapi',
         'openrouter'
-      ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
+      ].includes(value) ||
+        value.startsWith('ollama') ||
+        value.startsWith('llamacpp'),
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
     );
 
     return value;
@@ -854,6 +858,7 @@ export const configValidators = {
 
 export enum OCO_AI_PROVIDER_ENUM {
   OLLAMA = 'ollama',
+  LLAMACPP = 'llamacpp',
   OPENAI = 'openai',
   ANTHROPIC = 'anthropic',
   GEMINI = 'gemini',
@@ -880,6 +885,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
+  [OCO_AI_PROVIDER_ENUM.LLAMACPP]: null,
   [OCO_AI_PROVIDER_ENUM.MLX]: null,
   [OCO_AI_PROVIDER_ENUM.FLOWISE]: null,
   [OCO_AI_PROVIDER_ENUM.TEST]: null

@@ -24,6 +24,7 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'OpenAI (GPT-4o, GPT-4)',
   [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'Anthropic (Claude Sonnet, Opus)',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: 'Ollama (Free, runs locally)',
+  [OCO_AI_PROVIDER_ENUM.LLAMACPP]: 'llama.cpp (Free, runs locally)',
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'Google Gemini',
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'Groq (Fast inference, free tier)',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'Mistral AI',
@@ -37,7 +38,8 @@ const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
 const PRIMARY_PROVIDERS = [
   OCO_AI_PROVIDER_ENUM.OPENAI,
   OCO_AI_PROVIDER_ENUM.ANTHROPIC,
-  OCO_AI_PROVIDER_ENUM.OLLAMA
+  OCO_AI_PROVIDER_ENUM.OLLAMA,
+  OCO_AI_PROVIDER_ENUM.LLAMACPP
 ];
 
 const OTHER_PROVIDERS = [
@@ -53,13 +55,15 @@ const OTHER_PROVIDERS = [
 
 const NO_API_KEY_PROVIDERS = [
   OCO_AI_PROVIDER_ENUM.OLLAMA,
+  OCO_AI_PROVIDER_ENUM.LLAMACPP,
   OCO_AI_PROVIDER_ENUM.MLX,
   OCO_AI_PROVIDER_ENUM.TEST
 ];
 
 const MODEL_REQUIRED_PROVIDERS = [
   OCO_AI_PROVIDER_ENUM.OLLAMA,
-  OCO_AI_PROVIDER_ENUM.MLX
+  OCO_AI_PROVIDER_ENUM.MLX,
+  OCO_AI_PROVIDER_ENUM.LLAMACPP
 ];
 
 async function selectProvider(): Promise<string | symbol> {
@@ -335,6 +339,37 @@ async function setupOllama(): Promise<{
   };
 }
 
+async function setupLlamaCpp(): Promise<{
+  provider: string;
+  model: string;
+  apiUrl: string;
+} | null> {
+  console.log(chalk.cyan('\n  llama.cpp - Free Local AI\n'));
+  console.log(chalk.dim('  Setup steps:'));
+  console.log(
+    chalk.dim('  1. Install: https://github.com/ggerganov/llama.cpp')
+  );
+  console.log(
+    chalk.dim('  2. Start server: llama-server -m <model.gguf> --port 8080\n')
+  );
+
+  const defaultUrl = 'http://localhost:8080';
+
+  const apiUrl = await text({
+    message: 'llama.cpp server URL (press Enter for default):',
+    placeholder: defaultUrl,
+    defaultValue: defaultUrl
+  });
+
+  if (isCancel(apiUrl)) return null;
+
+  return {
+    provider: OCO_AI_PROVIDER_ENUM.LLAMACPP,
+    model: '',
+    apiUrl: (apiUrl as string) || defaultUrl
+  };
+}
+
 export async function runSetup(): Promise<boolean> {
   intro(chalk.bgCyan(' Welcome to OpenCommit! '));
 
@@ -381,6 +416,19 @@ export async function runSetup(): Promise<boolean> {
       OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.MLX,
       OCO_MODEL: model,
       OCO_API_KEY: 'mlx' // Placeholder
+    };
+  } else if (provider === OCO_AI_PROVIDER_ENUM.LLAMACPP) {
+    const llamacppConfig = await setupLlamaCpp();
+    if (!llamacppConfig) {
+      outro('Setup cancelled');
+      return false;
+    }
+
+    config = {
+      OCO_AI_PROVIDER: llamacppConfig.provider,
+      OCO_MODEL: llamacppConfig.model,
+      OCO_API_URL: llamacppConfig.apiUrl,
+      OCO_API_KEY: 'llamacpp' // Placeholder
     };
   } else {
     // Standard provider flow: API key then model
