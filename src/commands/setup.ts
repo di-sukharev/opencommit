@@ -346,8 +346,12 @@ async function setupLlamaCpp(): Promise<{
 } | null> {
   console.log(chalk.cyan('\n  llama.cpp - Free Local AI\n'));
   console.log(chalk.dim('  Setup steps:'));
-  console.log(chalk.dim('  1. Install: https://github.com/ggerganov/llama.cpp'));
-  console.log(chalk.dim('  2. Start server: llama-server -m <model.gguf> --port 8080\n'));
+  console.log(
+    chalk.dim('  1. Install: https://github.com/ggerganov/llama.cpp')
+  );
+  console.log(
+    chalk.dim('  2. Start server: llama-server -m <model.gguf> --port 8080\n')
+  );
 
   const defaultUrl = 'http://localhost:8080';
 

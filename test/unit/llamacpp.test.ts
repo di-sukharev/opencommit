@@ -84,7 +84,8 @@ describe('LlamaCppEngine', () => {
         choices: [
           {
             message: {
-              content: '<think>reasoning here</think>feat: add support for llama.cpp provider'
+              content:
+                '<think>reasoning here</think>feat: add support for llama.cpp provider'
             }
           }
         ]
