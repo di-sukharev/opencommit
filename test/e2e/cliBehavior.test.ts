@@ -159,6 +159,47 @@ it('cli flow allows editing the generated commit message before committing', asy
   }
 });
 
+it('cli flow cancels when editing the generated commit message is interrupted', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'fix(cli): allow editing the generated message'
+  );
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
+
+    const oco = await runCli([], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl)
+    });
+
+    expect(
+      await oco.findByText('Confirm the commit message?')
+    ).toBeInTheConsole();
+    oco.userEvent.keyboard('[ArrowDown][ArrowDown][Enter]');
+
+    expect(
+      await oco.findByText(
+        'Please edit the commit message: (press Enter to continue)'
+      )
+    ).toBeInTheConsole();
+    oco.process.stdin.write('\x03');
+
+    expect(await waitForExit(oco)).toBe(1);
+    expect(await oco.queryByText('Successfully committed')).not.toBeInTheConsole();
+    await assertGitStatus(gitDir, 'A  index.ts');
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
 it('cli flow regenerates the message when the user rejects the first suggestion', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
   const server = await startMockOpenAiServer(({ requestIndex }) => ({
