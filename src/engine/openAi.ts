@@ -36,6 +36,10 @@ export class OpenAiEngine implements AiEngine {
       }
     }
 
+    if (!clientOptions.fetch && typeof globalThis.fetch === 'function') {
+      clientOptions.fetch = (...args) => globalThis.fetch(...args);
+    }
+
     this.client = new OpenAI(clientOptions);
   }
 
