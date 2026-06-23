@@ -10,7 +10,11 @@ describe('normalizeEngineError', () => {
       { status: 400 }
     );
 
-    const normalized = normalizeEngineError(error, 'anthropic', 'claude-sonnet-4-6');
+    const normalized = normalizeEngineError(
+      error,
+      'anthropic',
+      'claude-sonnet-4-6'
+    );
 
     expect(normalized).not.toBeInstanceOf(ModelNotFoundError);
     expect(normalized.message).toContain('temperature');
