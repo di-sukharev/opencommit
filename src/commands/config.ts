@@ -70,11 +70,10 @@ export const MODEL_LIST = {
   ],
 
   anthropic: [
-    'claude-sonnet-4-20250514',
-    'claude-opus-4-20250514',
-    'claude-3-7-sonnet-20250219',
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-haiku-20241022'
+    'claude-sonnet-4-6',
+    'claude-opus-4-8',
+    'claude-sonnet-4-5-20250929',
+    'claude-haiku-4-5-20251001'
   ],
 
   gemini: [
@@ -893,7 +892,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
 
 export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'gpt-4o-mini',
-  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'claude-sonnet-4-20250514',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'claude-sonnet-4-6',
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'gemini-1.5-flash',
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'llama3-70b-8192',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',

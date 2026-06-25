@@ -46,8 +46,8 @@ export class AnthropicEngine implements AiEngine {
       max_tokens: this.config.maxTokensOutput
     };
 
-    // add top_p for non-4.5 models
-    if (!/claude.*-4-5/.test(params.model)) {
+    // Anthropic rejects simultaneous temperature and top_p on Claude 4.5+
+    if (!/claude.*-4-(?:5|[6-9])/.test(params.model)) {
       params.top_p = 0.1;
     }
 
