@@ -36,6 +36,15 @@ export class OpenAiEngine implements AiEngine {
       }
     }
 
+    // The OpenAI SDK's internal fetch may resolve before globalThis.fetch is
+    // available in some Node.js versions, causing premature connection errors.
+    // Explicitly binding globalThis.fetch here defers resolution to call time,
+    // ensuring the runtime's native fetch is used instead of the SDK's bundled
+    // undici — which also avoids double-initialisation in newer Node (>=18).
+    if (!clientOptions.fetch && typeof globalThis.fetch === 'function') {
+      clientOptions.fetch = (...args) => globalThis.fetch(...args);
+    }
+
     this.client = new OpenAI(clientOptions);
   }
 
