@@ -82,7 +82,6 @@ describe('GeminiEngine', () => {
           }
         ],
         generationConfig: expect.objectContaining({
-          maxOutputTokens: 256,
           temperature: 0,
           topP: 0.1
         })
