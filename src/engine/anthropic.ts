@@ -21,6 +21,10 @@ export class AnthropicEngine implements AiEngine {
     this.config = config;
     const clientOptions: any = { apiKey: this.config.apiKey };
 
+    if (this.config.baseURL) {
+      clientOptions.baseURL = this.config.baseURL;
+    }
+
     const proxy = config.proxy;
     if (proxy) {
       clientOptions.httpAgent = new HttpsProxyAgent(proxy);
@@ -65,7 +69,8 @@ export class AnthropicEngine implements AiEngine {
 
       const data = await this.client.messages.create(params);
 
-      const message = data?.content[0].text;
+      const textBlock = data?.content?.find((b) => b.type === 'text');
+      const message = textBlock && 'text' in textBlock ? textBlock.text : undefined;
       let content = message;
       return removeContentTags(content, 'think');
     } catch (error) {
