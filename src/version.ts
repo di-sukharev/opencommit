@@ -9,9 +9,7 @@ export const getOpenCommitLatestVersion = async (): Promise<
   string | undefined
 > => {
   try {
-    const response = await fetch(
-      `${NPM_REGISTRY}/${PACKAGE_NAME}/latest`
-    );
+    const response = await fetch(`${NPM_REGISTRY}/${PACKAGE_NAME}/latest`);
 
     if (!response.ok) {
       return undefined;
