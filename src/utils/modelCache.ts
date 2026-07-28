@@ -40,184 +40,148 @@ function isCacheValid(cache: ModelCache | null): boolean {
   return Date.now() - cache.timestamp < CACHE_TTL_MS;
 }
 
-export async function fetchOpenAIModels(apiKey: string): Promise<string[]> {
+interface ModelListItem {
+  id: string;
+}
+
+interface ModelListResponse {
+  data?: ModelListItem[];
+}
+
+interface OllamaModelListResponse {
+  models?: Array<{ name: string }>;
+}
+
+interface OpenRouterModelListResponse {
+  data?: Array<ModelListItem & { context_length?: number }>;
+}
+
+interface FetchModelListOptions {
+  url: string;
+  headers?: Record<string, string>;
+  fallback: string[];
+  mapModels: (data: unknown) => string[] | undefined;
+}
+
+async function fetchModelList({
+  url,
+  headers,
+  fallback,
+  mapModels
+}: FetchModelListOptions): Promise<string[]> {
   try {
-    const response = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
+    const response = headers ? await fetch(url, { headers }) : await fetch(url);
 
     if (!response.ok) {
-      return MODEL_LIST.openai;
+      return fallback;
     }
 
-    const data = await response.json();
-    const models = data.data
-      .map((m: { id: string }) => m.id)
-      .filter(
-        (id: string) =>
-          id.startsWith('gpt-') ||
-          id.startsWith('o1') ||
-          id.startsWith('o3') ||
-          id.startsWith('o4')
-      )
-      .sort();
-
-    return models.length > 0 ? models : MODEL_LIST.openai;
+    const models = mapModels(await response.json());
+    return models && models.length > 0 ? models : fallback;
   } catch {
-    return MODEL_LIST.openai;
+    return fallback;
   }
+}
+
+export async function fetchOpenAIModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.openai.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.openai,
+    mapModels: (data) =>
+      (data as Required<ModelListResponse>).data
+        .map((model) => model.id)
+        .filter(
+          (id) =>
+            id.startsWith('gpt-') ||
+            id.startsWith('o1') ||
+            id.startsWith('o3') ||
+            id.startsWith('o4')
+        )
+        .sort()
+  });
 }
 
 export async function fetchOllamaModels(
   baseUrl: string = 'http://localhost:11434'
 ): Promise<string[]> {
-  try {
-    const response = await fetch(`${baseUrl}/api/tags`);
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return data.models?.map((m: { name: string }) => m.name) || [];
-  } catch {
-    return [];
-  }
+  return fetchModelList({
+    url: `${baseUrl}/api/tags`,
+    fallback: [],
+    mapModels: (data) =>
+      (data as OllamaModelListResponse).models?.map((model) => model.name)
+  });
 }
 
 export async function fetchLlamaCppModels(
   baseUrl: string = 'http://localhost:8080'
 ): Promise<string[]> {
-  try {
-    const response = await fetch(`${baseUrl}/v1/models`);
-
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return data.data?.map((m: { id: string }) => m.id) || [];
-  } catch {
-    return [];
-  }
+  return fetchModelList({
+    url: `${baseUrl}/v1/models`,
+    fallback: [],
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id)
+  });
 }
 
 export async function fetchAnthropicModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/models', {
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.anthropic;
-    }
-
-    const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .filter((id: string) => id.startsWith('claude-'))
-      .sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.anthropic;
-  } catch {
-    return MODEL_LIST.anthropic;
-  }
+  return fetchModelList({
+    url: 'https://api.anthropic.com/v1/models',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    fallback: MODEL_LIST.anthropic,
+    mapModels: (data) =>
+      (data as ModelListResponse).data
+        ?.map((model) => model.id)
+        .filter((id) => id.startsWith('claude-'))
+        .sort()
+  });
 }
 
 export async function fetchMistralModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.mistral.ai/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.mistral;
-    }
-
-    const data = await response.json();
-    const models = data.data?.map((m: { id: string }) => m.id).sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.mistral;
-  } catch {
-    return MODEL_LIST.mistral;
-  }
+  return fetchModelList({
+    url: 'https://api.mistral.ai/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.mistral,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
 }
 
 export async function fetchGroqModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.groq;
-    }
-
-    const data = await response.json();
-    const models = data.data?.map((m: { id: string }) => m.id).sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.groq;
-  } catch {
-    return MODEL_LIST.groq;
-  }
+  return fetchModelList({
+    url: 'https://api.groq.com/openai/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.groq,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
 }
 
 export async function fetchOpenRouterModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.openrouter;
-    }
-
-    const data = await response.json();
-    // Filter to text-capable models only (exclude image/audio models)
-    const models = data.data
-      ?.filter(
-        (m: { id: string; context_length?: number }) =>
-          m.context_length && m.context_length > 0
-      )
-      .map((m: { id: string }) => m.id)
-      .sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.openrouter;
-  } catch {
-    return MODEL_LIST.openrouter;
-  }
+  return fetchModelList({
+    url: 'https://openrouter.ai/api/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.openrouter,
+    mapModels: (data) =>
+      (data as OpenRouterModelListResponse).data
+        // Keep only text-capable models (exclude image/audio models).
+        ?.filter((model) => model.context_length && model.context_length > 0)
+        .map((model) => model.id)
+        .sort()
+  });
 }
 
 export async function fetchDeepSeekModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.deepseek.com/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.deepseek;
-    }
-
-    const data = await response.json();
-    const models = data.data?.map((m: { id: string }) => m.id).sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.deepseek;
-  } catch {
-    return MODEL_LIST.deepseek;
-  }
+  return fetchModelList({
+    url: 'https://api.deepseek.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.deepseek,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
 }
 
 export async function fetchModelsForProvider(
