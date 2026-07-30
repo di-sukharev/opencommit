@@ -3,6 +3,11 @@ import { Tiktoken } from '@dqbd/tiktoken/lite';
 
 const TOKENIZER_CHUNK_LENGTH = 8_000;
 
+// An artificial split can change the cl100k regex/BPE result at the join. The
+// longest token in this encoding is 128 bytes, so reserve that many tokens at
+// every join instead of assuming independently encoded chunks are additive.
+export const TOKEN_BOUNDARY_RESERVE = 128;
+
 interface CountedTextChunk {
   content: string;
   tokens: number;
@@ -32,7 +37,7 @@ const getSafeSliceEnd = (content: string, start: number, length: number) => {
     /[\uD800-\uDBFF]/.test(content[end - 1]) &&
     /[\uDC00-\uDFFF]/.test(content[end])
   ) {
-    end -= 1;
+    end = end - 1 === start ? end + 1 : end - 1;
   }
 
   return end;
@@ -57,17 +62,18 @@ const yieldToEventLoop = () =>
   new Promise<void>((resolve) => setImmediate(resolve));
 
 export function tokenCount(content: string): number {
-  return getTextChunks(content).reduce(
-    (total, chunk) => total + countTextChunk(chunk),
-    0
-  );
+  return getTextChunks(content).reduce((total, chunk, index) => {
+    const boundaryReserve = index === 0 ? 0 : TOKEN_BOUNDARY_RESERVE;
+    return total + boundaryReserve + countTextChunk(chunk);
+  }, 0);
 }
 
 export async function tokenCountAsync(content: string): Promise<number> {
   let total = 0;
 
-  for (const chunk of getTextChunks(content)) {
-    total += countTextChunk(chunk);
+  for (const [index, chunk] of getTextChunks(content).entries()) {
+    const boundaryReserve = index === 0 ? 0 : TOKEN_BOUNDARY_RESERVE;
+    total += boundaryReserve + countTextChunk(chunk);
     await yieldToEventLoop();
   }
 
@@ -113,14 +119,20 @@ export async function splitByTokenLimit(
   let currentTokens = 0;
 
   for (const chunk of countedChunks) {
-    if (currentContent && currentTokens + chunk.tokens > maxTokens) {
+    const boundaryReserve = currentContent ? TOKEN_BOUNDARY_RESERVE : 0;
+
+    if (
+      currentContent &&
+      currentTokens + boundaryReserve + chunk.tokens > maxTokens
+    ) {
       mergedChunks.push(currentContent);
       currentContent = '';
       currentTokens = 0;
     }
 
+    const appliedBoundaryReserve = currentContent ? TOKEN_BOUNDARY_RESERVE : 0;
     currentContent += chunk.content;
-    currentTokens += chunk.tokens;
+    currentTokens += appliedBoundaryReserve + chunk.tokens;
   }
 
   if (currentContent) mergedChunks.push(currentContent);

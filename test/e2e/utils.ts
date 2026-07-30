@@ -368,15 +368,19 @@ export const startMockOpenAiServer = async (
         status?: number;
         body: Record<string, any>;
         headers?: Record<string, string>;
-      })
+      }),
+  { responseDelayMs = 0 }: { responseDelayMs?: number } = {}
 ): Promise<{
   authHeaders: string[];
   requestBodies: Array<Record<string, any>>;
+  readonly maxActiveRequests: number;
   baseUrl: string;
   cleanup: () => Promise<void>;
 }> => {
   const authHeaders: string[] = [];
   const requestBodies: Array<Record<string, any>> = [];
+  let activeRequests = 0;
+  let maxActiveRequests = 0;
 
   const server = http.createServer((req, res) => {
     const authorization = req.headers.authorization;
@@ -390,7 +394,7 @@ export const startMockOpenAiServer = async (
     req.on('data', (chunk) => {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     });
-    req.on('end', () => {
+    req.on('end', async () => {
       const rawBody = Buffer.concat(chunks).toString('utf8');
       let parsedBody: Record<string, any> | undefined;
       if (rawBody) {
@@ -403,33 +407,42 @@ export const startMockOpenAiServer = async (
       }
 
       if (req.method === 'POST' && req.url?.includes('/chat/completions')) {
-        const payload =
-          typeof response === 'string'
-            ? {
-                status: 200,
-                body: {
-                  choices: [
-                    {
-                      message: {
-                        content: response
-                      }
-                    }
-                  ]
-                }
-              }
-            : response({
-                authorization: Array.isArray(authorization)
-                  ? authorization[0]
-                  : authorization,
-                body: parsedBody,
-                requestIndex: requestBodies.length - 1
-              });
+        activeRequests += 1;
+        maxActiveRequests = Math.max(maxActiveRequests, activeRequests);
 
-        res.writeHead(payload.status ?? 200, {
-          'Content-Type': 'application/json',
-          ...payload.headers
-        });
-        res.end(JSON.stringify(payload.body));
+        try {
+          const payload =
+            typeof response === 'string'
+              ? {
+                  status: 200,
+                  body: {
+                    choices: [
+                      {
+                        message: {
+                          content: response
+                        }
+                      }
+                    ]
+                  }
+                }
+              : response({
+                  authorization: Array.isArray(authorization)
+                    ? authorization[0]
+                    : authorization,
+                  body: parsedBody,
+                  requestIndex: requestBodies.length - 1
+                });
+
+          if (responseDelayMs > 0) await wait(responseDelayMs);
+
+          res.writeHead(payload.status ?? 200, {
+            'Content-Type': 'application/json',
+            ...payload.headers
+          });
+          res.end(JSON.stringify(payload.body));
+        } finally {
+          activeRequests -= 1;
+        }
         return;
       }
 
@@ -447,6 +460,9 @@ export const startMockOpenAiServer = async (
   return {
     authHeaders,
     requestBodies,
+    get maxActiveRequests() {
+      return maxActiveRequests;
+    },
     baseUrl: `http://127.0.0.1:${port}/v1`,
     cleanup: () =>
       new Promise<void>((resolve, reject) => {
