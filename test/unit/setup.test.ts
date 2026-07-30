@@ -75,7 +75,7 @@ const { isFirstRun, promptForMissingApiKey, runSetup } = await import(
 );
 
 const PRIMARY_OPTIONS = [
-  { value: 'openai', label: 'OpenAI (GPT-4o, GPT-4)' },
+  { value: 'openai', label: 'OpenAI (GPT)' },
   { value: 'anthropic', label: 'Anthropic (Claude Sonnet, Opus)' },
   { value: 'ollama', label: 'Ollama (Free, runs locally)' },
   { value: 'llamacpp', label: 'llama.cpp (Free, runs locally)' },

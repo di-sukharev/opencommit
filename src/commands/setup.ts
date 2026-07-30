@@ -33,7 +33,7 @@ interface SetupProviderDefinition {
 const SETUP_PROVIDERS: SetupProviderDefinition[] = [
   {
     provider: OCO_AI_PROVIDER_ENUM.OPENAI,
-    displayName: 'OpenAI (GPT-4o, GPT-4)',
+    displayName: 'OpenAI (GPT)',
     selectionGroup: 'primary',
     firstRunRequirement: 'apiKey'
   },
