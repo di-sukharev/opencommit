@@ -118,7 +118,8 @@ it('cli flow passes --fgm through to the full GitMoji prompt', async () => {
 it('cli flow processes a large minified diff without stalling', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
   const server = await startMockOpenAiServer(
-    'fix(diff): process a large minified file'
+    'fix(diff): process a large minified file',
+    { responseDelayMs: 50 }
   );
 
   try {
@@ -141,6 +142,108 @@ it('cli flow processes a large minified diff without stalling', async () => {
     expect(await waitForExit(oco, 30_000)).toBe(0);
     await assertHeadCommit(gitDir, 'fix(diff): process a large minified file');
     expect(server.requestBodies.length).toBeGreaterThan(1);
+    expect(server.maxActiveRequests).toBe(3);
+    const requestDiffs = server.requestBodies.map((body) => {
+      const messages = (body as { messages: Array<{ content: string }> })
+        .messages;
+      return messages[messages.length - 1].content;
+    });
+    expect(
+      requestDiffs.every((diff) =>
+        diff.startsWith('diff --git a/content.json b/content.json')
+      )
+    ).toBe(true);
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
+it('cli flow preserves changed-line boundaries when splitting a multiline diff', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'fix(diff): preserve multiline diff boundaries'
+  );
+  const sourceLines = Array.from(
+    { length: 600 },
+    (_, index) => `const value${index} = "line-${index}";`
+  );
+
+  try {
+    await prepareRepo(
+      gitDir,
+      { 'values.ts': `${sourceLines.join('\n')}\n` },
+      { stage: true }
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl, {
+        OCO_TOKENS_MAX_INPUT: '4096',
+        OCO_TOKENS_MAX_OUTPUT: '500'
+      })
+    });
+
+    expect(await waitForExit(oco, 30_000)).toBe(0);
+    expect(server.requestBodies.length).toBeGreaterThan(1);
+
+    const changedLines = server.requestBodies.flatMap((body) => {
+      const messages = (body as { messages: Array<{ content: string }> })
+        .messages;
+      return messages[messages.length - 1].content
+        .split('\n')
+        .filter((line) => line.startsWith('+const value'));
+    });
+
+    expect(changedLines).toEqual(sourceLines.map((line) => `+${line}`));
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
+it('cli flow preserves every file marker when grouping a multi-file diff', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'fix(diff): preserve multi-file boundaries'
+  );
+  const files = Object.fromEntries(
+    Array.from({ length: 18 }, (_, fileIndex) => [
+      `src/file-${fileIndex}.ts`,
+      `${Array.from(
+        { length: 20 },
+        (_, lineIndex) =>
+          `export const value${fileIndex}_${lineIndex} = "content-${lineIndex}";`
+      ).join('\n')}\n`
+    ])
+  );
+
+  try {
+    await prepareRepo(gitDir, files, { stage: true });
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl, {
+        OCO_TOKENS_MAX_INPUT: '4096',
+        OCO_TOKENS_MAX_OUTPUT: '500'
+      })
+    });
+
+    expect(await waitForExit(oco, 30_000)).toBe(0);
+    expect(server.requestBodies.length).toBeGreaterThan(1);
+
+    const fileMarkers = server.requestBodies.flatMap((body) => {
+      const messages = (body as { messages: Array<{ content: string }> })
+        .messages;
+      return messages[messages.length - 1].content
+        .split('\n')
+        .filter((line) => line.startsWith('diff --git '));
+    });
+
+    expect(fileMarkers).toHaveLength(Object.keys(files).length);
+    for (const file of Object.keys(files)) {
+      expect(fileMarkers).toContain(`diff --git a/${file} b/${file}`);
+    }
   } finally {
     await server.cleanup();
     await cleanup();
