@@ -18,7 +18,11 @@ import {
 } from './utils/errors';
 import { GenerateCommitMessageErrorEnum } from './utils/generateCommitMessageErrors';
 import { mergeDiffs } from './utils/mergeDiffs';
-import { tokenCount } from './utils/tokenCount';
+import {
+  splitByTokenLimit,
+  tokenCount,
+  tokenCountAsync
+} from './utils/tokenCount';
 
 const config = getConfig();
 const MAX_TOKENS_INPUT = config.OCO_TOKENS_MAX_INPUT;
@@ -158,7 +162,7 @@ export const generateCommitMessageByDiff = async (
       INIT_MESSAGES_PROMPT_LENGTH -
       MAX_TOKENS_OUTPUT;
 
-    if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
+    if ((await tokenCountAsync(diff)) >= MAX_REQUEST_TOKENS) {
       const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
         diff,
         MAX_REQUEST_TOKENS,
@@ -215,18 +219,18 @@ export const generateCommitMessageByDiff = async (
   }
 };
 
-function getMessagesPromisesByChangesInFile(
+async function getMessagesPromisesByChangesInFile(
   fileDiff: string,
   separator: string,
   maxChangeLength: number,
   fullGitMojiSpec: boolean,
   context: string
-) {
+): Promise<Array<Promise<string | null | undefined>>> {
   const hunkHeaderSeparator = '@@ ';
   const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
 
   // merge multiple line-diffs into 1 to save tokens
-  const mergedChanges = mergeDiffs(
+  const mergedChanges = await mergeDiffs(
     fileDiffByLines.map((line) => hunkHeaderSeparator + line),
     maxChangeLength
   );
@@ -234,9 +238,9 @@ function getMessagesPromisesByChangesInFile(
   const lineDiffsWithHeader = [] as string[];
   for (const change of mergedChanges) {
     const totalChange = fileHeader + change;
-    if (tokenCount(totalChange) > maxChangeLength) {
+    if ((await tokenCountAsync(totalChange)) > maxChangeLength) {
       // If the totalChange is too large, split it into smaller pieces
-      const splitChanges = splitDiff(totalChange, maxChangeLength);
+      const splitChanges = await splitDiff(totalChange, maxChangeLength);
       lineDiffsWithHeader.push(...splitChanges);
     } else {
       lineDiffsWithHeader.push(totalChange);
@@ -259,40 +263,12 @@ function getMessagesPromisesByChangesInFile(
   return commitMsgsFromFileLineDiffs;
 }
 
-function splitDiff(diff: string, maxChangeLength: number) {
-  const lines = diff.split('\n');
-  const splitDiffs = [] as string[];
-  let currentDiff = '';
-
+async function splitDiff(diff: string, maxChangeLength: number) {
   if (maxChangeLength <= 0) {
     throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
   }
 
-  for (let line of lines) {
-    // If a single line exceeds maxChangeLength, split it into multiple lines
-    while (tokenCount(line) > maxChangeLength) {
-      const subLine = line.substring(0, maxChangeLength);
-      line = line.substring(maxChangeLength);
-      splitDiffs.push(subLine);
-    }
-
-    // Check the tokenCount of the currentDiff and the line separately
-    if (tokenCount(currentDiff) + tokenCount('\n' + line) > maxChangeLength) {
-      // If adding the next line would exceed the maxChangeLength, start a new diff
-      splitDiffs.push(currentDiff);
-      currentDiff = line;
-    } else {
-      // Otherwise, add the line to the current diff
-      currentDiff += '\n' + line;
-    }
-  }
-
-  // Add the last diff
-  if (currentDiff) {
-    splitDiffs.push(currentDiff);
-  }
-
-  return splitDiffs;
+  return splitByTokenLimit(diff, maxChangeLength);
 }
 
 export const getCommitMsgsPromisesFromFileDiffs = async (
@@ -306,14 +282,14 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
   const diffByFiles = diff.split(separator).slice(1);
 
   // merge multiple files-diffs into 1 prompt to save tokens
-  const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
+  const mergedFilesDiffs = await mergeDiffs(diffByFiles, maxDiffLength);
 
   const commitMessagePromises = [] as Promise<string | null | undefined>[];
 
   for (const fileDiff of mergedFilesDiffs) {
-    if (tokenCount(fileDiff) >= maxDiffLength) {
+    if ((await tokenCountAsync(fileDiff)) >= maxDiffLength) {
       // if file-diff is bigger than gpt context — split fileDiff into lineDiff
-      const messagesPromises = getMessagesPromisesByChangesInFile(
+      const messagesPromises = await getMessagesPromisesByChangesInFile(
         fileDiff,
         separator,
         maxDiffLength,
