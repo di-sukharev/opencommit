@@ -115,6 +115,38 @@ it('cli flow passes --fgm through to the full GitMoji prompt', async () => {
   }
 });
 
+it('cli flow processes a large minified diff without stalling', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'fix(diff): process a large minified file'
+  );
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'content.json': `{"content":"${'a'.repeat(100_000)}"}`
+      },
+      { stage: true }
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl, {
+        OCO_TOKENS_MAX_INPUT: '4096',
+        OCO_TOKENS_MAX_OUTPUT: '500'
+      })
+    });
+
+    expect(await waitForExit(oco, 30_000)).toBe(0);
+    await assertHeadCommit(gitDir, 'fix(diff): process a large minified file');
+    expect(server.requestBodies.length).toBeGreaterThan(1);
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
 it('cli flow allows editing the generated commit message before committing', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
   const server = await startMockOpenAiServer(
