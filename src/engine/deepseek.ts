@@ -26,7 +26,13 @@ export class DeepseekEngine extends OpenAiEngine {
       messages,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: this.config.maxTokensOutput
+      max_tokens: this.config.maxTokensOutput,
+      // DeepSeek V4: disable thinking mode (enabled by default with effort=high).
+      // Thinking mode returns reasoning in `reasoning_content` and can leave
+      // `content` empty when max_tokens is low, causing EMPTY_MESSAGE errors.
+      // Per DeepSeek docs, `thinking` must be passed via `extra_body` in the
+      // OpenAI SDK. Commit message generation doesn't need chain-of-thought.
+      extra_body: { thinking: { type: 'disabled' } }
     };
 
     try {
