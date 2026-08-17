@@ -28,6 +28,8 @@ export function getEngine(): AiEngine {
     model: config.OCO_MODEL!,
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
+    tokensMaxReasoning: config.OCO_REASONING_MAX_TOKENS,
+    isReasoning: config.OCO_REASONING,
     baseURL: config.OCO_API_URL!,
     proxy: resolvedProxy,
     apiKey: config.OCO_API_KEY!,

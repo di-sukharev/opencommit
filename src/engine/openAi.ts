@@ -51,13 +51,18 @@ export class OpenAiEngine implements AiEngine {
   public generateCommitMessage = async (
     messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | null> => {
-    const isReasoningModel = /^(o[1-9]|gpt-5)/.test(this.config.model);
+    const isReasoningModel = 
+      typeof this.config.isReasoning === 'boolean'
+        ? this.config.isReasoning
+        : /^(o[1-9]|gpt-5)/.test(this.config.model);
+
+    const reasoningTokens  = this.config.tokensMaxReasoning || 4096;
 
     const params = {
       model: this.config.model,
       messages,
       ...(isReasoningModel
-        ? { max_completion_tokens: this.config.maxTokensOutput }
+        ? { max_completion_tokens: reasoningTokens }
         : {
             temperature: 0,
             top_p: 0.1,
@@ -70,11 +75,17 @@ export class OpenAiEngine implements AiEngine {
         .map((msg) => tokenCount(msg.content as string) + 4)
         .reduce((a, b) => a + b, 0);
 
-      if (
-        REQUEST_TOKENS >
-        this.config.maxTokensInput - this.config.maxTokensOutput
-      )
-        throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
+        //TODO: create a env for reasoning tokens input? 
+      const maxInputLimit = isReasoningModel
+        ? Math.max(this.config.maxTokensInput, reasoningTokens * 2)
+        : this.config.maxTokensInput;
+
+      const maxOutPutLimit = isReasoningModel
+        ? reasoningTokens
+        : this.config.maxTokensOutput
+
+      if (REQUEST_TOKENS > maxInputLimit - maxOutPutLimit)
+          throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
 
       const completion = await this.client.chat.completions.create(
         params as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
