@@ -10,10 +10,12 @@ export interface AiEngineConfig {
   model: string;
   maxTokensOutput: number;
   maxTokensInput: number;
+  tokensMaxReasoning?: number;
   baseURL?: string;
   proxy?: string | null;
   customHeaders?: Record<string, string>;
   ollamaThink?: boolean;
+  isReasoning?: boolean;
 }
 
 type Client =
