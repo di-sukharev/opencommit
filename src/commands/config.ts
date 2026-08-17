@@ -83,13 +83,9 @@ export const MODEL_LIST = {
   ],
 
   groq: [
-    'llama3-70b-8192', // Meta Llama 3 70B (default one, no daily token limit and 14 400 reqs/day)
-    'llama3-8b-8192', // Meta Llama 3 8B
-    'llama-guard-3-8b', // Llama Guard 3 8B
-    'llama-3.1-8b-instant', // Llama 3.1 8B (Preview)
-    'llama-3.1-70b-versatile', // Llama 3.1 70B (Preview)
-    'gemma-7b-it', // Gemma 7B
-    'gemma2-9b-it' // Gemma 2 9B
+    'qwen/qwen3.6-27b', // Qwen 3.6 27B (recommended)
+    'openai/gpt-oss-120b', // OpenAI GPT-OSS 120B MoE
+    'openai/gpt-oss-20b' // OpenAI GPT-OSS 20B MoE
   ],
 
   mistral: [
