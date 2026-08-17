@@ -1,6 +1,6 @@
-import axios from 'axios';
 import { OpenAI } from 'openai';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { OpenAiEngine, OpenAiConfig } from './openAi';
@@ -10,9 +10,10 @@ export interface DeepseekConfig extends OpenAiConfig {}
 export class DeepseekEngine extends OpenAiEngine {
   constructor(config: DeepseekConfig) {
     // Call OpenAIEngine constructor with forced Deepseek baseURL
+    // Put baseURL first so user config can override it
     super({
-      ...config,
-      baseURL: 'https://api.deepseek.com/v1'
+      baseURL: 'https://api.deepseek.com/v1',
+      ...config
     });
   }
 
@@ -45,17 +46,7 @@ export class DeepseekEngine extends OpenAiEngine {
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const openAiError = error.response.data.error;
-
-        if (openAiError) throw new Error(openAiError.message);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'deepseek', this.config.model);
     }
   };
 }

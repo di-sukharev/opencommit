@@ -90,6 +90,25 @@ export OLLAMA_HOST=0.0.0.0
 
 This will make Ollama listen on all interfaces, including IPv6 and IPv4, resolving the connection issue. You can add this line to your shell configuration file (like `.bashrc` or `.zshrc`) to make it persistent across sessions.
 
+### Running locally with llama.cpp
+
+You can run OpenCommit with local models served by [llama.cpp](https://github.com/ggerganov/llama.cpp):
+
+- install and build llama.cpp
+- start the server with a GGUF model: `./llama-server -m model.gguf --port 8080`
+- run (in your project directory):
+
+```sh
+git add <files...>
+oco config set OCO_AI_PROVIDER='llamacpp' OCO_API_URL='http://localhost:8080'
+```
+
+If the server is running on a different machine, set the URL accordingly:
+
+```sh
+oco config set OCO_API_URL='http://192.168.1.10:8080'
+```
+
 ### Flags
 
 There are multiple optional flags that can be used with the `oco` command:
@@ -122,7 +141,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, gemini, flowise, deepseek, aimlapi>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -201,11 +220,33 @@ or for as a cheaper option:
 oco config set OCO_MODEL=gpt-3.5-turbo
 ```
 
+### Model Management
+
+OpenCommit automatically fetches available models from your provider when you run `oco setup`. Models are cached for 7 days to reduce API calls.
+
+To see available models for your current provider:
+
+```sh
+oco models
+```
+
+To refresh the model list (e.g., after new models are released):
+
+```sh
+oco models --refresh
+```
+
+To see models for a specific provider:
+
+```sh
+oco models --provider anthropic
+```
+
 ### Switch to other LLM providers with a custom URL
 
 By default OpenCommit uses [OpenAI](https://openai.com).
 
-You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cognitive-services/openai/) or Flowise or Ollama.
+You could switch to [Azure OpenAI Service](https://learn.microsoft.com/azure/cognitive-services/openai/) or Flowise or Ollama or llama.cpp.
 
 ```sh
 oco config set OCO_AI_PROVIDER=azure OCO_API_KEY=<your_azure_api_key> OCO_API_URL=<your_azure_endpoint>
@@ -213,6 +254,24 @@ oco config set OCO_AI_PROVIDER=azure OCO_API_KEY=<your_azure_api_key> OCO_API_UR
 oco config set OCO_AI_PROVIDER=flowise OCO_API_KEY=<your_flowise_api_key> OCO_API_URL=<your_flowise_endpoint>
 
 oco config set OCO_AI_PROVIDER=ollama OCO_API_KEY=<your_ollama_api_key> OCO_API_URL=<your_ollama_endpoint>
+
+oco config set OCO_AI_PROVIDER=llamacpp OCO_API_URL=<your_llamacpp_endpoint>
+```
+
+### Use with Proxy
+
+If you are behind a proxy, you can set it in the config:
+
+```sh
+oco config set OCO_PROXY=http://127.0.0.1:7890
+```
+
+If `OCO_PROXY` is unset, OpenCommit will automatically use `HTTPS_PROXY` or `HTTP_PROXY` environment variables.
+
+To explicitly disable proxy use for OpenCommit, even when those environment variables are set:
+
+```sh
+oco config set OCO_PROXY=null
 ```
 
 ### Locale configuration

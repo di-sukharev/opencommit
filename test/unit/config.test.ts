@@ -122,14 +122,15 @@ describe('config', () => {
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
       expect(config.OCO_OMIT_SCOPE).toEqual(true);
     });
-    
+
     it('should handle custom HTTP headers correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
         OCO_API_CUSTOM_HEADERS: '{"X-Global-Header": "global-value"}'
       });
 
       envConfigFile = await generateConfig('.env', {
-        OCO_API_CUSTOM_HEADERS: '{"Authorization": "Bearer token123", "X-Custom-Header": "test-value"}'
+        OCO_API_CUSTOM_HEADERS:
+          '{"Authorization": "Bearer token123", "X-Custom-Header": "test-value"}'
       });
 
       const config = getConfig({
@@ -138,8 +139,11 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_API_CUSTOM_HEADERS).toEqual({"Authorization": "Bearer token123", "X-Custom-Header": "test-value"});
-      
+      expect(config.OCO_API_CUSTOM_HEADERS).toEqual({
+        Authorization: 'Bearer token123',
+        'X-Custom-Header': 'test-value'
+      });
+
       // No need to parse JSON again since it's already an object
       const parsedHeaders = config.OCO_API_CUSTOM_HEADERS;
       expect(parsedHeaders).toHaveProperty('Authorization', 'Bearer token123');
@@ -198,6 +202,48 @@ describe('config', () => {
 
       expect(config).not.toEqual(null);
       expect(config.OCO_API_KEY).toEqual(undefined);
+    });
+
+    it('should not create a global config file when only reading defaults', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {});
+      rmSync(globalConfigFile.filePath);
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
+
+      expect(config.OCO_MODEL).toEqual(DEFAULT_CONFIG.OCO_MODEL);
+      expect(existsSync(globalConfigFile.filePath)).toBe(false);
+    });
+
+    it('should not materialize ambient proxy env vars into OCO_PROXY', async () => {
+      process.env.HTTPS_PROXY = 'http://127.0.0.1:7890';
+
+      globalConfigFile = await generateConfig('.opencommit', {});
+      envConfigFile = await generateConfig('.env', {});
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config.OCO_PROXY).toEqual(undefined);
+    });
+
+    it('should parse OCO_PROXY=null from local .env as explicit disable', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_PROXY: 'http://global-proxy:8080'
+      });
+      envConfigFile = await generateConfig('.env', {
+        OCO_PROXY: 'null'
+      });
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config.OCO_PROXY).toEqual(null);
     });
   });
 
@@ -324,6 +370,21 @@ describe('config', () => {
 
       const fileContent2 = readFileSync(globalConfigFile.filePath, 'utf8');
       expect(fileContent2).toContain('OCO_MODEL=gpt-4');
+    });
+
+    it('should persist OCO_PROXY=null as an explicit disable', async () => {
+      await setConfig(
+        [[CONFIG_KEYS.OCO_PROXY, null]],
+        globalConfigFile.filePath
+      );
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
+      const fileContent = readFileSync(globalConfigFile.filePath, 'utf8');
+
+      expect(config.OCO_PROXY).toEqual(null);
+      expect(fileContent).toContain('OCO_PROXY=null');
     });
   });
 });

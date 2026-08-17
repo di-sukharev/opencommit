@@ -4,6 +4,7 @@ import { AzureEngine } from '../engine/azure';
 import { AiEngine } from '../engine/Engine';
 import { FlowiseEngine } from '../engine/flowise';
 import { GeminiEngine } from '../engine/gemini';
+import { LlamaCppEngine } from '../engine/llamacpp';
 import { OllamaEngine } from '../engine/ollama';
 import { OpenAiEngine } from '../engine/openAi';
 import { MistralAiEngine } from '../engine/mistral';
@@ -13,47 +14,35 @@ import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
 import { AimlApiEngine } from '../engine/aimlapi';
 import { OpenRouterEngine } from '../engine/openrouter';
-
-export function parseCustomHeaders(headers: any): Record<string, string> {
-  let parsedHeaders = {};
-
-  if (!headers) {
-    return parsedHeaders;
-  }
-
-  try {
-    if (typeof headers === 'object' && !Array.isArray(headers)) {
-      parsedHeaders = headers;
-    } else {
-      parsedHeaders = JSON.parse(headers);
-    }
-  } catch (error) {
-    console.warn(
-      'Invalid OCO_API_CUSTOM_HEADERS format, ignoring custom headers'
-    );
-  }
-
-  return parsedHeaders;
-}
+import { parseCustomHeaders } from './customHeaders';
+import { resolveProxy } from './proxy';
 
 export function getEngine(): AiEngine {
   const config = getConfig();
   const provider = config.OCO_AI_PROVIDER;
 
   const customHeaders = parseCustomHeaders(config.OCO_API_CUSTOM_HEADERS);
+  const resolvedProxy = resolveProxy(config.OCO_PROXY);
 
   const DEFAULT_CONFIG = {
     model: config.OCO_MODEL!,
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
     baseURL: config.OCO_API_URL!,
+    proxy: resolvedProxy,
     apiKey: config.OCO_API_KEY!,
     customHeaders
   };
 
   switch (provider) {
     case OCO_AI_PROVIDER_ENUM.OLLAMA:
-      return new OllamaEngine(DEFAULT_CONFIG);
+      return new OllamaEngine({
+        ...DEFAULT_CONFIG,
+        ollamaThink: config.OCO_OLLAMA_THINK
+      });
+
+    case OCO_AI_PROVIDER_ENUM.LLAMACPP:
+      return new LlamaCppEngine(DEFAULT_CONFIG);
 
     case OCO_AI_PROVIDER_ENUM.ANTHROPIC:
       return new AnthropicEngine(DEFAULT_CONFIG);

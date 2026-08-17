@@ -1,7 +1,8 @@
-import axios from 'axios';
 import { OpenAI } from 'openai';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
-import { parseCustomHeaders } from '../utils/engine';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { parseCustomHeaders } from '../utils/customHeaders';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -23,11 +24,25 @@ export class OpenAiEngine implements AiEngine {
       clientOptions.baseURL = config.baseURL;
     }
 
+    const proxy = config.proxy;
+    if (proxy) {
+      clientOptions.httpAgent = new HttpsProxyAgent(proxy);
+    }
+
     if (config.customHeaders) {
       const headers = parseCustomHeaders(config.customHeaders);
       if (Object.keys(headers).length > 0) {
         clientOptions.defaultHeaders = headers;
       }
+    }
+
+    // The OpenAI SDK's internal fetch may resolve before globalThis.fetch is
+    // available in some Node.js versions, causing premature connection errors.
+    // Explicitly binding globalThis.fetch here defers resolution to call time,
+    // ensuring the runtime's native fetch is used instead of the SDK's bundled
+    // undici — which also avoids double-initialisation in newer Node (>=18).
+    if (!clientOptions.fetch && typeof globalThis.fetch === 'function') {
+      clientOptions.fetch = (...args) => globalThis.fetch(...args);
     }
 
     this.client = new OpenAI(clientOptions);
@@ -36,12 +51,18 @@ export class OpenAiEngine implements AiEngine {
   public generateCommitMessage = async (
     messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | null> => {
+    const isReasoningModel = /^(o[1-9]|gpt-5)/.test(this.config.model);
+
     const params = {
       model: this.config.model,
       messages,
-      temperature: 0,
-      top_p: 0.1,
-      max_tokens: this.config.maxTokensOutput
+      ...(isReasoningModel
+        ? { max_completion_tokens: this.config.maxTokensOutput }
+        : {
+            temperature: 0,
+            top_p: 0.1,
+            max_tokens: this.config.maxTokensOutput
+          })
     };
 
     try {
@@ -55,23 +76,15 @@ export class OpenAiEngine implements AiEngine {
       )
         throw new Error(GenerateCommitMessageErrorEnum.tooMuchTokens);
 
-      const completion = await this.client.chat.completions.create(params);
+      const completion = await this.client.chat.completions.create(
+        params as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming
+      );
 
       const message = completion.choices[0].message;
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const openAiError = error.response.data.error;
-
-        if (openAiError) throw new Error(openAiError.message);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'openai', this.config.model);
     }
   };
 }

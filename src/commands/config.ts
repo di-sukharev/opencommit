@@ -25,10 +25,12 @@ export enum CONFIG_KEYS {
   OCO_ONE_LINE_COMMIT = 'OCO_ONE_LINE_COMMIT',
   OCO_TEST_MOCK_TYPE = 'OCO_TEST_MOCK_TYPE',
   OCO_API_URL = 'OCO_API_URL',
+  OCO_PROXY = 'OCO_PROXY',
   OCO_API_CUSTOM_HEADERS = 'OCO_API_CUSTOM_HEADERS',
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT'
+  OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
+  OCO_OLLAMA_THINK = 'OCO_OLLAMA_THINK'
 }
 
 export enum CONFIG_MODES {
@@ -68,10 +70,10 @@ export const MODEL_LIST = {
   ],
 
   anthropic: [
-    'claude-3-5-sonnet-20240620',
-    'claude-3-opus-20240229',
-    'claude-3-sonnet-20240229',
-    'claude-3-haiku-20240307'
+    'claude-sonnet-4-6',
+    'claude-opus-4-8',
+    'claude-sonnet-4-5-20250929',
+    'claude-haiku-4-5-20251001'
   ],
 
   gemini: [
@@ -224,9 +226,9 @@ export const MODEL_LIST = {
     'deepseek/deepseek-prover-v2',
     'google/gemma-3n-e4b-it',
     'cohere/command-a',
+    'minimax/minimax-m3',
     'MiniMax-Text-01',
     'abab6.5s-chat',
-    'minimax/m1',
     'bagoodex/bagoodex-search-v1',
     'moonshot/kimi-k2-preview',
     'perplexity/sonar',
@@ -401,7 +403,7 @@ export const MODEL_LIST = {
     'microsoft/phi-4-reasoning-plus:free',
     'microsoft/phi-4-reasoning:free',
     'microsoft/wizardlm-2-8x22b',
-    'minimax/minimax-01',
+    'minimax/minimax-m3',
     'mistralai/codestral-2501',
     'mistralai/devstral-small',
     'mistralai/devstral-small:free',
@@ -572,6 +574,8 @@ const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
     case 'ollama':
       return '';
+    case 'llamacpp':
+      return '';
     case 'mlx':
       return '';
     case 'anthropic':
@@ -716,7 +720,17 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_API_URL](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_API_URL,
-      typeof value === 'string',
+      typeof value === 'string' && /^(https?:\/\/)/.test(value),
+      `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
+    );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_PROXY](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_PROXY,
+      value === null ||
+        (typeof value === 'string' && /^(https?:\/\/)/.test(value)),
       `${value} is not a valid URL. It should start with 'http://' or 'https://'.`
     );
     return value;
@@ -780,8 +794,10 @@ export const configValidators = {
         'deepseek',
         'aimlapi',
         'openrouter'
-      ].includes(value) || value.startsWith('ollama'),
-      `${value} is not supported yet, use 'ollama', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
+      ].includes(value) ||
+        value.startsWith('ollama') ||
+        value.startsWith('llamacpp'),
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
     );
 
     return value;
@@ -823,11 +839,21 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_OLLAMA_THINK](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_OLLAMA_THINK,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
   }
 };
 
 export enum OCO_AI_PROVIDER_ENUM {
   OLLAMA = 'ollama',
+  LLAMACPP = 'llamacpp',
   OPENAI = 'openai',
   ANTHROPIC = 'anthropic',
   GEMINI = 'gemini',
@@ -842,11 +868,41 @@ export enum OCO_AI_PROVIDER_ENUM {
   OPENROUTER = 'openrouter'
 }
 
+export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
+  [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/api-keys',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]:
+    'https://console.anthropic.com/settings/keys',
+  [OCO_AI_PROVIDER_ENUM.GEMINI]: 'https://aistudio.google.com/app/apikey',
+  [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/keys',
+  [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/api-keys/',
+  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
+  [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
+  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
+  [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
+  [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
+  [OCO_AI_PROVIDER_ENUM.LLAMACPP]: null,
+  [OCO_AI_PROVIDER_ENUM.MLX]: null,
+  [OCO_AI_PROVIDER_ENUM.FLOWISE]: null,
+  [OCO_AI_PROVIDER_ENUM.TEST]: null
+};
+
+export const RECOMMENDED_MODELS: Record<string, string> = {
+  [OCO_AI_PROVIDER_ENUM.OPENAI]: 'gpt-4o-mini',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'claude-sonnet-4-6',
+  [OCO_AI_PROVIDER_ENUM.GEMINI]: 'gemini-1.5-flash',
+  [OCO_AI_PROVIDER_ENUM.GROQ]: 'llama3-70b-8192',
+  [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
+  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-chat',
+  [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
+  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
+};
+
 export type ConfigType = {
   [CONFIG_KEYS.OCO_API_KEY]?: string;
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
   [CONFIG_KEYS.OCO_API_URL]?: string;
+  [CONFIG_KEYS.OCO_PROXY]?: string | null;
   [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS]?: string;
   [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
@@ -861,6 +917,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
+  [CONFIG_KEYS.OCO_OLLAMA_THINK]?: boolean;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -931,6 +988,7 @@ const getEnvConfig = (envPath: string) => {
   return {
     OCO_MODEL: process.env.OCO_MODEL,
     OCO_API_URL: process.env.OCO_API_URL,
+    OCO_PROXY: process.env.OCO_PROXY,
     OCO_API_KEY: process.env.OCO_API_KEY,
     OCO_API_CUSTOM_HEADERS: process.env.OCO_API_CUSTOM_HEADERS,
     OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
@@ -968,16 +1026,13 @@ export const getIsGlobalConfigFileExist = (
 };
 
 export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
-  let globalConfig: ConfigType;
-
   const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
-  if (!isGlobalConfigFileExist) globalConfig = initGlobalConfig(configPath);
-  else {
-    const configFile = readFileSync(configPath, 'utf8');
-    globalConfig = iniParse(configFile) as ConfigType;
+  if (!isGlobalConfigFileExist) {
+    return { ...DEFAULT_CONFIG };
   }
 
-  return globalConfig;
+  const configFile = readFileSync(configPath, 'utf8');
+  return iniParse(configFile) as ConfigType;
 };
 
 /**
@@ -990,7 +1045,10 @@ export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
 const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) => {
   const allKeys = new Set([...Object.keys(main), ...Object.keys(fallback)]);
   return Array.from(allKeys).reduce((acc, key) => {
-    acc[key] = parseConfigVarValue(main[key] ?? fallback[key]);
+    const mainValue = main[key];
+    acc[key] = parseConfigVarValue(
+      mainValue !== undefined ? mainValue : fallback[key]
+    );
     return acc;
   }, {} as ConfigType);
 };
@@ -1155,6 +1213,14 @@ function getConfigKeyDetails(key) {
         description:
           'Custom API URL - may be used to set proxy path to OpenAI API',
         values: ["URL string (must start with 'http://' or 'https://')"]
+      };
+    case CONFIG_KEYS.OCO_PROXY:
+      return {
+        description: 'HTTP/HTTPS Proxy URL',
+        values: [
+          "URL string (must start with 'http://' or 'https://')",
+          'null (disable proxy even when HTTP_PROXY/HTTPS_PROXY are set)'
+        ]
       };
     case CONFIG_KEYS.OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       return {

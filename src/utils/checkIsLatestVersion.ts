@@ -6,6 +6,10 @@ import currentPackage from '../../package.json';
 import { getOpenCommitLatestVersion } from '../version';
 
 export const checkIsLatestVersion = async () => {
+  if (process.env.OCO_TEST_SKIP_VERSION_CHECK === 'true') {
+    return;
+  }
+
   const latestVersion = await getOpenCommitLatestVersion();
 
   if (latestVersion) {
