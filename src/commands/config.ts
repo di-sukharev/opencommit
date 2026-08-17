@@ -14,6 +14,7 @@ export enum CONFIG_KEYS {
   OCO_API_KEY = 'OCO_API_KEY',
   OCO_TOKENS_MAX_INPUT = 'OCO_TOKENS_MAX_INPUT',
   OCO_TOKENS_MAX_OUTPUT = 'OCO_TOKENS_MAX_OUTPUT',
+  OCO_REASONING_MAX_TOKENS = 'OCO_REASONING_MAX_TOKENS',
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_MODEL = 'OCO_MODEL',
@@ -30,7 +31,8 @@ export enum CONFIG_KEYS {
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
   OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
-  OCO_OLLAMA_THINK = 'OCO_OLLAMA_THINK'
+  OCO_OLLAMA_THINK = 'OCO_OLLAMA_THINK',
+  OCO_REASONING = 'OCO_REASONING'
 }
 
 export enum CONFIG_MODES {
@@ -599,7 +601,8 @@ const getDefaultModel = (provider: string | undefined): string => {
 
 export enum DEFAULT_TOKEN_LIMITS {
   DEFAULT_MAX_TOKENS_INPUT = 4096,
-  DEFAULT_MAX_TOKENS_OUTPUT = 500
+  DEFAULT_MAX_TOKENS_OUTPUT = 500,
+  DEFAULT_MAX_REASONING     = 4096
 }
 
 const validateConfig = (
@@ -681,6 +684,17 @@ export const configValidators = {
       !isNaN(value),
       'Must be a number'
     );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](value: any) {
+    value = parseInt(value);
+    validateConfig(
+      CONFIG_KEYS.OCO_REASONING_MAX_TOKENS,
+      !isNaN(value),
+      'Must be a number'
+    )
 
     return value;
   },
@@ -848,7 +862,18 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+  },
+
+  [CONFIG_KEYS.OCO_REASONING](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_REASONING,
+      typeof value === 'boolean',
+      'Must be true or false'
+    )
+
+    return value;
   }
+
 };
 
 export enum OCO_AI_PROVIDER_ENUM {
@@ -901,6 +926,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_API_KEY]?: string;
   [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT]: number;
   [CONFIG_KEYS.OCO_TOKENS_MAX_OUTPUT]: number;
+  [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS]?: number;
   [CONFIG_KEYS.OCO_API_URL]?: string;
   [CONFIG_KEYS.OCO_PROXY]?: string | null;
   [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS]?: string;
@@ -918,6 +944,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
   [CONFIG_KEYS.OCO_OLLAMA_THINK]?: boolean;
+  [CONFIG_KEYS.OCO_REASONING]?: boolean;
 };
 
 export const defaultConfigPath = pathJoin(homedir(), '.opencommit');
@@ -954,6 +981,7 @@ enum OCO_PROMPT_MODULE_ENUM {
 export const DEFAULT_CONFIG = {
   OCO_TOKENS_MAX_INPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
   OCO_TOKENS_MAX_OUTPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
+  OCO_REASONING_MAX_TOKENS: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING,
   OCO_DESCRIPTION: false,
   OCO_EMOJI: false,
   OCO_MODEL: getDefaultModel('openai'),
@@ -966,7 +994,8 @@ export const DEFAULT_CONFIG = {
   OCO_WHY: false,
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true, // todo: deprecate
-  OCO_HOOK_AUTO_UNCOMMENT: false
+  OCO_HOOK_AUTO_UNCOMMENT: false,
+  OCO_REASONING: false
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
@@ -997,6 +1026,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
       process.env.OCO_TOKENS_MAX_OUTPUT
     ),
+    OCO_REASONING_MAX_TOKENS: parseConfigVarValue(process.env.OCO_REASONING_MAX_TOKENS),
 
     OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
     OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
@@ -1007,6 +1037,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
+    OCO_REASONING: parseConfigVarValue(process.env.OCO_REASONING),
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
@@ -1231,6 +1262,16 @@ function getConfigKeyDetails(key) {
       return {
         description: 'Automatically uncomment the commit message in the hook',
         values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_REASONING:
+      return {
+        description: 'Enable reasoning mode for the model and bypass default max_tokens',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_REASONING_MAX_TOKENS:
+      return {
+        description: 'Max response tokens limit for reasoning models',
+        values: ['Any positive integer']
       };
     default:
       return {
