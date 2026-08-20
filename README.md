@@ -141,7 +141,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -257,6 +257,20 @@ oco config set OCO_AI_PROVIDER=ollama OCO_API_KEY=<your_ollama_api_key> OCO_API_
 
 oco config set OCO_AI_PROVIDER=llamacpp OCO_API_URL=<your_llamacpp_endpoint>
 ```
+
+### Use OrcaRouter as the model gateway
+
+By default OpenCommit uses [OpenAI](https://openai.com).
+
+You could switch to [OrcaRouter](https://www.orcarouter.ai), an OpenAI-compatible gateway that routes every request to the best available model and runs gateway-level, zero-trust security for AI agents on the same endpoint.
+
+```sh
+oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key>
+
+oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key> OCO_MODEL=orcarouter/auto
+```
+
+The default model is `orcarouter/auto`, which lets OrcaRouter pick the best model for your request automatically.
 
 ### Use with Proxy
 

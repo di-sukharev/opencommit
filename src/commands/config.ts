@@ -571,7 +571,11 @@ export const MODEL_LIST = {
     'x-ai/grok-3-mini-beta',
     'x-ai/grok-beta',
     'x-ai/grok-vision-beta'
-  ]
+  ],
+
+  // OrcaRouter available models
+  // https://api.orcarouter.ai/v1/models
+  orcarouter: ['orcarouter/auto']
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -596,6 +600,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.aimlapi[0];
     case 'openrouter':
       return MODEL_LIST.openrouter[0];
+    case 'orcarouter':
+      return MODEL_LIST.orcarouter[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -635,7 +641,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -797,11 +803,12 @@ export const configValidators = {
         'groq',
         'deepseek',
         'aimlapi',
-        'openrouter'
+        'openrouter',
+        'orcarouter'
       ].includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter' or 'openai' (default)`
     );
 
     return value;
@@ -869,7 +876,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   MLX = 'mlx',
   DEEPSEEK = 'deepseek',
   AIMLAPI = 'aimlapi',
-  OPENROUTER = 'openrouter'
+  OPENROUTER = 'openrouter',
+  ORCAROUTER = 'orcarouter'
 }
 
 export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
@@ -881,6 +889,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/api-keys/',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
+  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -898,6 +907,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-chat',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
+  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'orcarouter/auto',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
 

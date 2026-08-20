@@ -184,6 +184,19 @@ export async function fetchDeepSeekModels(apiKey: string): Promise<string[]> {
   });
 }
 
+export async function fetchOrcaRouterModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.orcarouter.ai/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.orcarouter,
+    mapModels: (data) =>
+      (data as ModelListResponse).data
+        ?.map((model) => model.id)
+        .filter((id) => id.startsWith('orcarouter/'))
+        .sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -262,6 +275,14 @@ export async function fetchModelsForProvider(
         models = await fetchOpenRouterModels(apiKey);
       } else {
         models = MODEL_LIST.openrouter;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
+      if (apiKey) {
+        models = await fetchOrcaRouterModels(apiKey);
+      } else {
+        models = MODEL_LIST.orcarouter;
       }
       break;
 

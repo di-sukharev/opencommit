@@ -7,7 +7,8 @@ import {
   fetchMistralModels,
   fetchOllamaModels,
   fetchOpenAIModels,
-  fetchOpenRouterModels
+  fetchOpenRouterModels,
+  fetchOrcaRouterModels
 } from '../../src/utils/modelCache';
 
 const originalFetch = global.fetch;
@@ -126,6 +127,22 @@ describe('provider model fetchers', () => {
       ],
       payload: { data: [{ id: 'deepseek-z' }, { id: 'deepseek-a' }] },
       expected: ['deepseek-a', 'deepseek-z']
+    },
+    {
+      provider: 'OrcaRouter',
+      fetchModels: () => fetchOrcaRouterModels('orcarouter-key'),
+      request: [
+        'https://api.orcarouter.ai/v1/models',
+        { headers: { Authorization: 'Bearer orcarouter-key' } }
+      ],
+      payload: {
+        data: [
+          { id: 'orcarouter/auto' },
+          { id: 'other-route' },
+          { id: 'orcarouter/fusion' }
+        ]
+      },
+      expected: ['orcarouter/auto', 'orcarouter/fusion']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -145,7 +162,8 @@ describe('provider model fetchers', () => {
     ['Mistral', () => fetchMistralModels('key'), MODEL_LIST.mistral],
     ['Groq', () => fetchGroqModels('key'), MODEL_LIST.groq],
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
-    ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek]
+    ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
+    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {
