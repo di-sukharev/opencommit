@@ -19,6 +19,7 @@ import {
   getStagedFiles,
   gitAdd
 } from '../utils/git';
+import { buildGitPushArgs, GitPushOptions } from '../utils/gitPush';
 import { trytm } from '../utils/trytm';
 import { getConfig } from './config';
 
@@ -46,6 +47,14 @@ const hasUpstreamBranch = async (): Promise<boolean> => {
 const getCurrentBranch = async (): Promise<string> => {
   const { stdout } = await execa('git', ['branch', '--show-current']);
   return stdout.trim();
+};
+
+const runGitPush = async (options: GitPushOptions) => {
+  const upstreamBranch = (await hasUpstreamBranch())
+    ? null
+    : await getCurrentBranch();
+
+  return await execa('git', buildGitPushArgs(options, upstreamBranch));
 };
 
 const displayPushUrl = (stderr: string) => {
@@ -156,11 +165,10 @@ ${chalk.grey('——————————————————')}`
       if (config.OCO_GITPUSH === false) return;
 
       if (!remotes.length) {
-        const pushArgs = ['push'];
-        if (!(await hasUpstreamBranch())) {
-          pushArgs.push('--set-upstream', 'origin', await getCurrentBranch());
-        }
-        const { stdout, stderr } = await execa('git', pushArgs);
+        const { stdout, stderr } = await runGitPush({
+          mode: 'default',
+          fallbackRemote: 'origin'
+        });
         if (stdout) outro(stdout);
         displayPushUrl(stderr);
         process.exit(0);
@@ -178,11 +186,11 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.start(`Running 'git push ${remotes[0]}'`);
 
-          const pushArgs = ['push', '--verbose', remotes[0]];
-          if (!(await hasUpstreamBranch())) {
-            pushArgs.push('--set-upstream', await getCurrentBranch());
-          }
-          const { stdout, stderr } = await execa('git', pushArgs);
+          const { stdout, stderr } = await runGitPush({
+            mode: 'remote',
+            remote: remotes[0],
+            verbose: true
+          });
 
           pushSpinner.stop(
             `${chalk.green('✔')} Successfully pushed all commits to ${
@@ -213,11 +221,11 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.start(`Running 'git push ${selectedRemote}'`);
 
-          const pushArgs = ['push', selectedRemote];
-          if (!(await hasUpstreamBranch())) {
-            pushArgs.push('--set-upstream', await getCurrentBranch());
-          }
-          const { stdout, stderr } = await execa('git', pushArgs);
+          const { stdout, stderr } = await runGitPush({
+            mode: 'remote',
+            remote: selectedRemote,
+            verbose: false
+          });
 
           if (stdout) outro(stdout);
 

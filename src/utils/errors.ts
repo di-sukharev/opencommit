@@ -382,6 +382,66 @@ function getServiceUnavailableMessage(
   return `The ${provider} service is temporarily unavailable.`;
 }
 
+function formatInsufficientCredits(
+  provider: string,
+  billingUrl: string | null
+): FormattedError {
+  return {
+    title: 'Insufficient Credits',
+    message: `Your ${provider} account has insufficient credits or quota.`,
+    helpUrl: billingUrl,
+    suggestion: 'Add credits to your account to continue using the service.'
+  };
+}
+
+function formatRateLimit(
+  provider: string,
+  billingUrl: string | null,
+  retryAfter?: number
+): FormattedError {
+  return {
+    title: 'Rate Limit Exceeded',
+    message: `You've made too many requests to ${provider}.`,
+    helpUrl: billingUrl,
+    suggestion: retryAfter
+      ? `Please wait ${retryAfter} seconds before retrying.`
+      : 'Please wait a moment before retrying.'
+  };
+}
+
+function formatServiceUnavailable(
+  provider: string,
+  context?: ErrorFormattingContext
+): FormattedError {
+  return {
+    title: 'Service Unavailable',
+    message: getServiceUnavailableMessage(provider, context),
+    helpUrl: null,
+    suggestion: 'Please try again in a few moments.'
+  };
+}
+
+function formatAuthenticationError(
+  provider: string,
+  billingUrl: string | null
+): FormattedError {
+  return {
+    title: 'Authentication Failed',
+    message: `Your ${provider} API key is invalid or expired.`,
+    helpUrl: billingUrl,
+    suggestion: 'Run `oco setup` to configure a valid API key.'
+  };
+}
+
+function formatModelNotFound(provider: string, model: string): FormattedError {
+  return {
+    title: 'Model Not Found',
+    message: `The model '${model}' is not available for ${provider}.`,
+    helpUrl: null,
+    suggestion: 'Run `oco setup` to select a valid model.'
+  };
+}
+
 // Format an error into a user-friendly structure
 export function formatUserFriendlyError(
   error: unknown,
@@ -392,98 +452,45 @@ export function formatUserFriendlyError(
 
   // Handle our custom error types first
   if (error instanceof InsufficientCreditsError) {
-    return {
-      title: 'Insufficient Credits',
-      message: `Your ${provider} account has insufficient credits or quota.`,
-      helpUrl: billingUrl,
-      suggestion: 'Add credits to your account to continue using the service.'
-    };
+    return formatInsufficientCredits(provider, billingUrl);
   }
 
   if (error instanceof RateLimitError) {
-    const retryMsg = error.retryAfter
-      ? `Please wait ${error.retryAfter} seconds before retrying.`
-      : 'Please wait a moment before retrying.';
-    return {
-      title: 'Rate Limit Exceeded',
-      message: `You've made too many requests to ${provider}.`,
-      helpUrl: billingUrl,
-      suggestion: retryMsg
-    };
+    return formatRateLimit(provider, billingUrl, error.retryAfter);
   }
 
   if (error instanceof ServiceUnavailableError) {
-    return {
-      title: 'Service Unavailable',
-      message: getServiceUnavailableMessage(provider, context),
-      helpUrl: null,
-      suggestion: 'Please try again in a few moments.'
-    };
+    return formatServiceUnavailable(provider, context);
   }
 
   if (error instanceof AuthenticationError) {
-    return {
-      title: 'Authentication Failed',
-      message: `Your ${provider} API key is invalid or expired.`,
-      helpUrl: billingUrl,
-      suggestion: 'Run `oco setup` to configure a valid API key.'
-    };
+    return formatAuthenticationError(provider, billingUrl);
   }
 
   if (error instanceof ModelNotFoundError) {
-    return {
-      title: 'Model Not Found',
-      message: `The model '${error.modelName}' is not available for ${provider}.`,
-      helpUrl: null,
-      suggestion: 'Run `oco setup` to select a valid model.'
-    };
+    return formatModelNotFound(provider, error.modelName);
   }
 
   // Detect error type from raw errors
   if (isInsufficientCreditsError(error)) {
-    return {
-      title: 'Insufficient Credits',
-      message: `Your ${provider} account has insufficient credits or quota.`,
-      helpUrl: billingUrl,
-      suggestion: 'Add credits to your account to continue using the service.'
-    };
+    return formatInsufficientCredits(provider, billingUrl);
   }
 
   if (isRateLimitError(error)) {
-    return {
-      title: 'Rate Limit Exceeded',
-      message: `You've made too many requests to ${provider}.`,
-      helpUrl: billingUrl,
-      suggestion: 'Please wait a moment before retrying.'
-    };
+    return formatRateLimit(provider, billingUrl);
   }
 
   if (isServiceUnavailableError(error)) {
-    return {
-      title: 'Service Unavailable',
-      message: getServiceUnavailableMessage(provider, context),
-      helpUrl: null,
-      suggestion: 'Please try again in a few moments.'
-    };
+    return formatServiceUnavailable(provider, context);
   }
 
   if (isApiKeyError(error)) {
-    return {
-      title: 'Authentication Failed',
-      message: `Your ${provider} API key is invalid or expired.`,
-      helpUrl: billingUrl,
-      suggestion: 'Run `oco setup` to configure a valid API key.'
-    };
+    return formatAuthenticationError(provider, billingUrl);
   }
 
   if (isModelNotFoundError(error)) {
     const model = (error as any).modelName || (error as any).model || 'unknown';
-    return {
-      title: 'Model Not Found',
-      message: `The model '${model}' is not available for ${provider}.`,
-      helpUrl: null,
-      suggestion: 'Run `oco setup` to select a valid model.'
-    };
+    return formatModelNotFound(provider, model);
   }
 
   // Default: generic error
