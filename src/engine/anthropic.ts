@@ -70,7 +70,8 @@ export class AnthropicEngine implements AiEngine {
       const data = await this.client.messages.create(params);
 
       const textBlock = data?.content?.find((b) => b.type === 'text');
-      const message = textBlock && 'text' in textBlock ? textBlock.text : undefined;
+      const message =
+        textBlock && 'text' in textBlock ? textBlock.text : undefined;
       let content = message;
       return removeContentTags(content, 'think');
     } catch (error) {
