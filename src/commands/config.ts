@@ -137,7 +137,7 @@ export const MODEL_LIST = {
     'mistral-moderation-2411',
     'mistral-moderation-latest'
   ],
-  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+  deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
 
   // AI/ML API available chat-completion models
   // https://api.aimlapi.com/v1/models
@@ -919,7 +919,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'gemini-1.5-flash',
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'llama3-70b-8192',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
-  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-chat',
+  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
