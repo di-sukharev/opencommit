@@ -1265,13 +1265,13 @@ function getConfigKeyDetails(key) {
     case CONFIG_KEYS.OCO_REASONING:
       return {
         description:
-          'Specify if the selected model is a reasoning model (bypasses max_tokens for reasoning output)',
+          'Override automatic reasoning-model detection for the selected model',
         values: ['true', 'false']
       };
     case CONFIG_KEYS.OCO_REASONING_MAX_TOKENS:
       return {
         description:
-          'Max token limit allocated specifically for the reasoning/thinking output',
+          'Max completion token budget for reasoning models, including hidden reasoning tokens',
         values: ['Any positive integer']
       };
     default:
