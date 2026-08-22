@@ -192,7 +192,9 @@ it('cli flow cancels when editing the generated commit message is interrupted', 
     oco.process.stdin.write('\x03');
 
     expect(await waitForExit(oco)).toBe(1);
-    expect(await oco.queryByText('Successfully committed')).not.toBeInTheConsole();
+    expect(
+      await oco.queryByText('Successfully committed')
+    ).not.toBeInTheConsole();
     await assertGitStatus(gitDir, 'A  index.ts');
   } finally {
     await server.cleanup();
