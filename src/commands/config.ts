@@ -33,6 +33,8 @@ export enum CONFIG_KEYS {
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
   OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
+  OCO_REASONING_MAX_TOKENS = 'OCO_REASONING_MAX_TOKENS',
+  OCO_REASONING = 'OCO_REASONING',
   OCO_OLLAMA_THINK = 'OCO_OLLAMA_THINK'
 }
 
@@ -606,7 +608,8 @@ const getDefaultModel = (provider: string | undefined): string => {
 
 export enum DEFAULT_TOKEN_LIMITS {
   DEFAULT_MAX_TOKENS_INPUT = 4096,
-  DEFAULT_MAX_TOKENS_OUTPUT = 500
+  DEFAULT_MAX_TOKENS_OUTPUT = 500,
+  DEFAULT_MAX_REASONING = 1000
 }
 
 const validateConfig = (
@@ -623,6 +626,19 @@ const validateConfig = (
 
     process.exit(1);
   }
+};
+
+const parsePositiveInteger = (value: unknown): number | undefined => {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) {
+    return undefined;
+  }
+
+  const parsedValue = Number(value);
+  return Number.isSafeInteger(parsedValue) ? parsedValue : undefined;
 };
 
 export const configValidators = {
@@ -846,7 +862,23 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+  },
+  [CONFIG_KEYS.OCO_REASONING](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_REASONING,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
     return value;
+  },
+  [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](value: any) {
+    const parsedValue = parsePositiveInteger(value);
+    validateConfig(
+      CONFIG_KEYS.OCO_REASONING_MAX_TOKENS,
+      parsedValue !== undefined,
+      'Must be a positive integer'
+    );
+    return parsedValue!;
   },
 
   [CONFIG_KEYS.OCO_OLLAMA_THINK](value: any) {
@@ -907,6 +939,8 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
+  [CONFIG_KEYS.OCO_REASONING]?: boolean;
+  [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS]?: number;
   [CONFIG_KEYS.OCO_OLLAMA_THINK]?: boolean;
 };
 
@@ -944,6 +978,7 @@ enum OCO_PROMPT_MODULE_ENUM {
 export const DEFAULT_CONFIG = {
   OCO_TOKENS_MAX_INPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
   OCO_TOKENS_MAX_OUTPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
+  OCO_REASONING_MAX_TOKENS: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING,
   OCO_DESCRIPTION: false,
   OCO_EMOJI: false,
   OCO_MODEL: getDefaultModel('openai'),
@@ -957,6 +992,7 @@ export const DEFAULT_CONFIG = {
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true, // todo: deprecate
   OCO_HOOK_AUTO_UNCOMMENT: false
+  // OCO_REASONING: is intentionally omitted to default to 'undefined' and preserve auto-detection.
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
@@ -997,6 +1033,10 @@ const getEnvConfig = (envPath: string) => {
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
+    OCO_REASONING_MAX_TOKENS: parseConfigVarValue(
+      process.env.OCO_REASONING_MAX_TOKENS
+    ),
+    OCO_REASONING: parseConfigVarValue(process.env.OCO_REASONING),
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
@@ -1221,6 +1261,18 @@ function getConfigKeyDetails(key) {
       return {
         description: 'Automatically uncomment the commit message in the hook',
         values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_REASONING:
+      return {
+        description:
+          'Override automatic reasoning-model detection for the selected model',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_REASONING_MAX_TOKENS:
+      return {
+        description:
+          'Max completion token budget for reasoning models, including hidden reasoning tokens',
+        values: ['Any positive integer']
       };
     default:
       return {
