@@ -202,7 +202,7 @@ export function getRecommendedModel(provider: string): string | null {
     case OCO_AI_PROVIDER_ENUM.MISTRAL:
       return 'mistral-small-latest';
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
-      return 'deepseek-chat';
+      return 'deepseek-v4-flash';
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return 'openai/gpt-4o-mini';
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
