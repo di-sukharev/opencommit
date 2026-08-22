@@ -141,6 +141,8 @@ ${chalk.grey('——————————————————')}`
         initialValue: commitMessage
       });
 
+      if (isCancel(textResponse)) process.exit(1);
+
       commitMessage = textResponse.toString();
     }
 
