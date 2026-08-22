@@ -85,4 +85,34 @@ describe('AnthropicEngine', () => {
       })
     );
   });
+
+  it('forwards a custom baseURL to the Anthropic client', () => {
+    const engine = new AnthropicEngine({
+      ...baseConfig,
+      model: 'claude-sonnet-4-6',
+      baseURL: 'https://my-proxy.example.com/anthropic'
+    });
+
+    expect(engine.client.baseURL).toBe(
+      'https://my-proxy.example.com/anthropic'
+    );
+  });
+
+  it('extracts the text block when the response starts with a thinking block', async () => {
+    const engine = new AnthropicEngine({
+      ...baseConfig,
+      model: 'claude-sonnet-4-6'
+    });
+
+    jest.spyOn(engine.client.messages, 'create').mockResolvedValue({
+      content: [
+        { type: 'thinking', thinking: 'analyzing the diff step by step' },
+        { type: 'text', text: 'feat(anthropic): support thinking models' }
+      ]
+    } as any);
+
+    const result = await engine.generateCommitMessage(messages);
+
+    expect(result).toBe('feat(anthropic): support thinking models');
+  });
 });
