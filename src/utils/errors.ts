@@ -12,6 +12,7 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/billing/',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/usage',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/credits',
+  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
   [OCO_AI_PROVIDER_ENUM.AZURE]:
     'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
@@ -205,6 +206,8 @@ export function getRecommendedModel(provider: string): string | null {
       return 'deepseek-v4-flash';
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return 'openai/gpt-4o-mini';
+    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
+      return 'orcarouter/auto';
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       return 'gpt-4o-mini';
     default:
