@@ -15,6 +15,7 @@ import {
   getMockOpenAiEnv,
   prepareEnvironment,
   prepareRepo,
+  prepareSubmoduleEnvironment,
   prepareTempDir,
   runCli,
   runGit,
@@ -479,29 +480,94 @@ it('cli applies the documented message template placeholder from extra args', as
   }
 });
 
-it('hook command sets and unsets the prepare-commit-msg symlink', async () => {
+const expectHookSetAndUnset = async ({
+  cwd,
+  hookPath
+}: {
+  cwd: string;
+  hookPath: string;
+}): Promise<void> => {
+  const cliPath = realpathSync(resolve('./out/cli.cjs'));
+
+  const setHook = await runCli(['hook', 'set'], { cwd });
+
+  expect(await setHook.findByText('Hook set')).toBeInTheConsole();
+  expect(await waitForExit(setHook)).toBe(0);
+  expect(lstatSync(hookPath).isSymbolicLink()).toBe(true);
+  expect(realpathSync(hookPath)).toBe(cliPath);
+
+  const unsetHook = await runCli(['hook', 'unset'], { cwd });
+
+  expect(await unsetHook.findByText('Hook is removed')).toBeInTheConsole();
+  expect(await waitForExit(unsetHook)).toBe(0);
+  expect(existsSync(hookPath)).toBe(false);
+};
+
+it('hook command respects a relative core.hooksPath from a nested directory', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
-  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
-  const cliPath = resolve('./out/cli.cjs');
+  const nestedDir = resolve(gitDir, 'packages/app');
+  const hookPath = resolve(gitDir, 'custom-hooks/prepare-commit-msg');
 
   try {
-    const setHook = await runCli(['hook', 'set'], {
-      cwd: gitDir
+    writeRepoFile(gitDir, 'packages/app/.gitkeep', '');
+    await runGit(['config', 'core.hooksPath', 'custom-hooks'], gitDir);
+
+    await expectHookSetAndUnset({
+      cwd: nestedDir,
+      hookPath
     });
+  } finally {
+    await cleanup();
+  }
+});
 
-    expect(await setHook.findByText('Hook set')).toBeInTheConsole();
-    expect(await waitForExit(setHook)).toBe(0);
-    expect(existsSync(hookPath)).toBe(true);
-    expect(lstatSync(hookPath).isSymbolicLink()).toBe(true);
-    expect(realpathSync(hookPath)).toBe(cliPath);
+it('hook command sets and unsets the prepare-commit-msg symlink in a submodule', async () => {
+  const { submoduleDir, cleanup } = await prepareSubmoduleEnvironment();
+  const { stdout: absoluteGitDir } = await runGit(
+    ['rev-parse', '--absolute-git-dir'],
+    submoduleDir
+  );
+  const hookPath = resolve(absoluteGitDir.trim(), 'hooks/prepare-commit-msg');
 
-    const unsetHook = await runCli(['hook', 'unset'], {
-      cwd: gitDir
+  try {
+    await expectHookSetAndUnset({
+      cwd: submoduleDir,
+      hookPath
     });
+  } finally {
+    await cleanup();
+  }
+});
 
-    expect(await unsetHook.findByText('Hook is removed')).toBeInTheConsole();
-    expect(await waitForExit(unsetHook)).toBe(0);
-    expect(existsSync(hookPath)).toBe(false);
+it('hook command uses the shared hooks directory from a linked worktree', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const worktreeDir = resolve(tempDir, 'worktree');
+
+  try {
+    await prepareRepo(
+      gitDir,
+      { 'README.md': '# fixture\n' },
+      { commitMessage: 'test: initialize repository' }
+    );
+    await runGit(
+      ['worktree', 'add', '-b', 'hook-worktree', worktreeDir],
+      gitDir
+    );
+
+    const { stdout: commonGitDir } = await runGit(
+      ['rev-parse', '--git-common-dir'],
+      worktreeDir
+    );
+    const hookPath = resolve(
+      worktreeDir,
+      commonGitDir.trim(),
+      'hooks/prepare-commit-msg'
+    );
+
+    await expectHookSetAndUnset({
+      cwd: worktreeDir,
+      hookPath
+    });
   } finally {
     await cleanup();
   }
@@ -549,6 +615,95 @@ it('prepare-commit-msg hook writes the generated message into the commit message
   } finally {
     await server.cleanup();
     await cleanup();
+  }
+});
+
+it('prepare-commit-msg hook supports llama.cpp without an API key', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const homeDir = await prepareTempDir();
+  const server = await startMockOpenAiServer(
+    'fix(hook): support local providers without keys'
+  );
+  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+  const messageFile = resolve(gitDir, '.git/COMMIT_EDITMSG');
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
+
+    const setHook = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await waitForExit(setHook)).toBe(0);
+
+    writeFileSync(messageFile, '# existing\n');
+
+    const hookRun = await runProcess(hookPath, [messageFile], {
+      cwd: gitDir,
+      env: {
+        HOME: homeDir,
+        OCO_AI_PROVIDER: 'llamacpp',
+        OCO_API_KEY: '',
+        OCO_API_URL: new URL(server.baseUrl).origin,
+        OCO_MODEL: 'local-test-model',
+        OCO_GITPUSH: 'false'
+      }
+    });
+
+    expect(await hookRun.findByText('Done')).toBeInTheConsole();
+    expect(await waitForExit(hookRun)).toBe(0);
+    expect(readFileSync(messageFile, 'utf8')).toContain(
+      '# fix(hook): support local providers without keys'
+    );
+    expect(server.requestBodies).toHaveLength(1);
+    expect(server.authHeaders).toHaveLength(0);
+  } finally {
+    await server.cleanup();
+    await cleanup();
+    rmSync(homeDir, { force: true, recursive: true });
+  }
+});
+
+it('prepare-commit-msg hook preserves the message when OpenAI has no API key', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const homeDir = await prepareTempDir();
+  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+  const messageFile = resolve(gitDir, '.git/COMMIT_EDITMSG');
+  const originalMessage = '# existing\n';
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
+
+    const setHook = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await waitForExit(setHook)).toBe(0);
+
+    writeFileSync(messageFile, originalMessage);
+
+    const hookRun = await runProcess(hookPath, [messageFile], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv('http://127.0.0.1:1/v1', {
+        HOME: homeDir,
+        OCO_API_KEY: ''
+      })
+    });
+
+    expect(
+      await hookRun.findByText('No OCO_API_KEY is set')
+    ).toBeInTheConsole();
+    expect(await waitForExit(hookRun)).toBe(0);
+    expect(readFileSync(messageFile, 'utf8')).toBe(originalMessage);
+  } finally {
+    await cleanup();
+    rmSync(homeDir, { force: true, recursive: true });
   }
 });
 
