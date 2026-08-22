@@ -416,7 +416,12 @@ describe('config', () => {
         '10.5',
         10.5,
         '100abc',
-        'invalid'
+        'invalid',
+        '0x10',
+        '1e3',
+        ' 1000 ',
+        true,
+        Number.MAX_SAFE_INTEGER + 1
       ];
       for (const val of invalidValues) {
         expect(() =>

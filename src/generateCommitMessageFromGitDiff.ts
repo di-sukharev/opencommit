@@ -193,6 +193,15 @@ export const generateCommitMessageByDiff = async (
         MAX_CONCURRENT_GENERATIONS
       );
 
+      // Keep one-line mode intact when a large diff is split into multiple
+      // requests by combining the subject from each generated message.
+      if (currentConfig.OCO_ONE_LINE_COMMIT) {
+        return commitMessages
+          .filter(Boolean)
+          .map((message) => message!.split('\n')[0].trim())
+          .join('; ');
+      }
+
       return commitMessages.join('\n\n');
     }
 

@@ -9,6 +9,9 @@ import { join as pathJoin, resolve as pathResolve } from 'path';
 import { COMMANDS } from './ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
+import { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
+
+export { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
 
 export enum CONFIG_KEYS {
   OCO_API_KEY = 'OCO_API_KEY',
@@ -625,10 +628,18 @@ const validateConfig = (
   }
 };
 
-const isPositiveInteger = (value: any) =>
-  typeof value !== 'boolean' &&
-  Number.isInteger(Number(value)) &&
-  Number(value) > 0;
+const parsePositiveInteger = (value: unknown): number | undefined => {
+  if (typeof value === 'number') {
+    return Number.isSafeInteger(value) && value > 0 ? value : undefined;
+  }
+
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) {
+    return undefined;
+  }
+
+  const parsedValue = Number(value);
+  return Number.isSafeInteger(parsedValue) ? parsedValue : undefined;
+};
 
 export const configValidators = {
   [CONFIG_KEYS.OCO_API_KEY](value: any, config: any = {}) {
@@ -861,12 +872,13 @@ export const configValidators = {
     return value;
   },
   [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](value: any) {
+    const parsedValue = parsePositiveInteger(value);
     validateConfig(
       CONFIG_KEYS.OCO_REASONING_MAX_TOKENS,
-      isPositiveInteger(value),
+      parsedValue !== undefined,
       'Must be a positive integer'
     );
-    return typeof value === 'number' ? value : parseInt(value, 10);
+    return parsedValue!;
   },
 
   [CONFIG_KEYS.OCO_OLLAMA_THINK](value: any) {
@@ -877,23 +889,6 @@ export const configValidators = {
     );
   }
 };
-
-export enum OCO_AI_PROVIDER_ENUM {
-  OLLAMA = 'ollama',
-  LLAMACPP = 'llamacpp',
-  OPENAI = 'openai',
-  ANTHROPIC = 'anthropic',
-  GEMINI = 'gemini',
-  AZURE = 'azure',
-  TEST = 'test',
-  FLOWISE = 'flowise',
-  GROQ = 'groq',
-  MISTRAL = 'mistral',
-  MLX = 'mlx',
-  DEEPSEEK = 'deepseek',
-  AIMLAPI = 'aimlapi',
-  OPENROUTER = 'openrouter'
-}
 
 export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/api-keys',

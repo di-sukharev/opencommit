@@ -17,8 +17,7 @@ import { OpenRouterEngine } from '../engine/openrouter';
 import { parseCustomHeaders } from './customHeaders';
 import { resolveProxy } from './proxy';
 
-export function getEngine(): AiEngine {
-  const config = getConfig();
+export function getEngine(config = getConfig()): AiEngine {
   const provider = config.OCO_AI_PROVIDER;
 
   const customHeaders = parseCustomHeaders(config.OCO_API_CUSTOM_HEADERS);

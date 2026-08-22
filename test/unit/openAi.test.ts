@@ -1,5 +1,8 @@
 import { OpenAI } from 'openai';
+import { getConfig } from '../../src/commands/config';
 import { OpenAiEngine } from '../../src/engine/openAi';
+import { getEngine } from '../../src/utils/engine';
+import { prepareFile } from './utils';
 
 describe('OpenAiEngine', () => {
   const baseConfig = {
@@ -133,29 +136,38 @@ describe('OpenAiEngine', () => {
     );
   });
 
-  it('successfully reaches mocked client with real default config for auto-detected reasoning model', async () => {
-    const engine = new OpenAiEngine({
-      apiKey: 'test-key',
-      model: 'o3-mini',
-      maxTokensInput: 4096,
-      maxTokensOutput: 500,
-      tokensMaxReasoning: 1000
-    });
+  it('auto-detects a reasoning model through the real default config and engine path', async () => {
+    const envFile = await prepareFile('.env', '');
 
-    const create = jest
-      .spyOn(engine.client.chat.completions, 'create')
-      .mockResolvedValue({
-        choices: [{ message: { content: 'feat(default): success' } }]
-      } as any);
+    try {
+      const config = getConfig({
+        envPath: envFile.filePath,
+        globalPath: `${envFile.filePath}.missing`
+      });
+      config.OCO_MODEL = 'o3-mini';
+      config.OCO_API_KEY = 'test-key';
 
-    const result = await engine.generateCommitMessage(messages);
+      expect(config.OCO_REASONING).toBeUndefined();
+      expect(config.OCO_REASONING_MAX_TOKENS).toBe(1000);
 
-    expect(result).toBe('feat(default): success');
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        model: 'o3-mini',
-        max_completion_tokens: 1000
-      })
-    );
+      const engine = getEngine(config) as OpenAiEngine;
+      const create = jest
+        .spyOn(engine.client.chat.completions, 'create')
+        .mockResolvedValue({
+          choices: [{ message: { content: 'feat(default): success' } }]
+        } as any);
+
+      const result = await engine.generateCommitMessage(messages);
+
+      expect(result).toBe('feat(default): success');
+      expect(create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          model: 'o3-mini',
+          max_completion_tokens: 1000
+        })
+      );
+    } finally {
+      await envFile.cleanup();
+    }
   });
 });
