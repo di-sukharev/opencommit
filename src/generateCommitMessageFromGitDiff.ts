@@ -182,6 +182,15 @@ export const generateCommitMessageByDiff = async (
         MAX_CONCURRENT_GENERATIONS
       );
 
+      // When OCO_ONE_LINE_COMMIT is enabled, combine the first line of each
+      // split-diff message into a single line instead of joining with '\n\n'.
+      if (config.OCO_ONE_LINE_COMMIT) {
+        return commitMessages
+          .filter(Boolean)
+          .map((msg) => msg!.split('\n')[0].trim())
+          .join('; ');
+      }
+
       return commitMessages.join('\n\n');
     }
 
