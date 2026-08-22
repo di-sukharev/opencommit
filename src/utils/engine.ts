@@ -31,6 +31,8 @@ export function getEngine(): AiEngine {
     baseURL: config.OCO_API_URL!,
     proxy: resolvedProxy,
     apiKey: config.OCO_API_KEY!,
+    isReasoning: config.OCO_REASONING,
+    tokensMaxReasoning: config.OCO_REASONING_MAX_TOKENS,
     customHeaders
   };
 

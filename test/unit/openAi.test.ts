@@ -5,7 +5,8 @@ describe('OpenAiEngine', () => {
   const baseConfig = {
     apiKey: 'test-openai-key',
     maxTokensInput: 4096,
-    maxTokensOutput: 256
+    maxTokensOutput: 256,
+    tokensMaxReasoning: 1024
   };
 
   const messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam> = [
@@ -30,7 +31,7 @@ describe('OpenAiEngine', () => {
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'o3-mini',
-        max_completion_tokens: 256
+        max_completion_tokens: 1024
       })
     );
     expect(create).toHaveBeenCalledWith(
@@ -65,6 +66,95 @@ describe('OpenAiEngine', () => {
     expect(create).toHaveBeenCalledWith(
       expect.not.objectContaining({
         max_completion_tokens: expect.anything()
+      })
+    );
+  });
+
+  it('forces standard params when isReasoning is explicitly false', async () => {
+    const engine = new OpenAiEngine({
+      ...baseConfig,
+      model: 'o3-mini',
+      isReasoning: false
+    });
+
+    const create = jest
+      .spyOn(engine.client.chat.completions, 'create')
+      .mockResolvedValue({
+        choices: [{ message: { content: 'feat(openai): forced standard' } }]
+      } as any);
+
+    await engine.generateCommitMessage(messages);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'o3-mini',
+        max_tokens: 256,
+        temperature: 0,
+        top_p: 0.1
+      })
+    );
+  });
+
+  it('throws TOO_MUCH_TOKENS error when input exceeds token limit boundary', async () => {
+    const engine = new OpenAiEngine({
+      ...baseConfig,
+      model: 'o3-mini',
+      maxTokensInput: 1024,
+      tokensMaxReasoning: 1024
+      // 1024 (input) - 1024 (reasoning limit) leaves 0 tokens for the prompt.
+      // This guarantees the request will exceed the allowed boundary.
+    });
+
+    await expect(engine.generateCommitMessage(messages)).rejects.toThrow(
+      /TOO_MUCH_TOKENS/
+    );
+  });
+
+  it('forces reasoning params when isReasoning is explicitly true', async () => {
+    const engine = new OpenAiEngine({
+      ...baseConfig,
+      model: 'gpt-4',
+      isReasoning: true
+    });
+
+    const create = jest
+      .spyOn(engine.client.chat.completions, 'create')
+      .mockResolvedValue({
+        choices: [{ message: { content: 'feat(openai): forced reasoning' } }]
+      } as any);
+
+    await engine.generateCommitMessage(messages);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'gpt-4',
+        max_completion_tokens: 1024
+      })
+    );
+  });
+
+  it('successfully reaches mocked client with real default config for auto-detected reasoning model', async () => {
+    const engine = new OpenAiEngine({
+      apiKey: 'test-key',
+      model: 'o3-mini',
+      maxTokensInput: 4096,
+      maxTokensOutput: 500,
+      tokensMaxReasoning: 1000
+    });
+
+    const create = jest
+      .spyOn(engine.client.chat.completions, 'create')
+      .mockResolvedValue({
+        choices: [{ message: { content: 'feat(default): success' } }]
+      } as any);
+
+    const result = await engine.generateCommitMessage(messages);
+
+    expect(result).toBe('feat(default): success');
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'o3-mini',
+        max_completion_tokens: 1000
       })
     );
   });

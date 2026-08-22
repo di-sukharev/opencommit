@@ -101,13 +101,16 @@ describe('config', () => {
       globalConfigFile = await generateConfig('.opencommit', {
         OCO_TOKENS_MAX_INPUT: '4096',
         OCO_TOKENS_MAX_OUTPUT: '500',
-        OCO_GITPUSH: 'true'
+        OCO_GITPUSH: 'true',
+        OCO_REASONING: 'false'
       });
 
       envConfigFile = await generateConfig('.env', {
         OCO_TOKENS_MAX_INPUT: '8192',
         OCO_ONE_LINE_COMMIT: 'false',
-        OCO_OMIT_SCOPE: 'true'
+        OCO_OMIT_SCOPE: 'true',
+        OCO_REASONING: 'true',
+        OCO_REASONING_MAX_TOKENS: '2048'
       });
 
       const config = getConfig({
@@ -121,6 +124,8 @@ describe('config', () => {
       expect(config.OCO_GITPUSH).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
       expect(config.OCO_OMIT_SCOPE).toEqual(true);
+      expect(config.OCO_REASONING).toEqual(true);
+      expect(config.OCO_REASONING_MAX_TOKENS).toEqual(2048);
     });
 
     it('should handle custom HTTP headers correctly', async () => {
@@ -202,6 +207,8 @@ describe('config', () => {
 
       expect(config).not.toEqual(null);
       expect(config.OCO_API_KEY).toEqual(undefined);
+      // Ensure OCO_REASONING is undefined by default (auto-detect mode)
+      expect(config.OCO_REASONING).toEqual(undefined);
     });
 
     it('should not create a global config file when only reading defaults', async () => {
@@ -308,7 +315,9 @@ describe('config', () => {
         [
           [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT, '8192'],
           [CONFIG_KEYS.OCO_DESCRIPTION, 'true'],
-          [CONFIG_KEYS.OCO_ONE_LINE_COMMIT, 'false']
+          [CONFIG_KEYS.OCO_ONE_LINE_COMMIT, 'false'],
+          [CONFIG_KEYS.OCO_REASONING, 'true'],
+          [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS, '1024']
         ],
         globalConfigFile.filePath
       );
@@ -319,6 +328,8 @@ describe('config', () => {
       expect(config.OCO_TOKENS_MAX_INPUT).toEqual(8192);
       expect(config.OCO_DESCRIPTION).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
+      expect(config.OCO_REASONING).toEqual(true);
+      expect(config.OCO_REASONING_MAX_TOKENS).toEqual(1024);
     });
 
     it('should throw an error for unsupported config keys', async () => {
@@ -385,6 +396,33 @@ describe('config', () => {
 
       expect(config.OCO_PROXY).toEqual(null);
       expect(fileContent).toContain('OCO_PROXY=null');
+    });
+
+    it('should validate OCO_REASONING_MAX_TOKENS as a positive integer', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {});
+
+      await setConfig(
+        [[CONFIG_KEYS.OCO_REASONING_MAX_TOKENS, '1024']],
+        globalConfigFile.filePath
+      );
+      let config = getConfig({ globalPath: globalConfigFile.filePath });
+      expect(config.OCO_REASONING_MAX_TOKENS).toEqual(1024);
+
+      const invalidValues = [
+        '0',
+        0,
+        '-10',
+        -10,
+        '10.5',
+        10.5,
+        '100abc',
+        'invalid'
+      ];
+      for (const val of invalidValues) {
+        expect(() =>
+          configValidators[CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](val)
+        ).toThrow();
+      }
     });
   });
 });

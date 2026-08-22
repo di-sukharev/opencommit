@@ -9,9 +9,6 @@ import { join as pathJoin, resolve as pathResolve } from 'path';
 import { COMMANDS } from './ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
-import { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
-
-export { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
 
 export enum CONFIG_KEYS {
   OCO_API_KEY = 'OCO_API_KEY',
@@ -33,6 +30,8 @@ export enum CONFIG_KEYS {
   OCO_OMIT_SCOPE = 'OCO_OMIT_SCOPE',
   OCO_GITPUSH = 'OCO_GITPUSH', // todo: deprecate
   OCO_HOOK_AUTO_UNCOMMENT = 'OCO_HOOK_AUTO_UNCOMMENT',
+  OCO_REASONING_MAX_TOKENS = 'OCO_REASONING_MAX_TOKENS',
+  OCO_REASONING = 'OCO_REASONING',
   OCO_OLLAMA_THINK = 'OCO_OLLAMA_THINK'
 }
 
@@ -138,7 +137,7 @@ export const MODEL_LIST = {
     'mistral-moderation-2411',
     'mistral-moderation-latest'
   ],
-  deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
+  deepseek: ['deepseek-chat', 'deepseek-reasoner'],
 
   // AI/ML API available chat-completion models
   // https://api.aimlapi.com/v1/models
@@ -606,7 +605,8 @@ const getDefaultModel = (provider: string | undefined): string => {
 
 export enum DEFAULT_TOKEN_LIMITS {
   DEFAULT_MAX_TOKENS_INPUT = 4096,
-  DEFAULT_MAX_TOKENS_OUTPUT = 500
+  DEFAULT_MAX_TOKENS_OUTPUT = 500,
+  DEFAULT_MAX_REASONING = 1000
 }
 
 const validateConfig = (
@@ -624,6 +624,11 @@ const validateConfig = (
     process.exit(1);
   }
 };
+
+const isPositiveInteger = (value: any) =>
+  typeof value !== 'boolean' &&
+  Number.isInteger(Number(value)) &&
+  Number(value) > 0;
 
 export const configValidators = {
   [CONFIG_KEYS.OCO_API_KEY](value: any, config: any = {}) {
@@ -846,7 +851,22 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+  },
+  [CONFIG_KEYS.OCO_REASONING](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_REASONING,
+      typeof value === 'boolean',
+      'Must be true or false'
+    );
     return value;
+  },
+  [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_REASONING_MAX_TOKENS,
+      isPositiveInteger(value),
+      'Must be a positive integer'
+    );
+    return typeof value === 'number' ? value : parseInt(value, 10);
   },
 
   [CONFIG_KEYS.OCO_OLLAMA_THINK](value: any) {
@@ -857,6 +877,23 @@ export const configValidators = {
     );
   }
 };
+
+export enum OCO_AI_PROVIDER_ENUM {
+  OLLAMA = 'ollama',
+  LLAMACPP = 'llamacpp',
+  OPENAI = 'openai',
+  ANTHROPIC = 'anthropic',
+  GEMINI = 'gemini',
+  AZURE = 'azure',
+  TEST = 'test',
+  FLOWISE = 'flowise',
+  GROQ = 'groq',
+  MISTRAL = 'mistral',
+  MLX = 'mlx',
+  DEEPSEEK = 'deepseek',
+  AIMLAPI = 'aimlapi',
+  OPENROUTER = 'openrouter'
+}
 
 export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/api-keys',
@@ -882,7 +919,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'gemini-1.5-flash',
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'llama3-70b-8192',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
-  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
+  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-chat',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
@@ -907,6 +944,8 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_OMIT_SCOPE]: boolean;
   [CONFIG_KEYS.OCO_TEST_MOCK_TYPE]: string;
   [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT]: boolean;
+  [CONFIG_KEYS.OCO_REASONING]?: boolean;
+  [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS]?: number;
   [CONFIG_KEYS.OCO_OLLAMA_THINK]?: boolean;
 };
 
@@ -944,6 +983,7 @@ enum OCO_PROMPT_MODULE_ENUM {
 export const DEFAULT_CONFIG = {
   OCO_TOKENS_MAX_INPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT,
   OCO_TOKENS_MAX_OUTPUT: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT,
+  OCO_REASONING_MAX_TOKENS: DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING,
   OCO_DESCRIPTION: false,
   OCO_EMOJI: false,
   OCO_MODEL: getDefaultModel('openai'),
@@ -957,6 +997,7 @@ export const DEFAULT_CONFIG = {
   OCO_OMIT_SCOPE: false,
   OCO_GITPUSH: true, // todo: deprecate
   OCO_HOOK_AUTO_UNCOMMENT: false
+  // OCO_REASONING: is intentionally omitted to default to 'undefined' and preserve auto-detection.
 };
 
 const initGlobalConfig = (configPath: string = defaultConfigPath) => {
@@ -997,6 +1038,10 @@ const getEnvConfig = (envPath: string) => {
     OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
     OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
     OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
+    OCO_REASONING_MAX_TOKENS: parseConfigVarValue(
+      process.env.OCO_REASONING_MAX_TOKENS
+    ),
+    OCO_REASONING: parseConfigVarValue(process.env.OCO_REASONING),
 
     OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
   };
@@ -1221,6 +1266,18 @@ function getConfigKeyDetails(key) {
       return {
         description: 'Automatically uncomment the commit message in the hook',
         values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_REASONING:
+      return {
+        description:
+          'Specify if the selected model is a reasoning model (bypasses max_tokens for reasoning output)',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_REASONING_MAX_TOKENS:
+      return {
+        description:
+          'Max token limit allocated specifically for the reasoning/thinking output',
+        values: ['Any positive integer']
       };
     default:
       return {
