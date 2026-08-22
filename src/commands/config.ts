@@ -9,6 +9,9 @@ import { join as pathJoin, resolve as pathResolve } from 'path';
 import { COMMANDS } from './ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
+import { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
+
+export { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
 
 export enum CONFIG_KEYS {
   OCO_API_KEY = 'OCO_API_KEY',
@@ -854,23 +857,6 @@ export const configValidators = {
     );
   }
 };
-
-export enum OCO_AI_PROVIDER_ENUM {
-  OLLAMA = 'ollama',
-  LLAMACPP = 'llamacpp',
-  OPENAI = 'openai',
-  ANTHROPIC = 'anthropic',
-  GEMINI = 'gemini',
-  AZURE = 'azure',
-  TEST = 'test',
-  FLOWISE = 'flowise',
-  GROQ = 'groq',
-  MISTRAL = 'mistral',
-  MLX = 'mlx',
-  DEEPSEEK = 'deepseek',
-  AIMLAPI = 'aimlapi',
-  OPENROUTER = 'openrouter'
-}
 
 export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/api-keys',

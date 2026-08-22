@@ -19,101 +19,86 @@ import {
   fetchOllamaModels,
   getCacheInfo
 } from '../utils/modelCache';
+import { getProviderConfigRequirement } from '../utils/provider';
 
 type ProviderSelectionGroup = 'primary' | 'other' | 'hidden';
-type FirstRunRequirement = 'apiKey' | 'model' | 'none';
 
 interface SetupProviderDefinition {
   provider: OCO_AI_PROVIDER_ENUM;
   displayName: string;
   selectionGroup: ProviderSelectionGroup;
-  firstRunRequirement: FirstRunRequirement;
 }
 
 const SETUP_PROVIDERS: SetupProviderDefinition[] = [
   {
     provider: OCO_AI_PROVIDER_ENUM.OPENAI,
     displayName: 'OpenAI (GPT)',
-    selectionGroup: 'primary',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'primary'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.ANTHROPIC,
     displayName: 'Anthropic (Claude Sonnet, Opus)',
-    selectionGroup: 'primary',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'primary'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.OLLAMA,
     displayName: 'Ollama (Free, runs locally)',
-    selectionGroup: 'primary',
-    firstRunRequirement: 'model'
+    selectionGroup: 'primary'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.LLAMACPP,
     displayName: 'llama.cpp (Free, runs locally)',
-    selectionGroup: 'primary',
-    firstRunRequirement: 'model'
+    selectionGroup: 'primary'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.GEMINI,
     displayName: 'Google Gemini',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.GROQ,
     displayName: 'Groq (Fast inference, free tier)',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.MISTRAL,
     displayName: 'Mistral AI',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.DEEPSEEK,
     displayName: 'DeepSeek',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.OPENROUTER,
     displayName: 'OpenRouter (Multiple providers)',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
     displayName: 'AI/ML API',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.AZURE,
     displayName: 'Azure OpenAI',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.MLX,
     displayName: 'MLX (Apple Silicon, local)',
-    selectionGroup: 'other',
-    firstRunRequirement: 'model'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.FLOWISE,
     displayName: OCO_AI_PROVIDER_ENUM.FLOWISE,
-    selectionGroup: 'hidden',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'hidden'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.TEST,
     displayName: OCO_AI_PROVIDER_ENUM.TEST,
-    selectionGroup: 'hidden',
-    firstRunRequirement: 'none'
+    selectionGroup: 'hidden'
   }
 ];
 
@@ -136,10 +121,6 @@ function getProviderOptions(
 
 function getProviderDisplayName(provider: string): string {
   return getProviderDefinition(provider)?.displayName || provider;
-}
-
-function getFirstRunRequirement(provider: string): FirstRunRequirement {
-  return getProviderDefinition(provider)?.firstRunRequirement || 'apiKey';
 }
 
 async function selectProvider(): Promise<string | symbol> {
@@ -239,7 +220,7 @@ async function selectModel(
 
   if (models.length === 0) {
     // Providers without API keys can accept a local model name directly.
-    if (getFirstRunRequirement(provider) !== 'apiKey') {
+    if (getProviderConfigRequirement(provider) !== 'apiKey') {
       return await text({
         message: 'Enter model name (e.g., llama3:8b, mistral):',
         placeholder: 'llama3:8b',
@@ -548,7 +529,7 @@ export function isFirstRun(): boolean {
 
   const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
 
-  const requirement = getFirstRunRequirement(provider);
+  const requirement = getProviderConfigRequirement(provider);
   const hasRequiredConfig =
     requirement === 'model'
       ? Boolean(config.OCO_MODEL)
@@ -564,7 +545,7 @@ export async function promptForMissingApiKey(): Promise<boolean> {
   const config = getConfig();
   const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
 
-  if (getFirstRunRequirement(provider) !== 'apiKey') {
+  if (getProviderConfigRequirement(provider) !== 'apiKey') {
     return true; // No API key needed
   }
 

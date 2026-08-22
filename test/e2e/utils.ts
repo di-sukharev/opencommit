@@ -21,7 +21,12 @@ const fsRemove = promisify(rm);
 
 const CLI_PATH = path.resolve(process.cwd(), 'out/cli.cjs');
 const DEFAULT_TEST_ENV = {
-  OCO_TEST_SKIP_VERSION_CHECK: 'true'
+  OCO_TEST_SKIP_VERSION_CHECK: 'true',
+  GIT_CONFIG_NOSYSTEM: '1',
+  GIT_CONFIG_GLOBAL: path.resolve(
+    tmpdir(),
+    `opencommit-test-empty-global-gitconfig-${process.pid}`
+  )
 };
 const COMPLETED_MIGRATIONS = [
   '00_use_single_api_key_and_url',
@@ -66,9 +71,17 @@ export const runCli = async (
 
 export const runGit = async (
   args: string[],
-  cwd: string
+  cwd: string,
+  env: NodeJS.ProcessEnv = {}
 ): Promise<{ stdout: string; stderr: string }> => {
-  const { stdout = '', stderr = '' } = await fsExecFile('git', args, { cwd });
+  const { stdout = '', stderr = '' } = await fsExecFile('git', args, {
+    cwd,
+    env: {
+      ...process.env,
+      ...DEFAULT_TEST_ENV,
+      ...env
+    }
+  });
   return { stdout, stderr };
 };
 
@@ -92,21 +105,17 @@ export const prepareEnvironment = async ({
   let otherRemoteDir: string | undefined;
 
   if (remotes === 0) {
-    await fsExecFile('git', ['init', 'test'], { cwd: tempDir });
+    await runGit(['init', 'test'], tempDir);
   } else {
-    await fsExecFile('git', ['init', '--bare', 'remote.git'], {
-      cwd: tempDir
-    });
+    await runGit(['init', '--bare', 'remote.git'], tempDir);
     remoteDir = path.resolve(tempDir, 'remote.git');
 
     if (remotes === 2) {
-      await fsExecFile('git', ['init', '--bare', 'other.git'], {
-        cwd: tempDir
-      });
+      await runGit(['init', '--bare', 'other.git'], tempDir);
       otherRemoteDir = path.resolve(tempDir, 'other.git');
     }
 
-    await fsExecFile('git', ['clone', 'remote.git', 'test'], { cwd: tempDir });
+    await runGit(['clone', 'remote.git', 'test'], tempDir);
 
     if (remotes === 2) {
       await runGit(['remote', 'add', 'other', '../other.git'], gitDir);
@@ -128,6 +137,47 @@ export const prepareEnvironment = async ({
     otherRemoteDir,
     cleanup
   };
+};
+
+export const prepareSubmoduleEnvironment = async (): Promise<{
+  tempDir: string;
+  parentDir: string;
+  submoduleDir: string;
+  cleanup: () => Promise<void>;
+}> => {
+  const tempDir = await prepareTempDir();
+  const parentDir = path.resolve(tempDir, 'parent');
+  const sourceDir = path.resolve(tempDir, 'source');
+  const submoduleDir = path.resolve(parentDir, 'nested');
+
+  await runGit(['init', 'source'], tempDir);
+  await configureGitUser(sourceDir);
+  await runGit(
+    ['-c', 'core.hooksPath=/dev/null', 'commit', '--allow-empty', '-m', 'init'],
+    sourceDir
+  );
+
+  await runGit(['init', 'parent'], tempDir);
+  await configureGitUser(parentDir);
+  await runGit(
+    [
+      '-c',
+      'protocol.file.allow=always',
+      'submodule',
+      'add',
+      sourceDir,
+      'nested'
+    ],
+    parentDir
+  );
+
+  const cleanup = async () => {
+    if (existsSync(tempDir)) {
+      await fsRemove(tempDir, { force: true, recursive: true });
+    }
+  };
+
+  return { tempDir, parentDir, submoduleDir, cleanup };
 };
 
 export const prepareTempDir = async (): Promise<string> => {
@@ -308,7 +358,13 @@ export const getRemoteBranchHeadSubject = async (
       '--pretty=%s',
       `refs/heads/${branchName}`
     ],
-    { cwd: process.cwd() }
+    {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ...DEFAULT_TEST_ENV
+      }
+    }
   );
 
   return stdout.trim();
@@ -329,7 +385,13 @@ export const remoteBranchExists = async (
         '--quiet',
         `refs/heads/${branchName}`
       ],
-      { cwd: process.cwd() }
+      {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          ...DEFAULT_TEST_ENV
+        }
+      }
     );
     return true;
   } catch {

@@ -1,7 +1,7 @@
 import { execa } from 'execa';
 import { readFileSync, existsSync } from 'fs';
 import ignore, { Ignore } from 'ignore';
-import { join } from 'path';
+import { join, resolve as pathResolve } from 'path';
 import { homedir } from 'os';
 import { outro, spinner } from '@clack/prompts';
 
@@ -44,14 +44,14 @@ export const getOpenCommitIgnore = async (): Promise<Ignore> => {
   return ig;
 };
 
-export const getCoreHooksPath = async (): Promise<string> => {
+export const getGitHooksPath = async (): Promise<string> => {
   const gitDir = await getGitDir();
 
-  const { stdout } = await execa('git', ['config', 'core.hooksPath'], {
+  const { stdout } = await execa('git', ['rev-parse', '--git-path', 'hooks'], {
     cwd: gitDir
   });
 
-  return stdout;
+  return pathResolve(gitDir, stdout);
 };
 
 export const getStagedFiles = async (): Promise<string[]> => {
