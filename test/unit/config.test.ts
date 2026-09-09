@@ -1,30 +1,39 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
-import {
-  CONFIG_KEYS,
-  DEFAULT_CONFIG,
-  getConfig,
-  setConfig
-} from '../../src/commands/config';
+import { jest } from '@jest/globals';
 import { prepareFile } from './utils';
 import { dirname } from 'path';
 
+const defaultEnvFile = await prepareFile('.env', '');
+afterAll(() => defaultEnvFile.cleanup());
+
+const { CONFIG_KEYS, DEFAULT_CONFIG, configValidators, getConfig, setConfig } =
+  await (async () => {
+    // The config module captures its default .env path on import, including the
+    // path used internally by setConfig. Point it at a fixture for this suite.
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(dirname(defaultEnvFile.filePath));
+      return await import('../../src/commands/config');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  })();
+
 describe('config', () => {
   const originalEnv = { ...process.env };
+  const testEnv = Object.fromEntries(
+    Object.entries(originalEnv).filter(([key]) => !key.startsWith('OCO_'))
+  );
   let globalConfigFile: { filePath: string; cleanup: () => Promise<void> };
   let envConfigFile: { filePath: string; cleanup: () => Promise<void> };
 
   function resetEnv(env: NodeJS.ProcessEnv) {
-    Object.keys(process.env).forEach((key) => {
-      if (!(key in env)) {
-        delete process.env[key];
-      } else {
-        process.env[key] = env[key];
-      }
-    });
+    Object.keys(process.env).forEach((key) => delete process.env[key]);
+    Object.assign(process.env, env);
   }
 
   beforeEach(async () => {
-    resetEnv(originalEnv);
+    resetEnv(testEnv);
     if (globalConfigFile) await globalConfigFile.cleanup();
     if (envConfigFile) await envConfigFile.cleanup();
   });
@@ -427,10 +436,19 @@ describe('config', () => {
         true,
         Number.MAX_SAFE_INTEGER + 1
       ];
-      for (const val of invalidValues) {
-        expect(() =>
-          configValidators[CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](val)
-        ).toThrow();
+      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`process.exit(${code})`);
+      });
+      try {
+        for (const val of invalidValues) {
+          exit.mockClear();
+          expect(() =>
+            configValidators[CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](val)
+          ).toThrow('process.exit(1)');
+          expect(exit).toHaveBeenCalledWith(1);
+        }
+      } finally {
+        exit.mockRestore();
       }
     });
   });
