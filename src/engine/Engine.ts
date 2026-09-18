@@ -16,6 +16,7 @@ export interface AiEngineConfig {
   tokensMaxReasoning?: number;
   isReasoning?: boolean;
   ollamaThink?: boolean;
+  maxRetries?: number;
 }
 
 type Client =

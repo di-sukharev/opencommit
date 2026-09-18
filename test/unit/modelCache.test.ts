@@ -1,6 +1,7 @@
 import { MODEL_LIST } from '../../src/commands/config';
 import {
   fetchAnthropicModels,
+  fetchAtlasCloudModels,
   fetchDeepSeekModels,
   fetchGroqModels,
   fetchLlamaCppModels,
@@ -159,6 +160,40 @@ describe('provider model fetchers', () => {
         'orcarouter/auto',
         'orcarouter/fusion'
       ]
+    },
+    {
+      provider: 'Atlas Cloud',
+      fetchModels: () => fetchAtlasCloudModels(),
+      request: ['https://api.atlascloud.ai/api/v1/models'],
+      payload: {
+        data: [
+          {
+            model: 'qwen/qwen3.5-397b-a17b',
+            type: 'Text',
+            display_console: true,
+            supported_protocols: ['openai.chat.completions']
+          },
+          {
+            model: 'anthropic/claude-sonnet-4.6',
+            type: 'Text',
+            display_console: true,
+            supported_protocols: ['openai.chat.completions']
+          },
+          {
+            model: 'hidden/chat-model',
+            type: 'Text',
+            display_console: false,
+            supported_protocols: ['openai.chat.completions']
+          },
+          {
+            model: 'image/model',
+            type: 'Image',
+            display_console: true,
+            supported_protocols: ['openai.chat.completions']
+          }
+        ]
+      },
+      expected: ['anthropic/claude-sonnet-4.6', 'qwen/qwen3.5-397b-a17b']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -209,7 +244,8 @@ describe('provider model fetchers', () => {
     ['Groq', () => fetchGroqModels('key'), MODEL_LIST.groq],
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
     ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
-    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter]
+    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter],
+    ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

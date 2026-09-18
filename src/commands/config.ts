@@ -581,7 +581,11 @@ export const MODEL_LIST = {
 
   // OrcaRouter available models
   // https://api.orcarouter.ai/v1/models
-  orcarouter: ['orcarouter/auto']
+  orcarouter: ['orcarouter/auto'],
+
+  // Atlas Cloud available models
+  // https://api.atlascloud.ai/api/v1/models
+  atlascloud: ['qwen/qwen3.5-397b-a17b']
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -608,6 +612,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.openrouter[0];
     case 'orcarouter':
       return MODEL_LIST.orcarouter[0];
+    case 'atlascloud':
+      return MODEL_LIST.atlascloud[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -918,6 +924,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
+  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -936,6 +943,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'orcarouter/auto',
+  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'qwen/qwen3.5-397b-a17b',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
 

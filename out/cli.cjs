@@ -67323,6 +67323,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["AIMLAPI"] = "aimlapi";
   OCO_AI_PROVIDER_ENUM2["OPENROUTER"] = "openrouter";
   OCO_AI_PROVIDER_ENUM2["ORCAROUTER"] = "orcarouter";
+  OCO_AI_PROVIDER_ENUM2["ATLAS_CLOUD"] = "atlascloud";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
 var PROVIDER_CONFIG_REQUIREMENTS = {
@@ -67336,6 +67337,7 @@ var PROVIDER_CONFIG_REQUIREMENTS = {
   ["deepseek" /* DEEPSEEK */]: "apiKey",
   ["openrouter" /* OPENROUTER */]: "apiKey",
   ["orcarouter" /* ORCAROUTER */]: "apiKey",
+  ["atlascloud" /* ATLAS_CLOUD */]: "apiKey",
   ["aimlapi" /* AIMLAPI */]: "apiKey",
   ["azure" /* AZURE */]: "apiKey",
   ["mlx" /* MLX */]: "model",
@@ -67908,7 +67910,10 @@ var MODEL_LIST = {
   ],
   // OrcaRouter available models
   // https://api.orcarouter.ai/v1/models
-  orcarouter: ["orcarouter/auto"]
+  orcarouter: ["orcarouter/auto"],
+  // Atlas Cloud available models
+  // https://api.atlascloud.ai/api/v1/models
+  atlascloud: ["qwen/qwen3.5-397b-a17b"]
 };
 var getDefaultModel = (provider) => {
   switch (provider) {
@@ -67934,6 +67939,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.openrouter[0];
     case "orcarouter":
       return MODEL_LIST.orcarouter[0];
+    case "atlascloud":
+      return MODEL_LIST.atlascloud[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -68189,6 +68196,7 @@ var PROVIDER_API_KEY_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/api_keys",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/keys",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
+  ["atlascloud" /* ATLAS_CLOUD */]: "https://www.atlascloud.ai/console",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/keys",
   ["azure" /* AZURE */]: "https://portal.azure.com/",
   ["ollama" /* OLLAMA */]: null,
@@ -68206,6 +68214,7 @@ var RECOMMENDED_MODELS = {
   ["deepseek" /* DEEPSEEK */]: "deepseek-v4-flash",
   ["openrouter" /* OPENROUTER */]: "openai/gpt-4o-mini",
   ["orcarouter" /* ORCAROUTER */]: "orcarouter/auto",
+  ["atlascloud" /* ATLAS_CLOUD */]: "qwen/qwen3.5-397b-a17b",
   ["aimlapi" /* AIMLAPI */]: "gpt-4o-mini"
 };
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -74435,6 +74444,7 @@ var PROVIDER_BILLING_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/usage",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/credits",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
+  ["atlascloud" /* ATLAS_CLOUD */]: "https://www.atlascloud.ai/console",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/billing",
   ["azure" /* AZURE */]: "https://portal.azure.com/#view/Microsoft_Azure_CostManagement",
   ["ollama" /* OLLAMA */]: null,
@@ -84809,6 +84819,9 @@ var OpenAiEngine = class {
         clientOptions.defaultHeaders = headers;
       }
     }
+    if (typeof config7.maxRetries === "number") {
+      clientOptions.maxRetries = config7.maxRetries;
+    }
     if (!clientOptions.fetch && typeof globalThis.fetch === "function") {
       clientOptions.fetch = (...args) => globalThis.fetch(...args);
     }
@@ -85001,6 +85014,19 @@ var OrcaRouterEngine = class extends OpenAiEngine {
   }
 };
 
+// src/engine/atlascloud.ts
+var DEFAULT_ATLAS_CLOUD_BASE_URL = "https://api.atlascloud.ai/v1";
+var AtlasCloudEngine = class extends OpenAiEngine {
+  constructor(config7) {
+    super({
+      ...config7,
+      baseURL: config7.baseURL ?? DEFAULT_ATLAS_CLOUD_BASE_URL,
+      maxRetries: 0
+    });
+    this.providerName = "atlascloud";
+  }
+};
+
 // src/utils/proxy.ts
 var import_undici = __toESM(require_undici(), 1);
 function resolveProxy(proxySetting) {
@@ -85088,6 +85114,8 @@ function getEngine(config7 = getConfig()) {
       return new OpenRouterEngine(DEFAULT_CONFIG2);
     case "orcarouter" /* ORCAROUTER */:
       return new OrcaRouterEngine(DEFAULT_CONFIG2);
+    case "atlascloud" /* ATLAS_CLOUD */:
+      return new AtlasCloudEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
@@ -86617,6 +86645,15 @@ async function fetchOrcaRouterModels(apiKey) {
     })?.map((model) => model.id).sort()
   });
 }
+async function fetchAtlasCloudModels() {
+  return fetchModelList({
+    url: "https://api.atlascloud.ai/api/v1/models",
+    fallback: MODEL_LIST.atlascloud,
+    mapModels: (data) => data.data?.filter(
+      (model) => model.type === "Text" && model.display_console === true && model.supported_protocols?.includes("openai.chat.completions")
+    ).map((model) => model.model).sort()
+  });
+}
 async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = false) {
   const cache = readCache();
   if (!forceRefresh && isCacheValid(cache) && cache.models[provider]) {
@@ -86684,6 +86721,9 @@ async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = 
       } else {
         models = MODEL_LIST.orcarouter;
       }
+      break;
+    case "atlascloud" /* ATLAS_CLOUD */:
+      models = await fetchAtlasCloudModels();
       break;
     default:
       models = MODEL_LIST.openai;
@@ -86771,6 +86811,11 @@ var SETUP_PROVIDERS = [
     displayName: "OrcaRouter (Smart routing gateway)",
     selectionGroup: "other",
     firstRunRequirement: "apiKey"
+  },
+  {
+    provider: "atlascloud" /* ATLAS_CLOUD */,
+    displayName: "Atlas Cloud (Unified model API)",
+    selectionGroup: "other"
   },
   {
     provider: "aimlapi" /* AIMLAPI */,
@@ -87454,7 +87499,8 @@ var runMigrations = async () => {
     "mlx" /* MLX */,
     "openrouter" /* OPENROUTER */,
     "llamacpp" /* LLAMACPP */,
-    "aimlapi" /* AIMLAPI */
+    "aimlapi" /* AIMLAPI */,
+    "atlascloud" /* ATLAS_CLOUD */
   ].includes(config7.OCO_AI_PROVIDER)) {
     return;
   }
