@@ -8,7 +8,8 @@ import {
   fetchOllamaModels,
   fetchOpenAIModels,
   fetchOpenRouterModels,
-  fetchOrcaRouterModels
+  fetchOrcaRouterModels,
+  fetchRequestyModels
 } from '../../src/utils/modelCache';
 
 const originalFetch = global.fetch;
@@ -200,6 +201,54 @@ describe('provider model fetchers', () => {
     ]);
   });
 
+  it('merges Requesty managed policies with the full catalog', async () => {
+    fetchMock.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url === 'https://router.requesty.ai/v1/models/managed'
+          ? { data: [{ id: 'gpt-5.4-mini', api: 'chat' }] }
+          : {
+              data: [
+                { id: 'openai/gpt-4o-mini', api: 'chat' },
+                { id: 'openai/text-embedding-3-small', api: 'embedding' },
+                { id: 'anthropic/claude-sonnet-4-5', api: 'chat' }
+              ]
+            }
+    }));
+
+    await expect(fetchRequestyModels('requesty-key')).resolves.toEqual([
+      'gpt-5.4-mini',
+      'anthropic/claude-sonnet-4-5',
+      'openai/gpt-4o-mini'
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://router.requesty.ai/v1/models/managed',
+      { headers: { Authorization: 'Bearer requesty-key' } }
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://router.requesty.ai/v1/models',
+      { headers: { Authorization: 'Bearer requesty-key' } }
+    );
+  });
+
+  it('keeps the Requesty catalog when the managed list fails', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url === 'https://router.requesty.ai/v1/models/managed'
+        ? { ok: false, json: async () => ({}) }
+        : {
+            ok: true,
+            json: async () => ({ data: [{ id: 'openai/gpt-4o-mini' }] })
+          }
+    );
+
+    await expect(fetchRequestyModels()).resolves.toEqual([
+      'openai/gpt-4o-mini'
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://router.requesty.ai/v1/models'
+    );
+  });
+
   it.each([
     ['OpenAI', () => fetchOpenAIModels('key'), MODEL_LIST.openai],
     ['Ollama', () => fetchOllamaModels(), []],
@@ -209,7 +258,8 @@ describe('provider model fetchers', () => {
     ['Groq', () => fetchGroqModels('key'), MODEL_LIST.groq],
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
     ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
-    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter]
+    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter],
+    ['Requesty', () => fetchRequestyModels('key'), MODEL_LIST.requesty]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {
