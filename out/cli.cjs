@@ -67323,6 +67323,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["AIMLAPI"] = "aimlapi";
   OCO_AI_PROVIDER_ENUM2["OPENROUTER"] = "openrouter";
   OCO_AI_PROVIDER_ENUM2["ORCAROUTER"] = "orcarouter";
+  OCO_AI_PROVIDER_ENUM2["CHEAPERINFERENCE"] = "cheaperinference";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
 var PROVIDER_CONFIG_REQUIREMENTS = {
@@ -67336,6 +67337,7 @@ var PROVIDER_CONFIG_REQUIREMENTS = {
   ["deepseek" /* DEEPSEEK */]: "apiKey",
   ["openrouter" /* OPENROUTER */]: "apiKey",
   ["orcarouter" /* ORCAROUTER */]: "apiKey",
+  ["cheaperinference" /* CHEAPERINFERENCE */]: "apiKey",
   ["aimlapi" /* AIMLAPI */]: "apiKey",
   ["azure" /* AZURE */]: "apiKey",
   ["mlx" /* MLX */]: "model",
@@ -67908,7 +67910,10 @@ var MODEL_LIST = {
   ],
   // OrcaRouter available models
   // https://api.orcarouter.ai/v1/models
-  orcarouter: ["orcarouter/auto"]
+  orcarouter: ["orcarouter/auto"],
+  // Cheaper Inference available models
+  // https://cheaperinference.com/#models
+  cheaperinference: ["gpt-5.4-mini", "gpt-5.4", "claude-sonnet-5"]
 };
 var getDefaultModel = (provider) => {
   switch (provider) {
@@ -67934,6 +67939,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.openrouter[0];
     case "orcarouter":
       return MODEL_LIST.orcarouter[0];
+    case "cheaperinference":
+      return MODEL_LIST.cheaperinference[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -67968,7 +67975,7 @@ var configValidators = {
     validateConfig(
       "OCO_API_KEY",
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "cheaperinference". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -68116,9 +68123,10 @@ var configValidators = {
         "deepseek",
         "aimlapi",
         "openrouter",
-        "orcarouter"
+        "orcarouter",
+        "cheaperinference"
       ].includes(value) || value.startsWith("ollama") || value.startsWith("llamacpp"),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'cheaperinference' or 'openai' (default)`
     );
     return value;
   },
@@ -68189,6 +68197,7 @@ var PROVIDER_API_KEY_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/api_keys",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/keys",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
+  ["cheaperinference" /* CHEAPERINFERENCE */]: "https://cheaperinference.com/signup",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/keys",
   ["azure" /* AZURE */]: "https://portal.azure.com/",
   ["ollama" /* OLLAMA */]: null,
@@ -68206,6 +68215,7 @@ var RECOMMENDED_MODELS = {
   ["deepseek" /* DEEPSEEK */]: "deepseek-v4-flash",
   ["openrouter" /* OPENROUTER */]: "openai/gpt-4o-mini",
   ["orcarouter" /* ORCAROUTER */]: "orcarouter/auto",
+  ["cheaperinference" /* CHEAPERINFERENCE */]: "gpt-5.4-mini",
   ["aimlapi" /* AIMLAPI */]: "gpt-4o-mini"
 };
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -74435,6 +74445,7 @@ var PROVIDER_BILLING_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/usage",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/credits",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
+  ["cheaperinference" /* CHEAPERINFERENCE */]: "https://cheaperinference.com",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/billing",
   ["azure" /* AZURE */]: "https://portal.azure.com/#view/Microsoft_Azure_CostManagement",
   ["ollama" /* OLLAMA */]: null,
@@ -85001,6 +85012,18 @@ var OrcaRouterEngine = class extends OpenAiEngine {
   }
 };
 
+// src/engine/cheaperinference.ts
+var DEFAULT_CHEAPERINFERENCE_BASE_URL = "https://api.cheaperinference.com/v1";
+var CheaperInferenceEngine = class extends OpenAiEngine {
+  constructor(config7) {
+    super({
+      ...config7,
+      baseURL: config7.baseURL ?? DEFAULT_CHEAPERINFERENCE_BASE_URL
+    });
+    this.providerName = "cheaperinference";
+  }
+};
+
 // src/utils/proxy.ts
 var import_undici = __toESM(require_undici(), 1);
 function resolveProxy(proxySetting) {
@@ -85088,6 +85111,8 @@ function getEngine(config7 = getConfig()) {
       return new OpenRouterEngine(DEFAULT_CONFIG2);
     case "orcarouter" /* ORCAROUTER */:
       return new OrcaRouterEngine(DEFAULT_CONFIG2);
+    case "cheaperinference" /* CHEAPERINFERENCE */:
+      return new CheaperInferenceEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
@@ -86617,6 +86642,14 @@ async function fetchOrcaRouterModels(apiKey) {
     })?.map((model) => model.id).sort()
   });
 }
+async function fetchCheaperInferenceModels(apiKey) {
+  return fetchModelList({
+    url: "https://api.cheaperinference.com/v1/models",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.cheaperinference,
+    mapModels: (data) => data.data?.filter((model) => !model.type || model.type === "text").map((model) => model.id).sort()
+  });
+}
 async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = false) {
   const cache = readCache();
   if (!forceRefresh && isCacheValid(cache) && cache.models[provider]) {
@@ -86683,6 +86716,13 @@ async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = 
         models = await fetchOrcaRouterModels(apiKey);
       } else {
         models = MODEL_LIST.orcarouter;
+      }
+      break;
+    case "cheaperinference" /* CHEAPERINFERENCE */:
+      if (apiKey) {
+        models = await fetchCheaperInferenceModels(apiKey);
+      } else {
+        models = MODEL_LIST.cheaperinference;
       }
       break;
     default:
@@ -86769,6 +86809,12 @@ var SETUP_PROVIDERS = [
   {
     provider: "orcarouter" /* ORCAROUTER */,
     displayName: "OrcaRouter (Smart routing gateway)",
+    selectionGroup: "other",
+    firstRunRequirement: "apiKey"
+  },
+  {
+    provider: "cheaperinference" /* CHEAPERINFERENCE */,
+    displayName: "Cheaper Inference (OpenAI-compatible gateway)",
     selectionGroup: "other",
     firstRunRequirement: "apiKey"
   },

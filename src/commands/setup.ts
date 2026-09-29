@@ -82,6 +82,12 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     firstRunRequirement: 'apiKey'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE,
+    displayName: 'Cheaper Inference (OpenAI-compatible gateway)',
+    selectionGroup: 'other',
+    firstRunRequirement: 'apiKey'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
     displayName: 'AI/ML API',
     selectionGroup: 'other'

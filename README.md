@@ -141,7 +141,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -293,6 +293,20 @@ oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key> 
 ```
 
 The default model is `orcarouter/auto`, which lets OrcaRouter pick the best model for your request automatically.
+
+### Use Cheaper Inference as the model gateway
+
+You could switch to [Cheaper Inference](https://cheaperinference.com), an OpenAI-compatible gateway to models from several labs. Each model costs 15–60% less than the list price of its lab.
+
+Get an API key at [cheaperinference.com/signup](https://cheaperinference.com/signup).
+
+```sh
+oco config set OCO_AI_PROVIDER=cheaperinference OCO_API_KEY=<your_cheaperinference_api_key>
+
+oco config set OCO_AI_PROVIDER=cheaperinference OCO_API_KEY=<your_cheaperinference_api_key> OCO_MODEL=claude-sonnet-5
+```
+
+The default model is `gpt-5.4-mini`. See the [model list](https://cheaperinference.com/#models) for other model IDs.
 
 ### Use with Proxy
 
