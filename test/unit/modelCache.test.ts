@@ -1,6 +1,7 @@
 import { MODEL_LIST } from '../../src/commands/config';
 import {
   fetchAnthropicModels,
+  fetchCheaperInferenceModels,
   fetchDeepSeekModels,
   fetchGroqModels,
   fetchLlamaCppModels,
@@ -159,6 +160,24 @@ describe('provider model fetchers', () => {
         'orcarouter/auto',
         'orcarouter/fusion'
       ]
+    },
+    {
+      provider: 'Cheaper Inference',
+      fetchModels: () => fetchCheaperInferenceModels('ci_live_key'),
+      request: [
+        'https://api.cheaperinference.com/v1/models',
+        { headers: { Authorization: 'Bearer ci_live_key' } }
+      ],
+      payload: {
+        data: [
+          { id: 'gpt-5.4-mini', type: 'text' },
+          { id: 'image-model', type: 'image' },
+          { id: 'claude-sonnet-5', type: 'text' },
+          { id: 'video-model', type: 'video' },
+          { id: 'gpt-5.4' }
+        ]
+      },
+      expected: ['claude-sonnet-5', 'gpt-5.4', 'gpt-5.4-mini']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -209,7 +228,12 @@ describe('provider model fetchers', () => {
     ['Groq', () => fetchGroqModels('key'), MODEL_LIST.groq],
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
     ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
-    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter]
+    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter],
+    [
+      'Cheaper Inference',
+      () => fetchCheaperInferenceModels('key'),
+      MODEL_LIST.cheaperinference
+    ]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

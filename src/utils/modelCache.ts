@@ -42,6 +42,7 @@ function isCacheValid(cache: ModelCache | null): boolean {
 
 interface ModelListItem {
   id: string;
+  type?: string;
   architecture?: {
     output_modalities?: string[];
   };
@@ -206,6 +207,22 @@ export async function fetchOrcaRouterModels(apiKey: string): Promise<string[]> {
   });
 }
 
+export async function fetchCheaperInferenceModels(
+  apiKey: string
+): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.cheaperinference.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.cheaperinference,
+    mapModels: (data) =>
+      (data as ModelListResponse).data
+        // The catalog also lists image and video models. Keep text models.
+        ?.filter((model) => !model.type || model.type === 'text')
+        .map((model) => model.id)
+        .sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -292,6 +309,14 @@ export async function fetchModelsForProvider(
         models = await fetchOrcaRouterModels(apiKey);
       } else {
         models = MODEL_LIST.orcarouter;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
+      if (apiKey) {
+        models = await fetchCheaperInferenceModels(apiKey);
+      } else {
+        models = MODEL_LIST.cheaperinference;
       }
       break;
 
