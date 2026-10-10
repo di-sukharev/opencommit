@@ -62,7 +62,7 @@
     "test:e2e:smoke": "npm run build && npm run test:e2e:smoke:run",
     "test:e2e:smoke:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/smoke.test.ts",
     "test:e2e:core": "npm run build && npm run test:e2e:core:run",
-    "test:e2e:core:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/cliBehavior.test.ts test/e2e/geminiBehavior.test.ts test/e2e/gitPush.test.ts test/e2e/oneFile.test.ts test/e2e/noChanges.test.ts",
+    "test:e2e:core:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/cliBehavior.test.ts test/e2e/anthropicBehavior.test.ts test/e2e/geminiBehavior.test.ts test/e2e/gitPush.test.ts test/e2e/oneFile.test.ts test/e2e/noChanges.test.ts",
     "test:e2e:setup": "npm run test:e2e:prompt-module:setup",
     "test:e2e:prompt-module:setup": "sh test/e2e/setup.sh",
     "test:e2e:prompt-module": "npm run build && npm run test:e2e:prompt-module:run",

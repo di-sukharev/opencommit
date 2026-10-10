@@ -1,4 +1,4 @@
-import { MODEL_LIST } from '../../src/commands/config';
+import { MODEL_LIST, RECOMMENDED_MODELS } from '../../src/commands/config';
 import {
   fetchAnthropicModels,
   fetchDeepSeekModels,
@@ -77,9 +77,14 @@ describe('provider model fetchers', () => {
         }
       ],
       payload: {
-        data: [{ id: 'other-model' }, { id: 'claude-z' }, { id: 'claude-a' }]
+        data: [
+          { id: 'other-model' },
+          { id: 'claude-z' },
+          { id: 'claude-haiku-5-5' },
+          { id: 'claude-a' }
+        ]
       },
-      expected: ['claude-a', 'claude-z']
+      expected: ['claude-a', 'claude-haiku-5-5', 'claude-z']
     },
     {
       provider: 'Mistral',
@@ -223,6 +228,16 @@ describe('provider model fetchers', () => {
     mockJsonResponse({ data: [{ id: 'whisper-1' }] });
 
     await expect(fetchOpenAIModels('key')).resolves.toEqual(MODEL_LIST.openai);
+  });
+
+  it('offers Haiku 5.5 offline without changing the Anthropic default', async () => {
+    mockJsonResponse({ data: [] }, false);
+
+    const models = await fetchAnthropicModels('key');
+
+    expect(models).toContain('claude-haiku-5-5');
+    expect(models[0]).toBe('claude-sonnet-4-6');
+    expect(RECOMMENDED_MODELS.anthropic).toBe('claude-sonnet-4-6');
   });
 
   it('returns an empty local fallback when mapping produces no models', async () => {

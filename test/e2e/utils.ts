@@ -539,6 +539,65 @@ export const startMockOpenAiServer = async (
   };
 };
 
+export const startMockAnthropicServer = async (response: {
+  content: unknown[];
+  stop_reason: string;
+}): Promise<{
+  apiKeys: string[];
+  requestBodies: Array<Record<string, unknown>>;
+  baseUrl: string;
+  cleanup: () => Promise<void>;
+}> => {
+  const apiKeys: string[] = [];
+  const requestBodies: Array<Record<string, unknown>> = [];
+  const server = http.createServer((req, res) => {
+    if (req.method !== 'POST' || req.url !== '/v1/messages') {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+
+    const apiKey = req.headers['x-api-key'];
+    if (typeof apiKey === 'string') apiKeys.push(apiKey);
+
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    req.on('end', () => {
+      const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      requestBodies.push(body);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'msg_test',
+          type: 'message',
+          role: 'assistant',
+          model: body.model,
+          stop_sequence: null,
+          usage: { input_tokens: 100, output_tokens: 20 },
+          ...response
+        })
+      );
+    });
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, '127.0.0.1', () => resolve());
+  });
+  const { port } = server.address() as AddressInfo;
+
+  return {
+    apiKeys,
+    requestBodies,
+    baseUrl: `http://127.0.0.1:${port}`,
+    cleanup: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      })
+  };
+};
+
 export const startMockGeminiServer = async (
   response:
     | Record<string, any>
