@@ -65335,7 +65335,7 @@ var package_default = {
     "test:e2e:smoke": "npm run build && npm run test:e2e:smoke:run",
     "test:e2e:smoke:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/smoke.test.ts",
     "test:e2e:core": "npm run build && npm run test:e2e:core:run",
-    "test:e2e:core:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/cliBehavior.test.ts test/e2e/geminiBehavior.test.ts test/e2e/gitPush.test.ts test/e2e/oneFile.test.ts test/e2e/noChanges.test.ts",
+    "test:e2e:core:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/cliBehavior.test.ts test/e2e/anthropicBehavior.test.ts test/e2e/geminiBehavior.test.ts test/e2e/gitPush.test.ts test/e2e/oneFile.test.ts test/e2e/noChanges.test.ts",
     "test:e2e:setup": "npm run test:e2e:prompt-module:setup",
     "test:e2e:prompt-module:setup": "sh test/e2e/setup.sh",
     "test:e2e:prompt-module": "npm run build && npm run test:e2e:prompt-module:run",
@@ -67404,7 +67404,8 @@ var MODEL_LIST = {
     "claude-sonnet-4-6",
     "claude-opus-4-8",
     "claude-sonnet-4-5-20250929",
-    "claude-haiku-4-5-20251001"
+    "claude-haiku-4-5-20251001",
+    "claude-haiku-5-5"
   ],
   gemini: [
     "gemini-1.5-flash",
@@ -74954,6 +74955,20 @@ async function splitByTokenLimit(content, maxTokens) {
 }
 
 // src/engine/anthropic.ts
+function validateHaiku55StopReason(stopReason) {
+  switch (stopReason) {
+    case "refusal":
+      throw new Error("Anthropic refused to generate a commit message.");
+    case "max_tokens":
+      throw new Error(
+        "Anthropic response was truncated. Increase OCO_TOKENS_MAX_OUTPUT."
+      );
+    case "model_context_window_exceeded":
+      throw new Error(
+        "Anthropic response reached the context window limit. Reduce the input diff."
+      );
+  }
+}
 var AnthropicEngine = class {
   constructor(config7) {
     this.generateCommitMessage = async (messages) => {
@@ -74961,15 +74976,20 @@ var AnthropicEngine = class {
       const restMessages = messages.filter(
         (msg) => msg.role !== "system"
       );
+      const isHaiku55 = this.config.model === "claude-haiku-5-5";
       const params = {
         model: this.config.model,
         system: systemMessage,
         messages: restMessages,
-        temperature: 0,
         max_tokens: this.config.maxTokensOutput
       };
-      if (!/claude.*-4-(?:5|[6-9])/.test(params.model)) {
-        params.top_p = 0.1;
+      if (isHaiku55) {
+        params.thinking = { type: "disabled" };
+      } else {
+        params.temperature = 0;
+        if (!/claude.*-4-(?:5|[6-9])/.test(params.model)) {
+          params.top_p = 0.1;
+        }
       }
       try {
         const REQUEST_TOKENS = messages.map((msg) => tokenCount(msg.content) + 4).reduce((a4, b7) => a4 + b7, 0);
@@ -74977,10 +74997,14 @@ var AnthropicEngine = class {
           throw new Error("TOO_MUCH_TOKENS" /* tooMuchTokens */);
         }
         const data = await this.client.messages.create(params);
+        if (isHaiku55) validateHaiku55StopReason(data?.stop_reason);
         const textBlock = data?.content?.find((b7) => b7.type === "text");
         const message = textBlock && "text" in textBlock ? textBlock.text : void 0;
-        let content = message;
-        return removeContentTags(content, "think");
+        const content = removeContentTags(message, "think");
+        if (isHaiku55 && !content) {
+          throw new Error("EMPTY_MESSAGE" /* emptyMessage */);
+        }
+        return content;
       } catch (error) {
         throw normalizeEngineError(error, "anthropic", this.config.model);
       }
