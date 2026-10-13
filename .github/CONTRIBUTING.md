@@ -15,6 +15,8 @@ Thanks for considering contributing to the project.
 
 Use Node.js 20 and npm 10 when you update dependencies and validate the lockfile. These versions match the test workflow.
 
+Run `npm run test:e2e:prompt-module:run` with these versions to validate the commitlint fixture lockfiles too.
+
 The `content-type` override keeps Octokit's response parser compatible with Node.js 20. Remove it when Octokit's dependency supports this runtime.
 
 To get started, follow these steps:
