@@ -82,6 +82,11 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     firstRunRequirement: 'apiKey'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD,
+    displayName: 'Atlas Cloud (Unified model API)',
+    selectionGroup: 'other'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
     displayName: 'AI/ML API',
     selectionGroup: 'other'

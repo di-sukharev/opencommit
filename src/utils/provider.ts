@@ -13,7 +13,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   DEEPSEEK = 'deepseek',
   AIMLAPI = 'aimlapi',
   OPENROUTER = 'openrouter',
-  ORCAROUTER = 'orcarouter'
+  ORCAROUTER = 'orcarouter',
+  ATLAS_CLOUD = 'atlascloud'
 }
 
 export type ProviderConfigRequirement = 'apiKey' | 'model' | 'none';
@@ -32,6 +33,7 @@ const PROVIDER_CONFIG_REQUIREMENTS: Record<
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'apiKey',
+  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.MLX]: 'model',

@@ -141,7 +141,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, atlascloud>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -293,6 +293,18 @@ oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key> 
 ```
 
 The default model is `orcarouter/auto`, which lets OrcaRouter pick the best model for your request automatically.
+
+### Use Atlas Cloud as the model provider
+
+[Atlas Cloud](https://www.atlascloud.ai) exposes an OpenAI-compatible API. It is optional and does not change OpenCommit's default provider.
+
+```sh
+oco config set OCO_AI_PROVIDER=atlascloud OCO_API_KEY=<your_atlascloud_api_key>
+
+oco config set OCO_AI_PROVIDER=atlascloud OCO_API_KEY=<your_atlascloud_api_key> OCO_MODEL=qwen/qwen3.5-397b-a17b
+```
+
+OpenCommit uses `https://api.atlascloud.ai/v1` by default and fetches selectable text chat models from Atlas Cloud's public catalog. Set `OCO_API_URL` to override the endpoint. Atlas Cloud requests disable automatic SDK retries so a commit-message generation request is not submitted twice.
 
 ### Use with Proxy
 
