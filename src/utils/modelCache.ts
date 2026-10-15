@@ -59,6 +59,10 @@ interface OpenRouterModelListResponse {
   data?: Array<ModelListItem & { context_length?: number }>;
 }
 
+interface RequestyModelListResponse {
+  data?: Array<ModelListItem & { api?: string }>;
+}
+
 interface FetchModelListOptions {
   url: string;
   headers?: Record<string, string>;
@@ -206,6 +210,36 @@ export async function fetchOrcaRouterModels(apiKey: string): Promise<string[]> {
   });
 }
 
+export async function fetchRequestyModels(apiKey?: string): Promise<string[]> {
+  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined;
+  const mapModels = (data: unknown) =>
+    (data as RequestyModelListResponse).data
+      // Keep chat models only (exclude embedding and other APIs).
+      ?.filter((model) => !model.api || model.api === 'chat')
+      .map((model) => model.id)
+      .sort();
+
+  // Managed routing policies are listed first, followed by the full catalog.
+  // Each list is fetched on its own so one failing does not drop the other.
+  const [managedModels, catalogModels] = await Promise.all([
+    fetchModelList({
+      url: 'https://router.requesty.ai/v1/models/managed',
+      headers,
+      fallback: [],
+      mapModels
+    }),
+    fetchModelList({
+      url: 'https://router.requesty.ai/v1/models',
+      headers,
+      fallback: [],
+      mapModels
+    })
+  ]);
+
+  const models = [...new Set([...managedModels, ...catalogModels])];
+  return models.length > 0 ? models : MODEL_LIST.requesty;
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -293,6 +327,10 @@ export async function fetchModelsForProvider(
       } else {
         models = MODEL_LIST.orcarouter;
       }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.REQUESTY:
+      models = await fetchRequestyModels(apiKey);
       break;
 
     default:

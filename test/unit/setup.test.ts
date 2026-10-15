@@ -36,7 +36,8 @@ const OCO_AI_PROVIDER_ENUM = {
   DEEPSEEK: 'deepseek',
   AIMLAPI: 'aimlapi',
   OPENROUTER: 'openrouter',
-  ORCAROUTER: 'orcarouter'
+  ORCAROUTER: 'orcarouter',
+  REQUESTY: 'requesty'
 } as const;
 
 jest.unstable_mockModule('@clack/prompts', () => ({
@@ -90,6 +91,7 @@ const OTHER_OPTIONS = [
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'openrouter', label: 'OpenRouter (Multiple providers)' },
   { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
+  { value: 'requesty', label: 'Requesty (Multiple providers)' },
   { value: 'aimlapi', label: 'AI/ML API' },
   { value: 'azure', label: 'Azure OpenAI' },
   { value: 'mlx', label: 'MLX (Apple Silicon, local)' }

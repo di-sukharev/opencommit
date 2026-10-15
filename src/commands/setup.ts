@@ -82,6 +82,11 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     firstRunRequirement: 'apiKey'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.REQUESTY,
+    displayName: 'Requesty (Multiple providers)',
+    selectionGroup: 'other'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
     displayName: 'AI/ML API',
     selectionGroup: 'other'
