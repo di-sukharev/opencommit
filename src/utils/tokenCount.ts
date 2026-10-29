@@ -1,4 +1,4 @@
-import cl100k_base from '@dqbd/tiktoken/encoders/cl100k_base.json';
+import cl100k_base from '@dqbd/tiktoken/encoders/cl100k_base.json' with { type: 'json' };
 import { Tiktoken } from '@dqbd/tiktoken/lite';
 
 const TOKENIZER_CHUNK_LENGTH = 8_000;
