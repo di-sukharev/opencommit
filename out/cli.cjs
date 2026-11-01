@@ -68315,7 +68315,6 @@ var package_default = {
     axios: "1.20.0",
     chalk: "^5.2.0",
     cleye: "^1.3.2",
-    crypto: "^1.0.1",
     execa: "^7.0.0",
     "https-proxy-agent": "^8.0.0",
     ignore: "^5.2.4",
@@ -90380,10 +90379,10 @@ function getEngine(config7 = getConfig()) {
 var COMMITLINT_LLM_CONFIG_PATH = `${process.env.PWD}/.opencommit-commitlint`;
 
 // src/modules/commitlint/crypto.ts
-var import_crypto3 = __toESM(require("crypto"), 1);
+var import_node_crypto = __toESM(require("node:crypto"), 1);
 var computeHash = async (content, algorithm = "sha256") => {
   try {
-    const hash = import_crypto3.default.createHash(algorithm);
+    const hash = import_node_crypto.default.createHash(algorithm);
     hash.update(content);
     return hash.digest("hex");
   } catch (error) {
