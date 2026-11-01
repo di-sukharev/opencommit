@@ -1,4 +1,4 @@
-import packageJson from '../../package.json';
+import packageJson from '../../package.json' with { type: 'json' };
 import 'cli-testing-library/extend-expect';
 import { runCli, waitForExit } from './utils';
 

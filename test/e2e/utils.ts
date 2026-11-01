@@ -200,10 +200,10 @@ export const prepareRepo = async (
     options.stage === true
       ? Object.keys(files)
       : Array.isArray(options.stage)
-      ? options.stage
-      : options.commitMessage
-      ? Object.keys(files)
-      : [];
+        ? options.stage
+        : options.commitMessage
+          ? Object.keys(files)
+          : [];
 
   if (stageFiles.length > 0) {
     await runGit(['add', ...stageFiles], gitDir);

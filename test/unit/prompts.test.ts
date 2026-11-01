@@ -1,6 +1,6 @@
 import { jest } from '@jest/globals';
 import { dirname } from 'path';
-import englishConsistency from '../../src/i18n/en.json';
+import englishConsistency from '../../src/i18n/en.json' with { type: 'json' };
 import { prepareFile } from './utils';
 
 type PromptOptions = {

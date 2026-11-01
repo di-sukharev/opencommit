@@ -1,4 +1,4 @@
-import cl100k_base from '@dqbd/tiktoken/encoders/cl100k_base.json';
+import cl100k_base from '@dqbd/tiktoken/encoders/cl100k_base.json' with { type: 'json' };
 import { Tiktoken } from '@dqbd/tiktoken/lite';
 
 const TOKENIZER_CHUNK_LENGTH = 8_000;
@@ -46,7 +46,7 @@ const getSafeSliceEnd = (content: string, start: number, length: number) => {
 const getTextChunks = (content: string): string[] => {
   const chunks: string[] = [];
 
-  for (let start = 0; start < content.length; ) {
+  for (let start = 0; start < content.length;) {
     const end = getSafeSliceEnd(content, start, TOKENIZER_CHUNK_LENGTH);
     chunks.push(content.slice(start, end));
     start = end;

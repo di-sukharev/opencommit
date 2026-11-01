@@ -2,7 +2,7 @@ import chalk from 'chalk';
 
 import { outro } from '@clack/prompts';
 
-import currentPackage from '../../package.json';
+import currentPackage from '../../package.json' with { type: 'json' };
 import { getOpenCommitLatestVersion } from '../version';
 
 export const checkIsLatestVersion = async () => {
