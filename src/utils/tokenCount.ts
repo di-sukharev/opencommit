@@ -46,7 +46,7 @@ const getSafeSliceEnd = (content: string, start: number, length: number) => {
 const getTextChunks = (content: string): string[] => {
   const chunks: string[] = [];
 
-  for (let start = 0; start < content.length; ) {
+  for (let start = 0; start < content.length;) {
     const end = getSafeSliceEnd(content, start, TOKENIZER_CHUNK_LENGTH);
     chunks.push(content.slice(start, end));
     start = end;

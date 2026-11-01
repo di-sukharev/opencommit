@@ -68294,7 +68294,7 @@ var package_default = {
     dotenv: "^16.0.3",
     esbuild: "^0.25.5",
     jest: "^30.5.2",
-    prettier: "^2.8.4",
+    prettier: "3.9.10",
     rimraf: "^6.0.1",
     "ts-jest": "^29.4.14",
     "ts-node": "^10.9.1",

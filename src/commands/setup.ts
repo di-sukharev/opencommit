@@ -540,8 +540,8 @@ export function isFirstRun(): boolean {
     requirement === 'model'
       ? Boolean(config.OCO_MODEL)
       : requirement === 'apiKey'
-      ? Boolean(config.OCO_API_KEY)
-      : true;
+        ? Boolean(config.OCO_API_KEY)
+        : true;
 
   // Trigger the full setup wizard only when nothing usable was configured yet.
   return !hasGlobalConfig && !hasRequiredConfig;

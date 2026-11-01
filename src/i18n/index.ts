@@ -19,24 +19,24 @@ import zh_CN from '../i18n/zh_CN.json' with { type: 'json' };
 import zh_TW from '../i18n/zh_TW.json' with { type: 'json' };
 
 export enum I18nLocals {
-  'en' = 'en',
-  'zh_CN' = 'zh_CN',
-  'zh_TW' = 'zh_TW',
-  'ja' = 'ja',
-  'cs' = 'cs',
-  'de' = 'de',
-  'fr' = 'fr',
-  'nl' = 'nl',
-  'it' = 'it',
-  'ko' = 'ko',
-  'pt_br' = 'pt_br',
-  'es_ES' = 'es_ES',
-  'sv' = 'sv',
-  'ru' = 'ru',
-  'id_ID' = 'id_ID',
-  'pl' = 'pl',
-  'tr' = 'tr',
-  'th' = 'th'
+  en = 'en',
+  zh_CN = 'zh_CN',
+  zh_TW = 'zh_TW',
+  ja = 'ja',
+  cs = 'cs',
+  de = 'de',
+  fr = 'fr',
+  nl = 'nl',
+  it = 'it',
+  ko = 'ko',
+  pt_br = 'pt_br',
+  es_ES = 'es_ES',
+  sv = 'sv',
+  ru = 'ru',
+  id_ID = 'id_ID',
+  pl = 'pl',
+  tr = 'tr',
+  th = 'th'
 }
 
 export const i18n = {

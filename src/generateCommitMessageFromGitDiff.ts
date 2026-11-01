@@ -169,10 +169,10 @@ export const generateCommitMessageByDiff = async (
       DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
 
     const maxOutputTokens = isReasoningModel
-      ? currentConfig.OCO_REASONING_MAX_TOKENS ??
-        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING
-      : currentConfig.OCO_TOKENS_MAX_OUTPUT ??
-        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
+      ? (currentConfig.OCO_REASONING_MAX_TOKENS ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING)
+      : (currentConfig.OCO_TOKENS_MAX_OUTPUT ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT);
 
     const MAX_REQUEST_TOKENS =
       maxInputTokens -
