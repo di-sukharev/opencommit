@@ -92,13 +92,9 @@ export const MODEL_LIST = {
   ],
 
   groq: [
-    'llama3-70b-8192', // Meta Llama 3 70B (default one, no daily token limit and 14 400 reqs/day)
-    'llama3-8b-8192', // Meta Llama 3 8B
-    'llama-guard-3-8b', // Llama Guard 3 8B
-    'llama-3.1-8b-instant', // Llama 3.1 8B (Preview)
-    'llama-3.1-70b-versatile', // Llama 3.1 70B (Preview)
-    'gemma-7b-it', // Gemma 7B
-    'gemma2-9b-it' // Gemma 2 9B
+    'openai/gpt-oss-120b', // GPT-OSS 120B (default one)
+    'openai/gpt-oss-20b', // GPT-OSS 20B
+    'llama-guard-3-8b' // Llama Guard 3 8B
   ],
 
   mistral: [
@@ -932,7 +928,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'claude-sonnet-4-6',
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'gemini-1.5-flash',
-  [OCO_AI_PROVIDER_ENUM.GROQ]: 'llama3-70b-8192',
+  [OCO_AI_PROVIDER_ENUM.GROQ]: 'openai/gpt-oss-120b',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
