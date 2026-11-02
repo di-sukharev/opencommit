@@ -59,6 +59,15 @@ interface OpenRouterModelListResponse {
   data?: Array<ModelListItem & { context_length?: number }>;
 }
 
+interface AtlasCloudModelListResponse {
+  data?: Array<{
+    model: string;
+    type?: string;
+    display_console?: boolean;
+    supported_protocols?: string[];
+  }>;
+}
+
 interface FetchModelListOptions {
   url: string;
   headers?: Record<string, string>;
@@ -206,6 +215,23 @@ export async function fetchOrcaRouterModels(apiKey: string): Promise<string[]> {
   });
 }
 
+export async function fetchAtlasCloudModels(): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.atlascloud.ai/api/v1/models',
+    fallback: MODEL_LIST.atlascloud,
+    mapModels: (data) =>
+      (data as AtlasCloudModelListResponse).data
+        ?.filter(
+          (model) =>
+            model.type === 'Text' &&
+            model.display_console === true &&
+            model.supported_protocols?.includes('openai.chat.completions')
+        )
+        .map((model) => model.model)
+        .sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -293,6 +319,10 @@ export async function fetchModelsForProvider(
       } else {
         models = MODEL_LIST.orcarouter;
       }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
+      models = await fetchAtlasCloudModels();
       break;
 
     default:
