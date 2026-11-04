@@ -70269,6 +70269,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["AIMLAPI"] = "aimlapi";
   OCO_AI_PROVIDER_ENUM2["OPENROUTER"] = "openrouter";
   OCO_AI_PROVIDER_ENUM2["ORCAROUTER"] = "orcarouter";
+  OCO_AI_PROVIDER_ENUM2["REQUESTY"] = "requesty";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
 var PROVIDER_CONFIG_REQUIREMENTS = {
@@ -70282,6 +70283,7 @@ var PROVIDER_CONFIG_REQUIREMENTS = {
   ["deepseek" /* DEEPSEEK */]: "apiKey",
   ["openrouter" /* OPENROUTER */]: "apiKey",
   ["orcarouter" /* ORCAROUTER */]: "apiKey",
+  ["requesty" /* REQUESTY */]: "apiKey",
   ["aimlapi" /* AIMLAPI */]: "apiKey",
   ["azure" /* AZURE */]: "apiKey",
   ["mlx" /* MLX */]: "model",
@@ -70855,7 +70857,15 @@ var MODEL_LIST = {
   ],
   // OrcaRouter available models
   // https://api.orcarouter.ai/v1/models
-  orcarouter: ["orcarouter/auto"]
+  orcarouter: ["orcarouter/auto"],
+  // Requesty available models
+  // https://router.requesty.ai/v1/models
+  requesty: [
+    "openai/gpt-4o-mini",
+    // used by default
+    "google/gemini-2.5-flash",
+    "deepseek/deepseek-chat"
+  ]
 };
 var getDefaultModel = (provider) => {
   switch (provider) {
@@ -70881,6 +70891,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.openrouter[0];
     case "orcarouter":
       return MODEL_LIST.orcarouter[0];
+    case "requesty":
+      return MODEL_LIST.requesty[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -70915,7 +70927,7 @@ var configValidators = {
     validateConfig(
       "OCO_API_KEY",
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "requesty". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -71063,9 +71075,10 @@ var configValidators = {
         "deepseek",
         "aimlapi",
         "openrouter",
-        "orcarouter"
+        "orcarouter",
+        "requesty"
       ].includes(value) || value.startsWith("ollama") || value.startsWith("llamacpp"),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'requesty' or 'openai' (default)`
     );
     return value;
   },
@@ -71136,6 +71149,7 @@ var PROVIDER_API_KEY_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/api_keys",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/keys",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
+  ["requesty" /* REQUESTY */]: "https://app.requesty.ai/api-keys",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/keys",
   ["azure" /* AZURE */]: "https://portal.azure.com/",
   ["ollama" /* OLLAMA */]: null,
@@ -71153,6 +71167,7 @@ var RECOMMENDED_MODELS = {
   ["deepseek" /* DEEPSEEK */]: "deepseek-v4-flash",
   ["openrouter" /* OPENROUTER */]: "openai/gpt-4o-mini",
   ["orcarouter" /* ORCAROUTER */]: "orcarouter/auto",
+  ["requesty" /* REQUESTY */]: "openai/gpt-4o-mini",
   ["aimlapi" /* AIMLAPI */]: "gpt-4o-mini"
 };
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -79695,6 +79710,7 @@ var PROVIDER_BILLING_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/usage",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/credits",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
+  ["requesty" /* REQUESTY */]: "https://app.requesty.ai",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/billing",
   ["azure" /* AZURE */]: "https://portal.azure.com/#view/Microsoft_Azure_CostManagement",
   ["ollama" /* OLLAMA */]: null,
@@ -90284,6 +90300,18 @@ var OrcaRouterEngine = class extends OpenAiEngine {
   }
 };
 
+// src/engine/requesty.ts
+var DEFAULT_REQUESTY_BASE_URL = "https://router.requesty.ai/v1";
+var RequestyEngine = class extends OpenAiEngine {
+  constructor(config7) {
+    super({
+      ...config7,
+      baseURL: config7.baseURL || DEFAULT_REQUESTY_BASE_URL
+    });
+    this.providerName = "requesty";
+  }
+};
+
 // src/utils/proxy.ts
 var import_undici = __toESM(require_undici(), 1);
 function resolveProxy(proxySetting) {
@@ -90371,6 +90399,8 @@ function getEngine(config7 = getConfig()) {
       return new OpenRouterEngine(DEFAULT_CONFIG2);
     case "orcarouter" /* ORCAROUTER */:
       return new OrcaRouterEngine(DEFAULT_CONFIG2);
+    case "requesty" /* REQUESTY */:
+      return new RequestyEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
@@ -91900,6 +91930,26 @@ async function fetchOrcaRouterModels(apiKey) {
     })?.map((model) => model.id).sort()
   });
 }
+async function fetchRequestyModels(apiKey) {
+  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : void 0;
+  const mapModels = (data) => data.data?.filter((model) => !model.api || model.api === "chat").map((model) => model.id).sort();
+  const [managedModels, catalogModels] = await Promise.all([
+    fetchModelList({
+      url: "https://router.requesty.ai/v1/models/managed",
+      headers,
+      fallback: [],
+      mapModels
+    }),
+    fetchModelList({
+      url: "https://router.requesty.ai/v1/models",
+      headers,
+      fallback: [],
+      mapModels
+    })
+  ]);
+  const models = [.../* @__PURE__ */ new Set([...managedModels, ...catalogModels])];
+  return models.length > 0 ? models : MODEL_LIST.requesty;
+}
 async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = false) {
   const cache = readCache();
   if (!forceRefresh && isCacheValid(cache) && cache.models[provider]) {
@@ -91967,6 +92017,9 @@ async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = 
       } else {
         models = MODEL_LIST.orcarouter;
       }
+      break;
+    case "requesty" /* REQUESTY */:
+      models = await fetchRequestyModels(apiKey);
       break;
     default:
       models = MODEL_LIST.openai;
@@ -92054,6 +92107,11 @@ var SETUP_PROVIDERS = [
     displayName: "OrcaRouter (Smart routing gateway)",
     selectionGroup: "other",
     firstRunRequirement: "apiKey"
+  },
+  {
+    provider: "requesty" /* REQUESTY */,
+    displayName: "Requesty (Multiple providers)",
+    selectionGroup: "other"
   },
   {
     provider: "aimlapi" /* AIMLAPI */,
