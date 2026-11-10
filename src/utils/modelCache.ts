@@ -206,6 +206,17 @@ export async function fetchOrcaRouterModels(apiKey: string): Promise<string[]> {
   });
 }
 
+export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    // Without `?type=`, this endpoint lists chat (text-output) models only.
+    url: 'https://api.uberllm.dev/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.uberllm,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -292,6 +303,14 @@ export async function fetchModelsForProvider(
         models = await fetchOrcaRouterModels(apiKey);
       } else {
         models = MODEL_LIST.orcarouter;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      if (apiKey) {
+        models = await fetchUberLLMModels(apiKey);
+      } else {
+        models = MODEL_LIST.uberllm;
       }
       break;
 

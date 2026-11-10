@@ -141,7 +141,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, uberllm>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -293,6 +293,18 @@ oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key> 
 ```
 
 The default model is `orcarouter/auto`, which lets OrcaRouter pick the best model for your request automatically.
+
+### Use UberLLM as the model gateway
+
+[UberLLM](https://uberllm.dev) is an OpenAI-compatible gateway with one key for about 260 chat models (DeepSeek, Claude, GPT, Gemini, Qwen, GLM and others). Prices are per model, usually below list price, and listed at [uberllm.dev/models](https://uberllm.dev/models). `oco models` lists the same catalog.
+
+```sh
+oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key>
+
+oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key> OCO_MODEL=anthropic/claude-haiku-4.5
+```
+
+The default model is `deepseek/deepseek-v3.2`.
 
 ### Use with Proxy
 
