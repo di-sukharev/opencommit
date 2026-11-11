@@ -116,6 +116,45 @@ it('cli flow passes --fgm through to the full GitMoji prompt', async () => {
   }
 });
 
+it('cli flow uses the full GitMoji prompt when OCO_EMOJI_FULL_SPEC is set', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'feat(fgm): use the extended gitmoji specification'
+  );
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl, { OCO_EMOJI_FULL_SPEC: 'true' })
+    });
+
+    expect(await waitForExit(oco)).toBe(0);
+
+    const requestPayload = server.requestBodies[
+      server.requestBodies.length - 1
+    ] as { messages: Array<{ content: string }> };
+    const requestContents = requestPayload.messages
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(requestContents).toContain(
+      '🎨, Improve structure / format of the code;'
+    );
+    expect(requestContents).toContain('GitMoji specification');
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
 it('cli flow processes a large minified diff without stalling', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
   const server = await startMockOpenAiServer(

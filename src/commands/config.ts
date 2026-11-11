@@ -20,6 +20,7 @@ export enum CONFIG_KEYS {
   OCO_DESCRIPTION = 'OCO_DESCRIPTION',
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_EMOJI_POSITION_BEFORE_DESCRIPTION = 'OCO_EMOJI_POSITION_BEFORE_DESCRIPTION',
+  OCO_EMOJI_FULL_SPEC = 'OCO_EMOJI_FULL_SPEC',
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
   OCO_WHY = 'OCO_WHY',
@@ -736,6 +737,16 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_EMOJI_FULL_SPEC,
+      typeof value === 'boolean',
+      'Must be boolean: true or false'
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_OMIT_SCOPE](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_OMIT_SCOPE,
@@ -950,6 +961,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
   [CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION]: boolean;
+  [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC]: boolean;
   [CONFIG_KEYS.OCO_WHY]: boolean;
   [CONFIG_KEYS.OCO_MODEL]: string;
   [CONFIG_KEYS.OCO_LANGUAGE]: string;
@@ -1004,6 +1016,7 @@ export const DEFAULT_CONFIG = {
   OCO_DESCRIPTION: false,
   OCO_EMOJI: false,
   OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: false,
+  OCO_EMOJI_FULL_SPEC: false,
   OCO_MODEL: getDefaultModel('openai'),
   OCO_LANGUAGE: 'en',
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
@@ -1052,6 +1065,7 @@ const getEnvConfig = (envPath: string) => {
     OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: parseConfigVarValue(
       process.env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
     ),
+    OCO_EMOJI_FULL_SPEC: parseConfigVarValue(process.env.OCO_EMOJI_FULL_SPEC),
     OCO_LANGUAGE: process.env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
       process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
@@ -1236,6 +1250,12 @@ function getConfigKeyDetails(key) {
       return {
         description:
           'Place GitMoji immediately before the commit subject instead of at the start of the header',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_EMOJI_FULL_SPEC:
+      return {
+        description:
+          'Use the full GitMoji specification instead of the short OCO_EMOJI list, same as the --fgm flag',
         values: ['true', 'false']
       };
     case CONFIG_KEYS.OCO_WHY:
