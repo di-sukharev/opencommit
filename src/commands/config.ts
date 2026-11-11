@@ -668,7 +668,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -829,23 +829,10 @@ export const configValidators = {
 
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
-      [
-        'openai',
-        'mistral',
-        'anthropic',
-        'gemini',
-        'azure',
-        'test',
-        'flowise',
-        'groq',
-        'deepseek',
-        'aimlapi',
-        'openrouter',
-        'orcarouter'
-      ].includes(value) ||
+      (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud' or 'openai' (default)`
     );
 
     return value;
