@@ -2,7 +2,7 @@
 
 import { cli } from 'cleye';
 
-import packageJSON from '../package.json';
+import packageJSON from '../package.json' with { type: 'json' };
 import { commit } from './commands/commit';
 import { commitlintConfigCommand } from './commands/commitlint';
 import { configCommand, getConfig } from './commands/config';

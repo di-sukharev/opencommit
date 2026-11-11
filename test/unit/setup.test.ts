@@ -72,9 +72,8 @@ jest.unstable_mockModule('utils/modelCache', () => ({
   getCacheInfo: jest.fn(() => ({ timestamp: null, providers: [] }))
 }));
 
-const { isFirstRun, promptForMissingApiKey, runSetup } = await import(
-  'commands/setup'
-);
+const { isFirstRun, promptForMissingApiKey, runSetup } =
+  await import('commands/setup');
 
 const PRIMARY_OPTIONS = [
   { value: 'openai', label: 'OpenAI (GPT)' },

@@ -101,8 +101,8 @@ const getCommitConvention = (fullGitMojiSpec: boolean) =>
   fullGitMojiSpec
     ? FULL_GITMOJI_SPEC
     : config.OCO_EMOJI
-    ? GITMOJI_HELP
-    : CONVENTIONAL_COMMIT_KEYWORDS;
+      ? GITMOJI_HELP
+      : CONVENTIONAL_COMMIT_KEYWORDS;
 
 const getDescriptionInstruction = () =>
   config.OCO_DESCRIPTION
