@@ -764,6 +764,49 @@ it('cli flow prompts for a missing API key, saves it, and completes the commit',
   }
 });
 
+it('cli commits after a fresh uberllm setup without failing migration 00', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const homeDir = await prepareTempDir();
+  const server = await startMockOpenAiServer('feat(uberllm): first commit');
+
+  try {
+    // The global config the setup wizard writes, with no migrations recorded yet.
+    writeGlobalConfig(homeDir, [
+      'OCO_AI_PROVIDER=uberllm',
+      'OCO_API_KEY=test-uberllm-key',
+      'OCO_MODEL=deepseek/deepseek-v3.2',
+      `OCO_API_URL=${server.baseUrl}`,
+      'OCO_GITPUSH=false'
+    ]);
+
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: {
+        HOME: homeDir
+      }
+    });
+
+    expect(await waitForExit(oco)).toBe(0);
+    expect(
+      await oco.queryByText('Failed to apply migration')
+    ).not.toBeInTheConsole();
+    await assertHeadCommit(gitDir, 'feat(uberllm): first commit');
+    expect(server.authHeaders).toContain('Bearer test-uberllm-key');
+  } finally {
+    await server.cleanup();
+    rmSync(homeDir, { force: true, recursive: true });
+    await cleanup();
+  }
+});
+
 it('cli ignores files listed in .opencommitignore when they are the only staged changes', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
 

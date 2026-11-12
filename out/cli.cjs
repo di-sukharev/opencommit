@@ -92783,7 +92783,9 @@ var runMigrations = async () => {
     "mlx" /* MLX */,
     "openrouter" /* OPENROUTER */,
     "llamacpp" /* LLAMACPP */,
-    "aimlapi" /* AIMLAPI */
+    "aimlapi" /* AIMLAPI */,
+    "orcarouter" /* ORCAROUTER */,
+    "uberllm" /* UBERLLM */
   ].includes(config7.OCO_AI_PROVIDER)) {
     return;
   }
