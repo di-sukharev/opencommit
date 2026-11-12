@@ -559,6 +559,34 @@ Make sure you exclude public collaboration branches (`main`, `dev`, `etc`) in `b
 
 Interactive rebase (`rebase -i`) changes commits' SHA, so the commit history in remote becomes different from your local branch history. This is okay if you work on the branch alone, but may be inconvenient for other collaborators.
 
+## Use OpenCommit as a library
+
+Install OpenCommit as a dependency and call `generateCommitMessage` with the output of `git diff`:
+
+```sh
+npm install opencommit
+```
+
+```js
+import { execSync } from 'node:child_process';
+import { generateCommitMessage } from 'opencommit';
+
+const diff = execSync('git diff --staged', { encoding: 'utf8' });
+
+const message = await generateCommitMessage(diff, {
+  config: {
+    OCO_AI_PROVIDER: 'openai',
+    OCO_API_KEY: process.env.OPENAI_API_KEY,
+    OCO_MODEL: 'gpt-4o-mini',
+    OCO_EMOJI: true
+  },
+  context: 'Optional context for the model, like oco --context',
+  fullGitMojiSpec: false
+});
+```
+
+The `config` keys are the same as the [configuration](#configuration) keys of the CLI. Keys that you omit get the CLI default values. The library does not read `~/.opencommit`, `.env` or `OCO_*` environment variables, and it does not prompt or commit. The library always uses the `conventional-commit` prompt module. Errors from the provider are thrown to the caller.
+
 ## Payments
 
 You pay for your requests to OpenAI API on your own.

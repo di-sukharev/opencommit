@@ -585,7 +585,7 @@ export const MODEL_LIST = {
   orcarouter: ['orcarouter/auto']
 };
 
-const getDefaultModel = (provider: string | undefined): string => {
+export const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
     case 'ollama':
       return '';

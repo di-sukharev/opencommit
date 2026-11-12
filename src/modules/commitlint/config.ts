@@ -10,10 +10,9 @@ import { getCommitLintPWDConfig } from './pwd-commitlint';
 import { CommitlintLLMConfig } from './types';
 import * as utils from './utils';
 
-const config = getConfig();
-const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
-
 export const configureCommitlintIntegration = async (force = false) => {
+  const config = getConfig();
+  const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
   const spin = spinner();
   spin.start('Loading @commitlint configuration');
 
@@ -56,7 +55,11 @@ export const configureCommitlintIntegration = async (force = false) => {
   const prompts = inferPromptsFromCommitlintConfig(commitLintConfig as any);
 
   const consistencyPrompts =
-    commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts, translation);
+    commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(
+      prompts,
+      translation,
+      config
+    );
 
   // debug prompt which will generate a consistency
   // await fs.writeFile(
@@ -64,7 +67,7 @@ export const configureCommitlintIntegration = async (force = false) => {
   //   consistencyPrompts.map((p) => p.content)
   // );
 
-  const engine = getEngine();
+  const engine = getEngine(config);
   let consistency =
     (await engine.generateCommitMessage(consistencyPrompts)) || '{}';
 

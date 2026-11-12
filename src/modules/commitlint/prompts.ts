@@ -9,13 +9,11 @@ import {
   RuleConfigTuple
 } from '@commitlint/types';
 
-import { getConfig } from '../../commands/config';
+import { ConfigType } from '../../commands/config';
 import { i18n, I18nLocals } from '../../i18n';
 import { IDENTITY, INIT_DIFF_PROMPT } from '../../prompts';
 import { getGitMojiPositionInstruction } from '../../utils/gitmoji';
 import { ConsistencyPrompt } from './types';
-
-const config = getConfig();
 
 type DeepPartial<T> = {
   [P in keyof T]?: {
@@ -205,18 +203,20 @@ export const inferPromptsFromCommitlintConfig = (
  * ubiquitous language from @commitlint.
  * While gpt-4 does this on it self, gpt-3.5 can't map this on his own atm.
  */
-const STRUCTURE_OF_COMMIT = config.OCO_OMIT_SCOPE
-  ? `
+const getStructureOfCommit = (omitScope: boolean) =>
+  omitScope
+    ? `
 - Header of commit is composed of type and subject: <type-of-commit>: <subject-of-commit>
 - Description of commit is composed of body and footer (optional): <body-of-commit>\n<footer(s)-of-commit>`
-  : `
+    : `
 - Header of commit is composed of type, scope, subject: <type-of-commit>(<scope-of-commit>): <subject-of-commit>
 - Description of commit is composed of body and footer (optional): <body-of-commit>\n<footer(s)-of-commit>`;
 
 // Prompt to generate LLM-readable rules based on @commitlint rules.
 const GEN_COMMITLINT_CONSISTENCY_PROMPT = (
   prompts: string[],
-  translation: ConsistencyPrompt
+  translation: ConsistencyPrompt,
+  config: ConfigType
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam[] => [
   {
     role: 'system',
@@ -270,7 +270,8 @@ Example Git Diff is to follow:`
 const INIT_MAIN_PROMPT = (
   language: string,
   prompts: string[],
-  useGitMoji: boolean = config.OCO_EMOJI
+  useGitMoji: boolean,
+  config: ConfigType
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
   role: 'system',
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes ${
@@ -308,7 +309,7 @@ You will strictly follow the following conventions to generate the content of th
 - ${prompts.join('\n- ')}
 
 The conventions refers to the following structure of commit message:
-${STRUCTURE_OF_COMMIT}`
+${getStructureOfCommit(config.OCO_OMIT_SCOPE)}`
 });
 
 export const commitlintPrompts = {
