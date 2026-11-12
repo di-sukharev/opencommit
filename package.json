@@ -15,7 +15,8 @@
     "commit",
     "ollama"
   ],
-  "main": "cli.js",
+  "main": "out/index.cjs",
+  "types": "out/index.d.ts",
   "bin": {
     "opencommit": "out/cli.cjs",
     "oco": "out/cli.cjs"
@@ -28,6 +29,8 @@
   "license": "MIT",
   "files": [
     "out/cli.cjs",
+    "out/index.cjs",
+    "out/index.d.ts",
     "out/tiktoken_bg.wasm"
   ],
   "release": {
