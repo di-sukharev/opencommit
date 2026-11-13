@@ -116,6 +116,45 @@ it('cli flow passes --fgm through to the full GitMoji prompt', async () => {
   }
 });
 
+it('cli flow uses the full GitMoji prompt when OCO_EMOJI_FULL_SPEC is set', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'feat(fgm): use the extended gitmoji specification'
+  );
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl, { OCO_EMOJI_FULL_SPEC: 'true' })
+    });
+
+    expect(await waitForExit(oco)).toBe(0);
+
+    const requestPayload = server.requestBodies[
+      server.requestBodies.length - 1
+    ] as { messages: Array<{ content: string }> };
+    const requestContents = requestPayload.messages
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(requestContents).toContain(
+      '🎨, Improve structure / format of the code;'
+    );
+    expect(requestContents).toContain('GitMoji specification');
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
 it('cli flow processes a large minified diff without stalling', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
   const server = await startMockOpenAiServer(
@@ -573,50 +612,63 @@ it('hook command uses the shared hooks directory from a linked worktree', async 
   }
 });
 
-it('prepare-commit-msg hook writes the generated message into the commit message file', async () => {
-  const { gitDir, cleanup } = await prepareEnvironment();
-  const server = await startMockOpenAiServer(
-    'fix(hook): populate the commit message file'
-  );
-  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
-  const messageFile = resolve(gitDir, '.git/COMMIT_EDITMSG');
-
-  try {
-    await prepareRepo(
-      gitDir,
-      {
-        'index.ts': 'console.log("Hello World");\n'
-      },
-      { stage: true }
+it.each([false, true])(
+  'prepare-commit-msg hook writes the message with full GitMoji set to %s',
+  async (fullSpec) => {
+    const { gitDir, cleanup } = await prepareEnvironment();
+    const server = await startMockOpenAiServer(
+      'fix(hook): populate the commit message file'
     );
+    const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+    const messageFile = resolve(gitDir, '.git/COMMIT_EDITMSG');
 
-    const setHook = await runCli(['hook', 'set'], {
-      cwd: gitDir
-    });
-    expect(await setHook.findByText('Hook set')).toBeInTheConsole();
-    expect(await waitForExit(setHook)).toBe(0);
+    try {
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
 
-    writeFileSync(messageFile, '# existing\n');
+      const setHook = await runCli(['hook', 'set'], {
+        cwd: gitDir
+      });
+      expect(await setHook.findByText('Hook set')).toBeInTheConsole();
+      expect(await waitForExit(setHook)).toBe(0);
 
-    const hookRun = await runProcess(hookPath, [messageFile], {
-      cwd: gitDir,
-      env: getMockOpenAiEnv(server.baseUrl)
-    });
+      writeFileSync(messageFile, '# existing\n');
 
-    expect(await hookRun.findByText('Done')).toBeInTheConsole();
-    expect(await waitForExit(hookRun)).toBe(0);
+      const hookRun = await runProcess(hookPath, [messageFile], {
+        cwd: gitDir,
+        env: getMockOpenAiEnv(server.baseUrl, {
+          OCO_EMOJI_FULL_SPEC: String(fullSpec)
+        })
+      });
 
-    const commitMessage = readFileSync(messageFile, 'utf8');
-    expect(commitMessage).toContain(
-      '# fix(hook): populate the commit message file'
-    );
-    expect(commitMessage).toContain('# ---------- [OpenCommit] ---------- #');
-    expect(commitMessage).toContain('# existing');
-  } finally {
-    await server.cleanup();
-    await cleanup();
+      expect(await hookRun.findByText('Done')).toBeInTheConsole();
+      expect(await waitForExit(hookRun)).toBe(0);
+
+      const commitMessage = readFileSync(messageFile, 'utf8');
+      expect(commitMessage).toContain(
+        '# fix(hook): populate the commit message file'
+      );
+      expect(commitMessage).toContain('# ---------- [OpenCommit] ---------- #');
+      expect(commitMessage).toContain('# existing');
+
+      const payload = server.requestBodies[0] as {
+        messages: Array<{ content: string }>;
+      };
+      const fullSpecInstruction = '🎨, Improve structure / format of the code';
+      expect(payload.messages[0].content.includes(fullSpecInstruction)).toBe(
+        fullSpec
+      );
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
   }
-});
+);
 
 it('prepare-commit-msg hook supports llama.cpp without an API key', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();

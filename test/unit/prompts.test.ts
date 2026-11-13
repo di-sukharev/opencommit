@@ -7,6 +7,7 @@ type PromptOptions = {
   description: boolean;
   emoji: boolean;
   fullGitMojiSpec?: boolean;
+  fullGitMojiSpecSetting?: boolean;
   omitScope?: boolean;
   positionBeforeDescription: boolean;
   promptModule?: 'conventional-commit' | '@commitlint';
@@ -25,6 +26,7 @@ const loadPrompt = async ({
   description,
   emoji,
   fullGitMojiSpec = false,
+  fullGitMojiSpecSetting = false,
   omitScope = false,
   positionBeforeDescription,
   promptModule = 'conventional-commit'
@@ -46,6 +48,7 @@ const loadPrompt = async ({
     OCO_DESCRIPTION: String(description),
     OCO_EMOJI: String(emoji),
     OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: String(positionBeforeDescription),
+    OCO_EMOJI_FULL_SPEC: String(fullGitMojiSpecSetting),
     OCO_LANGUAGE: 'en',
     OCO_OMIT_SCOPE: String(omitScope),
     OCO_ONE_LINE_COMMIT: 'false',
@@ -142,6 +145,40 @@ it('applies the configured position when --fgm enables GitMoji', async () => {
   );
   expect(prompt.assistant).toContain(
     'fix(server.ts): 🐛 change port variable case'
+  );
+});
+
+it('uses the full GitMoji specification when OCO_EMOJI_FULL_SPEC is set', async () => {
+  const prompt = await loadPrompt({
+    description: false,
+    emoji: false,
+    fullGitMojiSpecSetting: true,
+    positionBeforeDescription: false
+  });
+
+  expect(prompt.system).toContain('GitMoji specification');
+  // 🎨 is only part of the full specification, not the short OCO_EMOJI list
+  expect(prompt.system).toContain('🎨, Improve structure / format of the code');
+  expect(prompt.system).toContain(
+    'Place the GitMoji at the start of the commit header'
+  );
+  expect(prompt.assistant).toContain(
+    '🐛 (server.ts): change port variable case'
+  );
+});
+
+it('enables GitMoji on the commitlint prompt path when OCO_EMOJI_FULL_SPEC is set', async () => {
+  const prompt = await loadPrompt({
+    description: false,
+    emoji: false,
+    fullGitMojiSpecSetting: true,
+    positionBeforeDescription: false,
+    promptModule: '@commitlint'
+  });
+
+  expect(prompt.system).toContain('given @commitlint convention');
+  expect(prompt.assistant).toContain(
+    '🐛 (server.ts): change port variable case'
   );
 });
 
