@@ -199,7 +199,7 @@ export function getRecommendedModel(provider: string): string | null {
     case OCO_AI_PROVIDER_ENUM.GEMINI:
       return 'gemini-1.5-flash';
     case OCO_AI_PROVIDER_ENUM.GROQ:
-      return 'llama3-70b-8192';
+      return 'openai/gpt-oss-120b';
     case OCO_AI_PROVIDER_ENUM.MISTRAL:
       return 'mistral-small-latest';
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
