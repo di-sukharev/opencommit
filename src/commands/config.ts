@@ -578,7 +578,11 @@ export const MODEL_LIST = {
 
   // OrcaRouter available models
   // https://api.orcarouter.ai/v1/models
-  orcarouter: ['orcarouter/auto']
+  orcarouter: ['orcarouter/auto'],
+
+  // UberLLM available models
+  // https://api.uberllm.dev/v1/models
+  uberllm: ['deepseek/deepseek-v3.2']
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -605,6 +609,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.openrouter[0];
     case 'orcarouter':
       return MODEL_LIST.orcarouter[0];
+    case 'uberllm':
+      return MODEL_LIST.uberllm[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -658,7 +664,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "uberllm". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -831,11 +837,12 @@ export const configValidators = {
         'deepseek',
         'aimlapi',
         'openrouter',
-        'orcarouter'
+        'orcarouter',
+        'uberllm'
       ].includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'uberllm' or 'openai' (default)`
     );
 
     return value;
@@ -915,6 +922,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/keys',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -933,6 +941,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'orcarouter/auto',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'deepseek/deepseek-v3.2',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
 

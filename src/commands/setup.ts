@@ -82,6 +82,12 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     firstRunRequirement: 'apiKey'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.UBERLLM,
+    displayName: 'UberLLM (OpenAI-compatible gateway)',
+    selectionGroup: 'other',
+    firstRunRequirement: 'apiKey'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
     displayName: 'AI/ML API',
     selectionGroup: 'other'
