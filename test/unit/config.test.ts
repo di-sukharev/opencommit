@@ -6,18 +6,24 @@ import { dirname } from 'path';
 const defaultEnvFile = await prepareFile('.env', '');
 afterAll(() => defaultEnvFile.cleanup());
 
-const { CONFIG_KEYS, DEFAULT_CONFIG, configValidators, getConfig, setConfig } =
-  await (async () => {
-    // The config module captures its default .env path on import, including the
-    // path used internally by setConfig. Point it at a fixture for this suite.
-    const originalCwd = process.cwd();
-    try {
-      process.chdir(dirname(defaultEnvFile.filePath));
-      return await import('../../src/commands/config');
-    } finally {
-      process.chdir(originalCwd);
-    }
-  })();
+const {
+  CONFIG_KEYS,
+  DEFAULT_CONFIG,
+  OCO_AI_PROVIDER_ENUM,
+  configValidators,
+  getConfig,
+  setConfig
+} = await (async () => {
+  // The config module captures its default .env path on import, including the
+  // path used internally by setConfig. Point it at a fixture for this suite.
+  const originalCwd = process.cwd();
+  try {
+    process.chdir(dirname(defaultEnvFile.filePath));
+    return await import('../../src/commands/config');
+  } finally {
+    process.chdir(originalCwd);
+  }
+})();
 
 describe('config', () => {
   const originalEnv = { ...process.env };
@@ -446,6 +452,36 @@ describe('config', () => {
             configValidators[CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](val)
           ).toThrow('process.exit(1)');
           expect(exit).toHaveBeenCalledWith(1);
+        }
+      } finally {
+        exit.mockRestore();
+      }
+    });
+  });
+  describe('OCO_AI_PROVIDER validator', () => {
+    it('accepts atlascloud', () => {
+      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`process.exit(${code})`);
+      });
+      try {
+        expect(
+          configValidators[CONFIG_KEYS.OCO_AI_PROVIDER]('atlascloud')
+        ).toBe('atlascloud');
+        expect(exit).not.toHaveBeenCalled();
+      } finally {
+        exit.mockRestore();
+      }
+    });
+
+    it('accepts every provider in OCO_AI_PROVIDER_ENUM', () => {
+      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`process.exit(${code})`);
+      });
+      try {
+        for (const provider of Object.values(OCO_AI_PROVIDER_ENUM)) {
+          expect(configValidators[CONFIG_KEYS.OCO_AI_PROVIDER](provider)).toBe(
+            provider
+          );
         }
       } finally {
         exit.mockRestore();

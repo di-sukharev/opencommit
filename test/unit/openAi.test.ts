@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
 import { getConfig } from '../../src/commands/config';
+import { GroqEngine } from '../../src/engine/groq';
 import { OpenAiEngine } from '../../src/engine/openAi';
 import { getEngine } from '../../src/utils/engine';
 import { prepareFile } from './utils';
@@ -132,6 +133,33 @@ describe('OpenAiEngine', () => {
       expect.objectContaining({
         model: 'gpt-4',
         max_completion_tokens: 1024
+      })
+    );
+  });
+
+  it('uses max_completion_tokens for Groq gpt-oss reasoning models', async () => {
+    const engine = new GroqEngine({
+      ...baseConfig,
+      model: 'openai/gpt-oss-120b'
+    });
+
+    const create = jest
+      .spyOn(engine.client.chat.completions, 'create')
+      .mockResolvedValue({
+        choices: [{ message: { content: 'feat(groq): reasoning path' } }]
+      } as any);
+
+    await engine.generateCommitMessage(messages);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'openai/gpt-oss-120b',
+        max_completion_tokens: 1024
+      })
+    );
+    expect(create).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        max_tokens: expect.anything()
       })
     );
   });

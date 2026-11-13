@@ -63,6 +63,15 @@ interface RequestyModelListResponse {
   data?: Array<ModelListItem & { api?: string }>;
 }
 
+interface AtlasCloudModelListResponse {
+  data?: Array<{
+    model: string;
+    type?: string;
+    display_console?: boolean;
+    supported_protocols?: string[];
+  }>;
+}
+
 interface FetchModelListOptions {
   url: string;
   headers?: Record<string, string>;
@@ -240,6 +249,34 @@ export async function fetchRequestyModels(apiKey?: string): Promise<string[]> {
   return models.length > 0 ? models : MODEL_LIST.requesty;
 }
 
+export async function fetchAtlasCloudModels(): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.atlascloud.ai/api/v1/models',
+    fallback: MODEL_LIST.atlascloud,
+    mapModels: (data) =>
+      (data as AtlasCloudModelListResponse).data
+        ?.filter(
+          (model) =>
+            model.type === 'Text' &&
+            model.display_console === true &&
+            model.supported_protocols?.includes('openai.chat.completions')
+        )
+        .map((model) => model.model)
+        .sort()
+  });
+}
+
+export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    // Without `?type=`, this endpoint lists chat (text-output) models only.
+    url: 'https://api.uberllm.dev/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.uberllm,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -331,6 +368,18 @@ export async function fetchModelsForProvider(
 
     case OCO_AI_PROVIDER_ENUM.REQUESTY:
       models = await fetchRequestyModels(apiKey);
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
+      models = await fetchAtlasCloudModels();
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      if (apiKey) {
+        models = await fetchUberLLMModels(apiKey);
+      } else {
+        models = MODEL_LIST.uberllm;
+      }
       break;
 
     default:

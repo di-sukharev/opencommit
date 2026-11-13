@@ -14,7 +14,9 @@ export enum OCO_AI_PROVIDER_ENUM {
   AIMLAPI = 'aimlapi',
   OPENROUTER = 'openrouter',
   ORCAROUTER = 'orcarouter',
-  REQUESTY = 'requesty'
+  REQUESTY = 'requesty',
+  ATLAS_CLOUD = 'atlascloud',
+  UBERLLM = 'uberllm'
 }
 
 export type ProviderConfigRequirement = 'apiKey' | 'model' | 'none';
@@ -34,6 +36,8 @@ const PROVIDER_CONFIG_REQUIREMENTS: Record<
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'apiKey',
+  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'apiKey',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.MLX]: 'model',

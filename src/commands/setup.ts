@@ -78,8 +78,17 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
   {
     provider: OCO_AI_PROVIDER_ENUM.ORCAROUTER,
     displayName: 'OrcaRouter (Smart routing gateway)',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD,
+    displayName: 'Atlas Cloud (Unified model API)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.UBERLLM,
+    displayName: 'UberLLM (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.REQUESTY,
@@ -545,8 +554,8 @@ export function isFirstRun(): boolean {
     requirement === 'model'
       ? Boolean(config.OCO_MODEL)
       : requirement === 'apiKey'
-      ? Boolean(config.OCO_API_KEY)
-      : true;
+        ? Boolean(config.OCO_API_KEY)
+        : true;
 
   // Trigger the full setup wizard only when nothing usable was configured yet.
   return !hasGlobalConfig && !hasRequiredConfig;
