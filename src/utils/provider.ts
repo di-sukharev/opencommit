@@ -14,6 +14,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   AIMLAPI = 'aimlapi',
   OPENROUTER = 'openrouter',
   ORCAROUTER = 'orcarouter',
+  CHEAPERINFERENCE = 'cheaperinference',
+  REQUESTY = 'requesty',
   ATLAS_CLOUD = 'atlascloud',
   UBERLLM = 'uberllm'
 }
@@ -34,6 +36,8 @@ const PROVIDER_CONFIG_REQUIREMENTS: Record<
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'apiKey',
+  [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'apiKey',
+  [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'apiKey',

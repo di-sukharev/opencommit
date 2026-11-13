@@ -37,6 +37,8 @@ const OCO_AI_PROVIDER_ENUM = {
   AIMLAPI: 'aimlapi',
   OPENROUTER: 'openrouter',
   ORCAROUTER: 'orcarouter',
+  CHEAPERINFERENCE: 'cheaperinference',
+  REQUESTY: 'requesty',
   ATLAS_CLOUD: 'atlascloud',
   UBERLLM: 'uberllm'
 } as const;
@@ -93,6 +95,11 @@ const OTHER_OPTIONS = [
   { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
   { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
   { value: 'uberllm', label: 'UberLLM (OpenAI-compatible gateway)' },
+  { value: 'requesty', label: 'Requesty (Multiple providers)' },
+  {
+    value: 'cheaperinference',
+    label: 'Cheaper Inference (OpenAI-compatible gateway)'
+  },
   { value: 'aimlapi', label: 'AI/ML API' },
   { value: 'azure', label: 'Azure OpenAI' },
   { value: 'mlx', label: 'MLX (Apple Silicon, local)' }

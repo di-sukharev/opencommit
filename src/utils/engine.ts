@@ -15,6 +15,8 @@ import { DeepseekEngine } from '../engine/deepseek';
 import { AimlApiEngine } from '../engine/aimlapi';
 import { OpenRouterEngine } from '../engine/openrouter';
 import { OrcaRouterEngine } from '../engine/orcarouter';
+import { CheaperInferenceEngine } from '../engine/cheaperinference';
+import { RequestyEngine } from '../engine/requesty';
 import { AtlasCloudEngine } from '../engine/atlascloud';
 import { UberLLMEngine } from '../engine/uberllm';
 import { parseCustomHeaders } from './customHeaders';
@@ -84,6 +86,10 @@ export function getEngine(config = getConfig()): AiEngine {
     case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
       return new OrcaRouterEngine(DEFAULT_CONFIG);
 
+    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
+      return new CheaperInferenceEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.REQUESTY:
+      return new RequestyEngine(DEFAULT_CONFIG);
     case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
       return new AtlasCloudEngine(DEFAULT_CONFIG);
     case OCO_AI_PROVIDER_ENUM.UBERLLM:

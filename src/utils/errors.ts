@@ -13,6 +13,8 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/usage',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/credits',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
+  [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'https://cheaperinference.com',
+  [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/credits',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
@@ -210,6 +212,10 @@ export function getRecommendedModel(provider: string): string | null {
       return 'openai/gpt-4o-mini';
     case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
       return 'orcarouter/auto';
+    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
+      return 'gpt-5.4-mini';
+    case OCO_AI_PROVIDER_ENUM.REQUESTY:
+      return 'openai/gpt-4o-mini';
     case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
       return 'qwen/qwen3.5-397b-a17b';
     case OCO_AI_PROVIDER_ENUM.UBERLLM:

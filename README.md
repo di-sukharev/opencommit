@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, atlascloud, uberllm>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -302,6 +302,32 @@ oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key> 
 ```
 
 The default model is `orcarouter/auto`, which lets OrcaRouter pick the best model for your request automatically.
+
+### Use Cheaper Inference as the model gateway
+
+You could switch to [Cheaper Inference](https://cheaperinference.com), an OpenAI-compatible gateway to models from several labs.
+
+Get an API key at [cheaperinference.com/signup](https://cheaperinference.com/signup).
+
+```sh
+oco config set OCO_AI_PROVIDER=cheaperinference OCO_API_KEY=<your_cheaperinference_api_key> OCO_MODEL=gpt-5.4-mini
+
+oco config set OCO_AI_PROVIDER=cheaperinference OCO_API_KEY=<your_cheaperinference_api_key> OCO_MODEL=claude-sonnet-5
+```
+
+The default model is `gpt-5.4-mini`. See the [model list](https://cheaperinference.com/#models) for other model IDs.
+
+### Use Requesty as the model gateway
+
+You could switch to [Requesty](https://www.requesty.ai), an OpenAI-compatible gateway with a single API key for models from many providers. Get a key at [app.requesty.ai/api-keys](https://app.requesty.ai/api-keys).
+
+```sh
+oco config set OCO_AI_PROVIDER=requesty OCO_API_KEY=<your_requesty_api_key> OCO_MODEL=openai/gpt-4o-mini
+
+oco config set OCO_AI_PROVIDER=requesty OCO_API_KEY=<your_requesty_api_key> OCO_MODEL=google/gemini-2.5-flash
+```
+
+The default model is `openai/gpt-4o-mini`. To route through the EU region, set `OCO_API_URL=https://router.eu.requesty.ai/v1`. See the [Requesty docs](https://docs.requesty.ai) for the full model list.
 
 ### Use Atlas Cloud as the model provider
 

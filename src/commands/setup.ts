@@ -91,6 +91,16 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     selectionGroup: 'other'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.REQUESTY,
+    displayName: 'Requesty (Multiple providers)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE,
+    displayName: 'Cheaper Inference (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
     displayName: 'AI/ML API',
     selectionGroup: 'other'

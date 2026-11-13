@@ -818,7 +818,9 @@ it('cli flow prompts for a missing API key, saves it, and completes the commit',
 
 it.each([
   { provider: 'uberllm', model: 'deepseek/deepseek-v3.2' },
-  { provider: 'atlascloud', model: 'qwen/qwen3.5-397b-a17b' }
+  { provider: 'atlascloud', model: 'qwen/qwen3.5-397b-a17b' },
+  { provider: 'requesty', model: 'openai/gpt-4o-mini' },
+  { provider: 'cheaperinference', model: 'gpt-5.4-mini' }
 ])(
   'cli commits after a fresh $provider setup without migration records',
   async ({ provider, model }) => {
