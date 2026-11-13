@@ -16,6 +16,7 @@ import { AimlApiEngine } from '../engine/aimlapi';
 import { OpenRouterEngine } from '../engine/openrouter';
 import { OrcaRouterEngine } from '../engine/orcarouter';
 import { AtlasCloudEngine } from '../engine/atlascloud';
+import { UberLLMEngine } from '../engine/uberllm';
 import { parseCustomHeaders } from './customHeaders';
 import { resolveProxy } from './proxy';
 
@@ -85,6 +86,8 @@ export function getEngine(config = getConfig()): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
       return new AtlasCloudEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      return new UberLLMEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);

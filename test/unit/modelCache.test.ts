@@ -9,7 +9,8 @@ import {
   fetchOllamaModels,
   fetchOpenAIModels,
   fetchOpenRouterModels,
-  fetchOrcaRouterModels
+  fetchOrcaRouterModels,
+  fetchUberLLMModels
 } from '../../src/utils/modelCache';
 
 const originalFetch = global.fetch;
@@ -199,6 +200,21 @@ describe('provider model fetchers', () => {
         ]
       },
       expected: ['anthropic/claude-sonnet-4.6', 'qwen/qwen3.5-397b-a17b']
+    },
+    {
+      provider: 'UberLLM',
+      fetchModels: () => fetchUberLLMModels('uberllm-key'),
+      request: [
+        'https://api.uberllm.dev/v1/models',
+        { headers: { Authorization: 'Bearer uberllm-key' } }
+      ],
+      payload: {
+        data: [
+          { id: 'deepseek/deepseek-v3.2' },
+          { id: 'anthropic/claude-haiku-4.5' }
+        ]
+      },
+      expected: ['anthropic/claude-haiku-4.5', 'deepseek/deepseek-v3.2']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -250,7 +266,8 @@ describe('provider model fetchers', () => {
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
     ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
     ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter],
-    ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud]
+    ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud],
+    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

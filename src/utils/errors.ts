@@ -14,6 +14,7 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/credits',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/credits',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
   [OCO_AI_PROVIDER_ENUM.AZURE]:
     'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
@@ -200,7 +201,7 @@ export function getRecommendedModel(provider: string): string | null {
     case OCO_AI_PROVIDER_ENUM.GEMINI:
       return 'gemini-1.5-flash';
     case OCO_AI_PROVIDER_ENUM.GROQ:
-      return 'llama3-70b-8192';
+      return 'openai/gpt-oss-120b';
     case OCO_AI_PROVIDER_ENUM.MISTRAL:
       return 'mistral-small-latest';
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
@@ -211,6 +212,8 @@ export function getRecommendedModel(provider: string): string | null {
       return 'orcarouter/auto';
     case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
       return 'qwen/qwen3.5-397b-a17b';
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      return 'deepseek/deepseek-v3.2';
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       return 'gpt-4o-mini';
     default:

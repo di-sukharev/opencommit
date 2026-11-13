@@ -70268,7 +70268,7 @@ var OCO_AI_PROVIDER_ENUM = /* @__PURE__ */ ((OCO_AI_PROVIDER_ENUM2) => {
   OCO_AI_PROVIDER_ENUM2["AIMLAPI"] = "aimlapi";
   OCO_AI_PROVIDER_ENUM2["OPENROUTER"] = "openrouter";
   OCO_AI_PROVIDER_ENUM2["ORCAROUTER"] = "orcarouter";
-  OCO_AI_PROVIDER_ENUM2["ATLAS_CLOUD"] = "atlascloud";
+  OCO_AI_PROVIDER_ENUM2["UBERLLM"] = "uberllm";
   return OCO_AI_PROVIDER_ENUM2;
 })(OCO_AI_PROVIDER_ENUM || {});
 var PROVIDER_CONFIG_REQUIREMENTS = {
@@ -70282,7 +70282,7 @@ var PROVIDER_CONFIG_REQUIREMENTS = {
   ["deepseek" /* DEEPSEEK */]: "apiKey",
   ["openrouter" /* OPENROUTER */]: "apiKey",
   ["orcarouter" /* ORCAROUTER */]: "apiKey",
-  ["atlascloud" /* ATLAS_CLOUD */]: "apiKey",
+  ["uberllm" /* UBERLLM */]: "apiKey",
   ["aimlapi" /* AIMLAPI */]: "apiKey",
   ["azure" /* AZURE */]: "apiKey",
   ["mlx" /* MLX */]: "model",
@@ -70857,9 +70857,9 @@ var MODEL_LIST = {
   // OrcaRouter available models
   // https://api.orcarouter.ai/v1/models
   orcarouter: ["orcarouter/auto"],
-  // Atlas Cloud available models
-  // https://api.atlascloud.ai/api/v1/models
-  atlascloud: ["qwen/qwen3.5-397b-a17b"]
+  // UberLLM available models
+  // https://api.uberllm.dev/v1/models
+  uberllm: ["deepseek/deepseek-v3.2"]
 };
 var getDefaultModel = (provider) => {
   switch (provider) {
@@ -70885,8 +70885,8 @@ var getDefaultModel = (provider) => {
       return MODEL_LIST.openrouter[0];
     case "orcarouter":
       return MODEL_LIST.orcarouter[0];
-    case "atlascloud":
-      return MODEL_LIST.atlascloud[0];
+    case "uberllm":
+      return MODEL_LIST.uberllm[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -70921,7 +70921,7 @@ var configValidators = {
     validateConfig(
       "OCO_API_KEY",
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "uberllm". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
     return value;
   },
@@ -71069,9 +71069,10 @@ var configValidators = {
         "deepseek",
         "aimlapi",
         "openrouter",
-        "orcarouter"
+        "orcarouter",
+        "uberllm"
       ].includes(value) || value.startsWith("ollama") || value.startsWith("llamacpp"),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'uberllm' or 'openai' (default)`
     );
     return value;
   },
@@ -71142,7 +71143,7 @@ var PROVIDER_API_KEY_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/api_keys",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/keys",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
-  ["atlascloud" /* ATLAS_CLOUD */]: "https://www.atlascloud.ai/console",
+  ["uberllm" /* UBERLLM */]: "https://uberllm.dev/dashboard/keys",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/keys",
   ["azure" /* AZURE */]: "https://portal.azure.com/",
   ["ollama" /* OLLAMA */]: null,
@@ -71160,7 +71161,7 @@ var RECOMMENDED_MODELS = {
   ["deepseek" /* DEEPSEEK */]: "deepseek-v4-flash",
   ["openrouter" /* OPENROUTER */]: "openai/gpt-4o-mini",
   ["orcarouter" /* ORCAROUTER */]: "orcarouter/auto",
-  ["atlascloud" /* ATLAS_CLOUD */]: "qwen/qwen3.5-397b-a17b",
+  ["uberllm" /* UBERLLM */]: "deepseek/deepseek-v3.2",
   ["aimlapi" /* AIMLAPI */]: "gpt-4o-mini"
 };
 var defaultConfigPath = (0, import_path.join)((0, import_os.homedir)(), ".opencommit");
@@ -79703,7 +79704,7 @@ var PROVIDER_BILLING_URLS = {
   ["deepseek" /* DEEPSEEK */]: "https://platform.deepseek.com/usage",
   ["openrouter" /* OPENROUTER */]: "https://openrouter.ai/credits",
   ["orcarouter" /* ORCAROUTER */]: "https://www.orcarouter.ai",
-  ["atlascloud" /* ATLAS_CLOUD */]: "https://www.atlascloud.ai/console",
+  ["uberllm" /* UBERLLM */]: "https://uberllm.dev/dashboard/credits",
   ["aimlapi" /* AIMLAPI */]: "https://aimlapi.com/app/billing",
   ["azure" /* AZURE */]: "https://portal.azure.com/#view/Microsoft_Azure_CostManagement",
   ["ollama" /* OLLAMA */]: null,
@@ -90101,9 +90102,6 @@ var OpenAiEngine = class {
         clientOptions.defaultHeaders = headers;
       }
     }
-    if (typeof config7.maxRetries === "number") {
-      clientOptions.maxRetries = config7.maxRetries;
-    }
     if (!clientOptions.fetch && typeof globalThis.fetch === "function") {
       clientOptions.fetch = (...args) => globalThis.fetch(...args);
     }
@@ -90296,16 +90294,15 @@ var OrcaRouterEngine = class extends OpenAiEngine {
   }
 };
 
-// src/engine/atlascloud.ts
-var DEFAULT_ATLAS_CLOUD_BASE_URL = "https://api.atlascloud.ai/v1";
-var AtlasCloudEngine = class extends OpenAiEngine {
+// src/engine/uberllm.ts
+var DEFAULT_UBERLLM_BASE_URL = "https://api.uberllm.dev/v1";
+var UberLLMEngine = class extends OpenAiEngine {
   constructor(config7) {
     super({
       ...config7,
-      baseURL: config7.baseURL ?? DEFAULT_ATLAS_CLOUD_BASE_URL,
-      maxRetries: 0
+      baseURL: config7.baseURL ?? DEFAULT_UBERLLM_BASE_URL
     });
-    this.providerName = "atlascloud";
+    this.providerName = "uberllm";
   }
 };
 
@@ -90396,8 +90393,8 @@ function getEngine(config7 = getConfig()) {
       return new OpenRouterEngine(DEFAULT_CONFIG2);
     case "orcarouter" /* ORCAROUTER */:
       return new OrcaRouterEngine(DEFAULT_CONFIG2);
-    case "atlascloud" /* ATLAS_CLOUD */:
-      return new AtlasCloudEngine(DEFAULT_CONFIG2);
+    case "uberllm" /* UBERLLM */:
+      return new UberLLMEngine(DEFAULT_CONFIG2);
     default:
       return new OpenAiEngine(DEFAULT_CONFIG2);
   }
@@ -91927,13 +91924,13 @@ async function fetchOrcaRouterModels(apiKey) {
     })?.map((model) => model.id).sort()
   });
 }
-async function fetchAtlasCloudModels() {
+async function fetchUberLLMModels(apiKey) {
   return fetchModelList({
-    url: "https://api.atlascloud.ai/api/v1/models",
-    fallback: MODEL_LIST.atlascloud,
-    mapModels: (data) => data.data?.filter(
-      (model) => model.type === "Text" && model.display_console === true && model.supported_protocols?.includes("openai.chat.completions")
-    ).map((model) => model.model).sort()
+    // Without `?type=`, this endpoint lists chat (text-output) models only.
+    url: "https://api.uberllm.dev/v1/models",
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.uberllm,
+    mapModels: (data) => data.data?.map((model) => model.id).sort()
   });
 }
 async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = false) {
@@ -92004,8 +92001,12 @@ async function fetchModelsForProvider(provider, apiKey, baseUrl, forceRefresh = 
         models = MODEL_LIST.orcarouter;
       }
       break;
-    case "atlascloud" /* ATLAS_CLOUD */:
-      models = await fetchAtlasCloudModels();
+    case "uberllm" /* UBERLLM */:
+      if (apiKey) {
+        models = await fetchUberLLMModels(apiKey);
+      } else {
+        models = MODEL_LIST.uberllm;
+      }
       break;
     default:
       models = MODEL_LIST.openai;
@@ -92095,9 +92096,10 @@ var SETUP_PROVIDERS = [
     firstRunRequirement: "apiKey"
   },
   {
-    provider: "atlascloud" /* ATLAS_CLOUD */,
-    displayName: "Atlas Cloud (Unified model API)",
-    selectionGroup: "other"
+    provider: "uberllm" /* UBERLLM */,
+    displayName: "UberLLM (OpenAI-compatible gateway)",
+    selectionGroup: "other",
+    firstRunRequirement: "apiKey"
   },
   {
     provider: "aimlapi" /* AIMLAPI */,
@@ -92782,7 +92784,8 @@ var runMigrations = async () => {
     "openrouter" /* OPENROUTER */,
     "llamacpp" /* LLAMACPP */,
     "aimlapi" /* AIMLAPI */,
-    "atlascloud" /* ATLAS_CLOUD */
+    "orcarouter" /* ORCAROUTER */,
+    "uberllm" /* UBERLLM */
   ].includes(config7.OCO_AI_PROVIDER)) {
     return;
   }

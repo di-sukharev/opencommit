@@ -92,13 +92,9 @@ export const MODEL_LIST = {
   ],
 
   groq: [
-    'llama3-70b-8192', // Meta Llama 3 70B (default one, no daily token limit and 14 400 reqs/day)
-    'llama3-8b-8192', // Meta Llama 3 8B
-    'llama-guard-3-8b', // Llama Guard 3 8B
-    'llama-3.1-8b-instant', // Llama 3.1 8B (Preview)
-    'llama-3.1-70b-versatile', // Llama 3.1 70B (Preview)
-    'gemma-7b-it', // Gemma 7B
-    'gemma2-9b-it' // Gemma 2 9B
+    'openai/gpt-oss-120b', // GPT-OSS 120B (default one)
+    'openai/gpt-oss-20b', // GPT-OSS 20B
+    'llama-guard-3-8b' // Llama Guard 3 8B
   ],
 
   mistral: [
@@ -586,7 +582,11 @@ export const MODEL_LIST = {
 
   // Atlas Cloud available models
   // https://api.atlascloud.ai/api/v1/models
-  atlascloud: ['qwen/qwen3.5-397b-a17b']
+  atlascloud: ['qwen/qwen3.5-397b-a17b'],
+
+  // UberLLM available models
+  // https://api.uberllm.dev/v1/models
+  uberllm: ['deepseek/deepseek-v3.2']
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -615,6 +615,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.orcarouter[0];
     case 'atlascloud':
       return MODEL_LIST.atlascloud[0];
+    case 'uberllm':
+      return MODEL_LIST.uberllm[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -668,7 +670,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud" or "uberllm". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -832,7 +834,7 @@ export const configValidators = {
       (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm' or 'openai' (default)`
     );
 
     return value;
@@ -913,6 +915,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/keys',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -926,12 +929,13 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.OPENAI]: 'gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'claude-sonnet-4-6',
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'gemini-1.5-flash',
-  [OCO_AI_PROVIDER_ENUM.GROQ]: 'llama3-70b-8192',
+  [OCO_AI_PROVIDER_ENUM.GROQ]: 'openai/gpt-oss-120b',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'orcarouter/auto',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'qwen/qwen3.5-397b-a17b',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'deepseek/deepseek-v3.2',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
 

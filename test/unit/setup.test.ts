@@ -37,7 +37,8 @@ const OCO_AI_PROVIDER_ENUM = {
   AIMLAPI: 'aimlapi',
   OPENROUTER: 'openrouter',
   ORCAROUTER: 'orcarouter',
-  ATLAS_CLOUD: 'atlascloud'
+  ATLAS_CLOUD: 'atlascloud',
+  UBERLLM: 'uberllm'
 } as const;
 
 jest.unstable_mockModule('@clack/prompts', () => ({
@@ -91,6 +92,7 @@ const OTHER_OPTIONS = [
   { value: 'openrouter', label: 'OpenRouter (Multiple providers)' },
   { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
   { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
+  { value: 'uberllm', label: 'UberLLM (OpenAI-compatible gateway)' },
   { value: 'aimlapi', label: 'AI/ML API' },
   { value: 'azure', label: 'Azure OpenAI' },
   { value: 'mlx', label: 'MLX (Apple Silicon, local)' }
