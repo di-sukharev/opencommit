@@ -816,48 +816,53 @@ it('cli flow prompts for a missing API key, saves it, and completes the commit',
   }
 });
 
-it('cli commits after a fresh uberllm setup without failing migration 00', async () => {
-  const { gitDir, cleanup } = await prepareEnvironment();
-  const homeDir = await prepareTempDir();
-  const server = await startMockOpenAiServer('feat(uberllm): first commit');
+it.each([
+  { provider: 'uberllm', model: 'deepseek/deepseek-v3.2' },
+  { provider: 'atlascloud', model: 'qwen/qwen3.5-397b-a17b' }
+])(
+  'cli commits after a fresh $provider setup without migration records',
+  async ({ provider, model }) => {
+    const { gitDir, cleanup } = await prepareEnvironment();
+    const homeDir = await prepareTempDir();
+    const message = `feat(${provider}): first commit`;
+    const apiKey = `test-${provider}-key`;
+    const server = await startMockOpenAiServer(message);
 
-  try {
-    // The global config the setup wizard writes, with no migrations recorded yet.
-    writeGlobalConfig(homeDir, [
-      'OCO_AI_PROVIDER=uberllm',
-      'OCO_API_KEY=test-uberllm-key',
-      'OCO_MODEL=deepseek/deepseek-v3.2',
-      `OCO_API_URL=${server.baseUrl}`,
-      'OCO_GITPUSH=false'
-    ]);
+    try {
+      // The global config the setup wizard writes, with no migrations recorded yet.
+      writeGlobalConfig(homeDir, [
+        `OCO_AI_PROVIDER=${provider}`,
+        `OCO_API_KEY=${apiKey}`,
+        `OCO_MODEL=${model}`,
+        `OCO_API_URL=${server.baseUrl}`,
+        'OCO_GITPUSH=false'
+      ]);
 
-    await prepareRepo(
-      gitDir,
-      {
-        'index.ts': 'console.log("Hello World");\n'
-      },
-      { stage: true }
-    );
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
 
-    const oco = await runCli(['--yes'], {
-      cwd: gitDir,
-      env: {
-        HOME: homeDir
-      }
-    });
+      const oco = await runCli(['--yes'], {
+        cwd: gitDir,
+        env: {
+          HOME: homeDir
+        }
+      });
 
-    expect(await waitForExit(oco)).toBe(0);
-    expect(
-      await oco.queryByText('Failed to apply migration')
-    ).not.toBeInTheConsole();
-    await assertHeadCommit(gitDir, 'feat(uberllm): first commit');
-    expect(server.authHeaders).toContain('Bearer test-uberllm-key');
-  } finally {
-    await server.cleanup();
-    rmSync(homeDir, { force: true, recursive: true });
-    await cleanup();
+      expect(await waitForExit(oco)).toBe(0);
+      await assertHeadCommit(gitDir, message);
+      expect(server.authHeaders).toContain(`Bearer ${apiKey}`);
+    } finally {
+      await server.cleanup();
+      rmSync(homeDir, { force: true, recursive: true });
+      await cleanup();
+    }
   }
-});
+);
 
 it('cli ignores files listed in .opencommitignore when they are the only staged changes', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();

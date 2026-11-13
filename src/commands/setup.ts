@@ -78,14 +78,17 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
   {
     provider: OCO_AI_PROVIDER_ENUM.ORCAROUTER,
     displayName: 'OrcaRouter (Smart routing gateway)',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD,
+    displayName: 'Atlas Cloud (Unified model API)',
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.UBERLLM,
     displayName: 'UberLLM (OpenAI-compatible gateway)',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
