@@ -43,6 +43,7 @@ function isCacheValid(cache: ModelCache | null): boolean {
 interface ModelListItem {
   id: string;
   type?: string;
+  supported_endpoints?: string[];
   architecture?: {
     output_modalities?: string[];
   };
@@ -58,6 +59,19 @@ interface OllamaModelListResponse {
 
 interface OpenRouterModelListResponse {
   data?: Array<ModelListItem & { context_length?: number }>;
+}
+
+interface RequestyModelListResponse {
+  data?: Array<ModelListItem & { api?: string }>;
+}
+
+interface AtlasCloudModelListResponse {
+  data?: Array<{
+    model: string;
+    type?: string;
+    display_console?: boolean;
+    supported_protocols?: string[];
+  }>;
 }
 
 interface FetchModelListOptions {
@@ -216,13 +230,75 @@ export async function fetchCheaperInferenceModels(
     fallback: MODEL_LIST.cheaperinference,
     mapModels: (data) =>
       (data as ModelListResponse).data
-        // The catalog also lists image and video models. Keep text models.
-        ?.filter((model) => !model.type || model.type === 'text')
+        // Keep text models compatible with the Chat Completions transport.
+        ?.filter(
+          (model) =>
+            (!model.type || model.type === 'text') &&
+            (!model.supported_endpoints ||
+              model.supported_endpoints.includes('/v1/chat/completions'))
+        )
         .map((model) => model.id)
         .sort()
   });
 }
 
+export async function fetchRequestyModels(apiKey?: string): Promise<string[]> {
+  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined;
+  const mapModels = (data: unknown) =>
+    (data as RequestyModelListResponse).data
+      // Keep chat models only (exclude embedding and other APIs).
+      ?.filter((model) => !model.api || model.api === 'chat')
+      .map((model) => model.id)
+      .sort();
+
+  // Managed routing policies are listed first, followed by the full catalog.
+  // Each list is fetched on its own so one failing does not drop the other.
+  const [managedModels, catalogModels] = await Promise.all([
+    fetchModelList({
+      url: 'https://router.requesty.ai/v1/models/managed',
+      headers,
+      fallback: [],
+      mapModels
+    }),
+    fetchModelList({
+      url: 'https://router.requesty.ai/v1/models',
+      headers,
+      fallback: [],
+      mapModels
+    })
+  ]);
+
+  const models = [...new Set([...managedModels, ...catalogModels])];
+  return models.length > 0 ? models : MODEL_LIST.requesty;
+}
+
+export async function fetchAtlasCloudModels(): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.atlascloud.ai/api/v1/models',
+    fallback: MODEL_LIST.atlascloud,
+    mapModels: (data) =>
+      (data as AtlasCloudModelListResponse).data
+        ?.filter(
+          (model) =>
+            model.type === 'Text' &&
+            model.display_console === true &&
+            model.supported_protocols?.includes('openai.chat.completions')
+        )
+        .map((model) => model.model)
+        .sort()
+  });
+}
+
+export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    // Without `?type=`, this endpoint lists chat (text-output) models only.
+    url: 'https://api.uberllm.dev/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.uberllm,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -317,6 +393,22 @@ export async function fetchModelsForProvider(
         models = await fetchCheaperInferenceModels(apiKey);
       } else {
         models = MODEL_LIST.cheaperinference;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.REQUESTY:
+      models = await fetchRequestyModels(apiKey);
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
+      models = await fetchAtlasCloudModels();
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      if (apiKey) {
+        models = await fetchUberLLMModels(apiKey);
+      } else {
+        models = MODEL_LIST.uberllm;
       }
       break;
 

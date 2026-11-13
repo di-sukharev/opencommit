@@ -7,8 +7,10 @@ import {
   setGlobalConfig,
   getGlobalConfig,
   MODEL_LIST,
+  OCO_AI_PROVIDER_ENUM,
   RECOMMENDED_MODELS
 } from './commands/config';
+import { isGroqReasoningModel } from './engine/groq';
 import { getMainCommitPrompt } from './prompts';
 import { getEngine } from './utils/engine';
 import {
@@ -162,17 +164,19 @@ export const generateCommitMessageByDiff = async (
     const isReasoningModel =
       typeof currentConfig.OCO_REASONING === 'boolean'
         ? currentConfig.OCO_REASONING
-        : /^(o[1-9]|gpt-5)/.test(currentModel);
+        : /^(o[1-9]|gpt-5)/.test(currentModel) ||
+          (provider === OCO_AI_PROVIDER_ENUM.GROQ &&
+            isGroqReasoningModel(currentModel));
 
     const maxInputTokens =
       currentConfig.OCO_TOKENS_MAX_INPUT ??
       DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
 
     const maxOutputTokens = isReasoningModel
-      ? currentConfig.OCO_REASONING_MAX_TOKENS ??
-        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING
-      : currentConfig.OCO_TOKENS_MAX_OUTPUT ??
-        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT;
+      ? (currentConfig.OCO_REASONING_MAX_TOKENS ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING)
+      : (currentConfig.OCO_TOKENS_MAX_OUTPUT ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT);
 
     const MAX_REQUEST_TOKENS =
       maxInputTokens -

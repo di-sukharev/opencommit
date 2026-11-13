@@ -37,7 +37,10 @@ const OCO_AI_PROVIDER_ENUM = {
   AIMLAPI: 'aimlapi',
   OPENROUTER: 'openrouter',
   ORCAROUTER: 'orcarouter',
-  CHEAPERINFERENCE: 'cheaperinference'
+  CHEAPERINFERENCE: 'cheaperinference',
+  REQUESTY: 'requesty',
+  ATLAS_CLOUD: 'atlascloud',
+  UBERLLM: 'uberllm'
 } as const;
 
 jest.unstable_mockModule('@clack/prompts', () => ({
@@ -72,9 +75,8 @@ jest.unstable_mockModule('utils/modelCache', () => ({
   getCacheInfo: jest.fn(() => ({ timestamp: null, providers: [] }))
 }));
 
-const { isFirstRun, promptForMissingApiKey, runSetup } = await import(
-  'commands/setup'
-);
+const { isFirstRun, promptForMissingApiKey, runSetup } =
+  await import('commands/setup');
 
 const PRIMARY_OPTIONS = [
   { value: 'openai', label: 'OpenAI (GPT)' },
@@ -91,6 +93,9 @@ const OTHER_OPTIONS = [
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'openrouter', label: 'OpenRouter (Multiple providers)' },
   { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
+  { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
+  { value: 'uberllm', label: 'UberLLM (OpenAI-compatible gateway)' },
+  { value: 'requesty', label: 'Requesty (Multiple providers)' },
   {
     value: 'cheaperinference',
     label: 'Cheaper Inference (OpenAI-compatible gateway)'

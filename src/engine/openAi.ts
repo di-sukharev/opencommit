@@ -44,6 +44,10 @@ export class OpenAiEngine implements AiEngine {
       }
     }
 
+    if (typeof config.maxRetries === 'number') {
+      clientOptions.maxRetries = config.maxRetries;
+    }
+
     // The OpenAI SDK's internal fetch may resolve before globalThis.fetch is
     // available in some Node.js versions, causing premature connection errors.
     // Explicitly binding globalThis.fetch here defers resolution to call time,

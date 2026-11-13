@@ -1,7 +1,8 @@
-import { MODEL_LIST } from '../../src/commands/config';
+import { MODEL_LIST, RECOMMENDED_MODELS } from '../../src/commands/config';
 import {
   fetchAnthropicModels,
   fetchCheaperInferenceModels,
+  fetchAtlasCloudModels,
   fetchDeepSeekModels,
   fetchGroqModels,
   fetchLlamaCppModels,
@@ -9,7 +10,9 @@ import {
   fetchOllamaModels,
   fetchOpenAIModels,
   fetchOpenRouterModels,
-  fetchOrcaRouterModels
+  fetchOrcaRouterModels,
+  fetchRequestyModels,
+  fetchUberLLMModels
 } from '../../src/utils/modelCache';
 
 const originalFetch = global.fetch;
@@ -78,9 +81,14 @@ describe('provider model fetchers', () => {
         }
       ],
       payload: {
-        data: [{ id: 'other-model' }, { id: 'claude-z' }, { id: 'claude-a' }]
+        data: [
+          { id: 'other-model' },
+          { id: 'claude-z' },
+          { id: 'claude-haiku-5-5' },
+          { id: 'claude-a' }
+        ]
       },
-      expected: ['claude-a', 'claude-z']
+      expected: ['claude-a', 'claude-haiku-5-5', 'claude-z']
     },
     {
       provider: 'Mistral',
@@ -170,7 +178,16 @@ describe('provider model fetchers', () => {
       ],
       payload: {
         data: [
-          { id: 'gpt-5.4-mini', type: 'text' },
+          {
+            id: 'gpt-5.4-mini',
+            type: 'text',
+            supported_endpoints: ['/v1/chat/completions', '/v1/responses']
+          },
+          {
+            id: 'gpt-5.4-pro',
+            type: 'text',
+            supported_endpoints: ['/v1/responses']
+          },
           { id: 'image-model', type: 'image' },
           { id: 'claude-sonnet-5', type: 'text' },
           { id: 'video-model', type: 'video' },
@@ -178,6 +195,55 @@ describe('provider model fetchers', () => {
         ]
       },
       expected: ['claude-sonnet-5', 'gpt-5.4', 'gpt-5.4-mini']
+    },
+    {
+      provider: 'Atlas Cloud',
+      fetchModels: () => fetchAtlasCloudModels(),
+      request: ['https://api.atlascloud.ai/api/v1/models'],
+      payload: {
+        data: [
+          {
+            model: 'qwen/qwen3.5-397b-a17b',
+            type: 'Text',
+            display_console: true,
+            supported_protocols: ['openai.chat.completions']
+          },
+          {
+            model: 'anthropic/claude-sonnet-4.6',
+            type: 'Text',
+            display_console: true,
+            supported_protocols: ['openai.chat.completions']
+          },
+          {
+            model: 'hidden/chat-model',
+            type: 'Text',
+            display_console: false,
+            supported_protocols: ['openai.chat.completions']
+          },
+          {
+            model: 'image/model',
+            type: 'Image',
+            display_console: true,
+            supported_protocols: ['openai.chat.completions']
+          }
+        ]
+      },
+      expected: ['anthropic/claude-sonnet-4.6', 'qwen/qwen3.5-397b-a17b']
+    },
+    {
+      provider: 'UberLLM',
+      fetchModels: () => fetchUberLLMModels('uberllm-key'),
+      request: [
+        'https://api.uberllm.dev/v1/models',
+        { headers: { Authorization: 'Bearer uberllm-key' } }
+      ],
+      payload: {
+        data: [
+          { id: 'deepseek/deepseek-v3.2' },
+          { id: 'anthropic/claude-haiku-4.5' }
+        ]
+      },
+      expected: ['anthropic/claude-haiku-4.5', 'deepseek/deepseek-v3.2']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -219,6 +285,54 @@ describe('provider model fetchers', () => {
     ]);
   });
 
+  it('merges Requesty managed policies with the full catalog', async () => {
+    fetchMock.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url === 'https://router.requesty.ai/v1/models/managed'
+          ? { data: [{ id: 'gpt-5.4-mini', api: 'chat' }] }
+          : {
+              data: [
+                { id: 'openai/gpt-4o-mini', api: 'chat' },
+                { id: 'openai/text-embedding-3-small', api: 'embedding' },
+                { id: 'anthropic/claude-sonnet-4-5', api: 'chat' }
+              ]
+            }
+    }));
+
+    await expect(fetchRequestyModels('requesty-key')).resolves.toEqual([
+      'gpt-5.4-mini',
+      'anthropic/claude-sonnet-4-5',
+      'openai/gpt-4o-mini'
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://router.requesty.ai/v1/models/managed',
+      { headers: { Authorization: 'Bearer requesty-key' } }
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://router.requesty.ai/v1/models',
+      { headers: { Authorization: 'Bearer requesty-key' } }
+    );
+  });
+
+  it('keeps the Requesty catalog when the managed list fails', async () => {
+    fetchMock.mockImplementation(async (url: string) =>
+      url === 'https://router.requesty.ai/v1/models/managed'
+        ? { ok: false, json: async () => ({}) }
+        : {
+            ok: true,
+            json: async () => ({ data: [{ id: 'openai/gpt-4o-mini' }] })
+          }
+    );
+
+    await expect(fetchRequestyModels()).resolves.toEqual([
+      'openai/gpt-4o-mini'
+    ]);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://router.requesty.ai/v1/models'
+    );
+  });
+
   it.each([
     ['OpenAI', () => fetchOpenAIModels('key'), MODEL_LIST.openai],
     ['Ollama', () => fetchOllamaModels(), []],
@@ -233,7 +347,10 @@ describe('provider model fetchers', () => {
       'Cheaper Inference',
       () => fetchCheaperInferenceModels('key'),
       MODEL_LIST.cheaperinference
-    ]
+    ],
+    ['Requesty', () => fetchRequestyModels('key'), MODEL_LIST.requesty],
+    ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud],
+    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {
@@ -247,6 +364,16 @@ describe('provider model fetchers', () => {
     mockJsonResponse({ data: [{ id: 'whisper-1' }] });
 
     await expect(fetchOpenAIModels('key')).resolves.toEqual(MODEL_LIST.openai);
+  });
+
+  it('offers Haiku 5.5 offline without changing the Anthropic default', async () => {
+    mockJsonResponse({ data: [] }, false);
+
+    const models = await fetchAnthropicModels('key');
+
+    expect(models).toContain('claude-haiku-5-5');
+    expect(models[0]).toBe('claude-sonnet-4-6');
+    expect(RECOMMENDED_MODELS.anthropic).toBe('claude-sonnet-4-6');
   });
 
   it('returns an empty local fallback when mapping produces no models', async () => {
