@@ -40,7 +40,8 @@ const OCO_AI_PROVIDER_ENUM = {
   CHEAPERINFERENCE: 'cheaperinference',
   REQUESTY: 'requesty',
   ATLAS_CLOUD: 'atlascloud',
-  UBERLLM: 'uberllm'
+  UBERLLM: 'uberllm',
+  TRUSTEDROUTER: 'trustedrouter'
 } as const;
 
 jest.unstable_mockModule('@clack/prompts', () => ({
@@ -99,6 +100,10 @@ const OTHER_OPTIONS = [
   {
     value: 'cheaperinference',
     label: 'Cheaper Inference (OpenAI-compatible gateway)'
+  },
+  {
+    value: 'trustedrouter',
+    label: 'TrustedRouter (OpenAI-compatible gateway)'
   },
   { value: 'aimlapi', label: 'AI/ML API' },
   { value: 'azure', label: 'Azure OpenAI' },

@@ -477,6 +477,20 @@ describe('config', () => {
       }
     });
 
+    it('accepts trustedrouter', () => {
+      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`process.exit(${code})`);
+      });
+      try {
+        expect(
+          configValidators[CONFIG_KEYS.OCO_AI_PROVIDER]('trustedrouter')
+        ).toBe('trustedrouter');
+        expect(exit).not.toHaveBeenCalled();
+      } finally {
+        exit.mockRestore();
+      }
+    });
+
     it('accepts every provider in OCO_AI_PROVIDER_ENUM', () => {
       const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
         throw new Error(`process.exit(${code})`);
