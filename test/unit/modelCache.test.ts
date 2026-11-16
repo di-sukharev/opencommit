@@ -12,6 +12,7 @@ import {
   fetchOpenRouterModels,
   fetchOrcaRouterModels,
   fetchRequestyModels,
+  fetchTrustedRouterModels,
   fetchUberLLMModels
 } from '../../src/utils/modelCache';
 
@@ -244,6 +245,32 @@ describe('provider model fetchers', () => {
         ]
       },
       expected: ['anthropic/claude-haiku-4.5', 'deepseek/deepseek-v3.2']
+    },
+    {
+      provider: 'TrustedRouter',
+      fetchModels: () => fetchTrustedRouterModels(),
+      request: ['https://api.trustedrouter.com/v1/models'],
+      payload: {
+        data: [
+          {
+            id: 'trustedrouter/auto',
+            architecture: { output_modalities: ['text'] }
+          },
+          {
+            id: 'deepseek/deepseek-v4-flash',
+            architecture: { output_modalities: ['text'] }
+          },
+          {
+            id: 'openai/text-embedding-3-small',
+            architecture: { output_modalities: ['embeddings'] }
+          },
+          {
+            id: 'openai/gpt-image-1',
+            architecture: { output_modalities: ['image'] }
+          }
+        ]
+      },
+      expected: ['deepseek/deepseek-v4-flash', 'trustedrouter/auto']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -350,7 +377,12 @@ describe('provider model fetchers', () => {
     ],
     ['Requesty', () => fetchRequestyModels('key'), MODEL_LIST.requesty],
     ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud],
-    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm]
+    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm],
+    [
+      'TrustedRouter',
+      () => fetchTrustedRouterModels(),
+      MODEL_LIST.trustedrouter
+    ]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

@@ -299,6 +299,23 @@ export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
       (data as ModelListResponse).data?.map((model) => model.id).sort()
   });
 }
+
+export async function fetchTrustedRouterModels(): Promise<string[]> {
+  return fetchModelList({
+    // The catalog is public, so no API key is sent.
+    url: 'https://api.trustedrouter.com/v1/models',
+    fallback: MODEL_LIST.trustedrouter,
+    mapModels: (data) =>
+      (data as ModelListResponse).data
+        // Keep text-output models (exclude embeddings, image, audio, video).
+        ?.filter((model) =>
+          model.architecture?.output_modalities?.includes('text')
+        )
+        .map((model) => model.id)
+        .sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -410,6 +427,10 @@ export async function fetchModelsForProvider(
       } else {
         models = MODEL_LIST.uberllm;
       }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
+      models = await fetchTrustedRouterModels();
       break;
 
     default:

@@ -101,6 +101,11 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     selectionGroup: 'other'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER,
+    displayName: 'TrustedRouter (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
     displayName: 'AI/ML API',
     selectionGroup: 'other'

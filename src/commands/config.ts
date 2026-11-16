@@ -599,7 +599,15 @@ export const MODEL_LIST = {
 
   // UberLLM available models
   // https://api.uberllm.dev/v1/models
-  uberllm: ['deepseek/deepseek-v3.2']
+  uberllm: ['deepseek/deepseek-v3.2'],
+
+  // TrustedRouter available models
+  // https://api.trustedrouter.com/v1/models
+  trustedrouter: [
+    'deepseek/deepseek-v4-flash', // used by default
+    'trustedrouter/auto',
+    'anthropic/claude-sonnet-4.5'
+  ]
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -634,6 +642,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.atlascloud[0];
     case 'uberllm':
       return MODEL_LIST.uberllm[0];
+    case 'trustedrouter':
+      return MODEL_LIST.trustedrouter[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -687,7 +697,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud" or "uberllm" or "requesty" or "cheaperinference". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud" or "uberllm" or "requesty" or "cheaperinference" or "trustedrouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -861,7 +871,7 @@ export const configValidators = {
       (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm', 'requesty', 'cheaperinference' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm', 'requesty', 'cheaperinference', 'trustedrouter' or 'openai' (default)`
     );
 
     return value;
@@ -946,6 +956,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai/api-keys',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/keys',
+  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]: 'https://trustedrouter.com/keys',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -968,6 +979,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'qwen/qwen3.5-397b-a17b',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'deepseek/deepseek-v3.2',
+  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]: 'deepseek/deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
 

@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, trustedrouter>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -350,6 +350,18 @@ oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key> OCO_MO
 ```
 
 The default model is `deepseek/deepseek-v3.2`.
+
+### Use TrustedRouter as the model gateway
+
+[TrustedRouter](https://trustedrouter.com) is an OpenAI-compatible gateway with one key for models from many providers. Get a key at [trustedrouter.com/keys](https://trustedrouter.com/keys).
+
+```sh
+oco config set OCO_AI_PROVIDER=trustedrouter OCO_API_KEY=<your_trustedrouter_api_key> OCO_MODEL=deepseek/deepseek-v4-flash
+
+oco config set OCO_AI_PROVIDER=trustedrouter OCO_API_KEY=<your_trustedrouter_api_key> OCO_MODEL=anthropic/claude-sonnet-4.5
+```
+
+The default model is `deepseek/deepseek-v4-flash`. OpenCommit uses `https://api.trustedrouter.com/v1` by default and fetches text models from TrustedRouter's public catalog; set `OCO_API_URL` to override the endpoint. See the [TrustedRouter docs](https://trustedrouter.com/docs) for details.
 
 ### Use with Proxy
 
