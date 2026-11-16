@@ -4,6 +4,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync
 } from 'fs';
 import { resolve } from 'path';
@@ -519,6 +520,18 @@ it('cli applies the documented message template placeholder from extra args', as
   }
 });
 
+const getHookCliPath = () => realpathSync(resolve('./out/cli.cjs'));
+
+const expectHookLauncher = (hookPath: string): void => {
+  const hookStats = lstatSync(hookPath);
+
+  expect(hookStats.isFile()).toBe(true);
+  expect(hookStats.mode & 0o111).not.toBe(0);
+  expect(readFileSync(hookPath, 'utf8')).toContain(
+    `exec '${process.execPath}' '${getHookCliPath()}' "$@"`
+  );
+};
+
 const expectHookSetAndUnset = async ({
   cwd,
   hookPath
@@ -526,14 +539,11 @@ const expectHookSetAndUnset = async ({
   cwd: string;
   hookPath: string;
 }): Promise<void> => {
-  const cliPath = realpathSync(resolve('./out/cli.cjs'));
-
   const setHook = await runCli(['hook', 'set'], { cwd });
 
   expect(await setHook.findByText('Hook set')).toBeInTheConsole();
   expect(await waitForExit(setHook)).toBe(0);
-  expect(lstatSync(hookPath).isSymbolicLink()).toBe(true);
-  expect(realpathSync(hookPath)).toBe(cliPath);
+  expectHookLauncher(hookPath);
 
   const unsetHook = await runCli(['hook', 'unset'], { cwd });
 
@@ -560,7 +570,7 @@ it('hook command respects a relative core.hooksPath from a nested directory', as
   }
 });
 
-it('hook command sets and unsets the prepare-commit-msg symlink in a submodule', async () => {
+it('hook command sets and unsets the prepare-commit-msg hook in a submodule', async () => {
   const { submoduleDir, cleanup } = await prepareSubmoduleEnvironment();
   const { stdout: absoluteGitDir } = await runGit(
     ['rev-parse', '--absolute-git-dir'],
@@ -608,6 +618,102 @@ it('hook command uses the shared hooks directory from a linked worktree', async 
       hookPath
     });
   } finally {
+    await cleanup();
+  }
+});
+
+it('hook command replaces a legacy symlink and an outdated launcher', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+
+  try {
+    symlinkSync(getHookCliPath(), hookPath);
+
+    const replaceSymlink = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await replaceSymlink.findByText('Hook set')).toBeInTheConsole();
+    expect(await waitForExit(replaceSymlink)).toBe(0);
+    expectHookLauncher(hookPath);
+
+    writeFileSync(
+      hookPath,
+      "#!/bin/sh\n# opencommit prepare-commit-msg hook\nexec '/old/node' '/old/cli.cjs' \"$@\"\n"
+    );
+
+    const replaceLauncher = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await replaceLauncher.findByText('Hook set')).toBeInTheConsole();
+    expect(await waitForExit(replaceLauncher)).toBe(0);
+    expectHookLauncher(hookPath);
+
+    const setAgain = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await setAgain.findByText('already set')).toBeInTheConsole();
+    expect(await waitForExit(setAgain)).toBe(0);
+    expectHookLauncher(hookPath);
+  } finally {
+    await cleanup();
+  }
+});
+
+it('hook command keeps a foreign or dangling prepare-commit-msg hook', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+  const foreignHook = '#!/bin/sh\necho custom\n';
+  const missingTarget = resolve(tempDir, 'missing-hook');
+
+  try {
+    writeFileSync(hookPath, foreignHook, { mode: 0o755 });
+
+    const setHook = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await setHook.findByText('already set')).toBeInTheConsole();
+    expect(await waitForExit(setHook)).toBe(1);
+
+    const unsetHook = await runCli(['hook', 'unset'], { cwd: gitDir });
+    expect(await unsetHook.findByText('different hook')).toBeInTheConsole();
+    expect(await waitForExit(unsetHook)).toBe(0);
+    expect(readFileSync(hookPath, 'utf8')).toBe(foreignHook);
+
+    rmSync(hookPath);
+    symlinkSync(missingTarget, hookPath);
+
+    const setDangling = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await setDangling.findByText('already set')).toBeInTheConsole();
+    expect(await waitForExit(setDangling)).toBe(1);
+    expect(lstatSync(hookPath).isSymbolicLink()).toBe(true);
+    expect(existsSync(missingTarget)).toBe(false);
+  } finally {
+    await cleanup();
+  }
+});
+
+it('prepare-commit-msg hook runs from git commit without node in PATH', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const server = await startMockOpenAiServer(
+    'fix(hook): run without node in PATH'
+  );
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("Hello World");\n'
+      },
+      { stage: true }
+    );
+
+    const setHook = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await waitForExit(setHook)).toBe(0);
+
+    await runGit(
+      ['commit'],
+      gitDir,
+      getMockOpenAiEnv(server.baseUrl, {
+        PATH: '/usr/bin:/bin',
+        GIT_EDITOR: "sed -i.bak -e 's/^# fix(hook)/fix(hook)/'"
+      })
+    );
+
+    await assertHeadCommit(gitDir, 'fix(hook): run without node in PATH');
+  } finally {
+    await server.cleanup();
     await cleanup();
   }
 });

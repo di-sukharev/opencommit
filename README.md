@@ -557,6 +557,8 @@ git commit
 
 Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow.
 
+The hook records the absolute path of the Node.js binary that ran `oco hook set`, so it also works in Git clients that start hooks without Node.js in `PATH`. After you switch or uninstall that Node.js version (for example with nvm or volta), run `oco hook set` again.
+
 ## Setup OpenCommit as a GitHub Action (BETA) 🔥
 
 OpenCommit is now available as a GitHub Action which automatically improves all new commits messages when you push to remote!
