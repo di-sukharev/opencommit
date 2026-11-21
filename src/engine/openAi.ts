@@ -2,6 +2,7 @@ import { OpenAI } from 'openai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { parseCustomHeaders } from '../utils/customHeaders';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { ApiKeyMissingError } from '../utils/errors';
 import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
@@ -20,13 +21,24 @@ export class OpenAiEngine implements AiEngine {
    * request path.
    */
   protected providerName = 'openai';
+  protected useSamplingParameters = true;
 
-  constructor(config: OpenAiConfig) {
+  constructor(config: OpenAiConfig, gatewayProvider?: string) {
     this.config = config;
 
     const clientOptions: OpenAI.ClientOptions = {
       apiKey: config.apiKey
     };
+
+    if (gatewayProvider) {
+      if (typeof config.apiKey !== 'string' || !config.apiKey.trim()) {
+        throw new ApiKeyMissingError(gatewayProvider);
+      }
+      this.providerName = gatewayProvider;
+      // Avoid the SDK's OpenAI environment defaults for this gateway.
+      clientOptions.organization = null;
+      clientOptions.project = null;
+    }
 
     if (config.baseURL) {
       clientOptions.baseURL = config.baseURL;
@@ -76,9 +88,10 @@ export class OpenAiEngine implements AiEngine {
       ...(isReasoningModel
         ? { max_completion_tokens: reasoningTokens }
         : {
-            temperature: 0,
-            top_p: 0.1,
-            max_tokens: this.config.maxTokensOutput
+            max_tokens: this.config.maxTokensOutput,
+            ...(this.useSamplingParameters
+              ? { temperature: 0, top_p: 0.1 }
+              : {})
           })
     };
 
