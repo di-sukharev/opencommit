@@ -820,7 +820,8 @@ it.each([
   { provider: 'uberllm', model: 'deepseek/deepseek-v3.2' },
   { provider: 'atlascloud', model: 'qwen/qwen3.5-397b-a17b' },
   { provider: 'requesty', model: 'openai/gpt-4o-mini' },
-  { provider: 'cheaperinference', model: 'gpt-5.4-mini' }
+  { provider: 'cheaperinference', model: 'gpt-5.4-mini' },
+  { provider: 'aigrow', model: 'claude-haiku-5.5' }
 ])(
   'cli commits after a fresh $provider setup without migration records',
   async ({ provider, model }) => {
