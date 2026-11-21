@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, aigrow>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, trustedrouter, aigrow>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -169,6 +169,8 @@ OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
 ```
 
 Global configs are same as local configs, but they are stored in the global `~/.opencommit` config file and set with `oco config set` command, e.g. `oco config set OCO_MODEL=gpt-4o`.
+
+When you switch providers, set the new provider's API key, model, and any required endpoint or custom headers. Put `OCO_AI_PROVIDER` alongside the API key when you select a different provider in a repository's `.env` file or in the shell. A key, endpoint, or custom header configured without a provider applies to the globally configured provider. If OpenCommit prompts for a key for a repository provider that differs from the global provider, it uses the key for the current run.
 
 ### Global config for all repos
 
@@ -351,17 +353,29 @@ oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key> OCO_MO
 
 The default model is `deepseek/deepseek-v3.2`.
 
-### Use AIGROW as the model provider
+### Use TrustedRouter as the model gateway
 
-[AIGROW](https://aigrow.gg/ai-api) sells prepaid API credit for Claude, GPT, Gemini, Grok, Qwen and Kimi models on one key, over an OpenAI-compatible API at `https://aigrow.gg/v1`. Model ids are unprefixed; `oco models` lists them from the public catalog at `https://aigrow.gg/v1/models`, which also gives each model's price and needs no key.
+[TrustedRouter](https://trustedrouter.com) is an OpenAI-compatible gateway with one key for models from many providers. Get a key at [TrustedRouter API Keys](https://trustedrouter.com/console/api-keys).
 
 ```sh
-oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=<your_aigrow_api_key>
+oco config set OCO_AI_PROVIDER=trustedrouter OCO_API_KEY=your_trustedrouter_api_key OCO_MODEL=deepseek/deepseek-v4-flash
 
-oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=<your_aigrow_api_key> OCO_MODEL=gemini-3.8-flash
+oco config set OCO_AI_PROVIDER=trustedrouter OCO_API_KEY=your_trustedrouter_api_key OCO_MODEL=anthropic/claude-sonnet-4.5
 ```
 
-The default model is `claude-haiku-5.5`.
+The default model is `deepseek/deepseek-v4-flash`. OpenCommit uses `https://api.trustedrouter.com/v1` by default and lists text models that support Chat Completions in TrustedRouter's public catalog. Set `OCO_API_URL` to override the endpoint. See the [TrustedRouter docs](https://trustedrouter.com/docs) for details.
+
+### Use AIGROW as the model provider
+
+[AIGROW](https://aigrow.gg/ai-api) provides an OpenAI-compatible API for Claude, GPT, Gemini, Grok, Qwen and Kimi at `https://aigrow.gg/v1`. Use model IDs without provider prefixes.
+
+```sh
+oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=your_aigrow_api_key OCO_MODEL=claude-haiku-5.5
+
+oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=your_aigrow_api_key OCO_MODEL=gemini-3.8-flash
+```
+
+Run `oco models --refresh` to fetch the current models. To list them before configuring a key, run `oco models --provider aigrow --refresh`.
 
 ### Use with Proxy
 
@@ -568,6 +582,10 @@ git commit
 ```
 
 Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow.
+
+The hook records the absolute paths of Node.js and OpenCommit, so it works in clients that start Git without Node.js in `PATH`. After you move or reinstall either one, run `oco hook set` again. If either recorded path disappears, the hook lets Git continue and prints a recovery hint.
+
+Run `oco hook unset` in repositories that use the hook before you uninstall or downgrade OpenCommit. Older releases can only remove the symlinks they install. If `oco hook set` reports a different hook after an upgrade, check whether the existing `prepare-commit-msg` is an old OpenCommit symlink. Remove that symlink from the configured hooks directory manually once you have verified its target, then run `oco hook set` again.
 
 ## Setup OpenCommit as a GitHub Action (BETA) 🔥
 

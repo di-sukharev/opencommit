@@ -65,6 +65,10 @@ interface RequestyModelListResponse {
   data?: Array<ModelListItem & { api?: string }>;
 }
 
+interface TrustedRouterModelListResponse {
+  data?: Array<ModelListItem & { trustedrouter?: { supports_chat?: boolean } }>;
+}
+
 interface AtlasCloudModelListResponse {
   data?: Array<{
     model: string;
@@ -300,6 +304,26 @@ export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
   });
 }
 
+export async function fetchTrustedRouterModels(): Promise<string[]> {
+  return fetchModelList({
+    // The catalog is public, so no API key is sent.
+    url: 'https://api.trustedrouter.com/v1/models',
+    fallback: MODEL_LIST.trustedrouter,
+    mapModels: (data) =>
+      (data as TrustedRouterModelListResponse).data
+        ?.filter((model) => {
+          const supportsChat = model.trustedrouter?.supports_chat;
+          const outputsText =
+            model.architecture?.output_modalities?.includes('text');
+          return (
+            supportsChat !== false && (outputsText ?? supportsChat === true)
+          );
+        })
+        .map((model) => model.id)
+        .sort()
+  });
+}
+
 export async function fetchAIGROWModels(): Promise<string[]> {
   return fetchModelList({
     // Public: lists every chat model with its price and needs no key.
@@ -421,6 +445,10 @@ export async function fetchModelsForProvider(
       } else {
         models = MODEL_LIST.uberllm;
       }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
+      models = await fetchTrustedRouterModels();
       break;
 
     case OCO_AI_PROVIDER_ENUM.AIGROW:

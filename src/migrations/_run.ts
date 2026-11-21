@@ -6,8 +6,10 @@ import { outro } from '@clack/prompts';
 import chalk from 'chalk';
 import {
   getConfig,
+  getGlobalConfig,
   getIsGlobalConfigFileExist,
-  OCO_AI_PROVIDER_ENUM
+  OCO_AI_PROVIDER_ENUM,
+  overridesProvider
 } from '../commands/config';
 
 const migrationsFile = pathJoin(homedir(), '.opencommit_migrations');
@@ -35,6 +37,11 @@ export const runMigrations = async () => {
 
   const config = getConfig();
   if (config.OCO_AI_PROVIDER === OCO_AI_PROVIDER_ENUM.TEST) return;
+  if (
+    overridesProvider(config.OCO_AI_PROVIDER, getGlobalConfig().OCO_AI_PROVIDER)
+  ) {
+    return;
+  }
 
   // skip unhandled providers in migration00
   if (
@@ -51,6 +58,7 @@ export const runMigrations = async () => {
       OCO_AI_PROVIDER_ENUM.UBERLLM,
       OCO_AI_PROVIDER_ENUM.REQUESTY,
       OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE,
+      OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER,
       OCO_AI_PROVIDER_ENUM.AIGROW
     ].includes(config.OCO_AI_PROVIDER)
   ) {

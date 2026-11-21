@@ -1,4 +1,5 @@
 import {
+  CONFIG_KEYS,
   ConfigType,
   DEFAULT_CONFIG,
   getGlobalConfig,
@@ -6,10 +7,11 @@ import {
 } from '../commands/config';
 
 export default function () {
-  const setDefaultConfigValues = (config: ConfigType) => {
+  const setDefaultConfigValues = (config: Partial<ConfigType>) => {
     const entriesToSet: [key: string, value: string | boolean | number][] = [];
     for (const entry of Object.entries(DEFAULT_CONFIG)) {
       const [key, _value] = entry;
+      if (key === CONFIG_KEYS.OCO_MODEL) continue;
       if (config[key] === 'undefined' || config[key] === undefined)
         entriesToSet.push(entry);
     }
