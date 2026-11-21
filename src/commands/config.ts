@@ -1098,7 +1098,8 @@ const getEnvConfig = (envPath: string) => {
     ),
     OCO_REASONING: parseConfigVarValue(process.env.OCO_REASONING),
 
-    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
+    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH), // todo: deprecate
+    OCO_HOOK_AUTO_UNCOMMENT: parseConfigVarValue(process.env.OCO_HOOK_AUTO_UNCOMMENT)
   };
 };
 
