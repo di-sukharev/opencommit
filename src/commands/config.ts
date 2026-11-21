@@ -913,6 +913,7 @@ export const configValidators = {
       typeof value === 'boolean',
       'Must be true or false'
     );
+    return value;
   },
   [CONFIG_KEYS.OCO_REASONING](value: any) {
     validateConfig(
@@ -1096,6 +1097,10 @@ const loadRepositoryEnv = (envPath: string) => {
 };
 
 const getEnvConfig = (env: NodeJS.ProcessEnv) => {
+  const hookAutoUncomment = parseConfigVarValue(
+    env.OCO_HOOK_AUTO_UNCOMMENT?.toLowerCase()
+  );
+
   return {
     OCO_MODEL: env.OCO_MODEL,
     OCO_API_URL: env.OCO_API_URL,
@@ -1123,7 +1128,9 @@ const getEnvConfig = (env: NodeJS.ProcessEnv) => {
     OCO_REASONING_MAX_TOKENS: parseConfigVarValue(env.OCO_REASONING_MAX_TOKENS),
     OCO_REASONING: parseConfigVarValue(env.OCO_REASONING),
 
-    OCO_GITPUSH: parseConfigVarValue(env.OCO_GITPUSH) // todo: deprecate
+    OCO_GITPUSH: parseConfigVarValue(env.OCO_GITPUSH), // todo: deprecate
+    OCO_HOOK_AUTO_UNCOMMENT:
+      typeof hookAutoUncomment === 'boolean' ? hookAutoUncomment : undefined
   };
 };
 

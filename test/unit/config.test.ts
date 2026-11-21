@@ -115,6 +115,7 @@ describe('config', () => {
     it('should handle boolean and numeric values correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
         OCO_TOKENS_MAX_INPUT: '4096',
+        OCO_HOOK_AUTO_UNCOMMENT: 'true',
         OCO_TOKENS_MAX_OUTPUT: '500',
         OCO_GITPUSH: 'true',
         OCO_REASONING: 'false'
@@ -122,6 +123,7 @@ describe('config', () => {
 
       envConfigFile = await generateConfig('.env', {
         OCO_TOKENS_MAX_INPUT: '8192',
+        OCO_HOOK_AUTO_UNCOMMENT: 'false',
         OCO_ONE_LINE_COMMIT: 'false',
         OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: 'true',
         OCO_EMOJI_FULL_SPEC: 'true',
@@ -137,6 +139,7 @@ describe('config', () => {
 
       expect(config).not.toEqual(null);
       expect(config.OCO_TOKENS_MAX_INPUT).toEqual(8192);
+      expect(config.OCO_HOOK_AUTO_UNCOMMENT).toBe(false);
       expect(config.OCO_TOKENS_MAX_OUTPUT).toEqual(500);
       expect(config.OCO_GITPUSH).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
@@ -146,6 +149,29 @@ describe('config', () => {
       expect(config.OCO_REASONING).toEqual(true);
       expect(config.OCO_REASONING_MAX_TOKENS).toEqual(2048);
     });
+
+    it.each([
+      ['FALSE', 'true', false],
+      ['off', 'false', false],
+      ['off', 'true', true]
+    ])(
+      'should resolve hook auto-uncomment from local %s and global %s',
+      async (localValue, globalValue, expected) => {
+        globalConfigFile = await generateConfig('.opencommit', {
+          OCO_HOOK_AUTO_UNCOMMENT: globalValue
+        });
+        envConfigFile = await generateConfig('.env', {
+          OCO_HOOK_AUTO_UNCOMMENT: localValue
+        });
+
+        const config = getConfig({
+          globalPath: globalConfigFile.filePath,
+          envPath: envConfigFile.filePath
+        });
+
+        expect(config.OCO_HOOK_AUTO_UNCOMMENT).toBe(expected);
+      }
+    );
 
     it('should handle custom HTTP headers correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
@@ -763,6 +789,7 @@ describe('config', () => {
       await setConfig(
         [
           [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT, '8192'],
+          [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT, 'true'],
           [CONFIG_KEYS.OCO_DESCRIPTION, 'true'],
           [CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION, 'true'],
           [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC, 'true'],
@@ -777,6 +804,7 @@ describe('config', () => {
         globalPath: globalConfigFile.filePath
       });
       expect(config.OCO_TOKENS_MAX_INPUT).toEqual(8192);
+      expect(config.OCO_HOOK_AUTO_UNCOMMENT).toBe(true);
       expect(config.OCO_DESCRIPTION).toEqual(true);
       expect(config.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION).toEqual(true);
       expect(config.OCO_EMOJI_FULL_SPEC).toEqual(true);
