@@ -599,7 +599,15 @@ export const MODEL_LIST = {
 
   // UberLLM available models
   // https://api.uberllm.dev/v1/models
-  uberllm: ['deepseek/deepseek-v3.2']
+  uberllm: ['deepseek/deepseek-v3.2'],
+
+  // TrustedRouter available models
+  // https://api.trustedrouter.com/v1/models
+  trustedrouter: [
+    'deepseek/deepseek-v4-flash', // used by default
+    'trustedrouter/auto',
+    'anthropic/claude-sonnet-4.5'
+  ]
 };
 
 const getDefaultModel = (provider: string | undefined): string => {
@@ -634,6 +642,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.atlascloud[0];
     case 'uberllm':
       return MODEL_LIST.uberllm[0];
+    case 'trustedrouter':
+      return MODEL_LIST.trustedrouter[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -687,7 +697,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud" or "uberllm" or "requesty" or "cheaperinference". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud" or "uberllm" or "requesty" or "cheaperinference" or "trustedrouter". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -861,7 +871,7 @@ export const configValidators = {
       (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm', 'requesty', 'cheaperinference' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm', 'requesty', 'cheaperinference', 'trustedrouter' or 'openai' (default)`
     );
 
     return value;
@@ -946,6 +956,8 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai/api-keys',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/keys',
+  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
+    'https://trustedrouter.com/console/api-keys',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -968,6 +980,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'qwen/qwen3.5-397b-a17b',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'deepseek/deepseek-v3.2',
+  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]: 'deepseek/deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
 };
 
@@ -1064,46 +1077,58 @@ const parseConfigVarValue = (value?: any) => {
   }
 };
 
-const getEnvConfig = (envPath: string) => {
-  dotenv.config({ path: envPath });
+const getNamedProvider = (value: unknown): string | undefined => {
+  const parsed = parseConfigVarValue(value);
+  const provider = typeof parsed === 'string' ? parsed.trim() : '';
+  return provider && provider !== 'null' && provider !== 'undefined'
+    ? provider
+    : undefined;
+};
 
+const loadRepositoryEnv = (envPath: string) => {
+  const { parsed = {} } = dotenv.config({ path: envPath, processEnv: {} });
+  for (const [key, value] of Object.entries(parsed)) {
+    if (!Object.prototype.hasOwnProperty.call(CONFIG_KEYS, key)) {
+      process.env[key] ??= value;
+    }
+  }
+  return parsed;
+};
+
+const getEnvConfig = (env: NodeJS.ProcessEnv) => {
   return {
-    OCO_MODEL: process.env.OCO_MODEL,
-    OCO_API_URL: process.env.OCO_API_URL,
-    OCO_PROXY: process.env.OCO_PROXY,
-    OCO_API_KEY: process.env.OCO_API_KEY,
-    OCO_API_CUSTOM_HEADERS: process.env.OCO_API_CUSTOM_HEADERS,
-    OCO_AI_PROVIDER: process.env.OCO_AI_PROVIDER as OCO_AI_PROVIDER_ENUM,
+    OCO_MODEL: env.OCO_MODEL,
+    OCO_API_URL: env.OCO_API_URL,
+    OCO_PROXY: env.OCO_PROXY,
+    OCO_API_KEY: env.OCO_API_KEY,
+    OCO_API_CUSTOM_HEADERS: env.OCO_API_CUSTOM_HEADERS,
+    OCO_AI_PROVIDER: getNamedProvider(env.OCO_AI_PROVIDER) as
+      OCO_AI_PROVIDER_ENUM | undefined,
 
-    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(process.env.OCO_TOKENS_MAX_INPUT),
-    OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(
-      process.env.OCO_TOKENS_MAX_OUTPUT
-    ),
+    OCO_TOKENS_MAX_INPUT: parseConfigVarValue(env.OCO_TOKENS_MAX_INPUT),
+    OCO_TOKENS_MAX_OUTPUT: parseConfigVarValue(env.OCO_TOKENS_MAX_OUTPUT),
 
-    OCO_DESCRIPTION: parseConfigVarValue(process.env.OCO_DESCRIPTION),
-    OCO_EMOJI: parseConfigVarValue(process.env.OCO_EMOJI),
+    OCO_DESCRIPTION: parseConfigVarValue(env.OCO_DESCRIPTION),
+    OCO_EMOJI: parseConfigVarValue(env.OCO_EMOJI),
     OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: parseConfigVarValue(
-      process.env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
+      env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
     ),
-    OCO_EMOJI_FULL_SPEC: parseConfigVarValue(process.env.OCO_EMOJI_FULL_SPEC),
-    OCO_LANGUAGE: process.env.OCO_LANGUAGE,
-    OCO_MESSAGE_TEMPLATE_PLACEHOLDER:
-      process.env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
-    OCO_PROMPT_MODULE: process.env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
-    OCO_ONE_LINE_COMMIT: parseConfigVarValue(process.env.OCO_ONE_LINE_COMMIT),
-    OCO_TEST_MOCK_TYPE: process.env.OCO_TEST_MOCK_TYPE,
-    OCO_OMIT_SCOPE: parseConfigVarValue(process.env.OCO_OMIT_SCOPE),
-    OCO_REASONING_MAX_TOKENS: parseConfigVarValue(
-      process.env.OCO_REASONING_MAX_TOKENS
-    ),
-    OCO_REASONING: parseConfigVarValue(process.env.OCO_REASONING),
+    OCO_EMOJI_FULL_SPEC: parseConfigVarValue(env.OCO_EMOJI_FULL_SPEC),
+    OCO_LANGUAGE: env.OCO_LANGUAGE,
+    OCO_MESSAGE_TEMPLATE_PLACEHOLDER: env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
+    OCO_PROMPT_MODULE: env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
+    OCO_ONE_LINE_COMMIT: parseConfigVarValue(env.OCO_ONE_LINE_COMMIT),
+    OCO_TEST_MOCK_TYPE: env.OCO_TEST_MOCK_TYPE,
+    OCO_OMIT_SCOPE: parseConfigVarValue(env.OCO_OMIT_SCOPE),
+    OCO_REASONING_MAX_TOKENS: parseConfigVarValue(env.OCO_REASONING_MAX_TOKENS),
+    OCO_REASONING: parseConfigVarValue(env.OCO_REASONING),
 
-    OCO_GITPUSH: parseConfigVarValue(process.env.OCO_GITPUSH) // todo: deprecate
+    OCO_GITPUSH: parseConfigVarValue(env.OCO_GITPUSH) // todo: deprecate
   };
 };
 
 export const setGlobalConfig = (
-  config: ConfigType,
+  config: Partial<ConfigType>,
   configPath: string = defaultConfigPath
 ) => {
   writeFileSync(configPath, iniStringify(config), 'utf8');
@@ -1115,30 +1140,133 @@ export const getIsGlobalConfigFileExist = (
   return existsSync(configPath);
 };
 
-export const getGlobalConfig = (configPath: string = defaultConfigPath) => {
+export const getGlobalConfig = (
+  configPath: string = defaultConfigPath
+): Partial<ConfigType> => {
   const isGlobalConfigFileExist = getIsGlobalConfigFileExist(configPath);
   if (!isGlobalConfigFileExist) {
-    return { ...DEFAULT_CONFIG };
+    const { OCO_MODEL: _defaultModel, ...defaults } = DEFAULT_CONFIG;
+    return defaults;
   }
 
   const configFile = readFileSync(configPath, 'utf8');
-  return iniParse(configFile) as ConfigType;
+  return iniParse(configFile) as Partial<ConfigType>;
 };
 
-/**
- * Merges two configs.
- * Env config takes precedence over global ~/.opencommit config file
- * @param main - env config
- * @param fallback - global ~/.opencommit config file
- * @returns merged config
- */
-const mergeConfigs = (main: Partial<ConfigType>, fallback: ConfigType) => {
-  const allKeys = new Set([...Object.keys(main), ...Object.keys(fallback)]);
-  return Array.from(allKeys).reduce((acc, key) => {
-    const mainValue = main[key];
-    acc[key] = parseConfigVarValue(
-      mainValue !== undefined ? mainValue : fallback[key]
+export const overridesProvider = (
+  provider: unknown,
+  fallbackProvider: unknown
+) => {
+  const namedProvider = getNamedProvider(provider);
+  return (
+    namedProvider !== undefined &&
+    namedProvider !==
+      (getNamedProvider(fallbackProvider) ?? DEFAULT_CONFIG.OCO_AI_PROVIDER)
+  );
+};
+
+const PROVIDER_TRANSPORT_KEYS = [
+  CONFIG_KEYS.OCO_API_KEY,
+  CONFIG_KEYS.OCO_API_URL,
+  CONFIG_KEYS.OCO_API_CUSTOM_HEADERS
+] as const;
+
+const LEGACY_TRANSPORT_KEYS = new Map<
+  OCO_AI_PROVIDER_ENUM,
+  [apiKey: string, apiUrl: string]
+>([
+  [OCO_AI_PROVIDER_ENUM.OLLAMA, ['OCO_OLLAMA_API_KEY', 'OCO_OLLAMA_API_URL']],
+  [
+    OCO_AI_PROVIDER_ENUM.ANTHROPIC,
+    ['OCO_ANTHROPIC_API_KEY', 'OCO_ANTHROPIC_BASE_PATH']
+  ],
+  [OCO_AI_PROVIDER_ENUM.OPENAI, ['OCO_OPENAI_API_KEY', 'OCO_OPENAI_BASE_PATH']],
+  [OCO_AI_PROVIDER_ENUM.AZURE, ['OCO_AZURE_API_KEY', 'OCO_AZURE_ENDPOINT']],
+  [OCO_AI_PROVIDER_ENUM.GEMINI, ['OCO_GEMINI_API_KEY', 'OCO_GEMINI_BASE_PATH']],
+  [
+    OCO_AI_PROVIDER_ENUM.FLOWISE,
+    ['OCO_FLOWISE_API_KEY', 'OCO_FLOWISE_ENDPOINT']
+  ]
+]);
+
+export const getLegacyProviderTransport = (
+  config: Record<string, unknown>,
+  provider: OCO_AI_PROVIDER_ENUM | undefined
+) => {
+  const keys = provider && LEGACY_TRANSPORT_KEYS.get(provider);
+  if (!keys) return undefined;
+
+  const [key, url] = keys;
+  const apiKey = config[key];
+  const apiUrl = config[url];
+  return {
+    OCO_API_KEY: typeof apiKey === 'string' ? apiKey : undefined,
+    OCO_API_URL: typeof apiUrl === 'string' ? apiUrl : undefined
+  };
+};
+
+const getProviderConfigFallback = (
+  fallback: Partial<ConfigType>,
+  provider: ConfigType['OCO_AI_PROVIDER'] | undefined,
+  sourceProvider = fallback.OCO_AI_PROVIDER
+) => {
+  if (!overridesProvider(provider, sourceProvider)) return fallback;
+
+  const config = { ...fallback };
+  for (const key of PROVIDER_TRANSPORT_KEYS) delete config[key];
+  return config;
+};
+
+export const updateGlobalConfig = (
+  changes: Partial<ConfigType>,
+  configPath: string = defaultConfigPath,
+  activeProvider?: ConfigType['OCO_AI_PROVIDER']
+) => {
+  const globalConfig = getGlobalConfig(configPath);
+  if (
+    !changes.OCO_AI_PROVIDER &&
+    PROVIDER_TRANSPORT_KEYS.some((key) => key in changes) &&
+    overridesProvider(activeProvider, globalConfig.OCO_AI_PROVIDER)
+  ) {
+    throw new Error(
+      'The active provider differs from the global provider. Include OCO_AI_PROVIDER in this command to set values globally, or set them in the repository .env file.'
     );
+  }
+
+  const config = getProviderConfigFallback(
+    globalConfig,
+    changes.OCO_AI_PROVIDER
+  );
+  setGlobalConfig({ ...config, ...changes }, configPath);
+};
+
+let sessionApiKey:
+  { provider: OCO_AI_PROVIDER_ENUM; value: string } | undefined;
+
+export const useApiKeyForCurrentRun = (
+  provider: OCO_AI_PROVIDER_ENUM,
+  apiKey: string
+) => {
+  sessionApiKey = { provider, value: apiKey };
+};
+
+export const savePromptedApiKey = (
+  provider: OCO_AI_PROVIDER_ENUM,
+  apiKey: string
+): boolean => {
+  const config = getGlobalConfig();
+  const saveGlobally = !overridesProvider(provider, config.OCO_AI_PROVIDER);
+  if (saveGlobally) setGlobalConfig({ ...config, OCO_API_KEY: apiKey });
+  useApiKeyForCurrentRun(provider, apiKey);
+  return saveGlobally;
+};
+
+// Earlier sources take precedence over later sources.
+const mergeConfigs = (...configs: Partial<ConfigType>[]) => {
+  const allKeys = new Set(configs.flatMap(Object.keys));
+  return Array.from(allKeys).reduce((acc, key) => {
+    const source = configs.find((config) => config[key] !== undefined);
+    acc[key] = parseConfigVarValue(source?.[key]);
     return acc;
   }, {} as ConfigType);
 };
@@ -1170,14 +1298,48 @@ const cleanUndefinedValues = (config: ConfigType) => {
 
 export const getConfig = ({
   envPath = defaultEnvPath,
-  globalPath = defaultConfigPath
+  globalPath = defaultConfigPath,
+  setDefaultValues = true
 }: GetConfigOptions = {}): ConfigType => {
-  const envConfig = getEnvConfig(envPath);
+  const repositoryConfig = getEnvConfig(loadRepositoryEnv(envPath));
+  const shellConfig = getEnvConfig(process.env);
   const globalConfig = getGlobalConfig(globalPath);
+  const overrideProvider =
+    shellConfig.OCO_AI_PROVIDER ?? repositoryConfig.OCO_AI_PROVIDER;
+  // An override skips global migrations. Use only its own legacy transport.
+  const legacyTransport = overridesProvider(
+    overrideProvider,
+    globalConfig.OCO_AI_PROVIDER
+  )
+    ? getLegacyProviderTransport(globalConfig, overrideProvider)
+    : undefined;
 
-  const config = mergeConfigs(envConfig, globalConfig);
+  const config = mergeConfigs(
+    ...[shellConfig, repositoryConfig, globalConfig].map((source) =>
+      getProviderConfigFallback(
+        source,
+        overrideProvider,
+        source.OCO_AI_PROVIDER ?? globalConfig.OCO_AI_PROVIDER
+      )
+    ),
+    legacyTransport ?? {}
+  );
 
   const cleanConfig = cleanUndefinedValues(config);
+
+  if (
+    globalPath === defaultConfigPath &&
+    !cleanConfig.OCO_API_KEY &&
+    sessionApiKey &&
+    sessionApiKey.provider ===
+      (cleanConfig.OCO_AI_PROVIDER || DEFAULT_CONFIG.OCO_AI_PROVIDER)
+  ) {
+    cleanConfig.OCO_API_KEY = sessionApiKey.value;
+  }
+
+  if (setDefaultValues) {
+    cleanConfig.OCO_MODEL ||= getDefaultModel(cleanConfig.OCO_AI_PROVIDER);
+  }
 
   return cleanConfig as ConfigType;
 };
@@ -1217,7 +1379,7 @@ export const setConfig = (
     configToSet[key] = validValue;
   }
 
-  setGlobalConfig(mergeConfigs(configToSet, config), globalConfigPath);
+  updateGlobalConfig(configToSet, globalConfigPath, config.OCO_AI_PROVIDER);
 
   outro(`${chalk.green('✔')} config successfully set`);
 };
@@ -1439,7 +1601,7 @@ export const configCommand = command(
   async (argv) => {
     try {
       const { mode, keyValues } = argv._;
-      intro(`COMMAND: config ${mode} ${keyValues}`);
+      intro(`COMMAND: config ${mode}`);
 
       if (mode === CONFIG_MODES.describe) {
         if (!keyValues || keyValues.length === 0) {

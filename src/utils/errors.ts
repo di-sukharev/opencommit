@@ -17,6 +17,8 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/credits',
+  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
+    'https://trustedrouter.com/console/credits',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
   [OCO_AI_PROVIDER_ENUM.AZURE]:
     'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
@@ -220,6 +222,8 @@ export function getRecommendedModel(provider: string): string | null {
       return 'qwen/qwen3.5-397b-a17b';
     case OCO_AI_PROVIDER_ENUM.UBERLLM:
       return 'deepseek/deepseek-v3.2';
+    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
+      return 'deepseek/deepseek-v4-flash';
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       return 'gpt-4o-mini';
     default:
