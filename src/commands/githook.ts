@@ -1,7 +1,7 @@
 import { intro, outro } from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
-import { existsSync } from 'fs';
+import { constants, existsSync, type Stats } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 import { assertGitRepo, getGitHooksPath } from '../utils/git.js';
@@ -9,22 +9,45 @@ import { COMMANDS } from './ENUMS';
 
 const HOOK_NAME = 'prepare-commit-msg';
 const HOOK_MARKER = '# opencommit prepare-commit-msg hook';
-const HOOK_ENV = 'OCO_GIT_HOOK';
+
+// Keep the hook path in argv[1] so the CLI detects the hook by its path.
+const LOAD_CLI = 'const [cli] = process.argv.splice(1, 1); require(cli);';
 
 const shellQuote = (value: string): string =>
   `'${value.replace(/'/g, `'\\''`)}'`;
 
+const quoteHookPath = (value: string): string =>
+  shellQuote(process.platform === 'win32' ? value.replace(/\\/g, '/') : value);
+
 // Git GUI clients often run hooks with a PATH that does not include node,
 // so the hook launches the CLI with absolute paths instead of the shebang.
-export const buildHookScript = (nodePath: string, cliPath: string): string =>
+const renderHookScript = (quotedNode: string, quotedCli: string): string =>
   [
     '#!/bin/sh',
     HOOK_MARKER,
-    `${HOOK_ENV}=1`,
-    `export ${HOOK_ENV}`,
-    `exec ${shellQuote(nodePath)} ${shellQuote(cliPath)} "$@"`,
+    `if [ ! -x ${quotedNode} ] || [ ! -f ${quotedCli} ]; then`,
+    "  printf '%s\\n' 'OpenCommit hook skipped. Reinstall OpenCommit or Node.js and run oco hook set, or remove this hook.' >&2",
+    '  exit 0',
+    'fi',
+    `exec ${quotedNode} --input-type=commonjs -e ${shellQuote(LOAD_CLI)} -- ${quotedCli} "$0" "$@"`,
     ''
   ].join('\n');
+
+export const buildHookScript = (nodePath: string, cliPath: string): string =>
+  renderHookScript(quoteHookPath(nodePath), quoteHookPath(cliPath));
+
+const quotedShellWord = String.raw`'[^']*'(?:\\''[^']*')*`;
+const hookInvocation = new RegExp(
+  String.raw`\nexec (${quotedShellWord}) --input-type=commonjs -e ${quotedShellWord} -- (${quotedShellWord}) "\$0" "\$@"\n$`
+);
+
+const isGeneratedLauncher = (content: string): boolean => {
+  const invocation = hookInvocation.exec(content);
+  if (!invocation) return false;
+
+  const [, quotedNode, quotedCli] = invocation;
+  return content === renderHookScript(quotedNode, quotedCli);
+};
 
 const getHooksPath = async (): Promise<string> => {
   return path.join(await getGitHooksPath(), HOOK_NAME);
@@ -37,8 +60,6 @@ const normalizeHookPath = async (hookPath: string): Promise<string> => {
 };
 
 export const isHookCalled = async (): Promise<boolean> => {
-  if (process.env[HOOK_ENV] === '1') return true;
-
   try {
     const invokedPath = process.argv[1];
     if (!invokedPath) return false;
@@ -52,27 +73,113 @@ export const isHookCalled = async (): Promise<boolean> => {
   }
 };
 
-// lstat so a dangling symlink counts as an existing hook and is never written through
-const isHookExists = async (hooksPath: string): Promise<boolean> => {
+const statHook = async (hookPath: string): Promise<Stats | undefined> => {
   try {
-    await fs.lstat(hooksPath);
-    return true;
+    return await fs.lstat(hookPath);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
     throw error;
   }
 };
 
-const isOpenCommitHook = async (
-  hooksPath: string,
-  hookUrl: string
-): Promise<boolean> => {
-  // hooks set by older versions are symlinks to the CLI itself
-  if ((await fs.lstat(hooksPath)).isSymbolicLink())
-    return existsSync(hooksPath) && (await fs.realpath(hooksPath)) === hookUrl;
+const sameFile = (current: Stats | undefined, previous: Stats): boolean =>
+  current !== undefined &&
+  current.dev === previous.dev &&
+  current.ino === previous.ino &&
+  current.ctimeMs === previous.ctimeMs;
 
-  const content = await fs.readFile(hooksPath, 'utf8');
-  return content.includes(HOOK_MARKER);
+const hookChanged = () =>
+  new Error(`The ${HOOK_NAME} hook changed during this operation. Try again.`);
+
+const openKnownHook = async (hookPath: string, stats: Stats) => {
+  // On POSIX these flags also protect against a concurrent symlink or FIFO.
+  const file = await fs.open(
+    hookPath,
+    constants.O_RDONLY |
+      (constants.O_NOFOLLOW ?? 0) |
+      (constants.O_NONBLOCK ?? 0)
+  );
+  try {
+    const current = await file.stat();
+    if (!current.isFile() || !sameFile(current, stats)) throw hookChanged();
+    return file;
+  } catch (error) {
+    await file.close();
+    throw error;
+  }
+};
+
+type ExistingHook = { stats: Stats; owned: boolean; content?: string };
+
+const inspectHook = async (
+  hookPath: string,
+  cliPath: string
+): Promise<ExistingHook | undefined> => {
+  const stats = await statHook(hookPath);
+  if (!stats) return undefined;
+
+  const uid = process.geteuid?.();
+  if (uid !== undefined && stats.uid !== uid) return { stats, owned: false };
+
+  if (stats.isSymbolicLink()) {
+    // A legacy symlink can be identified safely when it resolves to this CLI.
+    const owned =
+      existsSync(hookPath) &&
+      (await fs.realpath(hookPath)) === (await fs.realpath(cliPath));
+    return { stats, owned };
+  }
+  if (!stats.isFile()) return { stats, owned: false };
+
+  const file = await openKnownHook(hookPath, stats);
+  try {
+    const content = await file.readFile('utf8');
+    return { stats, content, owned: isGeneratedLauncher(content) };
+  } finally {
+    await file.close();
+  }
+};
+
+const restoreHookExecuteBit = async (hookPath: string, previous: Stats) => {
+  const file = await openKnownHook(hookPath, previous);
+  try {
+    if (!sameFile(await statHook(hookPath), previous)) throw hookChanged();
+    await file.chmod((previous.mode & 0o7777) | 0o100);
+  } finally {
+    await file.close();
+  }
+};
+
+const installHook = async (
+  hookPath: string,
+  script: string,
+  previous?: Stats
+): Promise<void> => {
+  const directory = path.dirname(hookPath);
+  await fs.mkdir(directory, { recursive: true });
+  const temporary = await fs.mkdtemp(path.join(directory, `.${HOOK_NAME}-`));
+  const launcher = path.join(temporary, HOOK_NAME);
+  const mode = previous?.isFile() ? (previous.mode & 0o777) | 0o100 : 0o755;
+
+  try {
+    await fs.writeFile(launcher, script, { flag: 'wx', mode });
+    if (previous?.isFile()) {
+      if (process.getgid) {
+        const { uid, gid } = await fs.stat(launcher);
+        if (gid !== previous.gid) await fs.chown(launcher, uid, previous.gid);
+      }
+      await fs.chmod(launcher, mode);
+    }
+
+    if (previous) {
+      if (!sameFile(await statHook(hookPath), previous)) throw hookChanged();
+      await fs.rename(launcher, hookPath);
+    } else {
+      // Publish the complete launcher only if no other hook took this name.
+      await fs.link(launcher, hookPath);
+    }
+  } finally {
+    await fs.rm(temporary, { recursive: true, force: true });
+  }
 };
 
 export const hookCommand = command(
@@ -81,55 +188,57 @@ export const hookCommand = command(
     parameters: ['<set/unset>']
   },
   async (argv) => {
-    const HOOK_URL = __filename;
+    const cliPath = __filename;
     try {
       await assertGitRepo();
-      const SYMLINK_URL = await getHooksPath();
+      const hookPath = await getHooksPath();
 
       const { setUnset: mode } = argv._;
 
       if (mode === 'set') {
-        intro(`setting opencommit as '${HOOK_NAME}' hook at ${SYMLINK_URL}`);
+        intro(`setting opencommit as '${HOOK_NAME}' hook at ${hookPath}`);
 
-        const hookScript = buildHookScript(process.execPath, HOOK_URL);
+        const script = buildHookScript(process.execPath, cliPath);
+        const existing = await inspectHook(hookPath, cliPath);
 
-        if (await isHookExists(SYMLINK_URL)) {
-          if (!(await isOpenCommitHook(SYMLINK_URL, HOOK_URL)))
-            throw new Error(
-              `Different ${HOOK_NAME} is already set. Remove it before setting opencommit as '${HOOK_NAME}' hook.`
-            );
+        if (existing && !existing.owned)
+          throw new Error(
+            `Different ${HOOK_NAME} is already set. Remove it before setting opencommit as '${HOOK_NAME}' hook.`
+          );
 
-          if ((await fs.readFile(SYMLINK_URL, 'utf8')) === hookScript)
-            return outro(`OpenCommit is already set as '${HOOK_NAME}'`);
+        if (
+          existing?.content === script &&
+          (process.platform === 'win32' || (existing.stats.mode & 0o100) !== 0)
+        )
+          return outro(`OpenCommit is already set as '${HOOK_NAME}'`);
 
-          await fs.rm(SYMLINK_URL);
+        if (existing?.content === script && existing.stats.nlink === 1) {
+          await restoreHookExecuteBit(hookPath, existing.stats);
+        } else {
+          await installHook(hookPath, script, existing?.stats);
         }
-
-        await fs.mkdir(path.dirname(SYMLINK_URL), { recursive: true });
-        await fs.writeFile(SYMLINK_URL, hookScript);
-        await fs.chmod(SYMLINK_URL, 0o755);
-
         return outro(`${chalk.green('✔')} Hook set`);
       }
 
       if (mode === 'unset') {
-        intro(
-          `unsetting opencommit as '${HOOK_NAME}' hook from ${SYMLINK_URL}`
-        );
+        intro(`unsetting opencommit as '${HOOK_NAME}' hook from ${hookPath}`);
 
-        if (!(await isHookExists(SYMLINK_URL))) {
+        const existing = await inspectHook(hookPath, cliPath);
+        if (!existing) {
           return outro(
             `OpenCommit wasn't previously set as '${HOOK_NAME}' hook, nothing to remove`
           );
         }
 
-        if (!(await isOpenCommitHook(SYMLINK_URL, HOOK_URL))) {
+        if (!existing.owned) {
           return outro(
             `OpenCommit wasn't previously set as '${HOOK_NAME}' hook, but different hook was, if you want to remove it — do it manually`
           );
         }
 
-        await fs.rm(SYMLINK_URL);
+        if (!sameFile(await statHook(hookPath), existing.stats))
+          throw hookChanged();
+        await fs.unlink(hookPath);
         return outro(`${chalk.green('✔')} Hook is removed`);
       }
 

@@ -1,13 +1,18 @@
+import { execFileSync } from 'child_process';
 import {
+  chmodSync,
+  chownSync,
+  copyFileSync,
   existsSync,
   lstatSync,
+  mkdirSync,
   readFileSync,
   realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync
 } from 'fs';
-import { resolve } from 'path';
+import { dirname, resolve } from 'path';
 import 'cli-testing-library/extend-expect';
 import {
   assertGitStatus,
@@ -522,14 +527,24 @@ it('cli applies the documented message template placeholder from extra args', as
 
 const getHookCliPath = () => realpathSync(resolve('./out/cli.cjs'));
 
+const installCopiedHook = async (gitDir: string, cliPath: string) => {
+  copyFileSync(getHookCliPath(), cliPath);
+  copyFileSync(
+    resolve('./out/tiktoken_bg.wasm'),
+    resolve(dirname(cliPath), 'tiktoken_bg.wasm')
+  );
+
+  const setHook = await runProcess(process.execPath, [cliPath, 'hook', 'set'], {
+    cwd: gitDir
+  });
+  expect(await waitForExit(setHook)).toBe(0);
+};
+
 const expectHookLauncher = (hookPath: string): void => {
   const hookStats = lstatSync(hookPath);
 
   expect(hookStats.isFile()).toBe(true);
-  expect(hookStats.mode & 0o111).not.toBe(0);
-  expect(readFileSync(hookPath, 'utf8')).toContain(
-    `exec '${process.execPath}' '${getHookCliPath()}' "$@"`
-  );
+  if (process.platform !== 'win32') expect(hookStats.mode & 0o111).not.toBe(0);
 };
 
 const expectHookSetAndUnset = async ({
@@ -623,8 +638,9 @@ it('hook command uses the shared hooks directory from a linked worktree', async 
 });
 
 it('hook command replaces a legacy symlink and an outdated launcher', async () => {
-  const { gitDir, cleanup } = await prepareEnvironment();
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
   const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+  const previousCli = resolve(tempDir, 'cli.cjs');
 
   try {
     symlinkSync(getHookCliPath(), hookPath);
@@ -634,15 +650,24 @@ it('hook command replaces a legacy symlink and an outdated launcher', async () =
     expect(await waitForExit(replaceSymlink)).toBe(0);
     expectHookLauncher(hookPath);
 
-    writeFileSync(
-      hookPath,
-      "#!/bin/sh\n# opencommit prepare-commit-msg hook\nexec '/old/node' '/old/cli.cjs' \"$@\"\n"
-    );
+    await installCopiedHook(gitDir, previousCli);
+    rmSync(previousCli);
+    if (process.platform !== 'win32') {
+      const { uid, gid } = lstatSync(hookPath);
+      const teamGroup = process.getgroups?.().find((group) => group !== gid);
+      if (teamGroup !== undefined) chownSync(hookPath, uid, teamGroup);
+      chmodSync(hookPath, 0o750);
+    }
+    const { gid } = lstatSync(hookPath);
 
     const replaceLauncher = await runCli(['hook', 'set'], { cwd: gitDir });
     expect(await replaceLauncher.findByText('Hook set')).toBeInTheConsole();
     expect(await waitForExit(replaceLauncher)).toBe(0);
     expectHookLauncher(hookPath);
+    if (process.platform !== 'win32') {
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o750);
+      expect(lstatSync(hookPath).gid).toBe(gid);
+    }
 
     const setAgain = await runCli(['hook', 'set'], { cwd: gitDir });
     expect(await setAgain.findByText('already set')).toBeInTheConsole();
@@ -653,14 +678,82 @@ it('hook command replaces a legacy symlink and an outdated launcher', async () =
   }
 });
 
+const itPosix = process.platform === 'win32' ? it.skip : it;
+
+itPosix.each(['launcher', 'legacy symlink'])(
+  'hook set and unset preserve another user’s %s',
+  async (hookType) => {
+    const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+    const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+    const preload = resolve(tempDir, 'other-user.cjs');
+
+    try {
+      if (hookType === 'legacy symlink')
+        symlinkSync(getHookCliPath(), hookPath);
+      else await installCopiedHook(gitDir, resolve(tempDir, 'cli.cjs'));
+      const { ino, uid } = lstatSync(hookPath);
+      writeFileSync(preload, `process.geteuid = () => ${uid + 1};\n`);
+      const env = { NODE_OPTIONS: `--require ${JSON.stringify(preload)}` };
+
+      const setHook = await runCli(['hook', 'set'], { cwd: gitDir, env });
+      expect(await waitForExit(setHook)).toBe(1);
+      expect(lstatSync(hookPath).ino).toBe(ino);
+
+      const unsetHook = await runCli(['hook', 'unset'], { cwd: gitDir, env });
+      expect(await waitForExit(unsetHook)).toBe(0);
+      expect(lstatSync(hookPath).ino).toBe(ino);
+    } finally {
+      await cleanup();
+    }
+  }
+);
+
+itPosix(
+  'hook set honors umask and repairs only the owner execute bit',
+  async () => {
+    const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+    const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+    const preload = resolve(tempDir, 'umask.cjs');
+    const env = { NODE_OPTIONS: `--require ${JSON.stringify(preload)}` };
+
+    try {
+      writeFileSync(preload, 'process.umask(0o077);\n');
+      expect(
+        await waitForExit(await runCli(['hook', 'set'], { cwd: gitDir, env }))
+      ).toBe(0);
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o700);
+
+      expect(
+        await waitForExit(await runCli(['hook', 'set'], { cwd: gitDir }))
+      ).toBe(0);
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o700);
+
+      chmodSync(hookPath, 0o640);
+      const { ino } = lstatSync(hookPath);
+      expect(
+        await waitForExit(await runCli(['hook', 'set'], { cwd: gitDir, env }))
+      ).toBe(0);
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o740);
+      expect(lstatSync(hookPath).ino).toBe(ino);
+    } finally {
+      await cleanup();
+    }
+  }
+);
+
 it('hook command keeps a foreign or dangling prepare-commit-msg hook', async () => {
   const { tempDir, gitDir, cleanup } = await prepareEnvironment();
   const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
-  const foreignHook = '#!/bin/sh\necho custom\n';
   const missingTarget = resolve(tempDir, 'missing-hook');
 
   try {
-    writeFileSync(hookPath, foreignHook, { mode: 0o755 });
+    const install = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await waitForExit(install)).toBe(0);
+    const foreignHook = readFileSync(hookPath, 'utf8').replace(
+      '\nexec ',
+      '\necho custom\nexec '
+    );
+    writeFileSync(hookPath, foreignHook);
 
     const setHook = await runCli(['hook', 'set'], { cwd: gitDir });
     expect(await setHook.findByText('already set')).toBeInTheConsole();
@@ -684,39 +777,99 @@ it('hook command keeps a foreign or dangling prepare-commit-msg hook', async () 
   }
 });
 
-it('prepare-commit-msg hook runs from git commit without node in PATH', async () => {
-  const { gitDir, cleanup } = await prepareEnvironment();
-  const server = await startMockOpenAiServer(
-    'fix(hook): run without node in PATH'
-  );
+it('git preserves a supplied message after OpenCommit is downgraded', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const installedCli = resolve(tempDir, 'cli.cjs');
 
   try {
-    await prepareRepo(
-      gitDir,
-      {
-        'index.ts': 'console.log("Hello World");\n'
-      },
-      { stage: true }
+    await installCopiedHook(gitDir, installedCli);
+    writeFileSync(
+      installedCli,
+      `const { realpathSync } = require('fs');
+if (realpathSync(process.argv[1]) !== realpathSync('.git/hooks/prepare-commit-msg') || process.argv[3] !== 'message') {
+  throw new Error('Expected a legacy hook call with a supplied message');
+}
+`
     );
-
-    const setHook = await runCli(['hook', 'set'], { cwd: gitDir });
-    expect(await waitForExit(setHook)).toBe(0);
 
     await runGit(
-      ['commit'],
-      gitDir,
-      getMockOpenAiEnv(server.baseUrl, {
-        PATH: '/usr/bin:/bin',
-        GIT_EDITOR: "sed -i.bak -e 's/^# fix(hook)/fix(hook)/'"
-      })
+      ['commit', '--allow-empty', '-m', 'docs: keep this message'],
+      gitDir
     );
-
-    await assertHeadCommit(gitDir, 'fix(hook): run without node in PATH');
+    await assertHeadCommit(gitDir, 'docs: keep this message');
   } finally {
-    await server.cleanup();
     await cleanup();
   }
 });
+
+it('git commit still works after OpenCommit is uninstalled', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const installedCli = resolve(tempDir, 'cli.cjs');
+
+  try {
+    await installCopiedHook(gitDir, installedCli);
+    rmSync(installedCli);
+
+    const { stderr } = await runGit(
+      ['commit', '--allow-empty', '-m', 'docs: update repository'],
+      gitDir
+    );
+    expect(stderr).toContain('oco hook set');
+    await assertHeadCommit(gitDir, 'docs: update repository');
+  } finally {
+    await cleanup();
+  }
+});
+
+itPosix(
+  'prepare-commit-msg hook runs from git commit without node in PATH',
+  async () => {
+    const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+    const server = await startMockOpenAiServer(
+      'fix(hook): run without node in PATH'
+    );
+
+    try {
+      const limitedPath = resolve(tempDir, 'bin');
+      const gitPath = execFileSync('/bin/sh', ['-c', 'command -v git'], {
+        encoding: 'utf8'
+      }).trim();
+      mkdirSync(limitedPath);
+      symlinkSync(gitPath, resolve(limitedPath, 'git'));
+      writeGlobalConfig(tempDir, ['OCO_HOOK_AUTO_UNCOMMENT=true']);
+      const env = { HOME: tempDir };
+
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
+
+      const setHook = await runCli(['hook', 'set'], {
+        cwd: gitDir,
+        env
+      });
+      expect(await waitForExit(setHook)).toBe(0);
+
+      await runGit(
+        ['commit'],
+        gitDir,
+        getMockOpenAiEnv(server.baseUrl, {
+          ...env,
+          PATH: limitedPath,
+          GIT_EDITOR: ':'
+        })
+      );
+
+      await assertHeadCommit(gitDir, 'fix(hook): run without node in PATH');
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
+  }
+);
 
 it.each([false, true])(
   'prepare-commit-msg hook writes the message with full GitMoji set to %s',

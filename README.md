@@ -557,7 +557,9 @@ git commit
 
 Or follow the process of your IDE Source Control feature, when it calls `git commit` command — OpenCommit will integrate into the flow.
 
-The hook records the absolute path of the Node.js binary that ran `oco hook set`, so it also works in Git clients that start hooks without Node.js in `PATH`. After you switch or uninstall that Node.js version (for example with nvm or volta), run `oco hook set` again.
+The hook records the absolute paths of Node.js and OpenCommit, so it works in clients that start Git without Node.js in `PATH`. After you move or reinstall either one, run `oco hook set` again. If either recorded path disappears, the hook lets Git continue and prints a recovery hint.
+
+Run `oco hook unset` in repositories that use the hook before you uninstall or downgrade OpenCommit. Older releases can only remove the symlinks they install. If `oco hook set` reports a different hook after an upgrade, check whether the existing `prepare-commit-msg` is an old OpenCommit symlink. Remove that symlink from the configured hooks directory manually once you have verified its target, then run `oco hook set` again.
 
 ## Setup OpenCommit as a GitHub Action (BETA) 🔥
 
