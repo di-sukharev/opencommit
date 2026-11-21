@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, aigrow>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -350,6 +350,18 @@ oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key> OCO_MO
 ```
 
 The default model is `deepseek/deepseek-v3.2`.
+
+### Use AIGROW as the model provider
+
+[AIGROW](https://aigrow.gg/ai-api) sells prepaid API credit for Claude, GPT, Gemini, Grok, Qwen and Kimi models on one key, over an OpenAI-compatible API at `https://aigrow.gg/v1`. Model ids are unprefixed; `oco models` lists them from the public catalog at `https://aigrow.gg/v1/models`, which also gives each model's price and needs no key.
+
+```sh
+oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=<your_aigrow_api_key>
+
+oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=<your_aigrow_api_key> OCO_MODEL=gemini-3.8-flash
+```
+
+The default model is `claude-haiku-5.5`.
 
 ### Use with Proxy
 

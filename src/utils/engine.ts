@@ -19,6 +19,7 @@ import { CheaperInferenceEngine } from '../engine/cheaperinference';
 import { RequestyEngine } from '../engine/requesty';
 import { AtlasCloudEngine } from '../engine/atlascloud';
 import { UberLLMEngine } from '../engine/uberllm';
+import { AIGROWEngine } from '../engine/aigrow';
 import { parseCustomHeaders } from './customHeaders';
 import { resolveProxy } from './proxy';
 
@@ -94,6 +95,8 @@ export function getEngine(config = getConfig()): AiEngine {
       return new AtlasCloudEngine(DEFAULT_CONFIG);
     case OCO_AI_PROVIDER_ENUM.UBERLLM:
       return new UberLLMEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.AIGROW:
+      return new AIGROWEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);

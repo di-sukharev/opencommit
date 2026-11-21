@@ -12,7 +12,8 @@ import {
   fetchOpenRouterModels,
   fetchOrcaRouterModels,
   fetchRequestyModels,
-  fetchUberLLMModels
+  fetchUberLLMModels,
+  fetchAIGROWModels
 } from '../../src/utils/modelCache';
 
 const originalFetch = global.fetch;
@@ -244,6 +245,15 @@ describe('provider model fetchers', () => {
         ]
       },
       expected: ['anthropic/claude-haiku-4.5', 'deepseek/deepseek-v3.2']
+    },
+    {
+      provider: 'AIGROW',
+      fetchModels: () => fetchAIGROWModels(),
+      request: ['https://aigrow.gg/v1/models'],
+      payload: {
+        data: [{ id: 'gemini-3.8-flash' }, { id: 'claude-haiku-5.5' }]
+      },
+      expected: ['claude-haiku-5.5', 'gemini-3.8-flash']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -350,7 +360,8 @@ describe('provider model fetchers', () => {
     ],
     ['Requesty', () => fetchRequestyModels('key'), MODEL_LIST.requesty],
     ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud],
-    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm]
+    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm],
+    ['AIGROW', () => fetchAIGROWModels(), MODEL_LIST.aigrow]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

@@ -299,6 +299,17 @@ export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
       (data as ModelListResponse).data?.map((model) => model.id).sort()
   });
 }
+
+export async function fetchAIGROWModels(): Promise<string[]> {
+  return fetchModelList({
+    // Public: lists every chat model with its price and needs no key.
+    url: 'https://aigrow.gg/v1/models',
+    fallback: MODEL_LIST.aigrow,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -410,6 +421,10 @@ export async function fetchModelsForProvider(
       } else {
         models = MODEL_LIST.uberllm;
       }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.AIGROW:
+      models = await fetchAIGROWModels();
       break;
 
     default:
