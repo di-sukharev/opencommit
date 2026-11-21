@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, trustedrouter>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, trustedrouter, aigrow>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -364,6 +364,18 @@ oco config set OCO_AI_PROVIDER=trustedrouter OCO_API_KEY=your_trustedrouter_api_
 ```
 
 The default model is `deepseek/deepseek-v4-flash`. OpenCommit uses `https://api.trustedrouter.com/v1` by default and lists text models that support Chat Completions in TrustedRouter's public catalog. Set `OCO_API_URL` to override the endpoint. See the [TrustedRouter docs](https://trustedrouter.com/docs) for details.
+
+### Use AIGROW as the model provider
+
+[AIGROW](https://aigrow.gg/ai-api) provides an OpenAI-compatible API for Claude, GPT, Gemini, Grok, Qwen and Kimi at `https://aigrow.gg/v1`. Use model IDs without provider prefixes.
+
+```sh
+oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=your_aigrow_api_key OCO_MODEL=claude-haiku-5.5
+
+oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=your_aigrow_api_key OCO_MODEL=gemini-3.8-flash
+```
+
+Run `oco models --refresh` to fetch the current models. To list them before configuring a key, run `oco models --provider aigrow --refresh`.
 
 ### Use with Proxy
 

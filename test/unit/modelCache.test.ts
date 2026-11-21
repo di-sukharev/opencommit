@@ -12,6 +12,7 @@ import {
   fetchOpenRouterModels,
   fetchOrcaRouterModels,
   fetchRequestyModels,
+  fetchAIGROWModels,
   fetchTrustedRouterModels,
   fetchUberLLMModels
 } from '../../src/utils/modelCache';
@@ -283,6 +284,15 @@ describe('provider model fetchers', () => {
         ]
       },
       expected: ['deepseek/deepseek-v4-flash', 'trustedrouter/auto']
+    },
+    {
+      provider: 'AIGROW',
+      fetchModels: () => fetchAIGROWModels(),
+      request: ['https://aigrow.gg/v1/models'],
+      payload: {
+        data: [{ id: 'gemini-3.8-flash' }, { id: 'claude-haiku-5.5' }]
+      },
+      expected: ['claude-haiku-5.5', 'gemini-3.8-flash']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -394,7 +404,8 @@ describe('provider model fetchers', () => {
       'TrustedRouter',
       () => fetchTrustedRouterModels(),
       MODEL_LIST.trustedrouter
-    ]
+    ],
+    ['AIGROW', () => fetchAIGROWModels(), MODEL_LIST.aigrow]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {
