@@ -1,7 +1,8 @@
 import OpenAI from 'openai';
-import { AiEngine, AiEngineConfig } from './Engine';
 import axios, { AxiosInstance } from 'axios';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { removeContentTags } from '../utils/removeContentTags';
+import { AiEngine, AiEngineConfig } from './Engine';
 
 interface OpenRouterConfig extends AiEngineConfig {}
 
@@ -33,17 +34,7 @@ export class OpenRouterEngine implements AiEngine {
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const openRouterError = error.response.data.error;
-
-        if (openRouterError) throw new Error(openRouterError.message);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'openrouter', this.config.model);
     }
   };
 }

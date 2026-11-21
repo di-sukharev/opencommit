@@ -1,30 +1,45 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
-import {
-  CONFIG_KEYS,
-  DEFAULT_CONFIG,
-  getConfig,
-  setConfig
-} from '../../src/commands/config';
+import { jest } from '@jest/globals';
 import { prepareFile } from './utils';
 import { dirname } from 'path';
 
+const defaultEnvFile = await prepareFile('.env', '');
+afterAll(() => defaultEnvFile.cleanup());
+
+const {
+  CONFIG_KEYS,
+  DEFAULT_CONFIG,
+  OCO_AI_PROVIDER_ENUM,
+  configValidators,
+  getConfig,
+  setConfig
+} = await (async () => {
+  // The config module captures its default .env path on import, including the
+  // path used internally by setConfig. Point it at a fixture for this suite.
+  const originalCwd = process.cwd();
+  try {
+    process.chdir(dirname(defaultEnvFile.filePath));
+    return await import('../../src/commands/config');
+  } finally {
+    process.chdir(originalCwd);
+  }
+})();
+
 describe('config', () => {
   const originalEnv = { ...process.env };
+  const testEnv = Object.fromEntries(
+    Object.entries(originalEnv).filter(([key]) => !key.startsWith('OCO_'))
+  );
   let globalConfigFile: { filePath: string; cleanup: () => Promise<void> };
   let envConfigFile: { filePath: string; cleanup: () => Promise<void> };
 
   function resetEnv(env: NodeJS.ProcessEnv) {
-    Object.keys(process.env).forEach((key) => {
-      if (!(key in env)) {
-        delete process.env[key];
-      } else {
-        process.env[key] = env[key];
-      }
-    });
+    Object.keys(process.env).forEach((key) => delete process.env[key]);
+    Object.assign(process.env, env);
   }
 
   beforeEach(async () => {
-    resetEnv(originalEnv);
+    resetEnv(testEnv);
     if (globalConfigFile) await globalConfigFile.cleanup();
     if (envConfigFile) await envConfigFile.cleanup();
   });
@@ -100,14 +115,21 @@ describe('config', () => {
     it('should handle boolean and numeric values correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
         OCO_TOKENS_MAX_INPUT: '4096',
+        OCO_HOOK_AUTO_UNCOMMENT: 'true',
         OCO_TOKENS_MAX_OUTPUT: '500',
-        OCO_GITPUSH: 'true'
+        OCO_GITPUSH: 'true',
+        OCO_REASONING: 'false'
       });
 
       envConfigFile = await generateConfig('.env', {
         OCO_TOKENS_MAX_INPUT: '8192',
+        OCO_HOOK_AUTO_UNCOMMENT: 'false',
         OCO_ONE_LINE_COMMIT: 'false',
-        OCO_OMIT_SCOPE: 'true'
+        OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: 'true',
+        OCO_EMOJI_FULL_SPEC: 'true',
+        OCO_OMIT_SCOPE: 'true',
+        OCO_REASONING: 'true',
+        OCO_REASONING_MAX_TOKENS: '2048'
       });
 
       const config = getConfig({
@@ -117,19 +139,48 @@ describe('config', () => {
 
       expect(config).not.toEqual(null);
       expect(config.OCO_TOKENS_MAX_INPUT).toEqual(8192);
+      expect(config.OCO_HOOK_AUTO_UNCOMMENT).toBe(false);
       expect(config.OCO_TOKENS_MAX_OUTPUT).toEqual(500);
       expect(config.OCO_GITPUSH).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
+      expect(config.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION).toEqual(true);
+      expect(config.OCO_EMOJI_FULL_SPEC).toEqual(true);
       expect(config.OCO_OMIT_SCOPE).toEqual(true);
+      expect(config.OCO_REASONING).toEqual(true);
+      expect(config.OCO_REASONING_MAX_TOKENS).toEqual(2048);
     });
-    
+
+    it.each([
+      ['FALSE', 'true', false],
+      ['off', 'false', false],
+      ['off', 'true', true]
+    ])(
+      'should resolve hook auto-uncomment from local %s and global %s',
+      async (localValue, globalValue, expected) => {
+        globalConfigFile = await generateConfig('.opencommit', {
+          OCO_HOOK_AUTO_UNCOMMENT: globalValue
+        });
+        envConfigFile = await generateConfig('.env', {
+          OCO_HOOK_AUTO_UNCOMMENT: localValue
+        });
+
+        const config = getConfig({
+          globalPath: globalConfigFile.filePath,
+          envPath: envConfigFile.filePath
+        });
+
+        expect(config.OCO_HOOK_AUTO_UNCOMMENT).toBe(expected);
+      }
+    );
+
     it('should handle custom HTTP headers correctly', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
         OCO_API_CUSTOM_HEADERS: '{"X-Global-Header": "global-value"}'
       });
 
       envConfigFile = await generateConfig('.env', {
-        OCO_API_CUSTOM_HEADERS: '{"Authorization": "Bearer token123", "X-Custom-Header": "test-value"}'
+        OCO_API_CUSTOM_HEADERS:
+          '{"Authorization": "Bearer token123", "X-Custom-Header": "test-value"}'
       });
 
       const config = getConfig({
@@ -138,8 +189,11 @@ describe('config', () => {
       });
 
       expect(config).not.toEqual(null);
-      expect(config.OCO_API_CUSTOM_HEADERS).toEqual({"Authorization": "Bearer token123", "X-Custom-Header": "test-value"});
-      
+      expect(config.OCO_API_CUSTOM_HEADERS).toEqual({
+        Authorization: 'Bearer token123',
+        'X-Custom-Header': 'test-value'
+      });
+
       // No need to parse JSON again since it's already an object
       const parsedHeaders = config.OCO_API_CUSTOM_HEADERS;
       expect(parsedHeaders).toHaveProperty('Authorization', 'Bearer token123');
@@ -198,6 +252,50 @@ describe('config', () => {
 
       expect(config).not.toEqual(null);
       expect(config.OCO_API_KEY).toEqual(undefined);
+      // Ensure OCO_REASONING is undefined by default (auto-detect mode)
+      expect(config.OCO_REASONING).toEqual(undefined);
+    });
+
+    it('should not create a global config file when only reading defaults', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {});
+      rmSync(globalConfigFile.filePath);
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
+
+      expect(config.OCO_MODEL).toEqual(DEFAULT_CONFIG.OCO_MODEL);
+      expect(existsSync(globalConfigFile.filePath)).toBe(false);
+    });
+
+    it('should not materialize ambient proxy env vars into OCO_PROXY', async () => {
+      process.env.HTTPS_PROXY = 'http://127.0.0.1:7890';
+
+      globalConfigFile = await generateConfig('.opencommit', {});
+      envConfigFile = await generateConfig('.env', {});
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config.OCO_PROXY).toEqual(undefined);
+    });
+
+    it('should parse OCO_PROXY=null from local .env as explicit disable', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_PROXY: 'http://global-proxy:8080'
+      });
+      envConfigFile = await generateConfig('.env', {
+        OCO_PROXY: 'null'
+      });
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config.OCO_PROXY).toEqual(null);
     });
   });
 
@@ -261,8 +359,13 @@ describe('config', () => {
       await setConfig(
         [
           [CONFIG_KEYS.OCO_TOKENS_MAX_INPUT, '8192'],
+          [CONFIG_KEYS.OCO_HOOK_AUTO_UNCOMMENT, 'true'],
           [CONFIG_KEYS.OCO_DESCRIPTION, 'true'],
-          [CONFIG_KEYS.OCO_ONE_LINE_COMMIT, 'false']
+          [CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION, 'true'],
+          [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC, 'true'],
+          [CONFIG_KEYS.OCO_ONE_LINE_COMMIT, 'false'],
+          [CONFIG_KEYS.OCO_REASONING, 'true'],
+          [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS, '1024']
         ],
         globalConfigFile.filePath
       );
@@ -271,8 +374,13 @@ describe('config', () => {
         globalPath: globalConfigFile.filePath
       });
       expect(config.OCO_TOKENS_MAX_INPUT).toEqual(8192);
+      expect(config.OCO_HOOK_AUTO_UNCOMMENT).toBe(true);
       expect(config.OCO_DESCRIPTION).toEqual(true);
+      expect(config.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION).toEqual(true);
+      expect(config.OCO_EMOJI_FULL_SPEC).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
+      expect(config.OCO_REASONING).toEqual(true);
+      expect(config.OCO_REASONING_MAX_TOKENS).toEqual(1024);
     });
 
     it('should throw an error for unsupported config keys', async () => {
@@ -324,6 +432,92 @@ describe('config', () => {
 
       const fileContent2 = readFileSync(globalConfigFile.filePath, 'utf8');
       expect(fileContent2).toContain('OCO_MODEL=gpt-4');
+    });
+
+    it('should persist OCO_PROXY=null as an explicit disable', async () => {
+      await setConfig(
+        [[CONFIG_KEYS.OCO_PROXY, null]],
+        globalConfigFile.filePath
+      );
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath
+      });
+      const fileContent = readFileSync(globalConfigFile.filePath, 'utf8');
+
+      expect(config.OCO_PROXY).toEqual(null);
+      expect(fileContent).toContain('OCO_PROXY=null');
+    });
+
+    it('should validate OCO_REASONING_MAX_TOKENS as a positive integer', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {});
+
+      await setConfig(
+        [[CONFIG_KEYS.OCO_REASONING_MAX_TOKENS, '1024']],
+        globalConfigFile.filePath
+      );
+      let config = getConfig({ globalPath: globalConfigFile.filePath });
+      expect(config.OCO_REASONING_MAX_TOKENS).toEqual(1024);
+
+      const invalidValues = [
+        '0',
+        0,
+        '-10',
+        -10,
+        '10.5',
+        10.5,
+        '100abc',
+        'invalid',
+        '0x10',
+        '1e3',
+        ' 1000 ',
+        true,
+        Number.MAX_SAFE_INTEGER + 1
+      ];
+      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`process.exit(${code})`);
+      });
+      try {
+        for (const val of invalidValues) {
+          exit.mockClear();
+          expect(() =>
+            configValidators[CONFIG_KEYS.OCO_REASONING_MAX_TOKENS](val)
+          ).toThrow('process.exit(1)');
+          expect(exit).toHaveBeenCalledWith(1);
+        }
+      } finally {
+        exit.mockRestore();
+      }
+    });
+  });
+  describe('OCO_AI_PROVIDER validator', () => {
+    it('accepts atlascloud', () => {
+      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`process.exit(${code})`);
+      });
+      try {
+        expect(
+          configValidators[CONFIG_KEYS.OCO_AI_PROVIDER]('atlascloud')
+        ).toBe('atlascloud');
+        expect(exit).not.toHaveBeenCalled();
+      } finally {
+        exit.mockRestore();
+      }
+    });
+
+    it('accepts every provider in OCO_AI_PROVIDER_ENUM', () => {
+      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
+        throw new Error(`process.exit(${code})`);
+      });
+      try {
+        for (const provider of Object.values(OCO_AI_PROVIDER_ENUM)) {
+          expect(configValidators[CONFIG_KEYS.OCO_AI_PROVIDER](provider)).toBe(
+            provider
+          );
+        }
+      } finally {
+        exit.mockRestore();
+      }
     });
   });
 });

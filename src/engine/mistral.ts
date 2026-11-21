@@ -1,6 +1,7 @@
-import axios from 'axios';
+import { Mistral } from '@mistralai/mistralai';
 import { OpenAI } from 'openai';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -8,10 +9,6 @@ import { AiEngine, AiEngineConfig } from './Engine';
 // Using any for Mistral types to avoid type declaration issues
 export interface MistralAiConfig extends AiEngineConfig {}
 export type MistralCompletionMessageParam = Array<any>;
-
-// Import Mistral dynamically to avoid TS errors
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Mistral = require('@mistralai/mistralai').Mistral;
 
 export class MistralAiEngine implements AiEngine {
   config: MistralAiConfig;
@@ -63,17 +60,7 @@ export class MistralAiEngine implements AiEngine {
       let content = message.content as string;
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const mistralError = error.response.data.error;
-
-        if (mistralError) throw new Error(mistralError.message);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'mistral', this.config.model);
     }
   };
 }

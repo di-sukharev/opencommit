@@ -1,18 +1,29 @@
-import axios from 'axios';
 import { OpenAI } from 'openai';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { OpenAiEngine, OpenAiConfig } from './openAi';
 
 export interface DeepseekConfig extends OpenAiConfig {}
 
+// DeepSeek supports an undocumented `thinking` field in the chat completion
+// request body (not part of the OpenAI type definitions). The JavaScript SDK
+// forwards unknown top-level fields as-is, so `thinking` must sit at the top
+// level of the request — wrapping it in `extra_body` (a Python SDK helper)
+// would send an `extra_body` field instead and leave thinking mode enabled.
+interface DeepseekChatCompletionParams
+  extends OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming {
+  thinking?: { type: 'enabled' | 'disabled' };
+}
+
 export class DeepseekEngine extends OpenAiEngine {
   constructor(config: DeepseekConfig) {
     // Call OpenAIEngine constructor with forced Deepseek baseURL
+    // Put baseURL first so user config can override it
     super({
-      ...config,
-      baseURL: 'https://api.deepseek.com/v1'
+      baseURL: 'https://api.deepseek.com/v1',
+      ...config
     });
   }
 
@@ -20,12 +31,17 @@ export class DeepseekEngine extends OpenAiEngine {
   public generateCommitMessage = async (
     messages: Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>
   ): Promise<string | null> => {
-    const params = {
+    const params: DeepseekChatCompletionParams = {
       model: this.config.model,
       messages,
       temperature: 0,
       top_p: 0.1,
-      max_tokens: this.config.maxTokensOutput
+      max_tokens: this.config.maxTokensOutput,
+      // DeepSeek V4: disable thinking mode (enabled by default with effort=high).
+      // Thinking mode returns reasoning in `reasoning_content` and can leave
+      // `content` empty when max_tokens is low, causing EMPTY_MESSAGE errors.
+      // Commit message generation doesn't need chain-of-thought.
+      thinking: { type: 'disabled' }
     };
 
     try {
@@ -45,17 +61,7 @@ export class DeepseekEngine extends OpenAiEngine {
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
-      const err = error as Error;
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const openAiError = error.response.data.error;
-
-        if (openAiError) throw new Error(openAiError.message);
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'deepseek', this.config.model);
     }
   };
 }
