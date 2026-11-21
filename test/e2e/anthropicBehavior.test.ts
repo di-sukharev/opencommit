@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 import 'cli-testing-library/extend-expect';
 import {
   assertGitStatus,
@@ -9,7 +11,8 @@ import {
   seedMigrations,
   startMockAnthropicServer,
   waitForExit,
-  writeGlobalConfig
+  writeGlobalConfig,
+  writeRepoFile
 } from './utils';
 
 const getAnthropicEnv = (
@@ -25,6 +28,82 @@ const getAnthropicEnv = (
   OCO_TOKENS_MAX_OUTPUT: '256',
   OCO_PROXY: 'null',
   OCO_GITPUSH: 'false'
+});
+
+it('uses saved legacy Anthropic transport when a repository selects Anthropic', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment({ remotes: 0 });
+  const message = 'fix(anthropic): use the saved API settings';
+  const server = await startMockAnthropicServer({
+    content: [{ type: 'text', text: message }],
+    stop_reason: 'end_turn'
+  });
+
+  try {
+    const configPath = writeGlobalConfig(tempDir, [
+      'OCO_AI_PROVIDER=openai',
+      'OCO_OPENAI_API_KEY=test-legacy-openai-key',
+      'OCO_ANTHROPIC_API_KEY=test-legacy-anthropic-key',
+      `OCO_ANTHROPIC_BASE_PATH=${server.baseUrl}`,
+      'OCO_GITPUSH=false',
+      'OCO_PROXY=null'
+    ]);
+    const savedConfig = readFileSync(configPath, 'utf8');
+    await prepareRepo(gitDir, { 'index.ts': 'export {};\n' }, { stage: true });
+    writeRepoFile(gitDir, '.env', 'OCO_AI_PROVIDER=anthropic\n');
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: { HOME: tempDir }
+    });
+
+    expect(await waitForExit(oco)).toBe(0);
+    await assertHeadCommit(gitDir, message);
+    expect(server.apiKeys).toEqual(['test-legacy-anthropic-key']);
+    expect(readFileSync(configPath, 'utf8')).toBe(savedConfig);
+    expect(existsSync(join(tempDir, '.opencommit_migrations'))).toBe(false);
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
+it('migrates missing transport for the saved provider and keeps its modern key', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment({ remotes: 0 });
+  const message = 'fix(anthropic): use the migrated API settings';
+  const server = await startMockAnthropicServer({
+    content: [{ type: 'text', text: message }],
+    stop_reason: 'end_turn'
+  });
+
+  try {
+    const configPath = writeGlobalConfig(tempDir, [
+      'OCO_AI_PROVIDER=anthropic',
+      'OCO_API_KEY=test-modern-anthropic-key',
+      'OCO_ANTHROPIC_API_KEY=test-legacy-anthropic-key',
+      `OCO_ANTHROPIC_BASE_PATH=${server.baseUrl}`,
+      'OCO_GITPUSH=false',
+      'OCO_PROXY=null'
+    ]);
+    await prepareRepo(gitDir, { 'index.ts': 'export {};\n' }, { stage: true });
+    const options = { cwd: gitDir, env: { HOME: tempDir } };
+
+    const migration = await runCli(['--yes'], options);
+    expect(await waitForExit(migration)).toBe(0);
+    expect(existsSync(join(tempDir, '.opencommit_migrations'))).toBe(true);
+    const savedConfig = readFileSync(configPath, 'utf8');
+    expect(savedConfig).toContain('OCO_API_KEY=test-modern-anthropic-key');
+    expect(savedConfig).toContain(`OCO_API_URL=${server.baseUrl}`);
+    expect(savedConfig).not.toContain('OCO_ANTHROPIC_API_KEY');
+    expect(savedConfig).not.toContain('OCO_ANTHROPIC_BASE_PATH');
+
+    const oco = await runCli(['--yes'], options);
+    expect(await waitForExit(oco)).toBe(0);
+    await assertHeadCommit(gitDir, message);
+    expect(server.apiKeys).toEqual(['test-modern-anthropic-key']);
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
 });
 
 it.each(['claude-haiku-5-5', 'claude-haiku-4-5-20251001'])(

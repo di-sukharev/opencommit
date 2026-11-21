@@ -1,16 +1,23 @@
+import { execFileSync, spawnSync } from 'child_process';
 import {
+  chmodSync,
+  chownSync,
+  copyFileSync,
   existsSync,
   lstatSync,
+  mkdirSync,
   readFileSync,
   realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync
 } from 'fs';
-import { resolve } from 'path';
+import { dirname, resolve } from 'path';
 import 'cli-testing-library/extend-expect';
 import {
   assertGitStatus,
   assertHeadCommit,
+  getCliPath,
   getHeadCommitFiles,
   getMockOpenAiEnv,
   prepareEnvironment,
@@ -519,6 +526,28 @@ it('cli applies the documented message template placeholder from extra args', as
   }
 });
 
+const getHookCliPath = () => realpathSync(resolve('./out/cli.cjs'));
+
+const installCopiedHook = async (gitDir: string, cliPath: string) => {
+  copyFileSync(getHookCliPath(), cliPath);
+  copyFileSync(
+    resolve('./out/tiktoken_bg.wasm'),
+    resolve(dirname(cliPath), 'tiktoken_bg.wasm')
+  );
+
+  const setHook = await runProcess(process.execPath, [cliPath, 'hook', 'set'], {
+    cwd: gitDir
+  });
+  expect(await waitForExit(setHook)).toBe(0);
+};
+
+const expectHookLauncher = (hookPath: string): void => {
+  const hookStats = lstatSync(hookPath);
+
+  expect(hookStats.isFile()).toBe(true);
+  if (process.platform !== 'win32') expect(hookStats.mode & 0o111).not.toBe(0);
+};
+
 const expectHookSetAndUnset = async ({
   cwd,
   hookPath
@@ -526,14 +555,11 @@ const expectHookSetAndUnset = async ({
   cwd: string;
   hookPath: string;
 }): Promise<void> => {
-  const cliPath = realpathSync(resolve('./out/cli.cjs'));
-
   const setHook = await runCli(['hook', 'set'], { cwd });
 
   expect(await setHook.findByText('Hook set')).toBeInTheConsole();
   expect(await waitForExit(setHook)).toBe(0);
-  expect(lstatSync(hookPath).isSymbolicLink()).toBe(true);
-  expect(realpathSync(hookPath)).toBe(cliPath);
+  expectHookLauncher(hookPath);
 
   const unsetHook = await runCli(['hook', 'unset'], { cwd });
 
@@ -560,7 +586,7 @@ it('hook command respects a relative core.hooksPath from a nested directory', as
   }
 });
 
-it('hook command sets and unsets the prepare-commit-msg symlink in a submodule', async () => {
+it('hook command sets and unsets the prepare-commit-msg hook in a submodule', async () => {
   const { submoduleDir, cleanup } = await prepareSubmoduleEnvironment();
   const { stdout: absoluteGitDir } = await runGit(
     ['rev-parse', '--absolute-git-dir'],
@@ -611,6 +637,240 @@ it('hook command uses the shared hooks directory from a linked worktree', async 
     await cleanup();
   }
 });
+
+it('hook command replaces a legacy symlink and an outdated launcher', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+  const previousCli = resolve(tempDir, 'cli.cjs');
+
+  try {
+    symlinkSync(getHookCliPath(), hookPath);
+
+    const replaceSymlink = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await replaceSymlink.findByText('Hook set')).toBeInTheConsole();
+    expect(await waitForExit(replaceSymlink)).toBe(0);
+    expectHookLauncher(hookPath);
+
+    await installCopiedHook(gitDir, previousCli);
+    rmSync(previousCli);
+    if (process.platform !== 'win32') {
+      const { uid, gid } = lstatSync(hookPath);
+      const teamGroup = process.getgroups?.().find((group) => group !== gid);
+      if (teamGroup !== undefined) chownSync(hookPath, uid, teamGroup);
+      chmodSync(hookPath, 0o750);
+    }
+    const { gid } = lstatSync(hookPath);
+
+    const replaceLauncher = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await replaceLauncher.findByText('Hook set')).toBeInTheConsole();
+    expect(await waitForExit(replaceLauncher)).toBe(0);
+    expectHookLauncher(hookPath);
+    if (process.platform !== 'win32') {
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o750);
+      expect(lstatSync(hookPath).gid).toBe(gid);
+    }
+
+    const setAgain = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await setAgain.findByText('already set')).toBeInTheConsole();
+    expect(await waitForExit(setAgain)).toBe(0);
+    expectHookLauncher(hookPath);
+  } finally {
+    await cleanup();
+  }
+});
+
+const itPosix = process.platform === 'win32' ? it.skip : it;
+
+itPosix.each(['launcher', 'legacy symlink'])(
+  'hook set and unset preserve another user’s %s',
+  async (hookType) => {
+    const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+    const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+    const preload = resolve(tempDir, 'other-user.cjs');
+
+    try {
+      if (hookType === 'legacy symlink')
+        symlinkSync(getHookCliPath(), hookPath);
+      else await installCopiedHook(gitDir, resolve(tempDir, 'cli.cjs'));
+      const { ino, uid } = lstatSync(hookPath);
+      writeFileSync(preload, `process.geteuid = () => ${uid + 1};\n`);
+      const env = { NODE_OPTIONS: `--require ${JSON.stringify(preload)}` };
+
+      const setHook = await runCli(['hook', 'set'], { cwd: gitDir, env });
+      expect(await waitForExit(setHook)).toBe(1);
+      expect(lstatSync(hookPath).ino).toBe(ino);
+
+      const unsetHook = await runCli(['hook', 'unset'], { cwd: gitDir, env });
+      expect(await waitForExit(unsetHook)).toBe(0);
+      expect(lstatSync(hookPath).ino).toBe(ino);
+    } finally {
+      await cleanup();
+    }
+  }
+);
+
+itPosix(
+  'hook set honors umask and repairs only the owner execute bit',
+  async () => {
+    const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+    const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+    const preload = resolve(tempDir, 'umask.cjs');
+    const env = { NODE_OPTIONS: `--require ${JSON.stringify(preload)}` };
+
+    try {
+      writeFileSync(preload, 'process.umask(0o077);\n');
+      expect(
+        await waitForExit(await runCli(['hook', 'set'], { cwd: gitDir, env }))
+      ).toBe(0);
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o700);
+
+      expect(
+        await waitForExit(await runCli(['hook', 'set'], { cwd: gitDir }))
+      ).toBe(0);
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o700);
+
+      chmodSync(hookPath, 0o640);
+      const { ino } = lstatSync(hookPath);
+      expect(
+        await waitForExit(await runCli(['hook', 'set'], { cwd: gitDir, env }))
+      ).toBe(0);
+      expect(lstatSync(hookPath).mode & 0o777).toBe(0o740);
+      expect(lstatSync(hookPath).ino).toBe(ino);
+    } finally {
+      await cleanup();
+    }
+  }
+);
+
+it('hook command keeps a foreign or dangling prepare-commit-msg hook', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+  const missingTarget = resolve(tempDir, 'missing-hook');
+
+  try {
+    const install = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await waitForExit(install)).toBe(0);
+    const foreignHook = readFileSync(hookPath, 'utf8').replace(
+      '\nexec ',
+      '\necho custom\nexec '
+    );
+    writeFileSync(hookPath, foreignHook);
+
+    const setHook = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await setHook.findByText('already set')).toBeInTheConsole();
+    expect(await waitForExit(setHook)).toBe(1);
+
+    const unsetHook = await runCli(['hook', 'unset'], { cwd: gitDir });
+    expect(await unsetHook.findByText('different hook')).toBeInTheConsole();
+    expect(await waitForExit(unsetHook)).toBe(0);
+    expect(readFileSync(hookPath, 'utf8')).toBe(foreignHook);
+
+    rmSync(hookPath);
+    symlinkSync(missingTarget, hookPath);
+
+    const setDangling = await runCli(['hook', 'set'], { cwd: gitDir });
+    expect(await setDangling.findByText('already set')).toBeInTheConsole();
+    expect(await waitForExit(setDangling)).toBe(1);
+    expect(lstatSync(hookPath).isSymbolicLink()).toBe(true);
+    expect(existsSync(missingTarget)).toBe(false);
+  } finally {
+    await cleanup();
+  }
+});
+
+it('git preserves a supplied message after OpenCommit is downgraded', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const installedCli = resolve(tempDir, 'cli.cjs');
+
+  try {
+    await installCopiedHook(gitDir, installedCli);
+    writeFileSync(
+      installedCli,
+      `const { realpathSync } = require('fs');
+if (realpathSync(process.argv[1]) !== realpathSync('.git/hooks/prepare-commit-msg') || process.argv[3] !== 'message') {
+  throw new Error('Expected a legacy hook call with a supplied message');
+}
+`
+    );
+
+    await runGit(
+      ['commit', '--allow-empty', '-m', 'docs: keep this message'],
+      gitDir
+    );
+    await assertHeadCommit(gitDir, 'docs: keep this message');
+  } finally {
+    await cleanup();
+  }
+});
+
+it('git commit still works after OpenCommit is uninstalled', async () => {
+  const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+  const installedCli = resolve(tempDir, 'cli.cjs');
+
+  try {
+    await installCopiedHook(gitDir, installedCli);
+    rmSync(installedCli);
+
+    const { stderr } = await runGit(
+      ['commit', '--allow-empty', '-m', 'docs: update repository'],
+      gitDir
+    );
+    expect(stderr).toContain('oco hook set');
+    await assertHeadCommit(gitDir, 'docs: update repository');
+  } finally {
+    await cleanup();
+  }
+});
+
+itPosix(
+  'prepare-commit-msg hook runs from git commit without node in PATH',
+  async () => {
+    const { tempDir, gitDir, cleanup } = await prepareEnvironment();
+    const server = await startMockOpenAiServer(
+      'fix(hook): run without node in PATH'
+    );
+
+    try {
+      const limitedPath = resolve(tempDir, 'bin');
+      const gitPath = execFileSync('/bin/sh', ['-c', 'command -v git'], {
+        encoding: 'utf8'
+      }).trim();
+      mkdirSync(limitedPath);
+      symlinkSync(gitPath, resolve(limitedPath, 'git'));
+      writeGlobalConfig(tempDir, ['OCO_HOOK_AUTO_UNCOMMENT=true']);
+      const env = { HOME: tempDir };
+
+      await prepareRepo(
+        gitDir,
+        {
+          'index.ts': 'console.log("Hello World");\n'
+        },
+        { stage: true }
+      );
+
+      const setHook = await runCli(['hook', 'set'], {
+        cwd: gitDir,
+        env
+      });
+      expect(await waitForExit(setHook)).toBe(0);
+
+      await runGit(
+        ['commit'],
+        gitDir,
+        getMockOpenAiEnv(server.baseUrl, {
+          ...env,
+          PATH: limitedPath,
+          GIT_EDITOR: ':'
+        })
+      );
+
+      await assertHeadCommit(gitDir, 'fix(hook): run without node in PATH');
+    } finally {
+      await server.cleanup();
+      await cleanup();
+    }
+  }
+);
 
 it.each([false, true])(
   'prepare-commit-msg hook writes the message with full GitMoji set to %s',
@@ -809,6 +1069,161 @@ it('cli flow prompts for a missing API key, saves it, and completes the commit',
     expect(readFileSync(configPath, 'utf8')).toContain(
       'OCO_API_KEY=test-openai-key'
     );
+  } finally {
+    await server.cleanup();
+    rmSync(homeDir, { force: true, recursive: true });
+    await cleanup();
+  }
+});
+
+it('saves TrustedRouter credentials without displaying them', async () => {
+  const homeDir = await prepareTempDir();
+  const apiKey = 'test-trustedrouter-config-key';
+  const headerValue = 'test-trustedrouter-config-header';
+
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        getCliPath(),
+        'config',
+        'set',
+        'OCO_AI_PROVIDER=trustedrouter',
+        `OCO_API_KEY=${apiKey}`,
+        `OCO_API_CUSTOM_HEADERS=${JSON.stringify({ Authorization: `Bearer ${headerValue}` })}`
+      ],
+      {
+        cwd: homeDir,
+        env: { ...process.env, HOME: homeDir },
+        encoding: 'utf8'
+      }
+    );
+
+    expect(result.status).toBe(0);
+    const output = result.stdout + result.stderr;
+    expect(output).not.toContain(apiKey);
+    expect(output).not.toContain(headerValue);
+
+    const config = readFileSync(resolve(homeDir, '.opencommit'), 'utf8');
+    expect(config).toContain(apiKey);
+    expect(config).toContain(headerValue);
+  } finally {
+    rmSync(homeDir, { force: true, recursive: true });
+  }
+});
+
+it('uses a key prompted for a repository provider without saving it globally', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const homeDir = await prepareTempDir();
+  const message = 'fix(api): use the repository provider';
+  const server = await startMockOpenAiServer(message);
+
+  try {
+    const configPath = writeGlobalConfig(homeDir, [
+      'OCO_AI_PROVIDER=openai',
+      'OCO_API_KEY=test-global-key',
+      'OCO_API_CUSTOM_HEADERS={"Authorization":"Bearer test-global-header"}',
+      'OCO_GITPUSH=false'
+    ]);
+    const savedConfig = readFileSync(configPath, 'utf8');
+    await prepareRepo(gitDir, { 'index.ts': 'export {};\n' }, { stage: true });
+    writeRepoFile(
+      gitDir,
+      '.env',
+      `OCO_AI_PROVIDER=trustedrouter\nOCO_API_URL=${server.baseUrl}\n`
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: { HOME: homeDir }
+    });
+
+    await oco.findByText('Enter your API key:');
+    oco.userEvent.keyboard('test-repo-key[Enter]');
+
+    expect(await waitForExit(oco)).toBe(0);
+    await assertHeadCommit(gitDir, message);
+    expect(server.authHeaders).toEqual(['Bearer test-repo-key']);
+    expect(oco.getStdallStr()).not.toContain('test-repo-key');
+    expect(server.requestBodies[0].model).toBe('deepseek/deepseek-v4-flash');
+    expect(readFileSync(configPath, 'utf8')).toBe(savedConfig);
+  } finally {
+    await server.cleanup();
+    rmSync(homeDir, { force: true, recursive: true });
+    await cleanup();
+  }
+});
+
+it('uses a prompted TrustedRouter key despite a blank repository key', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const homeDir = await prepareTempDir();
+  const message = 'fix(api): use the prompted gateway key';
+  const server = await startMockOpenAiServer(message);
+
+  try {
+    const configPath = writeGlobalConfig(homeDir, [
+      'OCO_AI_PROVIDER=trustedrouter',
+      `OCO_API_URL=${server.baseUrl}`,
+      'OCO_GITPUSH=false'
+    ]);
+    await prepareRepo(gitDir, { 'index.ts': 'export {};\n' }, { stage: true });
+    writeRepoFile(gitDir, '.env', 'OCO_API_KEY=\n');
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: { HOME: homeDir }
+    });
+
+    await oco.findByText('Enter your API key:');
+    oco.userEvent.keyboard('test-prompted-gateway-key[Enter]');
+
+    expect(await waitForExit(oco)).toBe(0);
+    await assertHeadCommit(gitDir, message);
+    expect(server.authHeaders).toEqual(['Bearer test-prompted-gateway-key']);
+    expect(readFileSync(configPath, 'utf8')).toContain(
+      'OCO_API_KEY=test-prompted-gateway-key'
+    );
+  } finally {
+    await server.cleanup();
+    rmSync(homeDir, { force: true, recursive: true });
+    await cleanup();
+  }
+});
+
+it('keeps the global gateway key when a repository provider has a legacy key', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const homeDir = await prepareTempDir();
+  const message = 'fix(api): use the repository key';
+  const server = await startMockOpenAiServer(message);
+
+  try {
+    const configPath = writeGlobalConfig(homeDir, [
+      'OCO_AI_PROVIDER=trustedrouter',
+      'OCO_API_KEY=test-global-gateway-key',
+      'OCO_OPENAI_API_KEY=test-legacy-openai-key',
+      'OCO_GITPUSH=false'
+    ]);
+    const savedConfig = readFileSync(configPath, 'utf8');
+    await prepareRepo(gitDir, { 'index.ts': 'export {};\n' }, { stage: true });
+    writeRepoFile(
+      gitDir,
+      '.env',
+      [
+        'OCO_AI_PROVIDER=openai',
+        'OCO_API_KEY=test-repo-openai-key',
+        `OCO_API_URL=${server.baseUrl}`
+      ].join('\n')
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: { HOME: homeDir }
+    });
+
+    expect(await waitForExit(oco)).toBe(0);
+    expect(readFileSync(configPath, 'utf8')).toBe(savedConfig);
+    expect(server.authHeaders).toEqual(['Bearer test-repo-openai-key']);
+    await assertHeadCommit(gitDir, message);
   } finally {
     await server.cleanup();
     rmSync(homeDir, { force: true, recursive: true });

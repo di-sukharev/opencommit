@@ -17,7 +17,8 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/credits',
-  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]: 'https://trustedrouter.com/credits',
+  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
+    'https://trustedrouter.com/console/credits',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
   [OCO_AI_PROVIDER_ENUM.AZURE]:
     'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',

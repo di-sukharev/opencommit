@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, rmSync } from 'fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { jest } from '@jest/globals';
 import { prepareFile } from './utils';
 import { dirname } from 'path';
@@ -242,6 +242,283 @@ describe('config', () => {
       expect(existsSync(globalConfigFile.filePath)).toBe(false);
     });
 
+    it.each([
+      ['trustedrouter', 'deepseek/deepseek-v4-flash'],
+      ['anthropic', 'claude-sonnet-4-6'],
+      ['llamacpp', '']
+    ])(
+      'uses the %s default model on a fresh installation',
+      async (provider, model) => {
+        globalConfigFile = await generateConfig('.opencommit', {});
+        rmSync(globalConfigFile.filePath);
+        envConfigFile = await generateConfig('.env', {
+          OCO_AI_PROVIDER: provider
+        });
+
+        expect(
+          getConfig({
+            globalPath: globalConfigFile.filePath,
+            envPath: envConfigFile.filePath
+          }).OCO_MODEL
+        ).toBe(model);
+      }
+    );
+
+    it('uses the saved provider default when an existing config omits its model', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_AI_PROVIDER: 'trustedrouter'
+      });
+
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath }).OCO_MODEL
+      ).toBe('deepseek/deepseek-v4-flash');
+    });
+
+    it.each(['', '   ', 'null', 'undefined'])(
+      'keeps the saved provider when the repository provider is %j',
+      async (provider) => {
+        globalConfigFile = await generateConfig('.opencommit', {
+          OCO_AI_PROVIDER: 'trustedrouter',
+          OCO_API_KEY: 'test-gateway-key'
+        });
+        envConfigFile = await generateConfig('.env', {
+          OCO_AI_PROVIDER: provider
+        });
+
+        expect(
+          getConfig({
+            globalPath: globalConfigFile.filePath,
+            envPath: envConfigFile.filePath
+          })
+        ).toMatchObject({
+          OCO_AI_PROVIDER: 'trustedrouter',
+          OCO_API_KEY: 'test-gateway-key',
+          OCO_MODEL: 'deepseek/deepseek-v4-flash'
+        });
+      }
+    );
+
+    it('uses the gateway default when the saved local provider has no model', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_AI_PROVIDER: 'llamacpp',
+        OCO_MODEL: ''
+      });
+      envConfigFile = await generateConfig('.env', {
+        OCO_AI_PROVIDER: 'trustedrouter'
+      });
+
+      expect(
+        getConfig({
+          globalPath: globalConfigFile.filePath,
+          envPath: envConfigFile.filePath
+        }).OCO_MODEL
+      ).toBe('deepseek/deepseek-v4-flash');
+    });
+
+    it.each(['openai', 'trustedrouter'])(
+      'applies a repository provider of %s without changing the global config',
+      async (provider) => {
+        globalConfigFile = await generateConfig('.opencommit', {});
+        const savedConfig = [
+          'OCO_AI_PROVIDER=openai',
+          'OCO_API_KEY=global-key',
+          'OCO_API_URL=https://global.example/v1',
+          'OCO_API_CUSTOM_HEADERS={"X-Provider":"global"}',
+          'OCO_MODEL=saved-model',
+          'OCO_LANGUAGE=fr'
+        ].join('\n');
+        writeFileSync(globalConfigFile.filePath, savedConfig);
+        envConfigFile = await generateConfig('.env', {
+          OCO_AI_PROVIDER: provider,
+          OCO_API_KEY: 'local-key'
+        });
+
+        const config = getConfig({
+          globalPath: globalConfigFile.filePath,
+          envPath: envConfigFile.filePath
+        });
+
+        expect(config).toMatchObject({
+          OCO_AI_PROVIDER: provider,
+          OCO_API_KEY: 'local-key',
+          OCO_MODEL: 'saved-model',
+          OCO_LANGUAGE: 'fr'
+        });
+        if (provider === 'openai') {
+          expect(config.OCO_API_URL).toBe('https://global.example/v1');
+          expect(config.OCO_API_CUSTOM_HEADERS).toEqual({
+            'X-Provider': 'global'
+          });
+        } else {
+          expect(config.OCO_API_URL).toBeUndefined();
+          expect(config.OCO_API_CUSTOM_HEADERS).toBeUndefined();
+        }
+        expect(readFileSync(globalConfigFile.filePath, 'utf8')).toBe(
+          savedConfig
+        );
+      }
+    );
+
+    it('uses repository transport when an unlabeled shell config belongs to a different provider', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_AI_PROVIDER: 'openai'
+      });
+      envConfigFile = await generateConfig('.env', {
+        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_API_URL: 'https://repo.example/v1',
+        OCO_LANGUAGE: 'fr'
+      });
+      Object.assign(process.env, {
+        OCO_API_KEY: 'test-shell-openai-key',
+        OCO_API_URL: 'https://shell.example/v1',
+        OCO_API_CUSTOM_HEADERS: '{"X-Provider":"shell"}',
+        OCO_LANGUAGE: 'en'
+      });
+
+      const config = getConfig({
+        globalPath: globalConfigFile.filePath,
+        envPath: envConfigFile.filePath
+      });
+
+      expect(config).toMatchObject({
+        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_API_URL: 'https://repo.example/v1',
+        OCO_LANGUAGE: 'en'
+      });
+      expect(config.OCO_API_KEY).toBeUndefined();
+      expect(config.OCO_API_CUSTOM_HEADERS).toBeUndefined();
+    });
+
+    it.each([undefined, 'openai'])(
+      'keeps repository transport scoped to its provider (%s) when the shell selects a different provider',
+      async (provider) => {
+        globalConfigFile = await generateConfig('.opencommit', {
+          OCO_AI_PROVIDER: 'openai',
+          OCO_API_KEY: 'test-global-openai-key'
+        });
+        envConfigFile = await prepareFile(
+          '.env',
+          [
+            provider && `OCO_AI_PROVIDER=${provider}`,
+            'OCO_API_KEY=test-repo-openai-key',
+            'OCO_API_URL=https://repo.example/v1',
+            'OCO_API_CUSTOM_HEADERS={"X-Provider":"repo"}',
+            'OCO_LANGUAGE=fr'
+          ]
+            .filter(Boolean)
+            .join('\n')
+        );
+        process.env.OCO_AI_PROVIDER = 'trustedrouter';
+
+        const config = getConfig({
+          globalPath: globalConfigFile.filePath,
+          envPath: envConfigFile.filePath
+        });
+
+        expect(config).toMatchObject({
+          OCO_AI_PROVIDER: 'trustedrouter',
+          OCO_LANGUAGE: 'fr'
+        });
+        expect(config.OCO_API_KEY).toBeUndefined();
+        expect(config.OCO_API_URL).toBeUndefined();
+        expect(config.OCO_API_CUSTOM_HEADERS).toBeUndefined();
+      }
+    );
+
+    it.each([
+      {
+        name: 'uses only the selected provider legacy values',
+        overrides: {},
+        apiKey: 'test-legacy-anthropic-key',
+        apiUrl: 'https://legacy-anthropic.example'
+      },
+      {
+        name: 'prefers modern values',
+        overrides: {
+          OCO_API_KEY: 'test-modern-anthropic-key',
+          OCO_API_URL: 'https://modern-anthropic.example'
+        },
+        apiKey: 'test-modern-anthropic-key',
+        apiUrl: 'https://modern-anthropic.example'
+      },
+      {
+        name: 'preserves explicit blank values',
+        overrides: { OCO_API_KEY: '', OCO_API_URL: '' },
+        apiKey: '',
+        apiUrl: ''
+      }
+    ])(
+      '$name for a shell provider override',
+      async ({ overrides, apiKey, apiUrl }) => {
+        globalConfigFile = await generateConfig('.opencommit', {
+          OCO_AI_PROVIDER: 'openai',
+          OCO_API_KEY: 'test-global-openai-key',
+          OCO_API_URL: 'https://global-openai.example',
+          OCO_OPENAI_API_KEY: 'test-legacy-openai-key',
+          OCO_OPENAI_BASE_PATH: 'https://legacy-openai.example',
+          OCO_ANTHROPIC_API_KEY: 'test-legacy-anthropic-key',
+          OCO_ANTHROPIC_BASE_PATH: 'https://legacy-anthropic.example'
+        });
+        const savedConfig = readFileSync(globalConfigFile.filePath, 'utf8');
+        Object.assign(process.env, {
+          OCO_AI_PROVIDER: 'anthropic',
+          ...overrides
+        });
+
+        const config = getConfig({ globalPath: globalConfigFile.filePath });
+
+        expect(config.OCO_API_KEY).toBe(apiKey);
+        expect(config.OCO_API_URL).toBe(apiUrl);
+        expect(process.env.OCO_ANTHROPIC_API_KEY).toBeUndefined();
+        expect(process.env.OCO_OPENAI_API_KEY).toBeUndefined();
+        expect(readFileSync(globalConfigFile.filePath, 'utf8')).toBe(
+          savedConfig
+        );
+      }
+    );
+
+    it('combines matching provider settings in priority order', async () => {
+      globalConfigFile = await prepareFile(
+        '.opencommit',
+        [
+          'OCO_AI_PROVIDER=trustedrouter',
+          'OCO_API_KEY=test-global-gateway-key',
+          'OCO_API_CUSTOM_HEADERS={"X-Provider":"global"}'
+        ].join('\n')
+      );
+      envConfigFile = await generateConfig('.env', {
+        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_API_KEY: 'test-repo-gateway-key',
+        OCO_API_URL: 'https://repo.example/v1',
+        OPENCOMMIT_TEST_AMBIENT: 'present'
+      });
+      process.env.OCO_API_KEY = 'test-shell-gateway-key';
+
+      expect(
+        getConfig({
+          globalPath: globalConfigFile.filePath,
+          envPath: envConfigFile.filePath
+        })
+      ).toMatchObject({
+        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_API_KEY: 'test-shell-gateway-key',
+        OCO_API_URL: 'https://repo.example/v1',
+        OCO_API_CUSTOM_HEADERS: { 'X-Provider': 'global' }
+      });
+      expect(process.env.OPENCOMMIT_TEST_AMBIENT).toBe('present');
+    });
+
+    it('keeps an explicitly empty local model', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_AI_PROVIDER: 'llamacpp',
+        OCO_MODEL: ''
+      });
+
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath }).OCO_MODEL
+      ).toBe('');
+    });
+
     it('should not materialize ambient proxy env vars into OCO_PROXY', async () => {
       process.env.HTTPS_PROXY = 'http://127.0.0.1:7890';
 
@@ -280,7 +557,7 @@ describe('config', () => {
       rmSync(globalConfigFile.filePath);
     });
 
-    it('should create .opencommit file with DEFAULT CONFIG if it does not exist on first setConfig run', async () => {
+    it('creates the global file and applies defaults on the first setConfig call', async () => {
       const isGlobalConfigFileExist = existsSync(globalConfigFile.filePath);
       expect(isGlobalConfigFileExist).toBe(false);
 
@@ -291,9 +568,162 @@ describe('config', () => {
 
       const fileContent = readFileSync(globalConfigFile.filePath, 'utf8');
       expect(fileContent).toContain('OCO_API_KEY=persisted-key_1');
-      Object.entries(DEFAULT_CONFIG).forEach(([key, value]) => {
-        expect(fileContent).toContain(`${key}=${value}`);
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath })
+      ).toMatchObject(DEFAULT_CONFIG);
+    });
+
+    it('uses the provider default after setting a provider and key on a fresh installation', async () => {
+      setConfig(
+        [
+          [CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter'],
+          [CONFIG_KEYS.OCO_API_KEY, 'test-key']
+        ],
+        globalConfigFile.filePath
+      );
+
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath }).OCO_MODEL
+      ).toBe('deepseek/deepseek-v4-flash');
+    });
+
+    it('drops the old provider transport and preserves the saved model and unrelated settings', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_AI_PROVIDER: 'ollama',
+        OCO_API_URL: 'http://127.0.0.1:11434',
+        OCO_API_CUSTOM_HEADERS: '{"Authorization":"Bearer old-key"}',
+        OCO_MODEL: 'saved-model',
+        OCO_LANGUAGE: 'fr'
       });
+      process.env.OCO_API_URL = 'https://temporary.example/v1';
+      process.env.OCO_API_CUSTOM_HEADERS = '{"X-Temporary":"yes"}';
+      process.env.OCO_MODEL = 'temporary-model';
+      process.env.OCO_LANGUAGE = 'en';
+
+      setConfig(
+        [
+          [CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter'],
+          [CONFIG_KEYS.OCO_API_KEY, 'test-key']
+        ],
+        globalConfigFile.filePath
+      );
+
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath })
+      ).toMatchObject({
+        OCO_API_URL: 'https://temporary.example/v1',
+        OCO_API_CUSTOM_HEADERS: { 'X-Temporary': 'yes' },
+        OCO_MODEL: 'temporary-model',
+        OCO_LANGUAGE: 'en'
+      });
+
+      delete process.env.OCO_API_URL;
+      delete process.env.OCO_API_CUSTOM_HEADERS;
+      delete process.env.OCO_MODEL;
+      delete process.env.OCO_LANGUAGE;
+
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath })
+      ).toMatchObject({
+        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_API_KEY: 'test-key',
+        OCO_API_URL: undefined,
+        OCO_API_CUSTOM_HEADERS: undefined,
+        OCO_MODEL: 'saved-model',
+        OCO_LANGUAGE: 'fr'
+      });
+    });
+
+    it('keeps an explicit new endpoint, headers, and model when changing providers', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_AI_PROVIDER: 'ollama',
+        OCO_API_URL: 'http://127.0.0.1:11434'
+      });
+
+      setConfig(
+        [
+          [CONFIG_KEYS.OCO_API_URL, 'https://new.example/v1'],
+          [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS, '{"X-Provider":"new"}'],
+          [CONFIG_KEYS.OCO_MODEL, 'new-model'],
+          [CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter']
+        ],
+        globalConfigFile.filePath
+      );
+
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath })
+      ).toMatchObject({
+        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_API_URL: 'https://new.example/v1',
+        OCO_API_CUSTOM_HEADERS: { 'X-Provider': 'new' },
+        OCO_MODEL: 'new-model'
+      });
+    });
+
+    it.each([
+      [CONFIG_KEYS.OCO_API_KEY, 'test-repository-key', 'test-repository-key'],
+      [
+        CONFIG_KEYS.OCO_API_URL,
+        'https://new.example/v1',
+        'https://new.example/v1'
+      ],
+      [
+        CONFIG_KEYS.OCO_API_CUSTOM_HEADERS,
+        '{"X-Provider":"new"}',
+        { 'X-Provider': 'new' }
+      ]
+    ])(
+      'requires a target provider for a global %s write from a repository with a different provider',
+      async (key, value, expected) => {
+        globalConfigFile = await generateConfig('.opencommit', {
+          OCO_AI_PROVIDER: 'openai',
+          OCO_API_KEY: 'test-global-key',
+          OCO_API_URL: 'https://global.example/v1',
+          OCO_API_CUSTOM_HEADERS: '{"X-Provider":"global"}'
+        });
+        process.env.OCO_AI_PROVIDER = 'trustedrouter';
+        const path = globalConfigFile.filePath;
+        const original = readFileSync(path, 'utf8');
+
+        expect(() => setConfig([[key, value]], path)).toThrow(
+          'OCO_AI_PROVIDER'
+        );
+        expect(readFileSync(path, 'utf8')).toBe(original);
+
+        setConfig(
+          [
+            [CONFIG_KEYS.OCO_AI_PROVIDER, 'openai'],
+            [key, value]
+          ],
+          path
+        );
+        delete process.env.OCO_AI_PROVIDER;
+        expect(getConfig({ globalPath: path })[key]).toEqual(expected);
+      }
+    );
+
+    it('requires a new key when switching the saved provider', async () => {
+      globalConfigFile = await generateConfig('.opencommit', {
+        OCO_AI_PROVIDER: 'openai',
+        OCO_API_KEY: 'old-provider-key'
+      });
+      process.env.OCO_API_KEY = 'temporary-key';
+
+      setConfig(
+        [[CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter']],
+        globalConfigFile.filePath
+      );
+
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath }).OCO_API_KEY
+      ).toBe('temporary-key');
+      delete process.env.OCO_API_KEY;
+      expect(
+        getConfig({ globalPath: globalConfigFile.filePath }).OCO_API_KEY
+      ).toBeUndefined();
+      expect(readFileSync(globalConfigFile.filePath, 'utf8')).not.toContain(
+        'old-provider-key'
+      );
     });
 
     it('should set new config values', async () => {

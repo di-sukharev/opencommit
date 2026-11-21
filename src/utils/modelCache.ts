@@ -65,6 +65,10 @@ interface RequestyModelListResponse {
   data?: Array<ModelListItem & { api?: string }>;
 }
 
+interface TrustedRouterModelListResponse {
+  data?: Array<ModelListItem & { trustedrouter?: { supports_chat?: boolean } }>;
+}
+
 interface AtlasCloudModelListResponse {
   data?: Array<{
     model: string;
@@ -306,11 +310,15 @@ export async function fetchTrustedRouterModels(): Promise<string[]> {
     url: 'https://api.trustedrouter.com/v1/models',
     fallback: MODEL_LIST.trustedrouter,
     mapModels: (data) =>
-      (data as ModelListResponse).data
-        // Keep text-output models (exclude embeddings, image, audio, video).
-        ?.filter((model) =>
-          model.architecture?.output_modalities?.includes('text')
-        )
+      (data as TrustedRouterModelListResponse).data
+        ?.filter((model) => {
+          const supportsChat = model.trustedrouter?.supports_chat;
+          const outputsText =
+            model.architecture?.output_modalities?.includes('text');
+          return (
+            supportsChat !== false && (outputsText ?? supportsChat === true)
+          );
+        })
         .map((model) => model.id)
         .sort()
   });

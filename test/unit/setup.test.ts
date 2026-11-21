@@ -6,6 +6,7 @@ const introMock = jest.fn();
 const outroMock = jest.fn();
 const selectMock = jest.fn();
 const textMock = jest.fn();
+const passwordMock = jest.fn();
 const isCancelMock = jest.fn((value: unknown) => value === CANCEL);
 const spinnerMock = jest.fn(() => ({
   start: jest.fn(),
@@ -13,8 +14,7 @@ const spinnerMock = jest.fn(() => ({
 }));
 
 const getConfigMock = jest.fn();
-const setGlobalConfigMock = jest.fn();
-const getGlobalConfigMock = jest.fn(() => ({}));
+const savePromptedApiKeyMock = jest.fn();
 const getIsGlobalConfigFileExistMock = jest.fn();
 const consoleLogMock = jest.spyOn(console, 'log').mockImplementation(() => {});
 
@@ -49,6 +49,7 @@ jest.unstable_mockModule('@clack/prompts', () => ({
   outro: outroMock,
   select: selectMock,
   text: textMock,
+  password: passwordMock,
   isCancel: isCancelMock,
   spinner: spinnerMock
 }));
@@ -62,10 +63,10 @@ jest.unstable_mockModule('commands/config', () => ({
   MODEL_LIST: {},
   OCO_AI_PROVIDER_ENUM,
   getConfig: getConfigMock,
-  setGlobalConfig: setGlobalConfigMock,
-  getGlobalConfig: getGlobalConfigMock,
+  savePromptedApiKey: savePromptedApiKeyMock,
+  useApiKeyForCurrentRun: jest.fn(),
   getIsGlobalConfigFileExist: getIsGlobalConfigFileExistMock,
-  DEFAULT_CONFIG: {},
+  updateGlobalConfig: jest.fn(),
   PROVIDER_API_KEY_URLS: {},
   RECOMMENDED_MODELS: {}
 }));
@@ -154,6 +155,15 @@ describe('setup provider behavior', () => {
     }
   );
 
+  it('uses a configured llama.cpp server on first run without a model', () => {
+    currentConfig = {
+      OCO_AI_PROVIDER: 'llamacpp',
+      OCO_API_URL: 'http://localhost:8080',
+      OCO_MODEL: ''
+    };
+    expect(isFirstRun()).toBe(false);
+  });
+
   it.each([
     'openai',
     'anthropic',
@@ -211,8 +221,8 @@ describe('setup provider behavior', () => {
       currentConfig = { OCO_AI_PROVIDER: provider, OCO_API_KEY: '' };
 
       await expect(promptForMissingApiKey()).resolves.toBe(true);
-      expect(textMock).not.toHaveBeenCalled();
-      expect(setGlobalConfigMock).not.toHaveBeenCalled();
+      expect(passwordMock).not.toHaveBeenCalled();
+      expect(savePromptedApiKeyMock).not.toHaveBeenCalled();
     }
   );
 
@@ -220,11 +230,11 @@ describe('setup provider behavior', () => {
     'keeps %s on the API-key prompt path',
     async (provider) => {
       currentConfig = { OCO_AI_PROVIDER: provider, OCO_API_KEY: '' };
-      textMock.mockResolvedValueOnce(CANCEL);
+      passwordMock.mockResolvedValueOnce(CANCEL);
 
       await expect(promptForMissingApiKey()).resolves.toBe(false);
-      expect(textMock).toHaveBeenCalledTimes(1);
-      expect(setGlobalConfigMock).not.toHaveBeenCalled();
+      expect(passwordMock).toHaveBeenCalledTimes(1);
+      expect(savePromptedApiKeyMock).not.toHaveBeenCalled();
     }
   );
 });

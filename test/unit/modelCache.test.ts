@@ -254,7 +254,8 @@ describe('provider model fetchers', () => {
         data: [
           {
             id: 'trustedrouter/auto',
-            architecture: { output_modalities: ['text'] }
+            architecture: { output_modalities: ['text'] },
+            trustedrouter: { supports_chat: true }
           },
           {
             id: 'deepseek/deepseek-v4-flash',
@@ -262,7 +263,18 @@ describe('provider model fetchers', () => {
           },
           {
             id: 'openai/text-embedding-3-small',
-            architecture: { output_modalities: ['embeddings'] }
+            architecture: { output_modalities: ['text'] },
+            trustedrouter: { supports_chat: false }
+          },
+          {
+            id: 'trustedrouter/polyphemus-1.0',
+            architecture: { output_modalities: ['text'] },
+            trustedrouter: { supports_chat: false, supports_responses: true }
+          },
+          {
+            id: 'google/gemini-3.1-flash-image',
+            architecture: { output_modalities: ['image', 'text'] },
+            trustedrouter: { supports_chat: false }
           },
           {
             id: 'openai/gpt-image-1',

@@ -5,6 +5,7 @@ import {
 } from '../../src/commands/config';
 import { TrustedRouterEngine } from '../../src/engine/trustedrouter';
 import { getEngine } from '../../src/utils/engine';
+import { ApiKeyMissingError } from '../../src/utils/errors';
 
 describe('TrustedRouterEngine', () => {
   const baseConfig = {
@@ -18,32 +19,74 @@ describe('TrustedRouterEngine', () => {
     { role: 'user', content: 'diff --git a/file b/file' }
   ];
 
-  it('uses the TrustedRouter base URL and sends the model and messages', async () => {
-    const engine = new TrustedRouterEngine({
-      ...baseConfig,
-      model: 'deepseek/deepseek-v4-flash'
+  it('sends only the configured gateway credentials to the TrustedRouter endpoint', async () => {
+    const env = jest.replaceProperty(process, 'env', {
+      ...process.env,
+      OPENAI_API_KEY: 'test-ambient-openai-key',
+      OPENAI_ORG_ID: 'test-openai-org',
+      OPENAI_PROJECT_ID: 'test-openai-project'
     });
-
-    const create = jest
-      .spyOn(engine.client.chat.completions, 'create')
-      .mockResolvedValue({
+    const fetch = jest.spyOn(globalThis, 'fetch').mockImplementation(async () =>
+      Response.json({
         choices: [{ message: { content: 'feat: add trustedrouter provider' } }]
-      } as any);
-
-    const result = await engine.generateCommitMessage(messages);
-
-    expect(result).toBe('feat: add trustedrouter provider');
-    expect(engine.config.baseURL).toBe('https://api.trustedrouter.com/v1');
-    expect(create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        model: 'deepseek/deepseek-v4-flash',
-        messages,
-        temperature: 0,
-        top_p: 0.1,
-        max_tokens: 256
       })
     );
+
+    try {
+      const engine = new TrustedRouterEngine({
+        ...baseConfig,
+        model: 'anthropic/claude-sonnet-4.5',
+        customHeaders: { 'X-Custom-Header': 'gateway' }
+      });
+
+      await expect(engine.generateCommitMessage(messages)).resolves.toBe(
+        'feat: add trustedrouter provider'
+      );
+
+      const [url, request] = fetch.mock.calls[0];
+      const headers = new Headers(request?.headers);
+      expect(url).toBe('https://api.trustedrouter.com/v1/chat/completions');
+      expect(headers.get('Authorization')).toBe(
+        'Bearer test-trustedrouter-key'
+      );
+      expect(headers.get('X-Custom-Header')).toBe('gateway');
+      expect(headers.has('OpenAI-Organization')).toBe(false);
+      expect(headers.has('OpenAI-Project')).toBe(false);
+      const payload = JSON.parse(request?.body as string);
+      expect(payload).toMatchObject({
+        model: 'anthropic/claude-sonnet-4.5',
+        messages,
+        max_tokens: 256
+      });
+      expect(payload).not.toHaveProperty('temperature');
+      expect(payload).not.toHaveProperty('top_p');
+    } finally {
+      fetch.mockRestore();
+      env.restore();
+    }
   });
+
+  it.each([undefined, '', ' '])(
+    'requires a configured gateway key when OCO_API_KEY is %p',
+    (key) => {
+      const env = jest.replaceProperty(process, 'env', {
+        ...process.env,
+        OPENAI_API_KEY: 'test-ambient-openai-key'
+      });
+
+      try {
+        expect(() =>
+          getEngine({
+            ...DEFAULT_CONFIG,
+            OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER,
+            OCO_API_KEY: key
+          })
+        ).toThrow(ApiKeyMissingError);
+      } finally {
+        env.restore();
+      }
+    }
+  );
 
   it('allows a custom base URL to override the default', () => {
     const engine = new TrustedRouterEngine({
