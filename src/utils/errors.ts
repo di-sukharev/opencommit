@@ -20,6 +20,7 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
     'https://trustedrouter.com/console/credits',
   [OCO_AI_PROVIDER_ENUM.AIGROW]: 'https://aigrow.gg/ai-api',
+  [OCO_AI_PROVIDER_ENUM.ONOMEO]: 'https://onomeo.com/dashboard',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
   [OCO_AI_PROVIDER_ENUM.AZURE]:
     'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
@@ -227,6 +228,8 @@ export function getRecommendedModel(provider: string): string | null {
       return 'deepseek/deepseek-v4-flash';
     case OCO_AI_PROVIDER_ENUM.AIGROW:
       return 'claude-haiku-5.5';
+    case OCO_AI_PROVIDER_ENUM.ONOMEO:
+      return 'deepseek-v4.1-flash';
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       return 'gpt-4o-mini';
     default:

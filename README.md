@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, trustedrouter, aigrow>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, trustedrouter, aigrow, onomeo>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -376,6 +376,18 @@ oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=your_aigrow_api_key OCO_MODEL=
 ```
 
 Run `oco models --refresh` to fetch the current models. To list them before configuring a key, run `oco models --provider aigrow --refresh`.
+
+### Use onomeo as the model provider
+
+[onomeo](https://onomeo.com) provides an OpenAI-compatible API for Claude, GPT, DeepSeek and several free models at `https://onomeo.com/v1`. Use model IDs without provider prefixes. New accounts can call `deepseek-v4.1-flash` within free limits; other models are charged to a prepaid balance.
+
+```sh
+oco config set OCO_AI_PROVIDER=onomeo OCO_API_KEY=your_onomeo_api_key OCO_MODEL=deepseek-v4.1-flash
+
+oco config set OCO_AI_PROVIDER=onomeo OCO_API_KEY=your_onomeo_api_key OCO_MODEL=claude-sonnet-5.5
+```
+
+Run `oco models --refresh` to fetch the models your key can call. Keys are created in the [onomeo dashboard](https://onomeo.com/dashboard). Set `OCO_API_URL` to override the endpoint.
 
 ### Use with Proxy
 

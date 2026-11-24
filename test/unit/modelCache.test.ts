@@ -13,6 +13,7 @@ import {
   fetchOrcaRouterModels,
   fetchRequestyModels,
   fetchAIGROWModels,
+  fetchOnomeoModels,
   fetchTrustedRouterModels,
   fetchUberLLMModels
 } from '../../src/utils/modelCache';
@@ -293,6 +294,18 @@ describe('provider model fetchers', () => {
         data: [{ id: 'gemini-3.8-flash' }, { id: 'claude-haiku-5.5' }]
       },
       expected: ['claude-haiku-5.5', 'gemini-3.8-flash']
+    },
+    {
+      provider: 'onomeo',
+      fetchModels: () => fetchOnomeoModels('onomeo-key'),
+      request: [
+        'https://onomeo.com/v1/models',
+        { headers: { Authorization: 'Bearer onomeo-key' } }
+      ],
+      payload: {
+        data: [{ id: 'deepseek-v4.1-flash' }, { id: 'claude-sonnet-5.5' }]
+      },
+      expected: ['claude-sonnet-5.5', 'deepseek-v4.1-flash']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -405,7 +418,8 @@ describe('provider model fetchers', () => {
       () => fetchTrustedRouterModels(),
       MODEL_LIST.trustedrouter
     ],
-    ['AIGROW', () => fetchAIGROWModels(), MODEL_LIST.aigrow]
+    ['AIGROW', () => fetchAIGROWModels(), MODEL_LIST.aigrow],
+    ['onomeo', () => fetchOnomeoModels('key'), MODEL_LIST.onomeo]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

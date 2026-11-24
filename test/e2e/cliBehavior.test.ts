@@ -1237,7 +1237,8 @@ it.each([
   { provider: 'requesty', model: 'openai/gpt-4o-mini' },
   { provider: 'cheaperinference', model: 'gpt-5.4-mini' },
   { provider: 'trustedrouter', model: 'deepseek/deepseek-v4-flash' },
-  { provider: 'aigrow', model: 'claude-haiku-5.5' }
+  { provider: 'aigrow', model: 'claude-haiku-5.5' },
+  { provider: 'onomeo', model: 'deepseek-v4.1-flash' }
 ])(
   'cli commits after a fresh $provider setup without migration records',
   async ({ provider, model }) => {

@@ -19,7 +19,8 @@ export enum OCO_AI_PROVIDER_ENUM {
   ATLAS_CLOUD = 'atlascloud',
   UBERLLM = 'uberllm',
   TRUSTEDROUTER = 'trustedrouter',
-  AIGROW = 'aigrow'
+  AIGROW = 'aigrow',
+  ONOMEO = 'onomeo'
 }
 
 export type ProviderConfigRequirement = 'apiKey' | 'model' | 'none';
@@ -44,6 +45,7 @@ const PROVIDER_CONFIG_REQUIREMENTS: Record<
   [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AIGROW]: 'apiKey',
+  [OCO_AI_PROVIDER_ENUM.ONOMEO]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.MLX]: 'model',

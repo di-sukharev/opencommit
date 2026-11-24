@@ -42,7 +42,8 @@ const OCO_AI_PROVIDER_ENUM = {
   ATLAS_CLOUD: 'atlascloud',
   UBERLLM: 'uberllm',
   TRUSTEDROUTER: 'trustedrouter',
-  AIGROW: 'aigrow'
+  AIGROW: 'aigrow',
+  ONOMEO: 'onomeo'
 } as const;
 
 jest.unstable_mockModule('@clack/prompts', () => ({
@@ -99,6 +100,7 @@ const OTHER_OPTIONS = [
   { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
   { value: 'uberllm', label: 'UberLLM (OpenAI-compatible gateway)' },
   { value: 'aigrow', label: 'AIGROW (Claude, GPT, Gemini on one key)' },
+  { value: 'onomeo', label: 'onomeo (Claude, GPT, DeepSeek on one key)' },
   { value: 'requesty', label: 'Requesty (Multiple providers)' },
   {
     value: 'cheaperinference',

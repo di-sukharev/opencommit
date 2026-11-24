@@ -334,6 +334,17 @@ export async function fetchAIGROWModels(): Promise<string[]> {
   });
 }
 
+export async function fetchOnomeoModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    // Requires an API key; lists the chat models the key can call.
+    url: 'https://onomeo.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.onomeo,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -453,6 +464,14 @@ export async function fetchModelsForProvider(
 
     case OCO_AI_PROVIDER_ENUM.AIGROW:
       models = await fetchAIGROWModels();
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.ONOMEO:
+      if (apiKey) {
+        models = await fetchOnomeoModels(apiKey);
+      } else {
+        models = MODEL_LIST.onomeo;
+      }
       break;
 
     default:
