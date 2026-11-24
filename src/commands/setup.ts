@@ -104,6 +104,11 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     selectionGroup: 'other'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.TEAMOROUTER,
+    displayName: 'TeamoRouter (Claude, GPT, Gemini, DeepSeek on one key)',
+    selectionGroup: 'other'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.REQUESTY,
     displayName: 'Requesty (Multiple providers)',
     selectionGroup: 'other'

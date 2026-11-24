@@ -334,6 +334,19 @@ export async function fetchAIGROWModels(): Promise<string[]> {
   });
 }
 
+export async function fetchTeamoRouterModels(
+  apiKey: string
+): Promise<string[]> {
+  return fetchModelList({
+    // The model list requires an API key (401 without one).
+    url: 'https://api.teamorouter.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.teamorouter,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -453,6 +466,14 @@ export async function fetchModelsForProvider(
 
     case OCO_AI_PROVIDER_ENUM.AIGROW:
       models = await fetchAIGROWModels();
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.TEAMOROUTER:
+      if (apiKey) {
+        models = await fetchTeamoRouterModels(apiKey);
+      } else {
+        models = MODEL_LIST.teamorouter;
+      }
       break;
 
     default:

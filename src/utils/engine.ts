@@ -21,6 +21,7 @@ import { AtlasCloudEngine } from '../engine/atlascloud';
 import { UberLLMEngine } from '../engine/uberllm';
 import { TrustedRouterEngine } from '../engine/trustedrouter';
 import { AIGROWEngine } from '../engine/aigrow';
+import { TeamoRouterEngine } from '../engine/teamorouter';
 import { parseCustomHeaders } from './customHeaders';
 import { resolveProxy } from './proxy';
 
@@ -100,6 +101,8 @@ export function getEngine(config = getConfig()): AiEngine {
       return new TrustedRouterEngine(DEFAULT_CONFIG);
     case OCO_AI_PROVIDER_ENUM.AIGROW:
       return new AIGROWEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.TEAMOROUTER:
+      return new TeamoRouterEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);

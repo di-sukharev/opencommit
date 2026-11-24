@@ -13,6 +13,7 @@ import {
   fetchOrcaRouterModels,
   fetchRequestyModels,
   fetchAIGROWModels,
+  fetchTeamoRouterModels,
   fetchTrustedRouterModels,
   fetchUberLLMModels
 } from '../../src/utils/modelCache';
@@ -293,6 +294,18 @@ describe('provider model fetchers', () => {
         data: [{ id: 'gemini-3.8-flash' }, { id: 'claude-haiku-5.5' }]
       },
       expected: ['claude-haiku-5.5', 'gemini-3.8-flash']
+    },
+    {
+      provider: 'TeamoRouter',
+      fetchModels: () => fetchTeamoRouterModels('teamorouter-key'),
+      request: [
+        'https://api.teamorouter.com/v1/models',
+        { headers: { Authorization: 'Bearer teamorouter-key' } }
+      ],
+      payload: {
+        data: [{ id: 'deepseek-v4-flash' }, { id: 'claude-haiku-5-5' }]
+      },
+      expected: ['claude-haiku-5-5', 'deepseek-v4-flash']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -405,7 +418,8 @@ describe('provider model fetchers', () => {
       () => fetchTrustedRouterModels(),
       MODEL_LIST.trustedrouter
     ],
-    ['AIGROW', () => fetchAIGROWModels(), MODEL_LIST.aigrow]
+    ['AIGROW', () => fetchAIGROWModels(), MODEL_LIST.aigrow],
+    ['TeamoRouter', () => fetchTeamoRouterModels('key'), MODEL_LIST.teamorouter]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {
