@@ -166,6 +166,7 @@ OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
+OCO_TICKET_FROM_BRANCH=<boolean, reference the ticket ID from the branch name in the message; default: false>
 ```
 
 Global configs are same as local configs, but they are stored in the global `~/.opencommit` config file and set with `oco config set` command, e.g. `oco config set OCO_MODEL=gpt-4o`.
@@ -518,6 +519,26 @@ For instance, using the command `oco '$msg #205’`, users can leverage this fea
 #### Committing with the Message
 
 Once users have generated their desired commit message, they can proceed to commit using the generated message. By understanding the feature's full potential and its implementation details, users can confidently use the generated messages for their commits.
+
+### Ticket ID from the branch name
+
+If your branches carry a ticket ID, OpenCommit can reference it in every generated message:
+
+```sh
+oco config set OCO_TICKET_FROM_BRANCH=true
+```
+
+On the branch `feat/foo-1234-button` the ticket is added as a footer, where [Conventional Commits](https://www.conventionalcommits.org/) puts issue references:
+
+```
+feat(button): add the component
+
+Refs: FOO-1234
+```
+
+With `OCO_ONE_LINE_COMMIT=true` the message has no footer, so the ticket goes at the end of the subject: `feat(button): add the component (FOO-1234)`.
+
+The ticket ID is the first `LETTERS-123` style key in the branch name, written in upper case. Branches without such a key keep the generated message as it is, and so do messages that already name the ticket. The setting also applies to the `prepare-commit-msg` git hook.
 
 ### Ignore files
 

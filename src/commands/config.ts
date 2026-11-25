@@ -21,6 +21,7 @@ export enum CONFIG_KEYS {
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_EMOJI_POSITION_BEFORE_DESCRIPTION = 'OCO_EMOJI_POSITION_BEFORE_DESCRIPTION',
   OCO_EMOJI_FULL_SPEC = 'OCO_EMOJI_FULL_SPEC',
+  OCO_TICKET_FROM_BRANCH = 'OCO_TICKET_FROM_BRANCH',
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
   OCO_WHY = 'OCO_WHY',
@@ -787,6 +788,16 @@ export const configValidators = {
     return value;
   },
 
+  [CONFIG_KEYS.OCO_TICKET_FROM_BRANCH](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_TICKET_FROM_BRANCH,
+      typeof value === 'boolean',
+      'Must be boolean: true or false'
+    );
+
+    return value;
+  },
+
   [CONFIG_KEYS.OCO_OMIT_SCOPE](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_OMIT_SCOPE,
@@ -1004,6 +1015,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
   [CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC]: boolean;
+  [CONFIG_KEYS.OCO_TICKET_FROM_BRANCH]: boolean;
   [CONFIG_KEYS.OCO_WHY]: boolean;
   [CONFIG_KEYS.OCO_MODEL]: string;
   [CONFIG_KEYS.OCO_LANGUAGE]: string;
@@ -1059,6 +1071,7 @@ export const DEFAULT_CONFIG = {
   OCO_EMOJI: false,
   OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: false,
   OCO_EMOJI_FULL_SPEC: false,
+  OCO_TICKET_FROM_BRANCH: false,
   OCO_MODEL: getDefaultModel('openai'),
   OCO_LANGUAGE: 'en',
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
@@ -1127,6 +1140,7 @@ const getEnvConfig = (env: NodeJS.ProcessEnv) => {
       env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
     ),
     OCO_EMOJI_FULL_SPEC: parseConfigVarValue(env.OCO_EMOJI_FULL_SPEC),
+    OCO_TICKET_FROM_BRANCH: parseConfigVarValue(env.OCO_TICKET_FROM_BRANCH),
     OCO_LANGUAGE: env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
     OCO_PROMPT_MODULE: env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
@@ -1453,6 +1467,12 @@ function getConfigKeyDetails(key) {
       return {
         description:
           'Use the full GitMoji specification instead of the short OCO_EMOJI list, same as the --fgm flag',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_TICKET_FROM_BRANCH:
+      return {
+        description:
+          'Reference the ticket ID found in the branch name in the commit message, e.g. a "Refs: FOO-1234" footer on feat/foo-1234-button',
         values: ['true', 'false']
       };
     case CONFIG_KEYS.OCO_WHY:

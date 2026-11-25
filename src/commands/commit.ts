@@ -15,11 +15,13 @@ import { formatUserFriendlyError, printFormattedError } from '../utils/errors';
 import {
   assertGitRepo,
   getChangedFiles,
+  getCurrentBranch,
   getDiff,
   getStagedFiles,
   gitAdd
 } from '../utils/git';
 import { buildGitPushArgs, GitPushOptions } from '../utils/gitPush';
+import { addTicketReference } from '../utils/ticketReference';
 import { trytm } from '../utils/trytm';
 import { getConfig } from './config';
 
@@ -42,11 +44,6 @@ const hasUpstreamBranch = async (): Promise<boolean> => {
   } catch {
     return false;
   }
-};
-
-const getCurrentBranch = async (): Promise<string> => {
-  const { stdout } = await execa('git', ['branch', '--show-current']);
-  return stdout.trim();
 };
 
 const runGitPush = async (options: GitPushOptions) => {
@@ -110,6 +107,14 @@ const generateCommitMessageFromGitDiff = async ({
       commitMessage = messageTemplate.replace(
         config.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
         commitMessage
+      );
+    }
+
+    if (config.OCO_TICKET_FROM_BRANCH) {
+      commitMessage = addTicketReference(
+        commitMessage,
+        await getCurrentBranch(),
+        { oneLine: config.OCO_ONE_LINE_COMMIT }
       );
     }
 
