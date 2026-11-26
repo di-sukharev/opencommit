@@ -7,7 +7,7 @@ import {
 import { generateCommitMessageWithConfig } from './generateCommitMessageFromGitDiff';
 import { getI18nLocal } from './i18n';
 
-// The build emits `out/index.d.ts` from this file alone. Keep the public types
+// The build emits `out/index.d.cts` from this file alone. Keep the public types
 // in this file and give exported functions explicit types.
 
 /**
