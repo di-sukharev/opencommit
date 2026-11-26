@@ -11,6 +11,7 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/settings/billing',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/billing/',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/usage',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'https://platform.minimax.io/console',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/credits',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
   [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'https://cheaperinference.com',
@@ -211,6 +212,8 @@ export function getRecommendedModel(provider: string): string | null {
       return 'mistral-small-latest';
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
       return 'deepseek-v4-flash';
+    case OCO_AI_PROVIDER_ENUM.MINIMAX:
+      return 'MiniMax-M3';
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return 'openai/gpt-4o-mini';
     case OCO_AI_PROVIDER_ENUM.ORCAROUTER:

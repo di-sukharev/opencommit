@@ -4,6 +4,7 @@ import {
   fetchCheaperInferenceModels,
   fetchAtlasCloudModels,
   fetchDeepSeekModels,
+  fetchMiniMaxModels,
   fetchGroqModels,
   fetchLlamaCppModels,
   fetchMistralModels,
@@ -138,6 +139,16 @@ describe('provider model fetchers', () => {
       ],
       payload: { data: [{ id: 'deepseek-z' }, { id: 'deepseek-a' }] },
       expected: ['deepseek-a', 'deepseek-z']
+    },
+    {
+      provider: 'MiniMax',
+      fetchModels: () => fetchMiniMaxModels('minimax-key'),
+      request: [
+        'https://api.minimax.io/v1/models',
+        { headers: { Authorization: 'Bearer minimax-key' } }
+      ],
+      payload: { data: [{ id: 'MiniMax-M3' }, { id: 'MiniMax-M2.7' }] },
+      expected: ['MiniMax-M2.7', 'MiniMax-M3']
     },
     {
       provider: 'OrcaRouter',
@@ -391,6 +402,7 @@ describe('provider model fetchers', () => {
     ['Groq', () => fetchGroqModels('key'), MODEL_LIST.groq],
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
     ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
+    ['MiniMax', () => fetchMiniMaxModels('key'), MODEL_LIST.minimax],
     ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter],
     [
       'Cheaper Inference',

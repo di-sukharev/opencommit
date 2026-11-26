@@ -14,7 +14,7 @@ export class FlowiseEngine implements AiEngine {
   constructor(config) {
     this.config = config;
     this.client = axios.create({
-      url: `${config.baseURL}/${config.apiKey}`,
+      baseURL: `${config.baseURL}/${config.apiKey}`,
       headers: { 'Content-Type': 'application/json' },
       ...getAxiosProxyOptions(config.proxy)
     });
@@ -39,9 +39,7 @@ export class FlowiseEngine implements AiEngine {
     };
     try {
       const response = await this.client.post('', payload);
-      const message = response.data;
-      let content = message?.text;
-      return removeContentTags(content, 'think');
+      return removeContentTags(response.data?.text, 'think');
     } catch (error) {
       throw normalizeEngineError(error, 'flowise', this.config.model);
     }

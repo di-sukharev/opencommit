@@ -127,6 +127,7 @@ describe('config', () => {
         OCO_ONE_LINE_COMMIT: 'false',
         OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: 'true',
         OCO_EMOJI_FULL_SPEC: 'true',
+        OCO_TICKET_FROM_BRANCH: 'true',
         OCO_OMIT_SCOPE: 'true',
         OCO_REASONING: 'true',
         OCO_REASONING_MAX_TOKENS: '2048'
@@ -145,6 +146,7 @@ describe('config', () => {
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
       expect(config.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION).toEqual(true);
       expect(config.OCO_EMOJI_FULL_SPEC).toEqual(true);
+      expect(config.OCO_TICKET_FROM_BRANCH).toEqual(true);
       expect(config.OCO_OMIT_SCOPE).toEqual(true);
       expect(config.OCO_REASONING).toEqual(true);
       expect(config.OCO_REASONING_MAX_TOKENS).toEqual(2048);
@@ -793,6 +795,7 @@ describe('config', () => {
           [CONFIG_KEYS.OCO_DESCRIPTION, 'true'],
           [CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION, 'true'],
           [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC, 'true'],
+          [CONFIG_KEYS.OCO_TICKET_FROM_BRANCH, 'true'],
           [CONFIG_KEYS.OCO_ONE_LINE_COMMIT, 'false'],
           [CONFIG_KEYS.OCO_REASONING, 'true'],
           [CONFIG_KEYS.OCO_REASONING_MAX_TOKENS, '1024']
@@ -808,6 +811,7 @@ describe('config', () => {
       expect(config.OCO_DESCRIPTION).toEqual(true);
       expect(config.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION).toEqual(true);
       expect(config.OCO_EMOJI_FULL_SPEC).toEqual(true);
+      expect(config.OCO_TICKET_FROM_BRANCH).toEqual(true);
       expect(config.OCO_ONE_LINE_COMMIT).toEqual(false);
       expect(config.OCO_REASONING).toEqual(true);
       expect(config.OCO_REASONING_MAX_TOKENS).toEqual(1024);
