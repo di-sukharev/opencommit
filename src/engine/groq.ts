@@ -16,6 +16,6 @@ export class GroqEngine extends OpenAiEngine {
     ) {
       config.isReasoning = true;
     }
-    super(config);
+    super(config, 'groq');
   }
 }

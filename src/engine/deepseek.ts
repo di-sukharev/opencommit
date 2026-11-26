@@ -21,10 +21,10 @@ export class DeepseekEngine extends OpenAiEngine {
   constructor(config: DeepseekConfig) {
     // getEngine passes an unset OCO_API_URL as undefined, so a spread of
     // config alone would replace the DeepSeek URL with the OpenAI default.
-    super({
-      ...config,
-      baseURL: config.baseURL || 'https://api.deepseek.com/v1'
-    });
+    super(
+      { ...config, baseURL: config.baseURL || 'https://api.deepseek.com/v1' },
+      'deepseek'
+    );
   }
 
   // Identical method from OpenAiEngine, re-implemented here
