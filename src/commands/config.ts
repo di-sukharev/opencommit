@@ -9,7 +9,10 @@ import { join as pathJoin, resolve as pathResolve } from 'path';
 import { COMMANDS } from './ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
-import { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
+import {
+  getRemovedProviderMessage,
+  OCO_AI_PROVIDER_ENUM
+} from '../utils/provider';
 
 export { OCO_AI_PROVIDER_ENUM } from '../utils/provider';
 
@@ -144,111 +147,6 @@ export const MODEL_LIST = {
 
   // https://api.minimax.io/v1/models (requires an API key)
   minimax: ['MiniMax-M3', 'MiniMax-M2.7'],
-
-  // AI/ML API available chat-completion models
-  // https://api.aimlapi.com/v1/models
-  aimlapi: [
-    'openai/gpt-4o',
-    'gpt-4o-2024-08-06',
-    'gpt-4o-2024-05-13',
-    'gpt-4o-mini',
-    'gpt-4o-mini-2024-07-18',
-    'chatgpt-4o-latest',
-    'gpt-4-turbo',
-    'gpt-4-turbo-2024-04-09',
-    'gpt-4',
-    'gpt-4-0125-preview',
-    'gpt-4-1106-preview',
-    'gpt-3.5-turbo',
-    'gpt-3.5-turbo-0125',
-    'gpt-3.5-turbo-1106',
-    'o1-preview',
-    'o1-preview-2024-09-12',
-    'o1-mini',
-    'o1-mini-2024-09-12',
-    'o3-mini',
-    'gpt-4o-audio-preview',
-    'gpt-4o-mini-audio-preview',
-    'gpt-4o-search-preview',
-    'gpt-4o-mini-search-preview',
-    'openai/gpt-4.1-2025-04-14',
-    'openai/gpt-4.1-mini-2025-04-14',
-    'openai/gpt-4.1-nano-2025-04-14',
-    'openai/o4-mini-2025-04-16',
-    'openai/o3-2025-04-16',
-    'o1',
-    'openai/o3-pro',
-    'meta-llama/Llama-3.2-90B-Vision-Instruct-Turbo',
-    'google/gemma-2-27b-it',
-    'meta-llama/Llama-Vision-Free',
-    'Qwen/Qwen2-72B-Instruct',
-    'mistralai/Mixtral-8x7B-Instruct-v0.1',
-    'nvidia/Llama-3.1-Nemotron-70B-Instruct-HF',
-    'NousResearch/Nous-Hermes-2-Mixtral-8x7B-DPO',
-    'meta-llama/Llama-3.3-70B-Instruct-Turbo',
-    'meta-llama/Llama-3.2-3B-Instruct-Turbo',
-    'meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo',
-    'meta-llama/Llama-Guard-3-11B-Vision-Turbo',
-    'Qwen/Qwen2.5-7B-Instruct-Turbo',
-    'Qwen/Qwen2.5-Coder-32B-Instruct',
-    'meta-llama/Meta-Llama-3-8B-Instruct-Lite',
-    'meta-llama/Llama-3-8b-chat-hf',
-    'meta-llama/Llama-3-70b-chat-hf',
-    'Qwen/Qwen2.5-72B-Instruct-Turbo',
-    'Qwen/QwQ-32B',
-    'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo',
-    'meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo',
-    'meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo',
-    'mistralai/Mistral-7B-Instruct-v0.2',
-    'meta-llama/LlamaGuard-2-8b',
-    'mistralai/Mistral-7B-Instruct-v0.1',
-    'mistralai/Mistral-7B-Instruct-v0.3',
-    'meta-llama/Meta-Llama-Guard-3-8B',
-    'meta-llama/llama-4-scout',
-    'meta-llama/llama-4-maverick',
-    'Qwen/Qwen3-235B-A22B-fp8-tput',
-    'claude-3-opus-20240229',
-    'claude-3-haiku-20240307',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-haiku-20241022',
-    'claude-3-7-sonnet-20250219',
-    'claude-sonnet-4-20250514',
-    'claude-opus-4-20250514',
-    'google/gemini-2.0-flash-exp',
-    'google/gemini-2.0-flash',
-    'google/gemini-2.5-pro',
-    'google/gemini-2.5-flash',
-    'deepseek-chat',
-    'deepseek-reasoner',
-    'qwen-max',
-    'qwen-plus',
-    'qwen-turbo',
-    'qwen-max-2025-01-25',
-    'mistralai/mistral-tiny',
-    'mistralai/mistral-nemo',
-    'anthracite-org/magnum-v4-72b',
-    'nvidia/llama-3.1-nemotron-70b-instruct',
-    'cohere/command-r-plus',
-    'mistralai/codestral-2501',
-    'google/gemma-3-4b-it',
-    'google/gemma-3-12b-it',
-    'google/gemma-3-27b-it',
-    'google/gemini-2.5-flash-lite-preview',
-    'deepseek/deepseek-prover-v2',
-    'google/gemma-3n-e4b-it',
-    'cohere/command-a',
-    'minimax/minimax-m3',
-    'MiniMax-Text-01',
-    'abab6.5s-chat',
-    'bagoodex/bagoodex-search-v1',
-    'moonshot/kimi-k2-preview',
-    'perplexity/sonar',
-    'perplexity/sonar-pro',
-    'x-ai/grok-4-07-09',
-    'x-ai/grok-3-beta',
-    'x-ai/grok-3-mini-beta'
-  ],
 
   // OpenRouter available models
   // input_modalities: 'text'
@@ -579,43 +477,7 @@ export const MODEL_LIST = {
     'x-ai/grok-3-mini-beta',
     'x-ai/grok-beta',
     'x-ai/grok-vision-beta'
-  ],
-
-  // OrcaRouter available models
-  // https://api.orcarouter.ai/v1/models
-  orcarouter: ['orcarouter/auto'],
-
-  // Cheaper Inference available models
-  // https://cheaperinference.com/#models
-  cheaperinference: ['gpt-5.4-mini', 'gpt-5.4', 'claude-sonnet-5'],
-
-  // Requesty available models
-  // https://router.requesty.ai/v1/models
-  requesty: [
-    'openai/gpt-4o-mini', // used by default
-    'google/gemini-2.5-flash',
-    'deepseek/deepseek-chat'
-  ],
-
-  // Atlas Cloud available models
-  // https://api.atlascloud.ai/api/v1/models
-  atlascloud: ['qwen/qwen3.5-397b-a17b'],
-
-  // UberLLM available models
-  // https://api.uberllm.dev/v1/models
-  uberllm: ['deepseek/deepseek-v3.2'],
-
-  // TrustedRouter available models
-  // https://api.trustedrouter.com/v1/models
-  trustedrouter: [
-    'deepseek/deepseek-v4-flash', // used by default
-    'trustedrouter/auto',
-    'anthropic/claude-sonnet-4.5'
-  ],
-
-  // AIGROW available models
-  // https://aigrow.gg/v1/models
-  aigrow: ['claude-haiku-5.5']
+  ]
 };
 
 export const getDefaultModel = (provider: string | undefined): string => {
@@ -638,24 +500,8 @@ export const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.deepseek[0];
     case 'minimax':
       return MODEL_LIST.minimax[0];
-    case 'aimlapi':
-      return MODEL_LIST.aimlapi[0];
     case 'openrouter':
       return MODEL_LIST.openrouter[0];
-    case 'orcarouter':
-      return MODEL_LIST.orcarouter[0];
-    case 'cheaperinference':
-      return MODEL_LIST.cheaperinference[0];
-    case 'requesty':
-      return MODEL_LIST.requesty[0];
-    case 'atlascloud':
-      return MODEL_LIST.atlascloud[0];
-    case 'uberllm':
-      return MODEL_LIST.uberllm[0];
-    case 'trustedrouter':
-      return MODEL_LIST.trustedrouter[0];
-    case 'aigrow':
-      return MODEL_LIST.aigrow[0];
     default:
       return MODEL_LIST.openai[0];
   }
@@ -709,7 +555,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "minimax" or "orcarouter" or "atlascloud" or "uberllm" or "requesty" or "cheaperinference" or "trustedrouter" or "aigrow". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "minimax". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -888,12 +734,20 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     if (!value) value = 'openai';
 
+    const removedProviderMessage = getRemovedProviderMessage(value);
+    if (removedProviderMessage) {
+      validateConfig(
+        CONFIG_KEYS.OCO_AI_PROVIDER,
+        false,
+        removedProviderMessage
+      );
+    }
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
       (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'minimax', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm', 'requesty', 'cheaperinference', 'trustedrouter', 'aigrow' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'groq', 'mistral', 'deepseek', 'minimax', 'openrouter' or 'openai' (default)`
     );
 
     return value;
@@ -974,16 +828,6 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
   [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'https://platform.minimax.io/console/keys',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
-  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
-  [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]:
-    'https://cheaperinference.com/signup',
-  [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai/api-keys',
-  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
-  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/keys',
-  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
-    'https://trustedrouter.com/console/api-keys',
-  [OCO_AI_PROVIDER_ENUM.AIGROW]: 'https://aigrow.gg/dashboard/api',
-  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
   [OCO_AI_PROVIDER_ENUM.LLAMACPP]: null,
@@ -1000,15 +844,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
   [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'MiniMax-M3',
-  [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
-  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'orcarouter/auto',
-  [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'gpt-5.4-mini',
-  [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'openai/gpt-4o-mini',
-  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'qwen/qwen3.5-397b-a17b',
-  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'deepseek/deepseek-v3.2',
-  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]: 'deepseek/deepseek-v4-flash',
-  [OCO_AI_PROVIDER_ENUM.AIGROW]: 'claude-haiku-5.5',
-  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'gpt-4o-mini'
+  [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini'
 };
 
 export type ConfigType = {

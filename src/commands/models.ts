@@ -68,7 +68,11 @@ async function listModels(
   console.log('');
 }
 
-async function refreshModels(provider: string, apiKey?: string): Promise<void> {
+async function refreshModels(
+  provider: string,
+  apiKey?: string,
+  apiUrl?: string
+): Promise<void> {
   const loadingSpinner = spinner();
   loadingSpinner.start(`Fetching models from ${provider}...`);
 
@@ -76,12 +80,7 @@ async function refreshModels(provider: string, apiKey?: string): Promise<void> {
   clearModelCache();
 
   try {
-    const models = await fetchModelsForProvider(
-      provider,
-      apiKey,
-      undefined,
-      true
-    );
+    const models = await fetchModelsForProvider(provider, apiKey, apiUrl, true);
     loadingSpinner.stop(`${chalk.green('+')} Fetched ${models.length} models`);
 
     // List the models
@@ -142,11 +141,12 @@ export const modelsCommand = command(
     }
 
     if (flags.refresh) {
-      const apiKey =
-        provider.toLowerCase() === configuredProvider.toLowerCase()
-          ? config.OCO_API_KEY
-          : undefined;
-      await refreshModels(provider, apiKey);
+      // The configured key and URL belong to the configured provider only.
+      if (provider.toLowerCase() === configuredProvider.toLowerCase()) {
+        await refreshModels(provider, config.OCO_API_KEY, config.OCO_API_URL);
+      } else {
+        await refreshModels(provider);
+      }
     } else {
       await listModels(provider);
     }

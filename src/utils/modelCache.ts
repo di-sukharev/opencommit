@@ -42,11 +42,6 @@ function isCacheValid(cache: ModelCache | null): boolean {
 
 interface ModelListItem {
   id: string;
-  type?: string;
-  supported_endpoints?: string[];
-  architecture?: {
-    output_modalities?: string[];
-  };
 }
 
 interface ModelListResponse {
@@ -59,23 +54,6 @@ interface OllamaModelListResponse {
 
 interface OpenRouterModelListResponse {
   data?: Array<ModelListItem & { context_length?: number }>;
-}
-
-interface RequestyModelListResponse {
-  data?: Array<ModelListItem & { api?: string }>;
-}
-
-interface TrustedRouterModelListResponse {
-  data?: Array<ModelListItem & { trustedrouter?: { supports_chat?: boolean } }>;
-}
-
-interface AtlasCloudModelListResponse {
-  data?: Array<{
-    model: string;
-    type?: string;
-    display_console?: boolean;
-    supported_protocols?: string[];
-  }>;
 }
 
 interface FetchModelListOptions {
@@ -105,22 +83,34 @@ async function fetchModelList({
   }
 }
 
-export async function fetchOpenAIModels(apiKey: string): Promise<string[]> {
+const OPENAI_API_URL = 'https://api.openai.com/v1';
+
+const isOpenAIChatModel = (id: string) =>
+  id.startsWith('gpt-') ||
+  id.startsWith('o1') ||
+  id.startsWith('o3') ||
+  id.startsWith('o4');
+
+/**
+ * Lists the models of the OpenAI API, or of the OpenAI-compatible API at
+ * `baseUrl`. Only the OpenAI catalog is filtered to chat models, because
+ * other APIs use their own model IDs.
+ */
+export async function fetchOpenAIModels(
+  apiKey: string,
+  baseUrl?: string
+): Promise<string[]> {
+  const apiUrl = baseUrl?.replace(/\/+$/, '') || OPENAI_API_URL;
   return fetchModelList({
-    url: 'https://api.openai.com/v1/models',
+    url: `${apiUrl}/models`,
     headers: { Authorization: `Bearer ${apiKey}` },
     fallback: MODEL_LIST.openai,
-    mapModels: (data) =>
-      (data as Required<ModelListResponse>).data
-        .map((model) => model.id)
-        .filter(
-          (id) =>
-            id.startsWith('gpt-') ||
-            id.startsWith('o1') ||
-            id.startsWith('o3') ||
-            id.startsWith('o4')
-        )
-        .sort()
+    mapModels: (data) => {
+      const ids = (data as ModelListResponse).data?.map((model) => model.id);
+      return (
+        apiUrl === OPENAI_API_URL ? ids?.filter(isOpenAIChatModel) : ids
+      )?.sort();
+    }
   });
 }
 
@@ -216,134 +206,6 @@ export async function fetchMiniMaxModels(apiKey: string): Promise<string[]> {
   });
 }
 
-export async function fetchOrcaRouterModels(apiKey: string): Promise<string[]> {
-  return fetchModelList({
-    url: 'https://api.orcarouter.ai/v1/models',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    fallback: MODEL_LIST.orcarouter,
-    mapModels: (data) =>
-      (data as ModelListResponse).data
-        // The catalog also contains image, audio, and video generators. Keep
-        // text-output models plus entries whose older metadata omits the
-        // modality field, while preserving provider-prefixed chat model IDs.
-        ?.filter((model) => {
-          const outputModalities = model.architecture?.output_modalities;
-          return !outputModalities || outputModalities.includes('text');
-        })
-        ?.map((model) => model.id)
-        .sort()
-  });
-}
-
-export async function fetchCheaperInferenceModels(
-  apiKey: string
-): Promise<string[]> {
-  return fetchModelList({
-    url: 'https://api.cheaperinference.com/v1/models',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    fallback: MODEL_LIST.cheaperinference,
-    mapModels: (data) =>
-      (data as ModelListResponse).data
-        // Keep text models compatible with the Chat Completions transport.
-        ?.filter(
-          (model) =>
-            (!model.type || model.type === 'text') &&
-            (!model.supported_endpoints ||
-              model.supported_endpoints.includes('/v1/chat/completions'))
-        )
-        .map((model) => model.id)
-        .sort()
-  });
-}
-
-export async function fetchRequestyModels(apiKey?: string): Promise<string[]> {
-  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined;
-  const mapModels = (data: unknown) =>
-    (data as RequestyModelListResponse).data
-      // Keep chat models only (exclude embedding and other APIs).
-      ?.filter((model) => !model.api || model.api === 'chat')
-      .map((model) => model.id)
-      .sort();
-
-  // Managed routing policies are listed first, followed by the full catalog.
-  // Each list is fetched on its own so one failing does not drop the other.
-  const [managedModels, catalogModels] = await Promise.all([
-    fetchModelList({
-      url: 'https://router.requesty.ai/v1/models/managed',
-      headers,
-      fallback: [],
-      mapModels
-    }),
-    fetchModelList({
-      url: 'https://router.requesty.ai/v1/models',
-      headers,
-      fallback: [],
-      mapModels
-    })
-  ]);
-
-  const models = [...new Set([...managedModels, ...catalogModels])];
-  return models.length > 0 ? models : MODEL_LIST.requesty;
-}
-
-export async function fetchAtlasCloudModels(): Promise<string[]> {
-  return fetchModelList({
-    url: 'https://api.atlascloud.ai/api/v1/models',
-    fallback: MODEL_LIST.atlascloud,
-    mapModels: (data) =>
-      (data as AtlasCloudModelListResponse).data
-        ?.filter(
-          (model) =>
-            model.type === 'Text' &&
-            model.display_console === true &&
-            model.supported_protocols?.includes('openai.chat.completions')
-        )
-        .map((model) => model.model)
-        .sort()
-  });
-}
-
-export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
-  return fetchModelList({
-    // Without `?type=`, this endpoint lists chat (text-output) models only.
-    url: 'https://api.uberllm.dev/v1/models',
-    headers: { Authorization: `Bearer ${apiKey}` },
-    fallback: MODEL_LIST.uberllm,
-    mapModels: (data) =>
-      (data as ModelListResponse).data?.map((model) => model.id).sort()
-  });
-}
-
-export async function fetchTrustedRouterModels(): Promise<string[]> {
-  return fetchModelList({
-    // The catalog is public, so no API key is sent.
-    url: 'https://api.trustedrouter.com/v1/models',
-    fallback: MODEL_LIST.trustedrouter,
-    mapModels: (data) =>
-      (data as TrustedRouterModelListResponse).data
-        ?.filter((model) => {
-          const supportsChat = model.trustedrouter?.supports_chat;
-          const outputsText =
-            model.architecture?.output_modalities?.includes('text');
-          return (
-            supportsChat !== false && (outputsText ?? supportsChat === true)
-          );
-        })
-        .map((model) => model.id)
-        .sort()
-  });
-}
-
-export async function fetchAIGROWModels(): Promise<string[]> {
-  return fetchModelList({
-    // Public: lists every chat model with its price and needs no key.
-    url: 'https://aigrow.gg/v1/models',
-    fallback: MODEL_LIST.aigrow,
-    mapModels: (data) =>
-      (data as ModelListResponse).data?.map((model) => model.id).sort()
-  });
-}
-
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -362,7 +224,7 @@ export async function fetchModelsForProvider(
   switch (provider.toLowerCase()) {
     case OCO_AI_PROVIDER_ENUM.OPENAI:
       if (apiKey) {
-        models = await fetchOpenAIModels(apiKey);
+        models = await fetchOpenAIModels(apiKey, baseUrl);
       } else {
         models = MODEL_LIST.openai;
       }
@@ -421,56 +283,12 @@ export async function fetchModelsForProvider(
       }
       break;
 
-    case OCO_AI_PROVIDER_ENUM.AIMLAPI:
-      models = MODEL_LIST.aimlapi;
-      break;
-
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       if (apiKey) {
         models = await fetchOpenRouterModels(apiKey);
       } else {
         models = MODEL_LIST.openrouter;
       }
-      break;
-
-    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
-      if (apiKey) {
-        models = await fetchOrcaRouterModels(apiKey);
-      } else {
-        models = MODEL_LIST.orcarouter;
-      }
-      break;
-
-    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
-      if (apiKey) {
-        models = await fetchCheaperInferenceModels(apiKey);
-      } else {
-        models = MODEL_LIST.cheaperinference;
-      }
-      break;
-
-    case OCO_AI_PROVIDER_ENUM.REQUESTY:
-      models = await fetchRequestyModels(apiKey);
-      break;
-
-    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
-      models = await fetchAtlasCloudModels();
-      break;
-
-    case OCO_AI_PROVIDER_ENUM.UBERLLM:
-      if (apiKey) {
-        models = await fetchUberLLMModels(apiKey);
-      } else {
-        models = MODEL_LIST.uberllm;
-      }
-      break;
-
-    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
-      models = await fetchTrustedRouterModels();
-      break;
-
-    case OCO_AI_PROVIDER_ENUM.AIGROW:
-      models = await fetchAIGROWModels();
       break;
 
     default:

@@ -23,9 +23,11 @@ afterAll(() => {
   rmSync(testHome, { force: true, recursive: true });
 });
 
+const apiUrl = 'https://gateway.example/v1';
+
 it.each([
   {
-    configured: 'trustedrouter',
+    configured: 'deepseek',
     requested: 'openai',
     requests: []
   },
@@ -51,15 +53,30 @@ it.each([
   },
   {
     configured: 'openai',
-    requested: 'TrustedRouter',
-    requests: [['https://api.trustedrouter.com/v1/models']]
+    apiUrl,
+    requested: undefined,
+    requests: [
+      [`${apiUrl}/models`, { headers: { Authorization: `Bearer ${apiKey}` } }]
+    ]
+  },
+  {
+    configured: 'openai',
+    apiUrl,
+    requested: 'Ollama',
+    requests: [['http://localhost:11434/api/tags']]
   }
 ])(
-  'refreshes models for $requested with $configured configured',
-  async ({ configured, requested, requests }) => {
+  'refreshes models for $requested with $configured at $apiUrl configured',
+  async ({ configured, apiUrl, requested, requests }) => {
     writeFileSync(
       join(testHome, '.opencommit'),
-      `OCO_API_KEY=${apiKey}\n${configured ? `OCO_AI_PROVIDER=${configured}\n` : ''}`
+      [
+        `OCO_API_KEY=${apiKey}`,
+        configured && `OCO_AI_PROVIDER=${configured}`,
+        apiUrl && `OCO_API_URL=${apiUrl}`
+      ]
+        .filter(Boolean)
+        .join('\n')
     );
     const env = jest.replaceProperty(process, 'env', {});
     const fetch = jest

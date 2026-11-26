@@ -13,20 +13,18 @@ import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
 import { MiniMaxEngine } from '../engine/minimax';
-import { AimlApiEngine } from '../engine/aimlapi';
 import { OpenRouterEngine } from '../engine/openrouter';
-import { OrcaRouterEngine } from '../engine/orcarouter';
-import { CheaperInferenceEngine } from '../engine/cheaperinference';
-import { RequestyEngine } from '../engine/requesty';
-import { AtlasCloudEngine } from '../engine/atlascloud';
-import { UberLLMEngine } from '../engine/uberllm';
-import { TrustedRouterEngine } from '../engine/trustedrouter';
-import { AIGROWEngine } from '../engine/aigrow';
 import { parseCustomHeaders } from './customHeaders';
+import { getRemovedProviderMessage } from './provider';
 import { resolveProxy } from './proxy';
 
 export function getEngine(config = getConfig()): AiEngine {
   const provider = config.OCO_AI_PROVIDER;
+
+  // Without this check the OpenAI fallback below would send the gateway key to
+  // api.openai.com, for example from the git hook before migrations run.
+  const removedProviderMessage = getRemovedProviderMessage(provider);
+  if (removedProviderMessage) throw new Error(removedProviderMessage);
 
   const customHeaders = parseCustomHeaders(config.OCO_API_CUSTOM_HEADERS);
   const resolvedProxy = resolveProxy(config.OCO_PROXY);
@@ -83,27 +81,8 @@ export function getEngine(config = getConfig()): AiEngine {
     case OCO_AI_PROVIDER_ENUM.MINIMAX:
       return new MiniMaxEngine(DEFAULT_CONFIG);
 
-    case OCO_AI_PROVIDER_ENUM.AIMLAPI:
-      return new AimlApiEngine(DEFAULT_CONFIG);
-
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return new OpenRouterEngine(DEFAULT_CONFIG);
-
-    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
-      return new OrcaRouterEngine(DEFAULT_CONFIG);
-
-    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
-      return new CheaperInferenceEngine(DEFAULT_CONFIG);
-    case OCO_AI_PROVIDER_ENUM.REQUESTY:
-      return new RequestyEngine(DEFAULT_CONFIG);
-    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
-      return new AtlasCloudEngine(DEFAULT_CONFIG);
-    case OCO_AI_PROVIDER_ENUM.UBERLLM:
-      return new UberLLMEngine(DEFAULT_CONFIG);
-    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
-      return new TrustedRouterEngine(DEFAULT_CONFIG);
-    case OCO_AI_PROVIDER_ENUM.AIGROW:
-      return new AIGROWEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);

@@ -89,46 +89,6 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     selectionGroup: 'other'
   },
   {
-    provider: OCO_AI_PROVIDER_ENUM.ORCAROUTER,
-    displayName: 'OrcaRouter (Smart routing gateway)',
-    selectionGroup: 'other'
-  },
-  {
-    provider: OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD,
-    displayName: 'Atlas Cloud (Unified model API)',
-    selectionGroup: 'other'
-  },
-  {
-    provider: OCO_AI_PROVIDER_ENUM.UBERLLM,
-    displayName: 'UberLLM (OpenAI-compatible gateway)',
-    selectionGroup: 'other'
-  },
-  {
-    provider: OCO_AI_PROVIDER_ENUM.AIGROW,
-    displayName: 'AIGROW (Claude, GPT, Gemini on one key)',
-    selectionGroup: 'other'
-  },
-  {
-    provider: OCO_AI_PROVIDER_ENUM.REQUESTY,
-    displayName: 'Requesty (Multiple providers)',
-    selectionGroup: 'other'
-  },
-  {
-    provider: OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE,
-    displayName: 'Cheaper Inference (OpenAI-compatible gateway)',
-    selectionGroup: 'other'
-  },
-  {
-    provider: OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER,
-    displayName: 'TrustedRouter (OpenAI-compatible gateway)',
-    selectionGroup: 'other'
-  },
-  {
-    provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
-    displayName: 'AI/ML API',
-    selectionGroup: 'other'
-  },
-  {
     provider: OCO_AI_PROVIDER_ENUM.AZURE,
     displayName: 'Azure OpenAI',
     selectionGroup: 'other'

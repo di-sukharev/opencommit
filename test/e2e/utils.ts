@@ -29,6 +29,7 @@ const DEFAULT_TEST_ENV = {
   )
 };
 const COMPLETED_MIGRATIONS = [
+  '03_replace_removed_providers',
   '00_use_single_api_key_and_url',
   '01_remove_obsolete_config_keys_from_global_file',
   '02_set_missing_default_values'

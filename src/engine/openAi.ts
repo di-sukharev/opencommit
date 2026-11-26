@@ -15,27 +15,26 @@ export class OpenAiEngine implements AiEngine {
   client: OpenAI;
 
   /**
-   * Provider name used for error normalization. Subclasses that reuse the
-   * OpenAI-compatible transport (e.g. OrcaRouter) override this so errors
-   * are attributed to the right provider without re-implementing the
-   * request path.
+   * Provider name used for error normalization. Subclasses for other
+   * OpenAI-compatible APIs pass their name to the constructor so errors are
+   * attributed to the right provider without re-implementing the request path.
    */
   protected providerName = 'openai';
   protected useSamplingParameters = true;
 
-  constructor(config: OpenAiConfig, gatewayProvider?: string) {
+  constructor(config: OpenAiConfig, compatibleProvider?: string) {
     this.config = config;
 
     const clientOptions: OpenAI.ClientOptions = {
       apiKey: config.apiKey
     };
 
-    if (gatewayProvider) {
+    if (compatibleProvider) {
       if (typeof config.apiKey !== 'string' || !config.apiKey.trim()) {
-        throw new ApiKeyMissingError(gatewayProvider);
+        throw new ApiKeyMissingError(compatibleProvider);
       }
-      this.providerName = gatewayProvider;
-      // Avoid the SDK's OpenAI environment defaults for this gateway.
+      this.providerName = compatibleProvider;
+      // Avoid the SDK's OpenAI environment defaults for this provider.
       clientOptions.organization = null;
       clientOptions.project = null;
     }
@@ -49,10 +48,6 @@ export class OpenAiEngine implements AiEngine {
       if (Object.keys(headers).length > 0) {
         clientOptions.defaultHeaders = headers;
       }
-    }
-
-    if (typeof config.maxRetries === 'number') {
-      clientOptions.maxRetries = config.maxRetries;
     }
 
     // Use the native fetch, resolved at call time, instead of the SDK's
