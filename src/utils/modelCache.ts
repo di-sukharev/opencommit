@@ -105,22 +105,34 @@ async function fetchModelList({
   }
 }
 
-export async function fetchOpenAIModels(apiKey: string): Promise<string[]> {
+const OPENAI_API_URL = 'https://api.openai.com/v1';
+
+const isOpenAIChatModel = (id: string) =>
+  id.startsWith('gpt-') ||
+  id.startsWith('o1') ||
+  id.startsWith('o3') ||
+  id.startsWith('o4');
+
+/**
+ * Lists the models of the OpenAI API, or of the OpenAI-compatible API at
+ * `baseUrl`. Only the OpenAI catalog is filtered to chat models, because
+ * other APIs use their own model IDs.
+ */
+export async function fetchOpenAIModels(
+  apiKey: string,
+  baseUrl?: string
+): Promise<string[]> {
+  const apiUrl = baseUrl?.replace(/\/+$/, '') || OPENAI_API_URL;
   return fetchModelList({
-    url: 'https://api.openai.com/v1/models',
+    url: `${apiUrl}/models`,
     headers: { Authorization: `Bearer ${apiKey}` },
     fallback: MODEL_LIST.openai,
-    mapModels: (data) =>
-      (data as Required<ModelListResponse>).data
-        .map((model) => model.id)
-        .filter(
-          (id) =>
-            id.startsWith('gpt-') ||
-            id.startsWith('o1') ||
-            id.startsWith('o3') ||
-            id.startsWith('o4')
-        )
-        .sort()
+    mapModels: (data) => {
+      const ids = (data as ModelListResponse).data?.map((model) => model.id);
+      return (
+        apiUrl === OPENAI_API_URL ? ids?.filter(isOpenAIChatModel) : ids
+      )?.sort();
+    }
   });
 }
 
@@ -352,7 +364,7 @@ export async function fetchModelsForProvider(
   switch (provider.toLowerCase()) {
     case OCO_AI_PROVIDER_ENUM.OPENAI:
       if (apiKey) {
-        models = await fetchOpenAIModels(apiKey);
+        models = await fetchOpenAIModels(apiKey, baseUrl);
       } else {
         models = MODEL_LIST.openai;
       }

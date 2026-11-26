@@ -57,6 +57,19 @@ describe('provider model fetchers', () => {
       expected: ['gpt-z', 'o1-preview', 'o3-mini', 'o4-mini']
     },
     {
+      provider: 'OpenAI-compatible gateway',
+      fetchModels: () =>
+        fetchOpenAIModels('gateway-key', 'https://gateway.example/v1/'),
+      request: [
+        'https://gateway.example/v1/models',
+        { headers: { Authorization: 'Bearer gateway-key' } }
+      ],
+      payload: {
+        data: [{ id: 'vendor/model-b' }, { id: 'gpt-z' }, { id: 'model-a' }]
+      },
+      expected: ['gpt-z', 'model-a', 'vendor/model-b']
+    },
+    {
       provider: 'Ollama',
       fetchModels: () => fetchOllamaModels('http://ollama.test'),
       request: ['http://ollama.test/api/tags'],
