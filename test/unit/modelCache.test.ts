@@ -1,20 +1,13 @@
 import { MODEL_LIST, RECOMMENDED_MODELS } from '../../src/commands/config';
 import {
   fetchAnthropicModels,
-  fetchCheaperInferenceModels,
-  fetchAtlasCloudModels,
   fetchDeepSeekModels,
   fetchGroqModels,
   fetchLlamaCppModels,
   fetchMistralModels,
   fetchOllamaModels,
   fetchOpenAIModels,
-  fetchOpenRouterModels,
-  fetchOrcaRouterModels,
-  fetchRequestyModels,
-  fetchAIGROWModels,
-  fetchTrustedRouterModels,
-  fetchUberLLMModels
+  fetchOpenRouterModels
 } from '../../src/utils/modelCache';
 
 const originalFetch = global.fetch;
@@ -151,161 +144,6 @@ describe('provider model fetchers', () => {
       ],
       payload: { data: [{ id: 'deepseek-z' }, { id: 'deepseek-a' }] },
       expected: ['deepseek-a', 'deepseek-z']
-    },
-    {
-      provider: 'OrcaRouter',
-      fetchModels: () => fetchOrcaRouterModels('orcarouter-key'),
-      request: [
-        'https://api.orcarouter.ai/v1/models',
-        { headers: { Authorization: 'Bearer orcarouter-key' } }
-      ],
-      payload: {
-        data: [
-          {
-            id: 'openai/gpt-5',
-            architecture: { output_modalities: ['text'] }
-          },
-          { id: 'orcarouter/auto' },
-          {
-            id: 'anthropic/claude-sonnet-4-5',
-            architecture: { output_modalities: ['text'] }
-          },
-          {
-            id: 'openai/gpt-image-1',
-            architecture: { output_modalities: ['image'] }
-          },
-          { id: 'orcarouter/fusion' }
-        ]
-      },
-      expected: [
-        'anthropic/claude-sonnet-4-5',
-        'openai/gpt-5',
-        'orcarouter/auto',
-        'orcarouter/fusion'
-      ]
-    },
-    {
-      provider: 'Cheaper Inference',
-      fetchModels: () => fetchCheaperInferenceModels('ci_live_key'),
-      request: [
-        'https://api.cheaperinference.com/v1/models',
-        { headers: { Authorization: 'Bearer ci_live_key' } }
-      ],
-      payload: {
-        data: [
-          {
-            id: 'gpt-5.4-mini',
-            type: 'text',
-            supported_endpoints: ['/v1/chat/completions', '/v1/responses']
-          },
-          {
-            id: 'gpt-5.4-pro',
-            type: 'text',
-            supported_endpoints: ['/v1/responses']
-          },
-          { id: 'image-model', type: 'image' },
-          { id: 'claude-sonnet-5', type: 'text' },
-          { id: 'video-model', type: 'video' },
-          { id: 'gpt-5.4' }
-        ]
-      },
-      expected: ['claude-sonnet-5', 'gpt-5.4', 'gpt-5.4-mini']
-    },
-    {
-      provider: 'Atlas Cloud',
-      fetchModels: () => fetchAtlasCloudModels(),
-      request: ['https://api.atlascloud.ai/api/v1/models'],
-      payload: {
-        data: [
-          {
-            model: 'qwen/qwen3.5-397b-a17b',
-            type: 'Text',
-            display_console: true,
-            supported_protocols: ['openai.chat.completions']
-          },
-          {
-            model: 'anthropic/claude-sonnet-4.6',
-            type: 'Text',
-            display_console: true,
-            supported_protocols: ['openai.chat.completions']
-          },
-          {
-            model: 'hidden/chat-model',
-            type: 'Text',
-            display_console: false,
-            supported_protocols: ['openai.chat.completions']
-          },
-          {
-            model: 'image/model',
-            type: 'Image',
-            display_console: true,
-            supported_protocols: ['openai.chat.completions']
-          }
-        ]
-      },
-      expected: ['anthropic/claude-sonnet-4.6', 'qwen/qwen3.5-397b-a17b']
-    },
-    {
-      provider: 'UberLLM',
-      fetchModels: () => fetchUberLLMModels('uberllm-key'),
-      request: [
-        'https://api.uberllm.dev/v1/models',
-        { headers: { Authorization: 'Bearer uberllm-key' } }
-      ],
-      payload: {
-        data: [
-          { id: 'deepseek/deepseek-v3.2' },
-          { id: 'anthropic/claude-haiku-4.5' }
-        ]
-      },
-      expected: ['anthropic/claude-haiku-4.5', 'deepseek/deepseek-v3.2']
-    },
-    {
-      provider: 'TrustedRouter',
-      fetchModels: () => fetchTrustedRouterModels(),
-      request: ['https://api.trustedrouter.com/v1/models'],
-      payload: {
-        data: [
-          {
-            id: 'trustedrouter/auto',
-            architecture: { output_modalities: ['text'] },
-            trustedrouter: { supports_chat: true }
-          },
-          {
-            id: 'deepseek/deepseek-v4-flash',
-            architecture: { output_modalities: ['text'] }
-          },
-          {
-            id: 'openai/text-embedding-3-small',
-            architecture: { output_modalities: ['text'] },
-            trustedrouter: { supports_chat: false }
-          },
-          {
-            id: 'trustedrouter/polyphemus-1.0',
-            architecture: { output_modalities: ['text'] },
-            trustedrouter: { supports_chat: false, supports_responses: true }
-          },
-          {
-            id: 'google/gemini-3.1-flash-image',
-            architecture: { output_modalities: ['image', 'text'] },
-            trustedrouter: { supports_chat: false }
-          },
-          {
-            id: 'openai/gpt-image-1',
-            architecture: { output_modalities: ['image'] }
-          }
-        ]
-      },
-      expected: ['deepseek/deepseek-v4-flash', 'trustedrouter/auto']
-    },
-    {
-      provider: 'AIGROW',
-      fetchModels: () => fetchAIGROWModels(),
-      request: ['https://aigrow.gg/v1/models'],
-      payload: {
-        data: [{ id: 'gemini-3.8-flash' }, { id: 'claude-haiku-5.5' }]
-      },
-      expected: ['claude-haiku-5.5', 'gemini-3.8-flash']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -317,84 +155,6 @@ describe('provider model fetchers', () => {
     }
   );
 
-  it('keeps direct provider-prefixed OrcaRouter models selectable', async () => {
-    mockJsonResponse({
-      data: [
-        {
-          id: 'openai/gpt-5',
-          architecture: { output_modalities: ['text'] }
-        },
-        {
-          id: 'anthropic/claude-sonnet-4-5',
-          architecture: { output_modalities: ['text'] }
-        },
-        {
-          id: 'kling/kling-v3-omni',
-          architecture: { output_modalities: ['video'] }
-        },
-        {
-          id: 'openai/tts-1',
-          architecture: { output_modalities: ['audio'] }
-        },
-        { id: 'orcarouter/auto' }
-      ]
-    });
-
-    await expect(fetchOrcaRouterModels('orcarouter-key')).resolves.toEqual([
-      'anthropic/claude-sonnet-4-5',
-      'openai/gpt-5',
-      'orcarouter/auto'
-    ]);
-  });
-
-  it('merges Requesty managed policies with the full catalog', async () => {
-    fetchMock.mockImplementation(async (url: string) => ({
-      ok: true,
-      json: async () =>
-        url === 'https://router.requesty.ai/v1/models/managed'
-          ? { data: [{ id: 'gpt-5.4-mini', api: 'chat' }] }
-          : {
-              data: [
-                { id: 'openai/gpt-4o-mini', api: 'chat' },
-                { id: 'openai/text-embedding-3-small', api: 'embedding' },
-                { id: 'anthropic/claude-sonnet-4-5', api: 'chat' }
-              ]
-            }
-    }));
-
-    await expect(fetchRequestyModels('requesty-key')).resolves.toEqual([
-      'gpt-5.4-mini',
-      'anthropic/claude-sonnet-4-5',
-      'openai/gpt-4o-mini'
-    ]);
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://router.requesty.ai/v1/models/managed',
-      { headers: { Authorization: 'Bearer requesty-key' } }
-    );
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://router.requesty.ai/v1/models',
-      { headers: { Authorization: 'Bearer requesty-key' } }
-    );
-  });
-
-  it('keeps the Requesty catalog when the managed list fails', async () => {
-    fetchMock.mockImplementation(async (url: string) =>
-      url === 'https://router.requesty.ai/v1/models/managed'
-        ? { ok: false, json: async () => ({}) }
-        : {
-            ok: true,
-            json: async () => ({ data: [{ id: 'openai/gpt-4o-mini' }] })
-          }
-    );
-
-    await expect(fetchRequestyModels()).resolves.toEqual([
-      'openai/gpt-4o-mini'
-    ]);
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://router.requesty.ai/v1/models'
-    );
-  });
-
   it.each([
     ['OpenAI', () => fetchOpenAIModels('key'), MODEL_LIST.openai],
     ['Ollama', () => fetchOllamaModels(), []],
@@ -403,22 +163,7 @@ describe('provider model fetchers', () => {
     ['Mistral', () => fetchMistralModels('key'), MODEL_LIST.mistral],
     ['Groq', () => fetchGroqModels('key'), MODEL_LIST.groq],
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
-    ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
-    ['OrcaRouter', () => fetchOrcaRouterModels('key'), MODEL_LIST.orcarouter],
-    [
-      'Cheaper Inference',
-      () => fetchCheaperInferenceModels('key'),
-      MODEL_LIST.cheaperinference
-    ],
-    ['Requesty', () => fetchRequestyModels('key'), MODEL_LIST.requesty],
-    ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud],
-    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm],
-    [
-      'TrustedRouter',
-      () => fetchTrustedRouterModels(),
-      MODEL_LIST.trustedrouter
-    ],
-    ['AIGROW', () => fetchAIGROWModels(), MODEL_LIST.aigrow]
+    ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

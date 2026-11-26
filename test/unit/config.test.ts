@@ -269,7 +269,7 @@ describe('config', () => {
     });
 
     it.each([
-      ['trustedrouter', 'deepseek/deepseek-v4-flash'],
+      ['openrouter', 'openai/gpt-4o-mini'],
       ['anthropic', 'claude-sonnet-4-6'],
       ['llamacpp', '']
     ])(
@@ -292,19 +292,19 @@ describe('config', () => {
 
     it('uses the saved provider default when an existing config omits its model', async () => {
       globalConfigFile = await generateConfig('.opencommit', {
-        OCO_AI_PROVIDER: 'trustedrouter'
+        OCO_AI_PROVIDER: 'openrouter'
       });
 
       expect(
         getConfig({ globalPath: globalConfigFile.filePath }).OCO_MODEL
-      ).toBe('deepseek/deepseek-v4-flash');
+      ).toBe('openai/gpt-4o-mini');
     });
 
     it.each(['', '   ', 'null', 'undefined'])(
       'keeps the saved provider when the repository provider is %j',
       async (provider) => {
         globalConfigFile = await generateConfig('.opencommit', {
-          OCO_AI_PROVIDER: 'trustedrouter',
+          OCO_AI_PROVIDER: 'openrouter',
           OCO_API_KEY: 'test-gateway-key'
         });
         envConfigFile = await generateConfig('.env', {
@@ -317,9 +317,9 @@ describe('config', () => {
             envPath: envConfigFile.filePath
           })
         ).toMatchObject({
-          OCO_AI_PROVIDER: 'trustedrouter',
+          OCO_AI_PROVIDER: 'openrouter',
           OCO_API_KEY: 'test-gateway-key',
-          OCO_MODEL: 'deepseek/deepseek-v4-flash'
+          OCO_MODEL: 'openai/gpt-4o-mini'
         });
       }
     );
@@ -330,7 +330,7 @@ describe('config', () => {
         OCO_MODEL: ''
       });
       envConfigFile = await generateConfig('.env', {
-        OCO_AI_PROVIDER: 'trustedrouter'
+        OCO_AI_PROVIDER: 'openrouter'
       });
 
       expect(
@@ -338,10 +338,10 @@ describe('config', () => {
           globalPath: globalConfigFile.filePath,
           envPath: envConfigFile.filePath
         }).OCO_MODEL
-      ).toBe('deepseek/deepseek-v4-flash');
+      ).toBe('openai/gpt-4o-mini');
     });
 
-    it.each(['openai', 'trustedrouter'])(
+    it.each(['openai', 'openrouter'])(
       'applies a repository provider of %s without changing the global config',
       async (provider) => {
         globalConfigFile = await generateConfig('.opencommit', {});
@@ -390,7 +390,7 @@ describe('config', () => {
         OCO_AI_PROVIDER: 'openai'
       });
       envConfigFile = await generateConfig('.env', {
-        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_AI_PROVIDER: 'openrouter',
         OCO_API_URL: 'https://repo.example/v1',
         OCO_LANGUAGE: 'fr'
       });
@@ -407,7 +407,7 @@ describe('config', () => {
       });
 
       expect(config).toMatchObject({
-        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_AI_PROVIDER: 'openrouter',
         OCO_API_URL: 'https://repo.example/v1',
         OCO_LANGUAGE: 'en'
       });
@@ -434,7 +434,7 @@ describe('config', () => {
             .filter(Boolean)
             .join('\n')
         );
-        process.env.OCO_AI_PROVIDER = 'trustedrouter';
+        process.env.OCO_AI_PROVIDER = 'openrouter';
 
         const config = getConfig({
           globalPath: globalConfigFile.filePath,
@@ -442,7 +442,7 @@ describe('config', () => {
         });
 
         expect(config).toMatchObject({
-          OCO_AI_PROVIDER: 'trustedrouter',
+          OCO_AI_PROVIDER: 'openrouter',
           OCO_LANGUAGE: 'fr'
         });
         expect(config.OCO_API_KEY).toBeUndefined();
@@ -507,13 +507,13 @@ describe('config', () => {
       globalConfigFile = await prepareFile(
         '.opencommit',
         [
-          'OCO_AI_PROVIDER=trustedrouter',
+          'OCO_AI_PROVIDER=openrouter',
           'OCO_API_KEY=test-global-gateway-key',
           'OCO_API_CUSTOM_HEADERS={"X-Provider":"global"}'
         ].join('\n')
       );
       envConfigFile = await generateConfig('.env', {
-        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_AI_PROVIDER: 'openrouter',
         OCO_API_KEY: 'test-repo-gateway-key',
         OCO_API_URL: 'https://repo.example/v1',
         OPENCOMMIT_TEST_AMBIENT: 'present'
@@ -526,7 +526,7 @@ describe('config', () => {
           envPath: envConfigFile.filePath
         })
       ).toMatchObject({
-        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_AI_PROVIDER: 'openrouter',
         OCO_API_KEY: 'test-shell-gateway-key',
         OCO_API_URL: 'https://repo.example/v1',
         OCO_API_CUSTOM_HEADERS: { 'X-Provider': 'global' }
@@ -602,7 +602,7 @@ describe('config', () => {
     it('uses the provider default after setting a provider and key on a fresh installation', async () => {
       setConfig(
         [
-          [CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter'],
+          [CONFIG_KEYS.OCO_AI_PROVIDER, 'openrouter'],
           [CONFIG_KEYS.OCO_API_KEY, 'test-key']
         ],
         globalConfigFile.filePath
@@ -610,7 +610,7 @@ describe('config', () => {
 
       expect(
         getConfig({ globalPath: globalConfigFile.filePath }).OCO_MODEL
-      ).toBe('deepseek/deepseek-v4-flash');
+      ).toBe('openai/gpt-4o-mini');
     });
 
     it('drops the old provider transport and preserves the saved model and unrelated settings', async () => {
@@ -628,7 +628,7 @@ describe('config', () => {
 
       setConfig(
         [
-          [CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter'],
+          [CONFIG_KEYS.OCO_AI_PROVIDER, 'openrouter'],
           [CONFIG_KEYS.OCO_API_KEY, 'test-key']
         ],
         globalConfigFile.filePath
@@ -651,7 +651,7 @@ describe('config', () => {
       expect(
         getConfig({ globalPath: globalConfigFile.filePath })
       ).toMatchObject({
-        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_AI_PROVIDER: 'openrouter',
         OCO_API_KEY: 'test-key',
         OCO_API_URL: undefined,
         OCO_API_CUSTOM_HEADERS: undefined,
@@ -671,7 +671,7 @@ describe('config', () => {
           [CONFIG_KEYS.OCO_API_URL, 'https://new.example/v1'],
           [CONFIG_KEYS.OCO_API_CUSTOM_HEADERS, '{"X-Provider":"new"}'],
           [CONFIG_KEYS.OCO_MODEL, 'new-model'],
-          [CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter']
+          [CONFIG_KEYS.OCO_AI_PROVIDER, 'openrouter']
         ],
         globalConfigFile.filePath
       );
@@ -679,7 +679,7 @@ describe('config', () => {
       expect(
         getConfig({ globalPath: globalConfigFile.filePath })
       ).toMatchObject({
-        OCO_AI_PROVIDER: 'trustedrouter',
+        OCO_AI_PROVIDER: 'openrouter',
         OCO_API_URL: 'https://new.example/v1',
         OCO_API_CUSTOM_HEADERS: { 'X-Provider': 'new' },
         OCO_MODEL: 'new-model'
@@ -707,7 +707,7 @@ describe('config', () => {
           OCO_API_URL: 'https://global.example/v1',
           OCO_API_CUSTOM_HEADERS: '{"X-Provider":"global"}'
         });
-        process.env.OCO_AI_PROVIDER = 'trustedrouter';
+        process.env.OCO_AI_PROVIDER = 'openrouter';
         const path = globalConfigFile.filePath;
         const original = readFileSync(path, 'utf8');
 
@@ -736,7 +736,7 @@ describe('config', () => {
       process.env.OCO_API_KEY = 'temporary-key';
 
       setConfig(
-        [[CONFIG_KEYS.OCO_AI_PROVIDER, 'trustedrouter']],
+        [[CONFIG_KEYS.OCO_AI_PROVIDER, 'openrouter']],
         globalConfigFile.filePath
       );
 
@@ -921,34 +921,6 @@ describe('config', () => {
     });
   });
   describe('OCO_AI_PROVIDER validator', () => {
-    it('accepts atlascloud', () => {
-      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
-        throw new Error(`process.exit(${code})`);
-      });
-      try {
-        expect(
-          configValidators[CONFIG_KEYS.OCO_AI_PROVIDER]('atlascloud')
-        ).toBe('atlascloud');
-        expect(exit).not.toHaveBeenCalled();
-      } finally {
-        exit.mockRestore();
-      }
-    });
-
-    it('accepts trustedrouter', () => {
-      const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
-        throw new Error(`process.exit(${code})`);
-      });
-      try {
-        expect(
-          configValidators[CONFIG_KEYS.OCO_AI_PROVIDER]('trustedrouter')
-        ).toBe('trustedrouter');
-        expect(exit).not.toHaveBeenCalled();
-      } finally {
-        exit.mockRestore();
-      }
-    });
-
     it('accepts every provider in OCO_AI_PROVIDER_ENUM', () => {
       const exit = jest.spyOn(process, 'exit').mockImplementation((code) => {
         throw new Error(`process.exit(${code})`);

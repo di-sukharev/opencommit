@@ -38,10 +38,10 @@ afterAll(() => {
   rmSync(testHome, { force: true, recursive: true });
 });
 
-it.each(['ollama', 'trustedrouter'])(
-  'sets up TrustedRouter with existing settings from %s',
+it.each(['ollama', 'openrouter'])(
+  'sets up OpenRouter with existing settings from %s',
   async (previousProvider) => {
-    const model = 'deepseek/deepseek-v4-flash';
+    const model = 'openai/gpt-4o-mini';
     writeFileSync(
       configPath,
       [
@@ -54,7 +54,7 @@ it.each(['ollama', 'trustedrouter'])(
       join(testHome, '.opencommit-models.json'),
       JSON.stringify({
         timestamp: Date.now(),
-        models: { trustedrouter: [model] }
+        models: { openrouter: [model] }
       })
     );
     const env = jest.replaceProperty(process, 'env', {
@@ -64,14 +64,14 @@ it.each(['ollama', 'trustedrouter'])(
     });
     select
       .mockResolvedValueOnce('other')
-      .mockResolvedValueOnce('trustedrouter')
+      .mockResolvedValueOnce('openrouter')
       .mockResolvedValueOnce(model);
-    password.mockResolvedValueOnce('trustedrouter-test-key');
+    password.mockResolvedValueOnce('openrouter-test-key');
 
     try {
       await expect(runSetup()).resolves.toBe(true);
       expect(getConfig({ envPath })).toMatchObject({
-        OCO_API_KEY: 'trustedrouter-test-key',
+        OCO_API_KEY: 'openrouter-test-key',
         OCO_API_URL: 'https://temporary.example/v1'
       });
     } finally {
@@ -80,12 +80,12 @@ it.each(['ollama', 'trustedrouter'])(
 
     const savedConfig = getGlobalConfig();
     expect(savedConfig).toMatchObject({
-      OCO_AI_PROVIDER: 'trustedrouter',
-      OCO_API_KEY: 'trustedrouter-test-key',
+      OCO_AI_PROVIDER: 'openrouter',
+      OCO_API_KEY: 'openrouter-test-key',
       OCO_MODEL: model
     });
 
-    if (previousProvider === 'trustedrouter') {
+    if (previousProvider === 'openrouter') {
       expect(savedConfig.OCO_API_URL).toBe('https://configured.example/v1');
       expect(savedConfig.OCO_API_CUSTOM_HEADERS).toBe(
         '{"X-Provider":"configured"}'
@@ -101,7 +101,7 @@ it('keeps the new endpoint selected in the llama.cpp setup wizard', async () => 
   writeFileSync(
     configPath,
     [
-      'OCO_AI_PROVIDER=trustedrouter',
+      'OCO_AI_PROVIDER=openrouter',
       'OCO_API_URL=https://configured.example/v1',
       'OCO_API_CUSTOM_HEADERS={"X-Provider":"configured"}'
     ].join('\n')

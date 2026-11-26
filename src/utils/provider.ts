@@ -11,15 +11,7 @@ export enum OCO_AI_PROVIDER_ENUM {
   MISTRAL = 'mistral',
   MLX = 'mlx',
   DEEPSEEK = 'deepseek',
-  AIMLAPI = 'aimlapi',
-  OPENROUTER = 'openrouter',
-  ORCAROUTER = 'orcarouter',
-  CHEAPERINFERENCE = 'cheaperinference',
-  REQUESTY = 'requesty',
-  ATLAS_CLOUD = 'atlascloud',
-  UBERLLM = 'uberllm',
-  TRUSTEDROUTER = 'trustedrouter',
-  AIGROW = 'aigrow'
+  OPENROUTER = 'openrouter'
 }
 
 export type ProviderConfigRequirement = 'apiKey' | 'model' | 'none';
@@ -37,14 +29,6 @@ const PROVIDER_CONFIG_REQUIREMENTS: Record<
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.AIGROW]: 'apiKey',
-  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.MLX]: 'model',
   [OCO_AI_PROVIDER_ENUM.FLOWISE]: 'apiKey',
@@ -55,3 +39,21 @@ export const getProviderConfigRequirement = (
   provider: string = OCO_AI_PROVIDER_ENUM.OPENAI
 ): ProviderConfigRequirement =>
   PROVIDER_CONFIG_REQUIREMENTS[provider as OCO_AI_PROVIDER_ENUM] || 'apiKey';
+
+// Former named providers that were only OpenAI-compatible gateways. The openai
+// provider reaches each of them through its base URL in OCO_API_URL.
+const REMOVED_PROVIDER_API_URLS = new Map([
+  ['aimlapi', 'https://api.aimlapi.com/v1'],
+  ['orcarouter', 'https://api.orcarouter.ai/v1'],
+  ['cheaperinference', 'https://api.cheaperinference.com/v1'],
+  ['requesty', 'https://router.requesty.ai/v1'],
+  ['atlascloud', 'https://api.atlascloud.ai/v1'],
+  ['uberllm', 'https://api.uberllm.dev/v1'],
+  ['trustedrouter', 'https://api.trustedrouter.com/v1'],
+  ['aigrow', 'https://aigrow.gg/v1']
+]);
+
+/** Returns the OCO_API_URL that replaces a removed provider. */
+export const getRemovedProviderApiUrl = (
+  provider: string | undefined
+): string | undefined => provider && REMOVED_PROVIDER_API_URLS.get(provider);

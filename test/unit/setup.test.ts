@@ -34,15 +34,7 @@ const OCO_AI_PROVIDER_ENUM = {
   MISTRAL: 'mistral',
   MLX: 'mlx',
   DEEPSEEK: 'deepseek',
-  AIMLAPI: 'aimlapi',
-  OPENROUTER: 'openrouter',
-  ORCAROUTER: 'orcarouter',
-  CHEAPERINFERENCE: 'cheaperinference',
-  REQUESTY: 'requesty',
-  ATLAS_CLOUD: 'atlascloud',
-  UBERLLM: 'uberllm',
-  TRUSTEDROUTER: 'trustedrouter',
-  AIGROW: 'aigrow'
+  OPENROUTER: 'openrouter'
 } as const;
 
 jest.unstable_mockModule('@clack/prompts', () => ({
@@ -95,20 +87,6 @@ const OTHER_OPTIONS = [
   { value: 'mistral', label: 'Mistral AI' },
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'openrouter', label: 'OpenRouter (Multiple providers)' },
-  { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
-  { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
-  { value: 'uberllm', label: 'UberLLM (OpenAI-compatible gateway)' },
-  { value: 'aigrow', label: 'AIGROW (Claude, GPT, Gemini on one key)' },
-  { value: 'requesty', label: 'Requesty (Multiple providers)' },
-  {
-    value: 'cheaperinference',
-    label: 'Cheaper Inference (OpenAI-compatible gateway)'
-  },
-  {
-    value: 'trustedrouter',
-    label: 'TrustedRouter (OpenAI-compatible gateway)'
-  },
-  { value: 'aimlapi', label: 'AI/ML API' },
   { value: 'azure', label: 'Azure OpenAI' },
   { value: 'mlx', label: 'MLX (Apple Silicon, local)' }
 ];
@@ -175,7 +153,6 @@ describe('setup provider behavior', () => {
     'groq',
     'mistral',
     'deepseek',
-    'aimlapi',
     'openrouter'
   ])('requires an API key on first run for %s', (provider) => {
     currentConfig = { OCO_AI_PROVIDER: provider, OCO_API_KEY: '' };

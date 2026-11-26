@@ -2,7 +2,6 @@ import { OpenAI } from 'openai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { parseCustomHeaders } from '../utils/customHeaders';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
-import { ApiKeyMissingError } from '../utils/errors';
 import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
@@ -14,31 +13,12 @@ export class OpenAiEngine implements AiEngine {
   config: OpenAiConfig;
   client: OpenAI;
 
-  /**
-   * Provider name used for error normalization. Subclasses that reuse the
-   * OpenAI-compatible transport (e.g. OrcaRouter) override this so errors
-   * are attributed to the right provider without re-implementing the
-   * request path.
-   */
-  protected providerName = 'openai';
-  protected useSamplingParameters = true;
-
-  constructor(config: OpenAiConfig, gatewayProvider?: string) {
+  constructor(config: OpenAiConfig) {
     this.config = config;
 
     const clientOptions: OpenAI.ClientOptions = {
       apiKey: config.apiKey
     };
-
-    if (gatewayProvider) {
-      if (typeof config.apiKey !== 'string' || !config.apiKey.trim()) {
-        throw new ApiKeyMissingError(gatewayProvider);
-      }
-      this.providerName = gatewayProvider;
-      // Avoid the SDK's OpenAI environment defaults for this gateway.
-      clientOptions.organization = null;
-      clientOptions.project = null;
-    }
 
     if (config.baseURL) {
       clientOptions.baseURL = config.baseURL;
@@ -54,10 +34,6 @@ export class OpenAiEngine implements AiEngine {
       if (Object.keys(headers).length > 0) {
         clientOptions.defaultHeaders = headers;
       }
-    }
-
-    if (typeof config.maxRetries === 'number') {
-      clientOptions.maxRetries = config.maxRetries;
     }
 
     // The OpenAI SDK's internal fetch may resolve before globalThis.fetch is
@@ -88,10 +64,9 @@ export class OpenAiEngine implements AiEngine {
       ...(isReasoningModel
         ? { max_completion_tokens: reasoningTokens }
         : {
-            max_tokens: this.config.maxTokensOutput,
-            ...(this.useSamplingParameters
-              ? { temperature: 0, top_p: 0.1 }
-              : {})
+            temperature: 0,
+            top_p: 0.1,
+            max_tokens: this.config.maxTokensOutput
           })
     };
 
@@ -117,7 +92,7 @@ export class OpenAiEngine implements AiEngine {
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
-      throw normalizeEngineError(error, this.providerName, this.config.model);
+      throw normalizeEngineError(error, 'openai', this.config.model);
     }
   };
 }

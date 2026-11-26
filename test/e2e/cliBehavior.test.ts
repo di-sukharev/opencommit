@@ -12,6 +12,7 @@ import {
   symlinkSync,
   writeFileSync
 } from 'fs';
+import { parse as iniParse } from 'ini';
 import { dirname, resolve } from 'path';
 import 'cli-testing-library/extend-expect';
 import {
@@ -1076,10 +1077,10 @@ it('cli flow prompts for a missing API key, saves it, and completes the commit',
   }
 });
 
-it('saves TrustedRouter credentials without displaying them', async () => {
+it('saves provider credentials without displaying them', async () => {
   const homeDir = await prepareTempDir();
-  const apiKey = 'test-trustedrouter-config-key';
-  const headerValue = 'test-trustedrouter-config-header';
+  const apiKey = 'test-openrouter-config-key';
+  const headerValue = 'test-openrouter-config-header';
 
   try {
     const result = spawnSync(
@@ -1088,7 +1089,7 @@ it('saves TrustedRouter credentials without displaying them', async () => {
         getCliPath(),
         'config',
         'set',
-        'OCO_AI_PROVIDER=trustedrouter',
+        'OCO_AI_PROVIDER=openrouter',
         `OCO_API_KEY=${apiKey}`,
         `OCO_API_CUSTOM_HEADERS=${JSON.stringify({ Authorization: `Bearer ${headerValue}` })}`
       ],
@@ -1130,7 +1131,7 @@ it('uses a key prompted for a repository provider without saving it globally', a
     writeRepoFile(
       gitDir,
       '.env',
-      `OCO_AI_PROVIDER=trustedrouter\nOCO_API_URL=${server.baseUrl}\n`
+      `OCO_AI_PROVIDER=deepseek\nOCO_API_URL=${server.baseUrl}\n`
     );
 
     const oco = await runCli(['--yes'], {
@@ -1145,7 +1146,7 @@ it('uses a key prompted for a repository provider without saving it globally', a
     await assertHeadCommit(gitDir, message);
     expect(server.authHeaders).toEqual(['Bearer test-repo-key']);
     expect(oco.getStdallStr()).not.toContain('test-repo-key');
-    expect(server.requestBodies[0].model).toBe('deepseek/deepseek-v4-flash');
+    expect(server.requestBodies[0].model).toBe('deepseek-v4-flash');
     expect(readFileSync(configPath, 'utf8')).toBe(savedConfig);
   } finally {
     await server.cleanup();
@@ -1154,15 +1155,15 @@ it('uses a key prompted for a repository provider without saving it globally', a
   }
 });
 
-it('uses a prompted TrustedRouter key despite a blank repository key', async () => {
+it('uses a prompted key despite a blank repository key', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
   const homeDir = await prepareTempDir();
-  const message = 'fix(api): use the prompted gateway key';
+  const message = 'fix(api): use the prompted key';
   const server = await startMockOpenAiServer(message);
 
   try {
     const configPath = writeGlobalConfig(homeDir, [
-      'OCO_AI_PROVIDER=trustedrouter',
+      'OCO_AI_PROVIDER=deepseek',
       `OCO_API_URL=${server.baseUrl}`,
       'OCO_GITPUSH=false'
     ]);
@@ -1175,13 +1176,13 @@ it('uses a prompted TrustedRouter key despite a blank repository key', async () 
     });
 
     await oco.findByText('Enter your API key:');
-    oco.userEvent.keyboard('test-prompted-gateway-key[Enter]');
+    oco.userEvent.keyboard('test-prompted-key[Enter]');
 
     expect(await waitForExit(oco)).toBe(0);
     await assertHeadCommit(gitDir, message);
-    expect(server.authHeaders).toEqual(['Bearer test-prompted-gateway-key']);
+    expect(server.authHeaders).toEqual(['Bearer test-prompted-key']);
     expect(readFileSync(configPath, 'utf8')).toContain(
-      'OCO_API_KEY=test-prompted-gateway-key'
+      'OCO_API_KEY=test-prompted-key'
     );
   } finally {
     await server.cleanup();
@@ -1190,7 +1191,7 @@ it('uses a prompted TrustedRouter key despite a blank repository key', async () 
   }
 });
 
-it('keeps the global gateway key when a repository provider has a legacy key', async () => {
+it('keeps the global provider key when a repository provider has a legacy key', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();
   const homeDir = await prepareTempDir();
   const message = 'fix(api): use the repository key';
@@ -1198,8 +1199,8 @@ it('keeps the global gateway key when a repository provider has a legacy key', a
 
   try {
     const configPath = writeGlobalConfig(homeDir, [
-      'OCO_AI_PROVIDER=trustedrouter',
-      'OCO_API_KEY=test-global-gateway-key',
+      'OCO_AI_PROVIDER=openrouter',
+      'OCO_API_KEY=test-global-openrouter-key',
       'OCO_OPENAI_API_KEY=test-legacy-openai-key',
       'OCO_GITPUSH=false'
     ]);
@@ -1232,53 +1233,136 @@ it('keeps the global gateway key when a repository provider has a legacy key', a
 });
 
 it.each([
-  { provider: 'uberllm', model: 'deepseek/deepseek-v3.2' },
-  { provider: 'atlascloud', model: 'qwen/qwen3.5-397b-a17b' },
-  { provider: 'requesty', model: 'openai/gpt-4o-mini' },
-  { provider: 'cheaperinference', model: 'gpt-5.4-mini' },
-  { provider: 'trustedrouter', model: 'deepseek/deepseek-v4-flash' },
-  { provider: 'aigrow', model: 'claude-haiku-5.5' }
+  ['aimlapi', 'https://api.aimlapi.com/v1'],
+  ['orcarouter', 'https://api.orcarouter.ai/v1'],
+  ['cheaperinference', 'https://api.cheaperinference.com/v1'],
+  ['requesty', 'https://router.requesty.ai/v1'],
+  ['atlascloud', 'https://api.atlascloud.ai/v1'],
+  ['uberllm', 'https://api.uberllm.dev/v1'],
+  ['trustedrouter', 'https://api.trustedrouter.com/v1'],
+  ['aigrow', 'https://aigrow.gg/v1']
 ])(
-  'cli commits after a fresh $provider setup without migration records',
-  async ({ provider, model }) => {
+  'migrates a global %s config to the openai provider at %s',
+  async (provider, apiUrl) => {
+    const homeDir = await prepareTempDir();
+
+    try {
+      // The setup wizard config of a removed provider, without migration records.
+      const configPath = writeGlobalConfig(homeDir, [
+        `OCO_AI_PROVIDER=${provider}`,
+        `OCO_API_KEY=test-${provider}-key`,
+        'OCO_MODEL=vendor/test-model'
+      ]);
+
+      const oco = await runCli([], { cwd: homeDir, env: { HOME: homeDir } });
+
+      expect(await waitForExit(oco)).toBe(0);
+      expect(iniParse(readFileSync(configPath, 'utf8'))).toMatchObject({
+        OCO_AI_PROVIDER: 'openai',
+        OCO_API_URL: apiUrl,
+        OCO_API_KEY: `test-${provider}-key`,
+        OCO_MODEL: 'vendor/test-model'
+      });
+    } finally {
+      rmSync(homeDir, { force: true, recursive: true });
+    }
+  }
+);
+
+it.each([
+  { provider: 'aimlapi', path: '/chat/completions' },
+  { provider: 'requesty', path: '' }
+])(
+  'commits through the saved $provider API URL after the migration',
+  async ({ provider, path }) => {
     const { gitDir, cleanup } = await prepareEnvironment();
     const homeDir = await prepareTempDir();
-    const message = `feat(${provider}): first commit`;
-    const apiKey = `test-${provider}-key`;
+    const message = `feat(${provider}): commit through the gateway`;
     const server = await startMockOpenAiServer(message);
 
     try {
-      // The global config the setup wizard writes, with no migrations recorded yet.
-      writeGlobalConfig(homeDir, [
+      const configPath = writeGlobalConfig(homeDir, [
         `OCO_AI_PROVIDER=${provider}`,
-        `OCO_API_KEY=${apiKey}`,
-        `OCO_MODEL=${model}`,
-        `OCO_API_URL=${server.baseUrl}`,
+        `OCO_API_KEY=test-${provider}-key`,
+        'OCO_MODEL=vendor/test-model',
+        `OCO_API_URL=${server.baseUrl}${path}`,
         'OCO_GITPUSH=false'
       ]);
-
+      // The migrations recorded before the providers were removed.
+      seedMigrations(homeDir, [
+        '00_use_single_api_key_and_url',
+        '01_remove_obsolete_config_keys_from_global_file',
+        '02_set_missing_default_values'
+      ]);
       await prepareRepo(
         gitDir,
-        {
-          'index.ts': 'console.log("Hello World");\n'
-        },
+        { 'index.ts': 'export {};\n' },
         { stage: true }
       );
 
+      const migrate = await runCli(['--yes'], {
+        cwd: gitDir,
+        env: { HOME: homeDir }
+      });
+      expect(await waitForExit(migrate)).toBe(0);
+      expect(iniParse(readFileSync(configPath, 'utf8'))).toMatchObject({
+        OCO_AI_PROVIDER: 'openai',
+        OCO_API_URL: server.baseUrl
+      });
+
       const oco = await runCli(['--yes'], {
         cwd: gitDir,
-        env: {
-          HOME: homeDir
-        }
+        env: { HOME: homeDir }
       });
 
       expect(await waitForExit(oco)).toBe(0);
       await assertHeadCommit(gitDir, message);
-      expect(server.authHeaders).toContain(`Bearer ${apiKey}`);
+      expect(server.authHeaders).toEqual([`Bearer test-${provider}-key`]);
+      expect(server.requestBodies[0].model).toBe('vendor/test-model');
     } finally {
       await server.cleanup();
       rmSync(homeDir, { force: true, recursive: true });
       await cleanup();
+    }
+  }
+);
+
+it.each([
+  { source: 'the shell', args: [], env: { OCO_AI_PROVIDER: 'requesty' } },
+  { source: 'the repository .env file', args: [], envFile: true },
+  {
+    source: 'oco config set',
+    args: ['config', 'set', 'OCO_AI_PROVIDER=requesty']
+  }
+])(
+  'shows the replacement for a removed provider from $source',
+  async ({ args, env = {}, envFile = false }) => {
+    const homeDir = await prepareTempDir();
+
+    try {
+      const configPath = writeGlobalConfig(homeDir, [
+        'OCO_AI_PROVIDER=openai',
+        'OCO_API_KEY=test-openai-key'
+      ]);
+      seedMigrations(homeDir);
+      const savedConfig = readFileSync(configPath, 'utf8');
+      if (envFile) {
+        writeFileSync(resolve(homeDir, '.env'), 'OCO_AI_PROVIDER=requesty\n');
+      }
+
+      const oco = await runCli(args, {
+        cwd: homeDir,
+        env: { HOME: homeDir, ...env }
+      });
+
+      expect(await waitForExit(oco)).toBe(1);
+      expect(oco.getStdallStr()).toContain('OCO_AI_PROVIDER=openai');
+      expect(oco.getStdallStr()).toContain(
+        'OCO_API_URL=https://router.requesty.ai/v1'
+      );
+      expect(readFileSync(configPath, 'utf8')).toBe(savedConfig);
+    } finally {
+      rmSync(homeDir, { force: true, recursive: true });
     }
   }
 );

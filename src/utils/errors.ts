@@ -12,15 +12,6 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/billing/',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/usage',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/credits',
-  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
-  [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'https://cheaperinference.com',
-  [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai',
-  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
-  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/credits',
-  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
-    'https://trustedrouter.com/console/credits',
-  [OCO_AI_PROVIDER_ENUM.AIGROW]: 'https://aigrow.gg/ai-api',
-  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
   [OCO_AI_PROVIDER_ENUM.AZURE]:
     'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -213,22 +204,6 @@ export function getRecommendedModel(provider: string): string | null {
       return 'deepseek-v4-flash';
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return 'openai/gpt-4o-mini';
-    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
-      return 'orcarouter/auto';
-    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
-      return 'gpt-5.4-mini';
-    case OCO_AI_PROVIDER_ENUM.REQUESTY:
-      return 'openai/gpt-4o-mini';
-    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
-      return 'qwen/qwen3.5-397b-a17b';
-    case OCO_AI_PROVIDER_ENUM.UBERLLM:
-      return 'deepseek/deepseek-v3.2';
-    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
-      return 'deepseek/deepseek-v4-flash';
-    case OCO_AI_PROVIDER_ENUM.AIGROW:
-      return 'claude-haiku-5.5';
-    case OCO_AI_PROVIDER_ENUM.AIMLAPI:
-      return 'gpt-4o-mini';
     default:
       return null;
   }

@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, gemini, flowise, deepseek, aimlapi, openrouter, orcarouter, cheaperinference, requesty, atlascloud, uberllm, trustedrouter, aigrow>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, mlx, gemini, flowise, groq, mistral, deepseek, openrouter>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -291,91 +291,21 @@ oco config set OCO_AI_PROVIDER=ollama OCO_API_KEY=<your_ollama_api_key> OCO_API_
 oco config set OCO_AI_PROVIDER=llamacpp OCO_API_URL=<your_llamacpp_endpoint>
 ```
 
-### Use OrcaRouter as the model gateway
+### Use an OpenAI-compatible gateway
 
-By default OpenCommit uses [OpenAI](https://openai.com).
-
-You could switch to [OrcaRouter](https://www.orcarouter.ai), an OpenAI-compatible gateway that supports direct provider models and automatic model routing. It can also provide optional gateway-level guardrails and firewall policies for prompts, responses, and tool calls. Enabling and configuring those controls is a separate step on the OrcaRouter side: the recommended `balanced` posture is primarily audit-based, while `tight` applies default-deny enforcement. OpenCommit itself does not configure them — it simply calls the gateway like any OpenAI-compatible API.
+To use any OpenAI-compatible API or gateway, keep the `openai` provider and set the base URL of the gateway in `OCO_API_URL`:
 
 ```sh
-oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key>
-
-oco config set OCO_AI_PROVIDER=orcarouter OCO_API_KEY=<your_orcarouter_api_key> OCO_MODEL=orcarouter/auto
+oco config set OCO_AI_PROVIDER=openai OCO_API_KEY=<your_gateway_api_key> OCO_API_URL=<gateway_base_url> OCO_MODEL=<gateway_model_id>
 ```
 
-The default model is `orcarouter/auto`, which lets OrcaRouter pick the best model for your request automatically.
+The base URL is the part before `/chat/completions`, for example `https://router.example.com/v1`. `oco models --refresh` lists the models of the configured gateway.
 
-### Use Cheaper Inference as the model gateway
-
-You could switch to [Cheaper Inference](https://cheaperinference.com), an OpenAI-compatible gateway to models from several labs.
-
-Get an API key at [cheaperinference.com/signup](https://cheaperinference.com/signup).
+[OpenRouter](https://openrouter.ai) remains a named provider:
 
 ```sh
-oco config set OCO_AI_PROVIDER=cheaperinference OCO_API_KEY=<your_cheaperinference_api_key> OCO_MODEL=gpt-5.4-mini
-
-oco config set OCO_AI_PROVIDER=cheaperinference OCO_API_KEY=<your_cheaperinference_api_key> OCO_MODEL=claude-sonnet-5
+oco config set OCO_AI_PROVIDER=openrouter OCO_API_KEY=<your_openrouter_api_key>
 ```
-
-The default model is `gpt-5.4-mini`. See the [model list](https://cheaperinference.com/#models) for other model IDs.
-
-### Use Requesty as the model gateway
-
-You could switch to [Requesty](https://www.requesty.ai), an OpenAI-compatible gateway with a single API key for models from many providers. Get a key at [app.requesty.ai/api-keys](https://app.requesty.ai/api-keys).
-
-```sh
-oco config set OCO_AI_PROVIDER=requesty OCO_API_KEY=<your_requesty_api_key> OCO_MODEL=openai/gpt-4o-mini
-
-oco config set OCO_AI_PROVIDER=requesty OCO_API_KEY=<your_requesty_api_key> OCO_MODEL=google/gemini-2.5-flash
-```
-
-The default model is `openai/gpt-4o-mini`. To route through the EU region, set `OCO_API_URL=https://router.eu.requesty.ai/v1`. See the [Requesty docs](https://docs.requesty.ai) for the full model list.
-
-### Use Atlas Cloud as the model provider
-
-[Atlas Cloud](https://www.atlascloud.ai) exposes an OpenAI-compatible API. It is optional and does not change OpenCommit's default provider.
-
-```sh
-oco config set OCO_AI_PROVIDER=atlascloud OCO_API_KEY=<your_atlascloud_api_key> OCO_MODEL=qwen/qwen3.5-397b-a17b
-```
-
-OpenCommit uses `https://api.atlascloud.ai/v1` by default and fetches selectable text chat models from Atlas Cloud's public catalog. Set `OCO_API_URL` to override the endpoint. Atlas Cloud requests disable automatic SDK retries so a commit-message generation request is not submitted twice.
-
-### Use UberLLM as the model gateway
-
-[UberLLM](https://uberllm.dev) is an OpenAI-compatible gateway with one key for about 260 chat models (DeepSeek, Claude, GPT, Gemini, Qwen, GLM and others). Prices are per model, usually below list price, and listed at [uberllm.dev/models](https://uberllm.dev/models). `oco models` lists the same catalog.
-
-```sh
-oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key> OCO_MODEL=deepseek/deepseek-v3.2
-
-oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key> OCO_MODEL=anthropic/claude-haiku-4.5
-```
-
-The default model is `deepseek/deepseek-v3.2`.
-
-### Use TrustedRouter as the model gateway
-
-[TrustedRouter](https://trustedrouter.com) is an OpenAI-compatible gateway with one key for models from many providers. Get a key at [TrustedRouter API Keys](https://trustedrouter.com/console/api-keys).
-
-```sh
-oco config set OCO_AI_PROVIDER=trustedrouter OCO_API_KEY=your_trustedrouter_api_key OCO_MODEL=deepseek/deepseek-v4-flash
-
-oco config set OCO_AI_PROVIDER=trustedrouter OCO_API_KEY=your_trustedrouter_api_key OCO_MODEL=anthropic/claude-sonnet-4.5
-```
-
-The default model is `deepseek/deepseek-v4-flash`. OpenCommit uses `https://api.trustedrouter.com/v1` by default and lists text models that support Chat Completions in TrustedRouter's public catalog. Set `OCO_API_URL` to override the endpoint. See the [TrustedRouter docs](https://trustedrouter.com/docs) for details.
-
-### Use AIGROW as the model provider
-
-[AIGROW](https://aigrow.gg/ai-api) provides an OpenAI-compatible API for Claude, GPT, Gemini, Grok, Qwen and Kimi at `https://aigrow.gg/v1`. Use model IDs without provider prefixes.
-
-```sh
-oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=your_aigrow_api_key OCO_MODEL=claude-haiku-5.5
-
-oco config set OCO_AI_PROVIDER=aigrow OCO_API_KEY=your_aigrow_api_key OCO_MODEL=gemini-3.8-flash
-```
-
-Run `oco models --refresh` to fetch the current models. To list them before configuring a key, run `oco models --provider aigrow --refresh`.
 
 ### Use with Proxy
 
