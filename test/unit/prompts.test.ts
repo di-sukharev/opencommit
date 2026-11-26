@@ -63,6 +63,7 @@ const loadPrompt = async ({
 
     return {
       assistant: prompt[2].content as string,
+      diff: prompt[1].content as string,
       system: prompt[0].content as string
     };
   } finally {
@@ -217,21 +218,43 @@ it('places GitMoji after an unscoped Conventional Commit type', async () => {
   );
 });
 
-describe('diff grounding guideline', () => {
-  it.each([false, true])(
-    'instructs the model to describe only changed lines (fullGitMojiSpec=%s)',
-    async (fullGitMojiSpec) => {
+// Issue #427: the model described unchanged context lines as the change.
+describe('diff lines', () => {
+  it.each([
+    { promptModule: 'conventional-commit' as const },
+    { promptModule: 'conventional-commit' as const, fullGitMojiSpec: true },
+    { promptModule: '@commitlint' as const }
+  ])(
+    'tells the model to describe only the changed lines (%o)',
+    async (options) => {
       const prompt = await loadPrompt({
         description: false,
         emoji: false,
-        fullGitMojiSpec,
-        positionBeforeDescription: false
+        positionBeforeDescription: false,
+        ...options
       });
 
-      expect(prompt.system).toContain('lines that start with + or -');
-      expect(prompt.system).toContain('unchanged context');
-      expect(prompt.system).toContain('+++ and --- lines are file headers');
+      expect(prompt.system).toContain('Describe only the changed lines');
     }
   );
 
+  it('marks the changes of the example diff with + and - lines', async () => {
+    const prompt = await loadPrompt({
+      description: false,
+      emoji: false,
+      positionBeforeDescription: false
+    });
+
+    const changedLines = prompt.diff
+      .split('\n')
+      .filter((line) => /^[+-]/.test(line) && !/^(\+\+\+|---) /.test(line));
+    expect(changedLines).toEqual([
+      '-const port = 7799;',
+      '+const PORT = 7799;',
+      '-app.listen(port, () => {',
+      '-  console.log(`Server listening on port ${port}`);',
+      '+app.listen(process.env.PORT || PORT, () => {',
+      '+  console.log(`Server listening on port ${PORT}`);'
+    ]);
+  });
 });

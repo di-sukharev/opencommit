@@ -11,7 +11,11 @@ import {
 
 import { ConfigType } from '../../commands/config';
 import { i18n, I18nLocals } from '../../i18n';
-import { IDENTITY, INIT_DIFF_PROMPT } from '../../prompts';
+import {
+  DIFF_LINES_INSTRUCTION,
+  IDENTITY,
+  INIT_DIFF_PROMPT
+} from '../../prompts';
 import { getGitMojiPositionInstruction } from '../../utils/gitmoji';
 import { ConsistencyPrompt } from './types';
 
@@ -277,6 +281,7 @@ const INIT_MAIN_PROMPT = (
   content: `${IDENTITY} Your mission is to create clean and comprehensive commit messages in the given @commitlint convention and explain WHAT were the changes ${
     config.OCO_WHY ? 'and WHY the changes were done' : ''
   }. I'll send you an output of 'git diff --staged' command, and you convert it into a commit message.
+${DIFF_LINES_INSTRUCTION}
 ${
   useGitMoji
     ? 'Use GitMoji convention to preface the commit.'

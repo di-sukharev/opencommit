@@ -14,6 +14,9 @@ import {
 export const IDENTITY =
   'You are to act as an author of a commit message in git.';
 
+export const DIFF_LINES_INSTRUCTION =
+  'Within each diff hunk, lines that start with + or - are the actual changes; the +++ and --- lines are file headers, not changes. Lines starting with a space are unchanged context. Describe only the changed lines, and use context lines solely to understand them. When a change touches only a few lines, never describe the surrounding unchanged lines as the change.';
+
 const GITMOJI_HELP = `Use GitMoji convention to preface the commit. Here are some help to choose the right emoji (emoji, description): 
 🐛, Fix a bug; 
 ✨, Introduce new features; 
@@ -154,11 +157,9 @@ const INIT_MAIN_PROMPT = (
   const oneLineCommitGuideline = getOneLineCommitInstruction(config);
   const scopeInstruction = getScopeInstruction(config);
   const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
-  const diffGroundingGuideline =
-    'Within each diff hunk, lines that start with + or - are the actual changes; the +++ and --- lines are file headers, not changes. Lines starting with a space are unchanged context. Describe only the changed lines, and use context lines solely to understand them. When a change touches only a few lines, never describe the surrounding unchanged lines as the change.';
   const userInputContext = userInputCodeContext(context);
 
-  const content = `${missionStatement}\n${diffInstruction}\n${diffGroundingGuideline}\n${conventionGuidelines}\n${gitMojiPositionGuideline}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
+  const content = `${missionStatement}\n${diffInstruction}\n${DIFF_LINES_INSTRUCTION}\n${conventionGuidelines}\n${gitMojiPositionGuideline}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
 
   return { role: 'system', content };
 };
@@ -166,30 +167,30 @@ const INIT_MAIN_PROMPT = (
 export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessageParam =
   {
     role: 'user',
-    content: `diff --git a/src/server.ts b/src/server.ts
-    index ad4db42..f3b18a9 100644
-    --- a/src/server.ts
-    +++ b/src/server.ts
-    @@ -10,7 +10,7 @@
-    import {
-        initWinstonLogger();
-        
-        const app = express();
-        -const port = 7799;
-        +const PORT = 7799;
-        
-        app.use(express.json());
-        
-        @@ -34,6 +34,6 @@
-        app.use((_, res, next) => {
-            // ROUTES
-            app.use(PROTECTED_ROUTER_URL, protectedRouter);
-            
-            -app.listen(port, () => {
-                -  console.log(\`Server listening on port \${port}\`);
-                +app.listen(process.env.PORT || PORT, () => {
-                    +  console.log(\`Server listening on port \${PORT}\`);
-                });`
+    content: [
+      'diff --git a/src/server.ts b/src/server.ts',
+      'index ad4db42..f3b18a9 100644',
+      '--- a/src/server.ts',
+      '+++ b/src/server.ts',
+      '@@ -10,7 +10,7 @@',
+      ' initWinstonLogger();',
+      ' ',
+      ' const app = express();',
+      '-const port = 7799;',
+      '+const PORT = 7799;',
+      ' ',
+      ' app.use(express.json());',
+      ' ',
+      '@@ -34,6 +34,6 @@',
+      ' // ROUTES',
+      ' app.use(PROTECTED_ROUTER_URL, protectedRouter);',
+      ' ',
+      '-app.listen(port, () => {',
+      '-  console.log(`Server listening on port ${port}`);',
+      '+app.listen(process.env.PORT || PORT, () => {',
+      '+  console.log(`Server listening on port ${PORT}`);',
+      ' });'
+    ].join('\n')
   };
 
 const COMMIT_TYPES = {
