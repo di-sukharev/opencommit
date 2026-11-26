@@ -1,5 +1,10 @@
 import { OpenAI } from 'openai';
+import {
+  DEFAULT_CONFIG,
+  OCO_AI_PROVIDER_ENUM
+} from '../../src/commands/config';
 import { DeepseekEngine } from '../../src/engine/deepseek';
+import { getEngine } from '../../src/utils/engine';
 
 describe('DeepseekEngine', () => {
   const baseConfig = {
@@ -65,12 +70,28 @@ describe('DeepseekEngine', () => {
     );
   });
 
-  it('uses the DeepSeek endpoint by default', () => {
-    const engine = new DeepseekEngine({
-      ...baseConfig,
-      model: 'deepseek-v4-flash'
-    });
+  it.each([undefined, ''])(
+    'uses the DeepSeek endpoint when OCO_API_URL is %p',
+    (apiUrl) => {
+      const engine = getEngine({
+        ...DEFAULT_CONFIG,
+        OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.DEEPSEEK,
+        OCO_API_KEY: 'test-deepseek-key',
+        OCO_API_URL: apiUrl
+      }) as DeepseekEngine;
 
-    expect(engine.client.baseURL).toContain('api.deepseek.com');
+      expect(engine.client.baseURL).toBe('https://api.deepseek.com/v1');
+    }
+  );
+
+  it('uses OCO_API_URL instead of the DeepSeek endpoint', () => {
+    const engine = getEngine({
+      ...DEFAULT_CONFIG,
+      OCO_AI_PROVIDER: OCO_AI_PROVIDER_ENUM.DEEPSEEK,
+      OCO_API_KEY: 'test-deepseek-key',
+      OCO_API_URL: 'https://deepseek.example.com/v1'
+    }) as DeepseekEngine;
+
+    expect(engine.client.baseURL).toBe('https://deepseek.example.com/v1');
   });
 });
