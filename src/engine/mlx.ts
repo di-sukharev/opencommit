@@ -6,16 +6,21 @@ import { AiEngine, AiEngineConfig } from './Engine';
 
 interface MLXConfig extends AiEngineConfig {}
 
+const DEFAULT_MLX_URL = 'http://localhost:8080';
+const MLX_CHAT_PATH = '/v1/chat/completions';
+
 export class MLXEngine implements AiEngine {
   config: MLXConfig;
   client: AxiosInstance;
+  private chatUrl: string;
 
   constructor(config) {
     this.config = config;
+
+    const baseUrl = config.baseURL || DEFAULT_MLX_URL;
+    this.chatUrl = `${baseUrl}${MLX_CHAT_PATH}`;
+
     this.client = axios.create({
-      url: config.baseURL
-        ? `${config.baseURL}/${config.apiKey}`
-        : 'http://localhost:8080/v1/chat/completions',
       headers: { 'Content-Type': 'application/json' }
     });
   }
@@ -31,10 +36,7 @@ export class MLXEngine implements AiEngine {
       stream: false
     };
     try {
-      const response = await this.client.post(
-        this.client.getUri(this.config),
-        params
-      );
+      const response = await this.client.post(this.chatUrl, params);
 
       const choices = response.data.choices;
       const message = choices[0].message;

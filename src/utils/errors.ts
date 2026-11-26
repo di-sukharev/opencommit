@@ -3,16 +3,26 @@ import { MODEL_LIST, OCO_AI_PROVIDER_ENUM } from '../commands/config';
 
 // Provider billing/help URLs for common errors
 export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
-  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'https://console.anthropic.com/settings/billing',
-  [OCO_AI_PROVIDER_ENUM.OPENAI]: 'https://platform.openai.com/settings/organization/billing',
+  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]:
+    'https://console.anthropic.com/settings/billing',
+  [OCO_AI_PROVIDER_ENUM.OPENAI]:
+    'https://platform.openai.com/settings/organization/billing',
   [OCO_AI_PROVIDER_ENUM.GEMINI]: 'https://aistudio.google.com/app/plan',
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/settings/billing',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/billing/',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/usage',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/credits',
+  [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
+  [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'https://cheaperinference.com',
+  [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai',
+  [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/credits',
+  [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
+    'https://trustedrouter.com/console/credits',
+  [OCO_AI_PROVIDER_ENUM.AIGROW]: 'https://aigrow.gg/ai-api',
   [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'https://aimlapi.com/app/billing',
-  [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
-  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'https://platform.minimaxi.com/user-center/basic-information',
+  [OCO_AI_PROVIDER_ENUM.AZURE]:
+    'https://portal.azure.com/#view/Microsoft_Azure_CostManagement',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
   [OCO_AI_PROVIDER_ENUM.MLX]: null,
   [OCO_AI_PROVIDER_ENUM.FLOWISE]: null,
@@ -24,7 +34,9 @@ export class InsufficientCreditsError extends Error {
   public readonly provider: string;
 
   constructor(provider: string, message?: string) {
-    super(message || `Insufficient credits or quota for provider '${provider}'`);
+    super(
+      message || `Insufficient credits or quota for provider '${provider}'`
+    );
     this.name = 'InsufficientCreditsError';
     this.provider = provider;
   }
@@ -194,17 +206,29 @@ export function getRecommendedModel(provider: string): string | null {
     case OCO_AI_PROVIDER_ENUM.GEMINI:
       return 'gemini-1.5-flash';
     case OCO_AI_PROVIDER_ENUM.GROQ:
-      return 'llama3-70b-8192';
+      return 'openai/gpt-oss-120b';
     case OCO_AI_PROVIDER_ENUM.MISTRAL:
       return 'mistral-small-latest';
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
-      return 'deepseek-chat';
+      return 'deepseek-v4-flash';
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return 'openai/gpt-4o-mini';
+    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
+      return 'orcarouter/auto';
+    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
+      return 'gpt-5.4-mini';
+    case OCO_AI_PROVIDER_ENUM.REQUESTY:
+      return 'openai/gpt-4o-mini';
+    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
+      return 'qwen/qwen3.5-397b-a17b';
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      return 'deepseek/deepseek-v3.2';
+    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
+      return 'deepseek/deepseek-v4-flash';
+    case OCO_AI_PROVIDER_ENUM.AIGROW:
+      return 'claude-haiku-5.5';
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       return 'gpt-4o-mini';
-    case OCO_AI_PROVIDER_ENUM.MINIMAX:
-      return 'MiniMax-M2.7';
     default:
       return null;
   }
@@ -347,104 +371,148 @@ export interface FormattedError {
   suggestion: string | null;
 }
 
+export interface ErrorFormattingContext {
+  baseURL?: string;
+}
+
+function getCustomEndpointLabel(baseURL?: string): string | null {
+  if (!baseURL) {
+    return null;
+  }
+
+  try {
+    return new URL(baseURL).host;
+  } catch {
+    return null;
+  }
+}
+
+function getServiceUnavailableMessage(
+  provider: string,
+  context?: ErrorFormattingContext
+): string {
+  const endpointLabel = getCustomEndpointLabel(context?.baseURL);
+
+  if (endpointLabel) {
+    return `The configured API endpoint (${endpointLabel}) is temporarily unavailable.`;
+  }
+
+  if (context?.baseURL) {
+    return 'The configured API endpoint is temporarily unavailable.';
+  }
+
+  return `The ${provider} service is temporarily unavailable.`;
+}
+
+function formatInsufficientCredits(
+  provider: string,
+  billingUrl: string | null
+): FormattedError {
+  return {
+    title: 'Insufficient Credits',
+    message: `Your ${provider} account has insufficient credits or quota.`,
+    helpUrl: billingUrl,
+    suggestion: 'Add credits to your account to continue using the service.'
+  };
+}
+
+function formatRateLimit(
+  provider: string,
+  billingUrl: string | null,
+  retryAfter?: number
+): FormattedError {
+  return {
+    title: 'Rate Limit Exceeded',
+    message: `You've made too many requests to ${provider}.`,
+    helpUrl: billingUrl,
+    suggestion: retryAfter
+      ? `Please wait ${retryAfter} seconds before retrying.`
+      : 'Please wait a moment before retrying.'
+  };
+}
+
+function formatServiceUnavailable(
+  provider: string,
+  context?: ErrorFormattingContext
+): FormattedError {
+  return {
+    title: 'Service Unavailable',
+    message: getServiceUnavailableMessage(provider, context),
+    helpUrl: null,
+    suggestion: 'Please try again in a few moments.'
+  };
+}
+
+function formatAuthenticationError(
+  provider: string,
+  billingUrl: string | null
+): FormattedError {
+  return {
+    title: 'Authentication Failed',
+    message: `Your ${provider} API key is invalid or expired.`,
+    helpUrl: billingUrl,
+    suggestion: 'Run `oco setup` to configure a valid API key.'
+  };
+}
+
+function formatModelNotFound(provider: string, model: string): FormattedError {
+  return {
+    title: 'Model Not Found',
+    message: `The model '${model}' is not available for ${provider}.`,
+    helpUrl: null,
+    suggestion: 'Run `oco setup` to select a valid model.'
+  };
+}
+
 // Format an error into a user-friendly structure
-export function formatUserFriendlyError(error: unknown, provider: string): FormattedError {
+export function formatUserFriendlyError(
+  error: unknown,
+  provider: string,
+  context?: ErrorFormattingContext
+): FormattedError {
   const billingUrl = PROVIDER_BILLING_URLS[provider] || null;
 
   // Handle our custom error types first
   if (error instanceof InsufficientCreditsError) {
-    return {
-      title: 'Insufficient Credits',
-      message: `Your ${provider} account has insufficient credits or quota.`,
-      helpUrl: billingUrl,
-      suggestion: 'Add credits to your account to continue using the service.'
-    };
+    return formatInsufficientCredits(provider, billingUrl);
   }
 
   if (error instanceof RateLimitError) {
-    const retryMsg = error.retryAfter
-      ? `Please wait ${error.retryAfter} seconds before retrying.`
-      : 'Please wait a moment before retrying.';
-    return {
-      title: 'Rate Limit Exceeded',
-      message: `You've made too many requests to ${provider}.`,
-      helpUrl: billingUrl,
-      suggestion: retryMsg
-    };
+    return formatRateLimit(provider, billingUrl, error.retryAfter);
   }
 
   if (error instanceof ServiceUnavailableError) {
-    return {
-      title: 'Service Unavailable',
-      message: `The ${provider} service is temporarily unavailable.`,
-      helpUrl: null,
-      suggestion: 'Please try again in a few moments.'
-    };
+    return formatServiceUnavailable(provider, context);
   }
 
   if (error instanceof AuthenticationError) {
-    return {
-      title: 'Authentication Failed',
-      message: `Your ${provider} API key is invalid or expired.`,
-      helpUrl: billingUrl,
-      suggestion: 'Run `oco setup` to configure a valid API key.'
-    };
+    return formatAuthenticationError(provider, billingUrl);
   }
 
   if (error instanceof ModelNotFoundError) {
-    return {
-      title: 'Model Not Found',
-      message: `The model '${error.modelName}' is not available for ${provider}.`,
-      helpUrl: null,
-      suggestion: 'Run `oco setup` to select a valid model.'
-    };
+    return formatModelNotFound(provider, error.modelName);
   }
 
   // Detect error type from raw errors
   if (isInsufficientCreditsError(error)) {
-    return {
-      title: 'Insufficient Credits',
-      message: `Your ${provider} account has insufficient credits or quota.`,
-      helpUrl: billingUrl,
-      suggestion: 'Add credits to your account to continue using the service.'
-    };
+    return formatInsufficientCredits(provider, billingUrl);
   }
 
   if (isRateLimitError(error)) {
-    return {
-      title: 'Rate Limit Exceeded',
-      message: `You've made too many requests to ${provider}.`,
-      helpUrl: billingUrl,
-      suggestion: 'Please wait a moment before retrying.'
-    };
+    return formatRateLimit(provider, billingUrl);
   }
 
   if (isServiceUnavailableError(error)) {
-    return {
-      title: 'Service Unavailable',
-      message: `The ${provider} service is temporarily unavailable.`,
-      helpUrl: null,
-      suggestion: 'Please try again in a few moments.'
-    };
+    return formatServiceUnavailable(provider, context);
   }
 
   if (isApiKeyError(error)) {
-    return {
-      title: 'Authentication Failed',
-      message: `Your ${provider} API key is invalid or expired.`,
-      helpUrl: billingUrl,
-      suggestion: 'Run `oco setup` to configure a valid API key.'
-    };
+    return formatAuthenticationError(provider, billingUrl);
   }
 
   if (isModelNotFoundError(error)) {
     const model = (error as any).modelName || (error as any).model || 'unknown';
-    return {
-      title: 'Model Not Found',
-      message: `The model '${model}' is not available for ${provider}.`,
-      helpUrl: null,
-      suggestion: 'Run `oco setup` to select a valid model.'
-    };
+    return formatModelNotFound(provider, model);
   }
 
   // Default: generic error
@@ -463,7 +531,9 @@ export function printFormattedError(formatted: FormattedError): string {
   output += `  ${formatted.message}\n`;
 
   if (formatted.helpUrl) {
-    output += `\n  ${chalk.cyan('Help:')} ${chalk.underline(formatted.helpUrl)}\n`;
+    output += `\n  ${chalk.cyan('Help:')} ${chalk.underline(
+      formatted.helpUrl
+    )}\n`;
   }
 
   if (formatted.suggestion) {

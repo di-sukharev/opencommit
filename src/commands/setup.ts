@@ -1,4 +1,12 @@
-import { intro, outro, select, text, isCancel, spinner } from '@clack/prompts';
+import {
+  intro,
+  outro,
+  select,
+  text,
+  password,
+  isCancel,
+  spinner
+} from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
 import { COMMANDS } from './ENUMS';
@@ -7,10 +15,10 @@ import {
   MODEL_LIST,
   OCO_AI_PROVIDER_ENUM,
   getConfig,
-  setGlobalConfig,
-  getGlobalConfig,
   getIsGlobalConfigFileExist,
-  DEFAULT_CONFIG,
+  savePromptedApiKey,
+  useApiKeyForCurrentRun,
+  updateGlobalConfig,
   PROVIDER_API_KEY_URLS,
   RECOMMENDED_MODELS
 } from './config';
@@ -19,50 +27,147 @@ import {
   fetchOllamaModels,
   getCacheInfo
 } from '../utils/modelCache';
+import { getProviderConfigRequirement } from '../utils/provider';
 
-const PROVIDER_DISPLAY_NAMES: Record<string, string> = {
-  [OCO_AI_PROVIDER_ENUM.OPENAI]: 'OpenAI (GPT-4o, GPT-4)',
-  [OCO_AI_PROVIDER_ENUM.ANTHROPIC]: 'Anthropic (Claude Sonnet, Opus)',
-  [OCO_AI_PROVIDER_ENUM.OLLAMA]: 'Ollama (Free, runs locally)',
-  [OCO_AI_PROVIDER_ENUM.GEMINI]: 'Google Gemini',
-  [OCO_AI_PROVIDER_ENUM.GROQ]: 'Groq (Fast inference, free tier)',
-  [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'Mistral AI',
-  [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'DeepSeek',
-  [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'OpenRouter (Multiple providers)',
-  [OCO_AI_PROVIDER_ENUM.AIMLAPI]: 'AI/ML API',
-  [OCO_AI_PROVIDER_ENUM.AZURE]: 'Azure OpenAI',
-  [OCO_AI_PROVIDER_ENUM.MLX]: 'MLX (Apple Silicon, local)',
-  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'MiniMax (M2.7, M2.5, fast inference)'
-};
+type ProviderSelectionGroup = 'primary' | 'other' | 'hidden';
 
-const PRIMARY_PROVIDERS = [
-  OCO_AI_PROVIDER_ENUM.OPENAI,
-  OCO_AI_PROVIDER_ENUM.ANTHROPIC,
-  OCO_AI_PROVIDER_ENUM.OLLAMA
+interface SetupProviderDefinition {
+  provider: OCO_AI_PROVIDER_ENUM;
+  displayName: string;
+  selectionGroup: ProviderSelectionGroup;
+}
+
+const SETUP_PROVIDERS: SetupProviderDefinition[] = [
+  {
+    provider: OCO_AI_PROVIDER_ENUM.OPENAI,
+    displayName: 'OpenAI (GPT)',
+    selectionGroup: 'primary'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.ANTHROPIC,
+    displayName: 'Anthropic (Claude Sonnet, Opus)',
+    selectionGroup: 'primary'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.OLLAMA,
+    displayName: 'Ollama (Free, runs locally)',
+    selectionGroup: 'primary'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.LLAMACPP,
+    displayName: 'llama.cpp (Free, runs locally)',
+    selectionGroup: 'primary'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.GEMINI,
+    displayName: 'Google Gemini',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.GROQ,
+    displayName: 'Groq (Fast inference, free tier)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.MISTRAL,
+    displayName: 'Mistral AI',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.DEEPSEEK,
+    displayName: 'DeepSeek',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.OPENROUTER,
+    displayName: 'OpenRouter (Multiple providers)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.ORCAROUTER,
+    displayName: 'OrcaRouter (Smart routing gateway)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD,
+    displayName: 'Atlas Cloud (Unified model API)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.UBERLLM,
+    displayName: 'UberLLM (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.AIGROW,
+    displayName: 'AIGROW (Claude, GPT, Gemini on one key)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.REQUESTY,
+    displayName: 'Requesty (Multiple providers)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE,
+    displayName: 'Cheaper Inference (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER,
+    displayName: 'TrustedRouter (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
+    displayName: 'AI/ML API',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.AZURE,
+    displayName: 'Azure OpenAI',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.MLX,
+    displayName: 'MLX (Apple Silicon, local)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.FLOWISE,
+    displayName: OCO_AI_PROVIDER_ENUM.FLOWISE,
+    selectionGroup: 'hidden'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.TEST,
+    displayName: OCO_AI_PROVIDER_ENUM.TEST,
+    selectionGroup: 'hidden'
+  }
 ];
 
-const OTHER_PROVIDERS = [
-  OCO_AI_PROVIDER_ENUM.GEMINI,
-  OCO_AI_PROVIDER_ENUM.GROQ,
-  OCO_AI_PROVIDER_ENUM.MISTRAL,
-  OCO_AI_PROVIDER_ENUM.DEEPSEEK,
-  OCO_AI_PROVIDER_ENUM.OPENROUTER,
-  OCO_AI_PROVIDER_ENUM.AIMLAPI,
-  OCO_AI_PROVIDER_ENUM.AZURE,
-  OCO_AI_PROVIDER_ENUM.MLX,
-  OCO_AI_PROVIDER_ENUM.MINIMAX
-];
+function getProviderDefinition(
+  provider: string
+): SetupProviderDefinition | undefined {
+  return SETUP_PROVIDERS.find((definition) => definition.provider === provider);
+}
 
-const NO_API_KEY_PROVIDERS = [
-  OCO_AI_PROVIDER_ENUM.OLLAMA,
-  OCO_AI_PROVIDER_ENUM.MLX
-];
+function getProviderOptions(
+  group: 'primary' | 'other'
+): Array<{ value: string; label: string }> {
+  return SETUP_PROVIDERS.filter(
+    (definition) => definition.selectionGroup === group
+  ).map((definition) => ({
+    value: definition.provider,
+    label: definition.displayName
+  }));
+}
+
+function getProviderDisplayName(provider: string): string {
+  return getProviderDefinition(provider)?.displayName || provider;
+}
 
 async function selectProvider(): Promise<string | symbol> {
-  const primaryOptions = PRIMARY_PROVIDERS.map((provider) => ({
-    value: provider,
-    label: PROVIDER_DISPLAY_NAMES[provider] || provider
-  }));
+  const primaryOptions = getProviderOptions('primary');
 
   primaryOptions.push({
     value: 'other',
@@ -77,14 +182,9 @@ async function selectProvider(): Promise<string | symbol> {
   if (isCancel(selection)) return selection;
 
   if (selection === 'other') {
-    const otherOptions = OTHER_PROVIDERS.map((provider) => ({
-      value: provider,
-      label: PROVIDER_DISPLAY_NAMES[provider] || provider
-    }));
-
     return await select({
       message: 'Select provider:',
-      options: otherOptions
+      options: getProviderOptions('other')
     });
   }
 
@@ -92,16 +192,16 @@ async function selectProvider(): Promise<string | symbol> {
 }
 
 async function getApiKey(provider: string): Promise<string | symbol> {
-  const url = PROVIDER_API_KEY_URLS[provider as keyof typeof PROVIDER_API_KEY_URLS];
+  const url =
+    PROVIDER_API_KEY_URLS[provider as keyof typeof PROVIDER_API_KEY_URLS];
 
   let message = `Enter your ${provider} API key:`;
   if (url) {
     message = `Enter your API key:\n${chalk.dim(`  Get your key at: ${url}`)}`;
   }
 
-  return await text({
+  return await password({
     message,
-    placeholder: 'sk-...',
     validate: (value) => {
       if (!value || value.trim().length === 0) {
         return 'API key is required';
@@ -129,7 +229,8 @@ async function selectModel(
   provider: string,
   apiKey?: string
 ): Promise<string | symbol> {
-  const providerDisplayName = PROVIDER_DISPLAY_NAMES[provider]?.split(' (')[0] || provider;
+  const providerDisplayName =
+    getProviderDisplayName(provider).split(' (')[0] || provider;
   const loadingSpinner = spinner();
   loadingSpinner.start(`Fetching models from ${providerDisplayName}...`);
 
@@ -160,8 +261,8 @@ async function selectModel(
   }
 
   if (models.length === 0) {
-    // For Ollama/MLX, prompt for manual entry
-    if (NO_API_KEY_PROVIDERS.includes(provider as OCO_AI_PROVIDER_ENUM)) {
+    // Providers without API keys can accept a local model name directly.
+    if (getProviderConfigRequirement(provider) !== 'apiKey') {
       return await text({
         message: 'Enter model name (e.g., llama3:8b, mistral):',
         placeholder: 'llama3:8b',
@@ -180,7 +281,8 @@ async function selectModel(
   }
 
   // Get recommended model for this provider
-  const recommended = RECOMMENDED_MODELS[provider as keyof typeof RECOMMENDED_MODELS];
+  const recommended =
+    RECOMMENDED_MODELS[provider as keyof typeof RECOMMENDED_MODELS];
 
   // Build options with recommended first
   const options: Array<{ value: string; label: string }> = [];
@@ -193,9 +295,7 @@ async function selectModel(
   }
 
   // Add other models (first 10, excluding recommended)
-  const otherModels = models
-    .filter((m) => m !== recommended)
-    .slice(0, 10);
+  const otherModels = models.filter((m) => m !== recommended).slice(0, 10);
 
   otherModels.forEach((model) => {
     options.push({ value: model, label: model });
@@ -330,6 +430,37 @@ async function setupOllama(): Promise<{
   };
 }
 
+async function setupLlamaCpp(): Promise<{
+  provider: string;
+  model: string;
+  apiUrl: string;
+} | null> {
+  console.log(chalk.cyan('\n  llama.cpp - Free Local AI\n'));
+  console.log(chalk.dim('  Setup steps:'));
+  console.log(
+    chalk.dim('  1. Install: https://github.com/ggerganov/llama.cpp')
+  );
+  console.log(
+    chalk.dim('  2. Start server: llama-server -m <model.gguf> --port 8080\n')
+  );
+
+  const defaultUrl = 'http://localhost:8080';
+
+  const apiUrl = await text({
+    message: 'llama.cpp server URL (press Enter for default):',
+    placeholder: defaultUrl,
+    defaultValue: defaultUrl
+  });
+
+  if (isCancel(apiUrl)) return null;
+
+  return {
+    provider: OCO_AI_PROVIDER_ENUM.LLAMACPP,
+    model: '',
+    apiUrl: (apiUrl as string) || defaultUrl
+  };
+}
+
 export async function runSetup(): Promise<boolean> {
   intro(chalk.bgCyan(' Welcome to OpenCommit! '));
 
@@ -377,6 +508,19 @@ export async function runSetup(): Promise<boolean> {
       OCO_MODEL: model,
       OCO_API_KEY: 'mlx' // Placeholder
     };
+  } else if (provider === OCO_AI_PROVIDER_ENUM.LLAMACPP) {
+    const llamacppConfig = await setupLlamaCpp();
+    if (!llamacppConfig) {
+      outro('Setup cancelled');
+      return false;
+    }
+
+    config = {
+      OCO_AI_PROVIDER: llamacppConfig.provider,
+      OCO_MODEL: llamacppConfig.model,
+      OCO_API_URL: llamacppConfig.apiUrl,
+      OCO_API_KEY: 'llamacpp' // Placeholder
+    };
   } else {
     // Standard provider flow: API key then model
     const apiKey = await getApiKey(provider as string);
@@ -398,49 +542,51 @@ export async function runSetup(): Promise<boolean> {
     };
   }
 
-  // Save configuration
-  const existingConfig = getIsGlobalConfigFileExist()
-    ? getGlobalConfig()
-    : DEFAULT_CONFIG;
-
-  const newConfig = {
-    ...existingConfig,
-    ...config
-  };
-
-  setGlobalConfig(newConfig as any);
+  updateGlobalConfig(config);
+  if (getProviderConfigRequirement(provider) === 'apiKey') {
+    useApiKeyForCurrentRun(
+      provider as OCO_AI_PROVIDER_ENUM,
+      config.OCO_API_KEY
+    );
+  }
 
   outro(
-    `${chalk.green('✔')} Configuration saved to ~/.opencommit\n\n  Run ${chalk.cyan('oco')} to generate commit messages!`
+    `${chalk.green(
+      '✔'
+    )} Configuration saved to ~/.opencommit\n\n  Run ${chalk.cyan(
+      'oco'
+    )} to generate commit messages!`
   );
 
   return true;
 }
 
 export function isFirstRun(): boolean {
-  if (!getIsGlobalConfigFileExist()) {
-    return true;
-  }
-
+  const hasGlobalConfig = getIsGlobalConfigFileExist();
   const config = getConfig();
 
-  // Check if API key is missing for providers that need it
   const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
-
-  if (NO_API_KEY_PROVIDERS.includes(provider as OCO_AI_PROVIDER_ENUM)) {
-    // For Ollama/MLX, check if model is set
-    return !config.OCO_MODEL;
+  if (provider === OCO_AI_PROVIDER_ENUM.LLAMACPP && config.OCO_API_URL) {
+    return false;
   }
 
-  // For other providers, check if API key is set
-  return !config.OCO_API_KEY;
+  const requirement = getProviderConfigRequirement(provider);
+  const hasRequiredConfig =
+    requirement === 'model'
+      ? Boolean(config.OCO_MODEL)
+      : requirement === 'apiKey'
+        ? Boolean(config.OCO_API_KEY)
+        : true;
+
+  // Trigger the full setup wizard only when nothing usable was configured yet.
+  return !hasGlobalConfig && !hasRequiredConfig;
 }
 
 export async function promptForMissingApiKey(): Promise<boolean> {
   const config = getConfig();
   const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
 
-  if (NO_API_KEY_PROVIDERS.includes(provider as OCO_AI_PROVIDER_ENUM)) {
+  if (getProviderConfigRequirement(provider) !== 'apiKey') {
     return true; // No API key needed
   }
 
@@ -449,9 +595,7 @@ export async function promptForMissingApiKey(): Promise<boolean> {
   }
 
   console.log(
-    chalk.yellow(
-      `\nAPI key missing for ${provider}. Let's set it up.\n`
-    )
+    chalk.yellow(`\nAPI key missing for ${provider}. Let's set it up.\n`)
   );
 
   const apiKey = await getApiKey(provider);
@@ -459,13 +603,11 @@ export async function promptForMissingApiKey(): Promise<boolean> {
     return false;
   }
 
-  const existingConfig = getGlobalConfig();
-  setGlobalConfig({
-    ...existingConfig,
-    OCO_API_KEY: apiKey as string
-  } as any);
-
-  console.log(chalk.green('✔') + ' API key saved\n');
+  const saved = savePromptedApiKey(provider, apiKey as string);
+  console.log(
+    chalk.green('✔') +
+      (saved ? ' API key saved\n' : ' API key set for this run\n')
+  );
   return true;
 }
 

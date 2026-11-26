@@ -11,10 +11,7 @@ import {
 import chalk from 'chalk';
 import { execa } from 'execa';
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
-import {
-  formatUserFriendlyError,
-  printFormattedError
-} from '../utils/errors';
+import { formatUserFriendlyError, printFormattedError } from '../utils/errors';
 import {
   assertGitRepo,
   getChangedFiles,
@@ -22,6 +19,7 @@ import {
   getStagedFiles,
   gitAdd
 } from '../utils/git';
+import { buildGitPushArgs, GitPushOptions } from '../utils/gitPush';
 import { trytm } from '../utils/trytm';
 import { getConfig } from './config';
 
@@ -30,6 +28,40 @@ const config = getConfig();
 const getGitRemotes = async () => {
   const { stdout } = await execa('git', ['remote']);
   return stdout.split('\n').filter((remote) => Boolean(remote.trim()));
+};
+
+const hasUpstreamBranch = async (): Promise<boolean> => {
+  try {
+    await execa('git', [
+      'rev-parse',
+      '--abbrev-ref',
+      '--symbolic-full-name',
+      '@{u}'
+    ]);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const getCurrentBranch = async (): Promise<string> => {
+  const { stdout } = await execa('git', ['branch', '--show-current']);
+  return stdout.trim();
+};
+
+const runGitPush = async (options: GitPushOptions) => {
+  const upstreamBranch = (await hasUpstreamBranch())
+    ? null
+    : await getCurrentBranch();
+
+  return await execa('git', buildGitPushArgs(options, upstreamBranch));
+};
+
+const displayPushUrl = (stderr: string) => {
+  const urlMatch = stderr.match(/https?:\/\/\S+/);
+  if (urlMatch) {
+    outro(`${chalk.cyan('Create a pull request:')} ${urlMatch[0]}`);
+  }
 };
 
 // Check for the presence of message templates
@@ -109,6 +141,8 @@ ${chalk.grey('——————————————————')}`
         initialValue: commitMessage
       });
 
+      if (isCancel(textResponse)) process.exit(1);
+
       commitMessage = textResponse.toString();
     }
 
@@ -133,8 +167,12 @@ ${chalk.grey('——————————————————')}`
       if (config.OCO_GITPUSH === false) return;
 
       if (!remotes.length) {
-        const { stdout } = await execa('git', ['push']);
+        const { stdout, stderr } = await runGitPush({
+          mode: 'default',
+          fallbackRemote: 'origin'
+        });
         if (stdout) outro(stdout);
+        displayPushUrl(stderr);
         process.exit(0);
       }
 
@@ -150,11 +188,11 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.start(`Running 'git push ${remotes[0]}'`);
 
-          const { stdout } = await execa('git', [
-            'push',
-            '--verbose',
-            remotes[0]
-          ]);
+          const { stdout, stderr } = await runGitPush({
+            mode: 'remote',
+            remote: remotes[0],
+            verbose: true
+          });
 
           pushSpinner.stop(
             `${chalk.green('✔')} Successfully pushed all commits to ${
@@ -163,6 +201,7 @@ ${chalk.grey('——————————————————')}`
           );
 
           if (stdout) outro(stdout);
+          displayPushUrl(stderr);
         } else {
           outro('`git push` aborted');
           process.exit(0);
@@ -184,7 +223,11 @@ ${chalk.grey('——————————————————')}`
 
           pushSpinner.start(`Running 'git push ${selectedRemote}'`);
 
-          const { stdout } = await execa('git', ['push', selectedRemote]);
+          const { stdout, stderr } = await runGitPush({
+            mode: 'remote',
+            remote: selectedRemote,
+            verbose: false
+          });
 
           if (stdout) outro(stdout);
 
@@ -193,6 +236,8 @@ ${chalk.grey('——————————————————')}`
               '✔'
             )} successfully pushed all commits to ${selectedRemote}`
           );
+
+          displayPushUrl(stderr);
         }
       }
     } else {
@@ -206,7 +251,9 @@ ${chalk.grey('——————————————————')}`
         await generateCommitMessageFromGitDiff({
           diff,
           extraArgs,
-          fullGitMojiSpec
+          context,
+          fullGitMojiSpec,
+          skipCommitConfirmation
         });
       }
     }
@@ -217,7 +264,9 @@ ${chalk.grey('——————————————————')}`
 
     const errorConfig = getConfig();
     const provider = errorConfig.OCO_AI_PROVIDER || 'openai';
-    const formatted = formatUserFriendlyError(error, provider);
+    const formatted = formatUserFriendlyError(error, provider, {
+      baseURL: errorConfig.OCO_API_URL
+    });
     outro(printFormattedError(formatted));
 
     process.exit(1);

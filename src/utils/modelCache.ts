@@ -40,196 +40,298 @@ function isCacheValid(cache: ModelCache | null): boolean {
   return Date.now() - cache.timestamp < CACHE_TTL_MS;
 }
 
-export async function fetchOpenAIModels(apiKey: string): Promise<string[]> {
+interface ModelListItem {
+  id: string;
+  type?: string;
+  supported_endpoints?: string[];
+  architecture?: {
+    output_modalities?: string[];
+  };
+}
+
+interface ModelListResponse {
+  data?: ModelListItem[];
+}
+
+interface OllamaModelListResponse {
+  models?: Array<{ name: string }>;
+}
+
+interface OpenRouterModelListResponse {
+  data?: Array<ModelListItem & { context_length?: number }>;
+}
+
+interface RequestyModelListResponse {
+  data?: Array<ModelListItem & { api?: string }>;
+}
+
+interface TrustedRouterModelListResponse {
+  data?: Array<ModelListItem & { trustedrouter?: { supports_chat?: boolean } }>;
+}
+
+interface AtlasCloudModelListResponse {
+  data?: Array<{
+    model: string;
+    type?: string;
+    display_console?: boolean;
+    supported_protocols?: string[];
+  }>;
+}
+
+interface FetchModelListOptions {
+  url: string;
+  headers?: Record<string, string>;
+  fallback: string[];
+  mapModels: (data: unknown) => string[] | undefined;
+}
+
+async function fetchModelList({
+  url,
+  headers,
+  fallback,
+  mapModels
+}: FetchModelListOptions): Promise<string[]> {
   try {
-    const response = await fetch('https://api.openai.com/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
+    const response = headers ? await fetch(url, { headers }) : await fetch(url);
 
     if (!response.ok) {
-      return MODEL_LIST.openai;
+      return fallback;
     }
 
-    const data = await response.json();
-    const models = data.data
-      .map((m: { id: string }) => m.id)
-      .filter(
-        (id: string) =>
-          id.startsWith('gpt-') ||
-          id.startsWith('o1') ||
-          id.startsWith('o3') ||
-          id.startsWith('o4')
-      )
-      .sort();
-
-    return models.length > 0 ? models : MODEL_LIST.openai;
+    const models = mapModels(await response.json());
+    return models && models.length > 0 ? models : fallback;
   } catch {
-    return MODEL_LIST.openai;
+    return fallback;
   }
+}
+
+export async function fetchOpenAIModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.openai.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.openai,
+    mapModels: (data) =>
+      (data as Required<ModelListResponse>).data
+        .map((model) => model.id)
+        .filter(
+          (id) =>
+            id.startsWith('gpt-') ||
+            id.startsWith('o1') ||
+            id.startsWith('o3') ||
+            id.startsWith('o4')
+        )
+        .sort()
+  });
 }
 
 export async function fetchOllamaModels(
   baseUrl: string = 'http://localhost:11434'
 ): Promise<string[]> {
-  try {
-    const response = await fetch(`${baseUrl}/api/tags`);
+  return fetchModelList({
+    url: `${baseUrl}/api/tags`,
+    fallback: [],
+    mapModels: (data) =>
+      (data as OllamaModelListResponse).models?.map((model) => model.name)
+  });
+}
 
-    if (!response.ok) {
-      return [];
-    }
-
-    const data = await response.json();
-    return data.models?.map((m: { name: string }) => m.name) || [];
-  } catch {
-    return [];
-  }
+export async function fetchLlamaCppModels(
+  baseUrl: string = 'http://localhost:8080'
+): Promise<string[]> {
+  return fetchModelList({
+    url: `${baseUrl}/v1/models`,
+    fallback: [],
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id)
+  });
 }
 
 export async function fetchAnthropicModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/models', {
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.anthropic;
-    }
-
-    const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .filter((id: string) => id.startsWith('claude-'))
-      .sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.anthropic;
-  } catch {
-    return MODEL_LIST.anthropic;
-  }
+  return fetchModelList({
+    url: 'https://api.anthropic.com/v1/models',
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    fallback: MODEL_LIST.anthropic,
+    mapModels: (data) =>
+      (data as ModelListResponse).data
+        ?.map((model) => model.id)
+        .filter((id) => id.startsWith('claude-'))
+        .sort()
+  });
 }
 
 export async function fetchMistralModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.mistral.ai/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.mistral;
-    }
-
-    const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.mistral;
-  } catch {
-    return MODEL_LIST.mistral;
-  }
+  return fetchModelList({
+    url: 'https://api.mistral.ai/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.mistral,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
 }
 
 export async function fetchGroqModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.groq.com/openai/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.groq;
-    }
-
-    const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.groq;
-  } catch {
-    return MODEL_LIST.groq;
-  }
+  return fetchModelList({
+    url: 'https://api.groq.com/openai/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.groq,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
 }
 
 export async function fetchOpenRouterModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://openrouter.ai/api/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.openrouter;
-    }
-
-    const data = await response.json();
-    // Filter to text-capable models only (exclude image/audio models)
-    const models = data.data
-      ?.filter((m: { id: string; context_length?: number }) =>
-        m.context_length && m.context_length > 0
-      )
-      .map((m: { id: string }) => m.id)
-      .sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.openrouter;
-  } catch {
-    return MODEL_LIST.openrouter;
-  }
-}
-
-export async function fetchMiniMaxModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.minimax.io/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
-
-    if (!response.ok) {
-      return MODEL_LIST.minimax;
-    }
-
-    const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
-      .filter((id: string) => id.startsWith('MiniMax-'))
-      .sort();
-
-    return models && models.length > 0 ? models : MODEL_LIST.minimax;
-  } catch {
-    return MODEL_LIST.minimax;
-  }
+  return fetchModelList({
+    url: 'https://openrouter.ai/api/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.openrouter,
+    mapModels: (data) =>
+      (data as OpenRouterModelListResponse).data
+        // Keep only text-capable models (exclude image/audio models).
+        ?.filter((model) => model.context_length && model.context_length > 0)
+        .map((model) => model.id)
+        .sort()
+  });
 }
 
 export async function fetchDeepSeekModels(apiKey: string): Promise<string[]> {
-  try {
-    const response = await fetch('https://api.deepseek.com/v1/models', {
-      headers: {
-        Authorization: `Bearer ${apiKey}`
-      }
-    });
+  return fetchModelList({
+    url: 'https://api.deepseek.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.deepseek,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
 
-    if (!response.ok) {
-      return MODEL_LIST.deepseek;
-    }
+export async function fetchOrcaRouterModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.orcarouter.ai/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.orcarouter,
+    mapModels: (data) =>
+      (data as ModelListResponse).data
+        // The catalog also contains image, audio, and video generators. Keep
+        // text-output models plus entries whose older metadata omits the
+        // modality field, while preserving provider-prefixed chat model IDs.
+        ?.filter((model) => {
+          const outputModalities = model.architecture?.output_modalities;
+          return !outputModalities || outputModalities.includes('text');
+        })
+        ?.map((model) => model.id)
+        .sort()
+  });
+}
 
-    const data = await response.json();
-    const models = data.data
-      ?.map((m: { id: string }) => m.id)
+export async function fetchCheaperInferenceModels(
+  apiKey: string
+): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.cheaperinference.com/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.cheaperinference,
+    mapModels: (data) =>
+      (data as ModelListResponse).data
+        // Keep text models compatible with the Chat Completions transport.
+        ?.filter(
+          (model) =>
+            (!model.type || model.type === 'text') &&
+            (!model.supported_endpoints ||
+              model.supported_endpoints.includes('/v1/chat/completions'))
+        )
+        .map((model) => model.id)
+        .sort()
+  });
+}
+
+export async function fetchRequestyModels(apiKey?: string): Promise<string[]> {
+  const headers = apiKey ? { Authorization: `Bearer ${apiKey}` } : undefined;
+  const mapModels = (data: unknown) =>
+    (data as RequestyModelListResponse).data
+      // Keep chat models only (exclude embedding and other APIs).
+      ?.filter((model) => !model.api || model.api === 'chat')
+      .map((model) => model.id)
       .sort();
 
-    return models && models.length > 0 ? models : MODEL_LIST.deepseek;
-  } catch {
-    return MODEL_LIST.deepseek;
-  }
+  // Managed routing policies are listed first, followed by the full catalog.
+  // Each list is fetched on its own so one failing does not drop the other.
+  const [managedModels, catalogModels] = await Promise.all([
+    fetchModelList({
+      url: 'https://router.requesty.ai/v1/models/managed',
+      headers,
+      fallback: [],
+      mapModels
+    }),
+    fetchModelList({
+      url: 'https://router.requesty.ai/v1/models',
+      headers,
+      fallback: [],
+      mapModels
+    })
+  ]);
+
+  const models = [...new Set([...managedModels, ...catalogModels])];
+  return models.length > 0 ? models : MODEL_LIST.requesty;
+}
+
+export async function fetchAtlasCloudModels(): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.atlascloud.ai/api/v1/models',
+    fallback: MODEL_LIST.atlascloud,
+    mapModels: (data) =>
+      (data as AtlasCloudModelListResponse).data
+        ?.filter(
+          (model) =>
+            model.type === 'Text' &&
+            model.display_console === true &&
+            model.supported_protocols?.includes('openai.chat.completions')
+        )
+        .map((model) => model.model)
+        .sort()
+  });
+}
+
+export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    // Without `?type=`, this endpoint lists chat (text-output) models only.
+    url: 'https://api.uberllm.dev/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.uberllm,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
+
+export async function fetchTrustedRouterModels(): Promise<string[]> {
+  return fetchModelList({
+    // The catalog is public, so no API key is sent.
+    url: 'https://api.trustedrouter.com/v1/models',
+    fallback: MODEL_LIST.trustedrouter,
+    mapModels: (data) =>
+      (data as TrustedRouterModelListResponse).data
+        ?.filter((model) => {
+          const supportsChat = model.trustedrouter?.supports_chat;
+          const outputsText =
+            model.architecture?.output_modalities?.includes('text');
+          return (
+            supportsChat !== false && (outputsText ?? supportsChat === true)
+          );
+        })
+        .map((model) => model.id)
+        .sort()
+  });
+}
+
+export async function fetchAIGROWModels(): Promise<string[]> {
+  return fetchModelList({
+    // Public: lists every chat model with its price and needs no key.
+    url: 'https://aigrow.gg/v1/models',
+    fallback: MODEL_LIST.aigrow,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
 }
 
 export async function fetchModelsForProvider(
@@ -258,6 +360,10 @@ export async function fetchModelsForProvider(
 
     case OCO_AI_PROVIDER_ENUM.OLLAMA:
       models = await fetchOllamaModels(baseUrl);
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.LLAMACPP:
+      models = await fetchLlamaCppModels(baseUrl);
       break;
 
     case OCO_AI_PROVIDER_ENUM.ANTHROPIC:
@@ -297,14 +403,6 @@ export async function fetchModelsForProvider(
       }
       break;
 
-    case OCO_AI_PROVIDER_ENUM.MINIMAX:
-      if (apiKey) {
-        models = await fetchMiniMaxModels(apiKey);
-      } else {
-        models = MODEL_LIST.minimax;
-      }
-      break;
-
     case OCO_AI_PROVIDER_ENUM.AIMLAPI:
       models = MODEL_LIST.aimlapi;
       break;
@@ -315,6 +413,46 @@ export async function fetchModelsForProvider(
       } else {
         models = MODEL_LIST.openrouter;
       }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
+      if (apiKey) {
+        models = await fetchOrcaRouterModels(apiKey);
+      } else {
+        models = MODEL_LIST.orcarouter;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
+      if (apiKey) {
+        models = await fetchCheaperInferenceModels(apiKey);
+      } else {
+        models = MODEL_LIST.cheaperinference;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.REQUESTY:
+      models = await fetchRequestyModels(apiKey);
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
+      models = await fetchAtlasCloudModels();
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      if (apiKey) {
+        models = await fetchUberLLMModels(apiKey);
+      } else {
+        models = MODEL_LIST.uberllm;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
+      models = await fetchTrustedRouterModels();
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.AIGROW:
+      models = await fetchAIGROWModels();
       break;
 
     default:
@@ -344,7 +482,10 @@ export function clearModelCache(): void {
   }
 }
 
-export function getCacheInfo(): { timestamp: number | null; providers: string[] } {
+export function getCacheInfo(): {
+  timestamp: number | null;
+  providers: string[];
+} {
   const cache = readCache();
   if (!cache) {
     return { timestamp: null, providers: [] };
