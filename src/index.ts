@@ -49,11 +49,24 @@ export interface GenerateCommitMessageOptions {
 
 const PROVIDERS: string[] = Object.values(OCO_AI_PROVIDER_ENUM);
 
+// The engines apply OCO_PROXY to their own clients. The gemini SDK always uses
+// the global fetch, and the azure SDK reads only HTTPS_PROXY and HTTP_PROXY.
+const PROVIDERS_WITHOUT_PROXY: string[] = [
+  OCO_AI_PROVIDER_ENUM.GEMINI,
+  OCO_AI_PROVIDER_ENUM.AZURE
+];
+
 const resolveConfig = (config: OpenCommitConfig): ConfigType => {
   const provider = config.OCO_AI_PROVIDER ?? DEFAULT_CONFIG.OCO_AI_PROVIDER;
   if (!PROVIDERS.includes(provider)) {
     throw new Error(
       `OCO_AI_PROVIDER "${provider}" is not supported. Supported providers: ${PROVIDERS.join(', ')}.`
+    );
+  }
+
+  if (config.OCO_PROXY?.trim() && PROVIDERS_WITHOUT_PROXY.includes(provider)) {
+    throw new Error(
+      `OCO_PROXY is not supported with OCO_AI_PROVIDER "${provider}".`
     );
   }
 

@@ -674,6 +674,8 @@ const message = await generateCommitMessage(diff, {
 
 The `config` keys are the same as the [configuration](#configuration) keys of the CLI. Keys that you omit get the CLI default values. The library does not read `~/.opencommit`, `.env` or `OCO_*` environment variables, and it does not prompt or commit. The library always uses the `conventional-commit` prompt module. Errors from the provider are thrown to the caller.
 
+[`OCO_PROXY`](#use-with-proxy) applies only to the requests to the AI provider. The library does not change the global proxy settings of your process. The library throws an error if you set `OCO_PROXY` with the `gemini` or `azure` provider.
+
 ## Payments
 
 You pay for your requests to OpenAI API on your own.

@@ -1,5 +1,5 @@
 import { createServer, IncomingMessage, Server } from 'http';
-import { AddressInfo } from 'net';
+import { AddressInfo, connect } from 'net';
 import { MODEL_LIST } from '../../src/commands/config';
 import { generateCommitMessage } from '../../src/index';
 import { GenerateCommitMessageErrorEnum } from '../../src/utils/generateCommitMessageErrors';
@@ -53,9 +53,67 @@ const completion = (content: string) => ({
         finish_reason: 'stop',
         message: { role: 'assistant', content }
       }
-    ]
+    ],
+    usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 }
   }
 });
+
+const PROXIED_MESSAGE = 'fix(server): rename port';
+
+// Nothing listens on the discard port, so a request to it fails locally.
+const CLOSED_URL = 'http://127.0.0.1:9';
+
+const PROVIDER_RESPONSES = {
+  openai: completion(PROXIED_MESSAGE),
+  mistral: completion(PROXIED_MESSAGE),
+  anthropic: {
+    status: 200,
+    body: {
+      id: 'msg-test',
+      type: 'message',
+      role: 'assistant',
+      model: 'test-model',
+      content: [{ type: 'text', text: PROXIED_MESSAGE }],
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 1, output_tokens: 1 }
+    }
+  },
+  ollama: {
+    status: 200,
+    body: { message: { role: 'assistant', content: PROXIED_MESSAGE } }
+  }
+};
+
+// A forward proxy double. It tunnels CONNECT requests to their target and
+// rejects plain proxy requests. It records the target of each request.
+const startProxy = async () => {
+  const targets: string[] = [];
+  const proxy = createServer((request, response) => {
+    targets.push(request.url!);
+    response.writeHead(502).end();
+  });
+  proxy.on('connect', (request, client, head) => {
+    targets.push(request.url!);
+    const [host, port] = request.url!.split(':');
+    const target = connect(Number(port), host, () => {
+      client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
+      target.write(head);
+      target.pipe(client).pipe(target);
+    });
+    target.on('error', () => client.destroy());
+    client.on('error', () => target.destroy());
+  });
+  await new Promise<void>((resolve) => proxy.listen(0, '127.0.0.1', resolve));
+
+  return {
+    targets,
+    url: `http://127.0.0.1:${(proxy.address() as AddressInfo).port}`,
+    close: () => {
+      proxy.closeAllConnections();
+      return new Promise((resolve) => proxy.close(resolve));
+    }
+  };
+};
 
 const readBody = async (request: IncomingMessage): Promise<string> => {
   let body = '';
@@ -68,6 +126,8 @@ describe('generateCommitMessage', () => {
   const requests: ChatRequest[] = [];
   let server: Server;
   let apiUrl: string;
+  let apiHost: string;
+  let proxy: Awaited<ReturnType<typeof startProxy>>;
   let respond: () => { status: number; body: unknown };
 
   beforeAll(async () => {
@@ -83,15 +143,20 @@ describe('generateCommitMessage', () => {
     await new Promise<void>((resolve) =>
       server.listen(0, '127.0.0.1', resolve)
     );
-    apiUrl = `http://127.0.0.1:${(server.address() as AddressInfo).port}/v1`;
+    apiHost = `127.0.0.1:${(server.address() as AddressInfo).port}`;
+    apiUrl = `http://${apiHost}/v1`;
+    proxy = await startProxy();
   });
 
   afterAll(async () => {
+    await proxy.close();
+    server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));
   });
 
   beforeEach(() => {
     requests.length = 0;
+    proxy.targets.length = 0;
     respond = () => completion('fix(server): rename port');
   });
 
@@ -241,6 +306,42 @@ describe('generateCommitMessage', () => {
     expect(requests.length).toBeGreaterThan(1);
   });
 
+  it.each(Object.entries(PROVIDER_RESPONSES))(
+    'sends %s requests through OCO_PROXY',
+    async (provider, response) => {
+      respond = () => response;
+
+      const message = await generateCommitMessage(DIFF, {
+        config: {
+          OCO_AI_PROVIDER: provider,
+          OCO_API_KEY: 'library-key',
+          OCO_API_URL: apiUrl,
+          OCO_PROXY: proxy.url
+        }
+      });
+
+      expect(message).toBe(PROXIED_MESSAGE);
+      expect(proxy.targets).toEqual([apiHost]);
+      expect(requests).toHaveLength(1);
+    }
+  );
+
+  it('does not use HTTP_PROXY when OCO_PROXY is null', async () => {
+    process.env.HTTP_PROXY = proxy.url;
+    respond = () => PROVIDER_RESPONSES.ollama;
+
+    await generateCommitMessage(DIFF, {
+      config: {
+        OCO_AI_PROVIDER: 'ollama',
+        OCO_API_URL: apiUrl,
+        OCO_PROXY: null
+      }
+    });
+
+    expect(proxy.targets).toEqual([]);
+    expect(requests).toHaveLength(1);
+  });
+
   it.each([
     ['an empty diff', ' \n', {}, 'The diff is empty.'],
     [
@@ -254,7 +355,17 @@ describe('generateCommitMessage', () => {
       DIFF,
       { OCO_LANGUAGE: 'Klingon' },
       'OCO_LANGUAGE "Klingon" is not supported.'
-    ]
+    ],
+    ...['gemini', 'azure'].map((provider) => [
+      `OCO_PROXY with the ${provider} provider`,
+      DIFF,
+      {
+        OCO_AI_PROVIDER: provider,
+        OCO_API_URL: CLOSED_URL,
+        OCO_PROXY: CLOSED_URL
+      },
+      `OCO_PROXY is not supported with OCO_AI_PROVIDER "${provider}".`
+    ])
   ])('rejects %s', async (_, diff, config, error) => {
     await expect(generateCommitMessage(diff, { config })).rejects.toThrow(
       error
