@@ -252,7 +252,9 @@ export const getMainCommitPrompt = async (
   config: ConfigType = getConfig()
 ): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> => {
   const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
-  const useGitMoji = fullGitMojiSpec || config.OCO_EMOJI;
+  // --fgm turns the full spec on for one run, OCO_EMOJI_FULL_SPEC keeps it on
+  const useFullGitMojiSpec = fullGitMojiSpec || config.OCO_EMOJI_FULL_SPEC;
+  const useGitMoji = useFullGitMojiSpec || config.OCO_EMOJI;
 
   switch (config.OCO_PROMPT_MODULE) {
     case '@commitlint':
@@ -295,7 +297,7 @@ export const getMainCommitPrompt = async (
       return [
         INIT_MAIN_PROMPT(
           translation.localLanguage,
-          fullGitMojiSpec,
+          useFullGitMojiSpec,
           context,
           config
         ),

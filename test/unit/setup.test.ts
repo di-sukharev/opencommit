@@ -6,6 +6,7 @@ const introMock = jest.fn();
 const outroMock = jest.fn();
 const selectMock = jest.fn();
 const textMock = jest.fn();
+const passwordMock = jest.fn();
 const isCancelMock = jest.fn((value: unknown) => value === CANCEL);
 const spinnerMock = jest.fn(() => ({
   start: jest.fn(),
@@ -13,8 +14,7 @@ const spinnerMock = jest.fn(() => ({
 }));
 
 const getConfigMock = jest.fn();
-const setGlobalConfigMock = jest.fn();
-const getGlobalConfigMock = jest.fn(() => ({}));
+const savePromptedApiKeyMock = jest.fn();
 const getIsGlobalConfigFileExistMock = jest.fn();
 const consoleLogMock = jest.spyOn(console, 'log').mockImplementation(() => {});
 
@@ -36,7 +36,13 @@ const OCO_AI_PROVIDER_ENUM = {
   DEEPSEEK: 'deepseek',
   AIMLAPI: 'aimlapi',
   OPENROUTER: 'openrouter',
-  ORCAROUTER: 'orcarouter'
+  ORCAROUTER: 'orcarouter',
+  CHEAPERINFERENCE: 'cheaperinference',
+  REQUESTY: 'requesty',
+  ATLAS_CLOUD: 'atlascloud',
+  UBERLLM: 'uberllm',
+  TRUSTEDROUTER: 'trustedrouter',
+  AIGROW: 'aigrow'
 } as const;
 
 jest.unstable_mockModule('@clack/prompts', () => ({
@@ -44,6 +50,7 @@ jest.unstable_mockModule('@clack/prompts', () => ({
   outro: outroMock,
   select: selectMock,
   text: textMock,
+  password: passwordMock,
   isCancel: isCancelMock,
   spinner: spinnerMock
 }));
@@ -57,10 +64,10 @@ jest.unstable_mockModule('commands/config', () => ({
   MODEL_LIST: {},
   OCO_AI_PROVIDER_ENUM,
   getConfig: getConfigMock,
-  setGlobalConfig: setGlobalConfigMock,
-  getGlobalConfig: getGlobalConfigMock,
+  savePromptedApiKey: savePromptedApiKeyMock,
+  useApiKeyForCurrentRun: jest.fn(),
   getIsGlobalConfigFileExist: getIsGlobalConfigFileExistMock,
-  DEFAULT_CONFIG: {},
+  updateGlobalConfig: jest.fn(),
   PROVIDER_API_KEY_URLS: {},
   RECOMMENDED_MODELS: {}
 }));
@@ -89,6 +96,18 @@ const OTHER_OPTIONS = [
   { value: 'deepseek', label: 'DeepSeek' },
   { value: 'openrouter', label: 'OpenRouter (Multiple providers)' },
   { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
+  { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
+  { value: 'uberllm', label: 'UberLLM (OpenAI-compatible gateway)' },
+  { value: 'aigrow', label: 'AIGROW (Claude, GPT, Gemini on one key)' },
+  { value: 'requesty', label: 'Requesty (Multiple providers)' },
+  {
+    value: 'cheaperinference',
+    label: 'Cheaper Inference (OpenAI-compatible gateway)'
+  },
+  {
+    value: 'trustedrouter',
+    label: 'TrustedRouter (OpenAI-compatible gateway)'
+  },
   { value: 'aimlapi', label: 'AI/ML API' },
   { value: 'azure', label: 'Azure OpenAI' },
   { value: 'mlx', label: 'MLX (Apple Silicon, local)' }
@@ -137,6 +156,15 @@ describe('setup provider behavior', () => {
       expect(isFirstRun()).toBe(false);
     }
   );
+
+  it('uses a configured llama.cpp server on first run without a model', () => {
+    currentConfig = {
+      OCO_AI_PROVIDER: 'llamacpp',
+      OCO_API_URL: 'http://localhost:8080',
+      OCO_MODEL: ''
+    };
+    expect(isFirstRun()).toBe(false);
+  });
 
   it.each([
     'openai',
@@ -195,8 +223,8 @@ describe('setup provider behavior', () => {
       currentConfig = { OCO_AI_PROVIDER: provider, OCO_API_KEY: '' };
 
       await expect(promptForMissingApiKey()).resolves.toBe(true);
-      expect(textMock).not.toHaveBeenCalled();
-      expect(setGlobalConfigMock).not.toHaveBeenCalled();
+      expect(passwordMock).not.toHaveBeenCalled();
+      expect(savePromptedApiKeyMock).not.toHaveBeenCalled();
     }
   );
 
@@ -204,11 +232,11 @@ describe('setup provider behavior', () => {
     'keeps %s on the API-key prompt path',
     async (provider) => {
       currentConfig = { OCO_AI_PROVIDER: provider, OCO_API_KEY: '' };
-      textMock.mockResolvedValueOnce(CANCEL);
+      passwordMock.mockResolvedValueOnce(CANCEL);
 
       await expect(promptForMissingApiKey()).resolves.toBe(false);
-      expect(textMock).toHaveBeenCalledTimes(1);
-      expect(setGlobalConfigMock).not.toHaveBeenCalled();
+      expect(passwordMock).toHaveBeenCalledTimes(1);
+      expect(savePromptedApiKeyMock).not.toHaveBeenCalled();
     }
   );
 });

@@ -27,6 +27,7 @@ export interface OpenCommitConfig {
   OCO_DESCRIPTION?: boolean;
   OCO_EMOJI?: boolean;
   OCO_EMOJI_POSITION_BEFORE_DESCRIPTION?: boolean;
+  OCO_EMOJI_FULL_SPEC?: boolean;
   OCO_ONE_LINE_COMMIT?: boolean;
   OCO_OMIT_SCOPE?: boolean;
   OCO_REASONING?: boolean;

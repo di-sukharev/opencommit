@@ -1,4 +1,12 @@
-import { intro, outro, select, text, isCancel, spinner } from '@clack/prompts';
+import {
+  intro,
+  outro,
+  select,
+  text,
+  password,
+  isCancel,
+  spinner
+} from '@clack/prompts';
 import chalk from 'chalk';
 import { command } from 'cleye';
 import { COMMANDS } from './ENUMS';
@@ -7,10 +15,10 @@ import {
   MODEL_LIST,
   OCO_AI_PROVIDER_ENUM,
   getConfig,
-  setGlobalConfig,
-  getGlobalConfig,
   getIsGlobalConfigFileExist,
-  DEFAULT_CONFIG,
+  savePromptedApiKey,
+  useApiKeyForCurrentRun,
+  updateGlobalConfig,
   PROVIDER_API_KEY_URLS,
   RECOMMENDED_MODELS
 } from './config';
@@ -78,8 +86,37 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
   {
     provider: OCO_AI_PROVIDER_ENUM.ORCAROUTER,
     displayName: 'OrcaRouter (Smart routing gateway)',
-    selectionGroup: 'other',
-    firstRunRequirement: 'apiKey'
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD,
+    displayName: 'Atlas Cloud (Unified model API)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.UBERLLM,
+    displayName: 'UberLLM (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.AIGROW,
+    displayName: 'AIGROW (Claude, GPT, Gemini on one key)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.REQUESTY,
+    displayName: 'Requesty (Multiple providers)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE,
+    displayName: 'Cheaper Inference (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
+  },
+  {
+    provider: OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER,
+    displayName: 'TrustedRouter (OpenAI-compatible gateway)',
+    selectionGroup: 'other'
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.AIMLAPI,
@@ -163,9 +200,8 @@ async function getApiKey(provider: string): Promise<string | symbol> {
     message = `Enter your API key:\n${chalk.dim(`  Get your key at: ${url}`)}`;
   }
 
-  return await text({
+  return await password({
     message,
-    placeholder: 'sk-...',
     validate: (value) => {
       if (!value || value.trim().length === 0) {
         return 'API key is required';
@@ -506,17 +542,13 @@ export async function runSetup(): Promise<boolean> {
     };
   }
 
-  // Save configuration
-  const existingConfig = getIsGlobalConfigFileExist()
-    ? getGlobalConfig()
-    : DEFAULT_CONFIG;
-
-  const newConfig = {
-    ...existingConfig,
-    ...config
-  };
-
-  setGlobalConfig(newConfig as any);
+  updateGlobalConfig(config);
+  if (getProviderConfigRequirement(provider) === 'apiKey') {
+    useApiKeyForCurrentRun(
+      provider as OCO_AI_PROVIDER_ENUM,
+      config.OCO_API_KEY
+    );
+  }
 
   outro(
     `${chalk.green(
@@ -534,6 +566,9 @@ export function isFirstRun(): boolean {
   const config = getConfig();
 
   const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
+  if (provider === OCO_AI_PROVIDER_ENUM.LLAMACPP && config.OCO_API_URL) {
+    return false;
+  }
 
   const requirement = getProviderConfigRequirement(provider);
   const hasRequiredConfig =
@@ -568,13 +603,11 @@ export async function promptForMissingApiKey(): Promise<boolean> {
     return false;
   }
 
-  const existingConfig = getGlobalConfig();
-  setGlobalConfig({
-    ...existingConfig,
-    OCO_API_KEY: apiKey as string
-  } as any);
-
-  console.log(chalk.green('✔') + ' API key saved\n');
+  const saved = savePromptedApiKey(provider, apiKey as string);
+  console.log(
+    chalk.green('✔') +
+      (saved ? ' API key saved\n' : ' API key set for this run\n')
+  );
   return true;
 }
 

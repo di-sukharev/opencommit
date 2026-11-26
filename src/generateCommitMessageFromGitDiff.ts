@@ -8,8 +8,10 @@ import {
   setGlobalConfig,
   getGlobalConfig,
   MODEL_LIST,
+  OCO_AI_PROVIDER_ENUM,
   RECOMMENDED_MODELS
 } from './commands/config';
+import { isGroqReasoningModel } from './engine/groq';
 import { getMainCommitPrompt } from './prompts';
 import { getEngine } from './utils/engine';
 import {
@@ -166,7 +168,9 @@ export const generateCommitMessageWithConfig = async (
   const isReasoningModel =
     typeof config.OCO_REASONING === 'boolean'
       ? config.OCO_REASONING
-      : /^(o[1-9]|gpt-5)/.test(config.OCO_MODEL);
+      : /^(o[1-9]|gpt-5)/.test(config.OCO_MODEL) ||
+        (config.OCO_AI_PROVIDER === OCO_AI_PROVIDER_ENUM.GROQ &&
+          isGroqReasoningModel(config.OCO_MODEL));
 
   const maxInputTokens =
     config.OCO_TOKENS_MAX_INPUT ??

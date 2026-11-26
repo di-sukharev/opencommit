@@ -1,5 +1,6 @@
 import { OpenAI } from 'openai';
-import { getConfig } from '../../src/commands/config';
+import { DEFAULT_CONFIG, getConfig } from '../../src/commands/config';
+import { GroqEngine } from '../../src/engine/groq';
 import { OpenAiEngine } from '../../src/engine/openAi';
 import { getEngine } from '../../src/utils/engine';
 import { prepareFile } from './utils';
@@ -16,6 +17,25 @@ describe('OpenAiEngine', () => {
     { role: 'system', content: 'system message' },
     { role: 'user', content: 'diff --git a/file b/file' }
   ];
+
+  it('uses the OpenAI SDK environment defaults for the OpenAI provider', () => {
+    const env = jest.replaceProperty(process, 'env', {
+      ...process.env,
+      OPENAI_API_KEY: 'test-ambient-openai-key',
+      OPENAI_ORG_ID: 'test-openai-org',
+      OPENAI_PROJECT_ID: 'test-openai-project'
+    });
+
+    try {
+      const engine = getEngine(DEFAULT_CONFIG) as OpenAiEngine;
+
+      expect(engine.client.apiKey).toBe('test-ambient-openai-key');
+      expect(engine.client.organization).toBe('test-openai-org');
+      expect(engine.client.project).toBe('test-openai-project');
+    } finally {
+      env.restore();
+    }
+  });
 
   it('uses max_completion_tokens for reasoning models', async () => {
     const engine = new OpenAiEngine({
@@ -132,6 +152,33 @@ describe('OpenAiEngine', () => {
       expect.objectContaining({
         model: 'gpt-4',
         max_completion_tokens: 1024
+      })
+    );
+  });
+
+  it('uses max_completion_tokens for Groq gpt-oss reasoning models', async () => {
+    const engine = new GroqEngine({
+      ...baseConfig,
+      model: 'openai/gpt-oss-120b'
+    });
+
+    const create = jest
+      .spyOn(engine.client.chat.completions, 'create')
+      .mockResolvedValue({
+        choices: [{ message: { content: 'feat(groq): reasoning path' } }]
+      } as any);
+
+    await engine.generateCommitMessage(messages);
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: 'openai/gpt-oss-120b',
+        max_completion_tokens: 1024
+      })
+    );
+    expect(create).toHaveBeenCalledWith(
+      expect.not.objectContaining({
+        max_tokens: expect.anything()
       })
     );
   });
