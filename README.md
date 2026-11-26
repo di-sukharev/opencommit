@@ -562,11 +562,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
-      - name: Setup Node.js Environment
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - uses: di-sukharev/opencommit@github-action-v1.0.4
@@ -582,7 +578,6 @@ jobs:
           # customization
           OCO_TOKENS_MAX_INPUT: 4096
           OCO_TOKENS_MAX_OUTPUT: 500
-          OCO_OPENAI_BASE_PATH: ''
           OCO_DESCRIPTION: false
           OCO_EMOJI: false
           OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: false
