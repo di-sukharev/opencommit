@@ -233,10 +233,10 @@ describe('provider model fetchers', () => {
       expected: ['anthropic/claude-sonnet-4.6', 'qwen/qwen3.5-397b-a17b']
     },
     {
-      provider: 'UberLLM',
+      provider: 'MartLLM',
       fetchModels: () => fetchUberLLMModels('uberllm-key'),
       request: [
-        'https://api.uberllm.dev/v1/models',
+        'https://api.martllm.com/v1/models',
         { headers: { Authorization: 'Bearer uberllm-key' } }
       ],
       payload: {
@@ -399,7 +399,7 @@ describe('provider model fetchers', () => {
     ],
     ['Requesty', () => fetchRequestyModels('key'), MODEL_LIST.requesty],
     ['Atlas Cloud', () => fetchAtlasCloudModels(), MODEL_LIST.atlascloud],
-    ['UberLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm],
+    ['MartLLM', () => fetchUberLLMModels('key'), MODEL_LIST.uberllm],
     [
       'TrustedRouter',
       () => fetchTrustedRouterModels(),

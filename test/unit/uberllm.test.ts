@@ -18,7 +18,7 @@ describe('UberLLMEngine', () => {
     { role: 'user', content: 'diff --git a/file b/file' }
   ];
 
-  it('uses the UberLLM base URL and sends the model and messages', async () => {
+  it('uses the MartLLM base URL and sends the model and messages', async () => {
     const engine = new UberLLMEngine({
       ...baseConfig,
       model: 'deepseek/deepseek-v3.2'
@@ -32,7 +32,7 @@ describe('UberLLMEngine', () => {
 
     await engine.generateCommitMessage(messages);
 
-    expect(engine.config.baseURL).toBe('https://api.uberllm.dev/v1');
+    expect(engine.config.baseURL).toBe('https://api.martllm.com/v1');
     expect(create).toHaveBeenCalledWith(
       expect.objectContaining({
         model: 'deepseek/deepseek-v3.2',
@@ -62,8 +62,8 @@ describe('UberLLMEngine', () => {
       OCO_API_URL: undefined
     } as any) as UberLLMEngine;
 
-    expect(engine.config.baseURL).toBe('https://api.uberllm.dev/v1');
-    expect(engine.client.baseURL).toBe('https://api.uberllm.dev/v1');
+    expect(engine.config.baseURL).toBe('https://api.martllm.com/v1');
+    expect(engine.client.baseURL).toBe('https://api.martllm.com/v1');
   });
 
   it('strips <think> tags from response content', async () => {

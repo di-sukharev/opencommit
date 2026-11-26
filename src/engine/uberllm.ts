@@ -2,7 +2,7 @@ import { OpenAiEngine, OpenAiConfig } from './openAi';
 
 export interface UberLLMConfig extends OpenAiConfig {}
 
-const DEFAULT_UBERLLM_BASE_URL = 'https://api.uberllm.dev/v1';
+const DEFAULT_UBERLLM_BASE_URL = 'https://api.martllm.com/v1';
 
 export class UberLLMEngine extends OpenAiEngine {
   protected providerName = 'uberllm';

@@ -597,8 +597,8 @@ export const MODEL_LIST = {
   // https://api.atlascloud.ai/api/v1/models
   atlascloud: ['qwen/qwen3.5-397b-a17b'],
 
-  // UberLLM available models
-  // https://api.uberllm.dev/v1/models
+  // MartLLM available models
+  // https://api.martllm.com/v1/models
   uberllm: ['deepseek/deepseek-v3.2'],
 
   // TrustedRouter available models
@@ -962,7 +962,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
     'https://cheaperinference.com/signup',
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai/api-keys',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
-  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/keys',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://martllm.com/dashboard/keys',
   [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
     'https://trustedrouter.com/console/api-keys',
   [OCO_AI_PROVIDER_ENUM.AIGROW]: 'https://aigrow.gg/dashboard/api',

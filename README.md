@@ -341,9 +341,9 @@ oco config set OCO_AI_PROVIDER=atlascloud OCO_API_KEY=<your_atlascloud_api_key> 
 
 OpenCommit uses `https://api.atlascloud.ai/v1` by default and fetches selectable text chat models from Atlas Cloud's public catalog. Set `OCO_API_URL` to override the endpoint. Atlas Cloud requests disable automatic SDK retries so a commit-message generation request is not submitted twice.
 
-### Use UberLLM as the model gateway
+### Use MartLLM as the model gateway
 
-[UberLLM](https://uberllm.dev) is an OpenAI-compatible gateway with one key for about 260 chat models (DeepSeek, Claude, GPT, Gemini, Qwen, GLM and others). Prices are per model, usually below list price, and listed at [uberllm.dev/models](https://uberllm.dev/models). `oco models` lists the same catalog.
+[MartLLM](https://martllm.com) is an OpenAI-compatible gateway with one key for about 260 chat models (DeepSeek, Claude, GPT, Gemini, Qwen, GLM and others). Prices are per model, usually below list price, and listed at [martllm.com/models](https://martllm.com/models). `oco models` lists the same catalog.
 
 ```sh
 oco config set OCO_AI_PROVIDER=uberllm OCO_API_KEY=<your_uberllm_api_key> OCO_MODEL=deepseek/deepseek-v3.2

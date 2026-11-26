@@ -97,7 +97,7 @@ const OTHER_OPTIONS = [
   { value: 'openrouter', label: 'OpenRouter (Multiple providers)' },
   { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
   { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
-  { value: 'uberllm', label: 'UberLLM (OpenAI-compatible gateway)' },
+  { value: 'uberllm', label: 'MartLLM (OpenAI-compatible gateway)' },
   { value: 'aigrow', label: 'AIGROW (Claude, GPT, Gemini on one key)' },
   { value: 'requesty', label: 'Requesty (Multiple providers)' },
   {

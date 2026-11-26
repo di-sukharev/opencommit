@@ -16,7 +16,7 @@ export const PROVIDER_BILLING_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'https://cheaperinference.com',
   [OCO_AI_PROVIDER_ENUM.REQUESTY]: 'https://app.requesty.ai',
   [OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD]: 'https://www.atlascloud.ai/console',
-  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://uberllm.dev/dashboard/credits',
+  [OCO_AI_PROVIDER_ENUM.UBERLLM]: 'https://martllm.com/dashboard/credits',
   [OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER]:
     'https://trustedrouter.com/console/credits',
   [OCO_AI_PROVIDER_ENUM.AIGROW]: 'https://aigrow.gg/ai-api',

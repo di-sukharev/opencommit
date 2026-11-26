@@ -296,7 +296,7 @@ export async function fetchAtlasCloudModels(): Promise<string[]> {
 export async function fetchUberLLMModels(apiKey: string): Promise<string[]> {
   return fetchModelList({
     // Without `?type=`, this endpoint lists chat (text-output) models only.
-    url: 'https://api.uberllm.dev/v1/models',
+    url: 'https://api.martllm.com/v1/models',
     headers: { Authorization: `Bearer ${apiKey}` },
     fallback: MODEL_LIST.uberllm,
     mapModels: (data) =>

@@ -95,7 +95,7 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
   },
   {
     provider: OCO_AI_PROVIDER_ENUM.UBERLLM,
-    displayName: 'UberLLM (OpenAI-compatible gateway)',
+    displayName: 'MartLLM (OpenAI-compatible gateway)',
     selectionGroup: 'other'
   },
   {
