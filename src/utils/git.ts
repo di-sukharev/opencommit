@@ -9,7 +9,8 @@ export const assertGitRepo = async () => {
   try {
     await execa('git', ['rev-parse']);
   } catch (error) {
-    throw new Error(error as string);
+    const { stderr, message } = error as { stderr?: string; message: string };
+    throw new Error(stderr?.trim() || message);
   }
 };
 
