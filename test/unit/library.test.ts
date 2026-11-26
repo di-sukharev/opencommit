@@ -84,8 +84,8 @@ const PROVIDER_RESPONSES = {
   }
 };
 
-// A forward proxy double. It tunnels CONNECT requests to their target and
-// rejects plain proxy requests. It records the target of each request.
+// A forward proxy double. It tunnels CONNECT requests to local targets and
+// rejects all other requests. It records the target of each request.
 const startProxy = async () => {
   const targets: string[] = [];
   const proxy = createServer((request, response) => {
@@ -95,6 +95,10 @@ const startProxy = async () => {
   proxy.on('connect', (request, client, head) => {
     targets.push(request.url!);
     const [host, port] = request.url!.split(':');
+    if (host !== '127.0.0.1') {
+      client.end('HTTP/1.1 403 Forbidden\r\n\r\n');
+      return;
+    }
     const target = connect(Number(port), host, () => {
       client.write('HTTP/1.1 200 Connection Established\r\n\r\n');
       target.write(head);
