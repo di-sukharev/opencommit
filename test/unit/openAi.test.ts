@@ -1,5 +1,9 @@
 import { OpenAI } from 'openai';
-import { DEFAULT_CONFIG, getConfig } from '../../src/commands/config';
+import {
+  DEFAULT_CONFIG,
+  getConfig,
+  OCO_AI_PROVIDER_ENUM
+} from '../../src/commands/config';
 import { GroqEngine } from '../../src/engine/groq';
 import { OpenAiEngine } from '../../src/engine/openAi';
 import { getEngine } from '../../src/utils/engine';
@@ -35,6 +39,49 @@ describe('OpenAiEngine', () => {
     } finally {
       env.restore();
     }
+  });
+
+  describe.each([
+    OCO_AI_PROVIDER_ENUM.DEEPSEEK,
+    OCO_AI_PROVIDER_ENUM.GROQ,
+    OCO_AI_PROVIDER_ENUM.MINIMAX
+  ])('with the OpenAI-compatible %s provider', (provider) => {
+    let env: jest.ReplaceProperty<NodeJS.ProcessEnv>;
+
+    beforeEach(() => {
+      env = jest.replaceProperty(process, 'env', {
+        ...process.env,
+        OPENAI_API_KEY: 'test-ambient-openai-key',
+        OPENAI_ORG_ID: 'test-openai-org',
+        OPENAI_PROJECT_ID: 'test-openai-project'
+      });
+    });
+
+    afterEach(() => {
+      env.restore();
+    });
+
+    it('requires its own key instead of OPENAI_API_KEY', () => {
+      expect(() =>
+        getEngine({
+          ...DEFAULT_CONFIG,
+          OCO_AI_PROVIDER: provider,
+          OCO_API_KEY: undefined
+        })
+      ).toThrow(new RegExp(provider, 'i'));
+    });
+
+    it('does not send the OpenAI organization and project', () => {
+      const engine = getEngine({
+        ...DEFAULT_CONFIG,
+        OCO_AI_PROVIDER: provider,
+        OCO_API_KEY: `test-${provider}-key`
+      }) as OpenAiEngine;
+
+      expect(engine.client.apiKey).toBe(`test-${provider}-key`);
+      expect(engine.client.organization).toBeNull();
+      expect(engine.client.project).toBeNull();
+    });
   });
 
   it('uses max_completion_tokens for reasoning models', async () => {

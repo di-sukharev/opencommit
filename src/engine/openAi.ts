@@ -15,9 +15,10 @@ export class OpenAiEngine implements AiEngine {
   client: OpenAI;
 
   /**
-   * Provider name used for error normalization. Subclasses for other
-   * OpenAI-compatible APIs pass their name to the constructor so errors are
-   * attributed to the right provider without re-implementing the request path.
+   * Provider name used for error normalization. Every subclass for another
+   * OpenAI-compatible API must pass its name to the constructor: then the
+   * engine requires that provider's key and ignores the SDK's OPENAI_* env
+   * defaults, so an OpenAI key is never sent to another provider.
    */
   protected providerName = 'openai';
   protected useSamplingParameters = true;
