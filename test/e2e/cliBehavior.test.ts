@@ -1232,6 +1232,7 @@ it('keeps the global gateway key when a repository provider has a legacy key', a
 });
 
 it.each([
+  { provider: 'minimax', model: 'MiniMax-M3' },
   { provider: 'uberllm', model: 'deepseek/deepseek-v3.2' },
   { provider: 'atlascloud', model: 'qwen/qwen3.5-397b-a17b' },
   { provider: 'requesty', model: 'openai/gpt-4o-mini' },
