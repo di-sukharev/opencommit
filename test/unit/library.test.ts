@@ -2,6 +2,7 @@ import { createServer, IncomingMessage, Server } from 'http';
 import { AddressInfo } from 'net';
 import { MODEL_LIST } from '../../src/commands/config';
 import { generateCommitMessage } from '../../src/index';
+import { GenerateCommitMessageErrorEnum } from '../../src/utils/generateCommitMessageErrors';
 
 type ChatRequest = {
   authorization?: string;
@@ -18,6 +19,43 @@ const DIFF = `diff --git a/src/server.ts b/src/server.ts
 -const port = 7799;
 +const PORT = 7799;
 `;
+
+const ADDED_LINES = Array.from(
+  { length: 300 },
+  (_, index) => `+export const value${index} = ${index};`
+);
+
+// A unified diff without the `diff --git` file header, like the output of
+// `diff -u` or of the `diff` npm package.
+const LARGE_HUNK = `--- a/src/values.ts
++++ b/src/values.ts
+@@ -0,0 +1,300 @@
+${ADDED_LINES.join('\n')}
+`;
+
+const LARGE_DIFF = `diff --git a/src/values.ts b/src/values.ts
+${LARGE_HUNK}`;
+
+// A small input limit makes the library split these diffs into several
+// requests.
+const SPLIT_LIMITS = { OCO_TOKENS_MAX_INPUT: 1500, OCO_TOKENS_MAX_OUTPUT: 100 };
+
+const completion = (content: string) => ({
+  status: 200,
+  body: {
+    id: 'chatcmpl-test',
+    object: 'chat.completion',
+    created: 0,
+    model: 'test-model',
+    choices: [
+      {
+        index: 0,
+        finish_reason: 'stop',
+        message: { role: 'assistant', content }
+      }
+    ]
+  }
+});
 
 const readBody = async (request: IncomingMessage): Promise<string> => {
   let body = '';
@@ -54,22 +92,7 @@ describe('generateCommitMessage', () => {
 
   beforeEach(() => {
     requests.length = 0;
-    respond = () => ({
-      status: 200,
-      body: {
-        id: 'chatcmpl-test',
-        object: 'chat.completion',
-        created: 0,
-        model: 'test-model',
-        choices: [
-          {
-            index: 0,
-            finish_reason: 'stop',
-            message: { role: 'assistant', content: 'fix(server): rename port' }
-          }
-        ]
-      }
-    });
+    respond = () => completion('fix(server): rename port');
   });
 
   afterEach(() => {
@@ -159,6 +182,63 @@ describe('generateCommitMessage', () => {
       })
     ).rejects.toThrow("Model 'missing-model' not found");
     expect(requests).toHaveLength(1);
+  });
+
+  it.each([
+    ['a git file header', LARGE_HUNK],
+    ['a hunk header', `${ADDED_LINES.join('\n')}\n`]
+  ])('sends every line of a split diff without %s', async (_, diff) => {
+    const message = await generateCommitMessage(diff, {
+      config: {
+        OCO_API_KEY: 'library-key',
+        OCO_API_URL: apiUrl,
+        ...SPLIT_LIMITS
+      }
+    });
+
+    expect(requests.length).toBeGreaterThan(1);
+    expect(message).toContain('fix(server): rename port');
+
+    const sentLines = requests.flatMap(({ body }) =>
+      body.messages
+        .at(-1)!
+        .content.split('\n')
+        .filter((line) => line.startsWith('+export'))
+    );
+    expect(sentLines).toEqual(ADDED_LINES);
+  });
+
+  it('leaves empty chunk messages out of a split diff message', async () => {
+    let responses = 0;
+    respond = () => completion(responses++ === 0 ? '' : 'feat: add values');
+
+    const message = await generateCommitMessage(LARGE_DIFF, {
+      config: {
+        OCO_API_KEY: 'library-key',
+        OCO_API_URL: apiUrl,
+        ...SPLIT_LIMITS
+      }
+    });
+
+    expect(requests.length).toBeGreaterThan(2);
+    expect(message.split('\n\n')).toEqual(
+      Array(requests.length - 1).fill('feat: add values')
+    );
+  });
+
+  it('rejects a split diff when every chunk message is empty', async () => {
+    respond = () => completion('');
+
+    await expect(
+      generateCommitMessage(LARGE_DIFF, {
+        config: {
+          OCO_API_KEY: 'library-key',
+          OCO_API_URL: apiUrl,
+          ...SPLIT_LIMITS
+        }
+      })
+    ).rejects.toThrow(GenerateCommitMessageErrorEnum.emptyMessage);
+    expect(requests.length).toBeGreaterThan(1);
   });
 
   it.each([

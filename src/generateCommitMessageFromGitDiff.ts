@@ -188,6 +188,8 @@ export const generateCommitMessageWithConfig = async (
     INIT_MESSAGES_PROMPT_LENGTH -
     maxOutputTokens;
 
+  let commitMessage: CommitMessage;
+
   if ((await tokenCountAsync(diff)) >= MAX_REQUEST_TOKENS) {
     const commitMessageTasks = await getCommitMessageTasksFromFileDiffs(
       diff,
@@ -197,32 +199,31 @@ export const generateCommitMessageWithConfig = async (
       config
     );
 
-    const commitMessages = await runTasksWithConcurrency(
-      commitMessageTasks,
-      MAX_CONCURRENT_GENERATIONS
-    );
+    // A chunk without a message adds nothing to the combined message.
+    const commitMessages = (
+      await runTasksWithConcurrency(
+        commitMessageTasks,
+        MAX_CONCURRENT_GENERATIONS
+      )
+    ).filter((message): message is string => Boolean(message));
 
     // Keep one-line mode intact when a large diff is split into multiple
     // requests by combining the subject from each generated message.
-    if (config.OCO_ONE_LINE_COMMIT) {
-      return commitMessages
-        .filter(Boolean)
-        .map((message) => message!.split('\n')[0].trim())
-        .join('; ');
-    }
+    commitMessage = config.OCO_ONE_LINE_COMMIT
+      ? commitMessages
+          .map((message) => message.split('\n')[0].trim())
+          .join('; ')
+      : commitMessages.join('\n\n');
+  } else {
+    const messages = await generateCommitMessageChatCompletionPrompt(
+      diff,
+      fullGitMojiSpec,
+      context,
+      config
+    );
 
-    return commitMessages.join('\n\n');
+    commitMessage = await getEngine(config).generateCommitMessage(messages);
   }
-
-  const messages = await generateCommitMessageChatCompletionPrompt(
-    diff,
-    fullGitMojiSpec,
-    context,
-    config
-  );
-
-  const engine = getEngine(config);
-  const commitMessage = await engine.generateCommitMessage(messages);
 
   if (!commitMessage)
     throw new Error(GenerateCommitMessageErrorEnum.emptyMessage);
@@ -280,28 +281,26 @@ export const generateCommitMessageByDiff = async (
 
 async function getMessageTasksByChangesInFile(
   fileDiff: string,
-  separator: string,
   maxChangeLength: number,
   fullGitMojiSpec: boolean,
   context: string,
   config: ConfigType
 ): Promise<Array<AsyncTask<CommitMessage>>> {
-  const hunkHeaderSeparator = '@@ ';
-  const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
+  // The file header is the text before the first hunk. A diff without hunks
+  // has no header and is split by lines.
+  const firstHunkIndex = Math.max(fileDiff.search(/^@@ /m), 0);
+  const fileHeader = fileDiff.slice(0, firstHunkIndex);
+  const hunks = fileDiff.slice(firstHunkIndex).split(/(?=^@@ )/m);
 
-  // merge multiple line-diffs into 1 to save tokens
-  const mergedChanges = await mergeDiffs(
-    fileDiffByLines.map((line) => hunkHeaderSeparator + line),
-    maxChangeLength
-  );
+  // merge multiple hunks into 1 to save tokens
+  const mergedChanges = await mergeDiffs(hunks, maxChangeLength);
 
   const lineDiffsWithHeader = [] as string[];
   for (const change of mergedChanges) {
-    const diffPrefix = separator + fileHeader;
-    const totalChange = diffPrefix + change;
+    const totalChange = fileHeader + change;
     if ((await tokenCountAsync(totalChange)) > maxChangeLength) {
       // If the totalChange is too large, split it into smaller pieces
-      const splitChanges = await splitDiff(change, diffPrefix, maxChangeLength);
+      const splitChanges = await splitDiff(change, fileHeader, maxChangeLength);
       lineDiffsWithHeader.push(...splitChanges);
     } else {
       lineDiffsWithHeader.push(totalChange);
@@ -368,12 +367,9 @@ export const getCommitMessageTasksFromFileDiffs = async (
   context: string,
   config: ConfigType
 ) => {
-  const separator = 'diff --git ';
-
-  const diffByFiles = diff
-    .split(separator)
-    .slice(1)
-    .map((fileDiff) => separator + fileDiff);
+  // Split before each file header. Text without a file header stays in its
+  // own part, so no part of the diff is lost.
+  const diffByFiles = diff.split(/(?=^diff --git )/m);
 
   // merge multiple files-diffs into 1 prompt to save tokens
   const mergedFilesDiffs = await mergeDiffs(diffByFiles, maxDiffLength);
@@ -384,8 +380,7 @@ export const getCommitMessageTasksFromFileDiffs = async (
     if ((await tokenCountAsync(fileDiff)) > maxDiffLength) {
       // if file-diff is bigger than gpt context — split fileDiff into lineDiff
       const messageTasks = await getMessageTasksByChangesInFile(
-        fileDiff.slice(separator.length),
-        separator,
+        fileDiff,
         maxDiffLength,
         fullGitMojiSpec,
         context,
