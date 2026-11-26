@@ -9,14 +9,20 @@ Thanks for considering contributing to the project.
 3. Create a new branch for your changes.
 4. Make your changes and commit them with descriptive commit messages.
 5. Push your changes to your forked repository.
-6. Create a pull request from your branch to the `dev` branch. Not `master` branch, PR to `dev` branch, please.
+6. Create a pull request from your branch to the `master` branch. Pull requests targeting `dev` should be retargeted to `master` before review.
 
 ## Getting started
+
+Use Node.js 20 and npm 10 when you update dependencies and validate the lockfile. These versions match the test workflow.
+
+Run `npm run test:e2e:prompt-module:run` with these versions to validate the commitlint fixture lockfiles too.
+
+The `content-type` override keeps Octokit's response parser compatible with Node.js 20. Remove it when Octokit's dependency supports this runtime.
 
 To get started, follow these steps:
 
 1. Clone the project repository locally.
-2. Install dependencies with `npm install`.
+2. Install dependencies with `npm ci`.
 3. Run the project with `npm run dev`.
 4. See [issues](https://github.com/di-sukharev/opencommit/issues) or [TODO.md](TODO.md) to help the project.
 
