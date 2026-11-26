@@ -154,9 +154,11 @@ const INIT_MAIN_PROMPT = (
   const oneLineCommitGuideline = getOneLineCommitInstruction(config);
   const scopeInstruction = getScopeInstruction(config);
   const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
+  const diffGroundingGuideline =
+    'Within each diff hunk, lines that start with + or - are the actual changes; the +++ and --- lines are file headers, not changes. Lines starting with a space are unchanged context. Describe only the changed lines, and use context lines solely to understand them. When a change touches only a few lines, never describe the surrounding unchanged lines as the change.';
   const userInputContext = userInputCodeContext(context);
 
-  const content = `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${gitMojiPositionGuideline}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
+  const content = `${missionStatement}\n${diffInstruction}\n${diffGroundingGuideline}\n${conventionGuidelines}\n${gitMojiPositionGuideline}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
 
   return { role: 'system', content };
 };
