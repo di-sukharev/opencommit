@@ -4,8 +4,15 @@ import fs from 'fs/promises';
 import { intro, outro, spinner } from '@clack/prompts';
 
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
-import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
+import {
+  getChangedFiles,
+  getCurrentBranch,
+  getDiff,
+  getStagedFiles,
+  gitAdd
+} from '../utils/git';
 import { getProviderConfigRequirement } from '../utils/provider';
+import { addTicketReference } from '../utils/ticketReference';
 import { getConfig, OCO_AI_PROVIDER_ENUM } from './config';
 
 const [messageFilePath, commitSource] = process.argv.slice(2);
@@ -66,9 +73,23 @@ export const prepareCommitMessageHook = async (
 
     spin.stop('Done');
 
+    if (config.OCO_TICKET_FROM_BRANCH) {
+      commitMessage = addTicketReference(
+        commitMessage,
+        await getCurrentBranch(),
+        { oneLine: config.OCO_ONE_LINE_COMMIT }
+      );
+    }
+
     const fileContent = await fs.readFile(messageFilePath);
 
-    const messageWithComment = `# ${commitMessage}\n\n# ---------- [OpenCommit] ---------- #\n# Remove the # above to use this generated commit message.\n# To cancel the commit, just close this window without making any changes.\n\n${fileContent.toString()}`;
+    // Comment every line, or an untouched message would commit its body
+    const commentedMessage = commitMessage
+      .split('\n')
+      .map((line) => (line ? `# ${line}` : '#'))
+      .join('\n');
+
+    const messageWithComment = `${commentedMessage}\n\n# ---------- [OpenCommit] ---------- #\n# Remove the # above to use this generated commit message.\n# To cancel the commit, just close this window without making any changes.\n\n${fileContent.toString()}`;
     const messageWithoutComment = `${commitMessage}\n\n${fileContent.toString()}`;
 
     const message = config.OCO_HOOK_AUTO_UNCOMMENT

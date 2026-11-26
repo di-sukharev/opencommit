@@ -9,7 +9,8 @@ export const assertGitRepo = async () => {
   try {
     await execa('git', ['rev-parse']);
   } catch (error) {
-    throw new Error(error as string);
+    const { stderr, message } = error as { stderr?: string; message: string };
+    throw new Error(stderr?.trim() || message);
   }
 };
 
@@ -139,6 +140,11 @@ export const getDiff = async ({ files }: { files: string[] }) => {
   );
 
   return diff;
+};
+
+export const getCurrentBranch = async (): Promise<string> => {
+  const { stdout } = await execa('git', ['branch', '--show-current']);
+  return stdout.trim();
 };
 
 export const getGitDir = async (): Promise<string> => {

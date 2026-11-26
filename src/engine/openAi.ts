@@ -1,9 +1,9 @@
 import { OpenAI } from 'openai';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { parseCustomHeaders } from '../utils/customHeaders';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { ApiKeyMissingError } from '../utils/errors';
 import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
+import { createProxyFetch } from '../utils/proxy';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -43,11 +43,6 @@ export class OpenAiEngine implements AiEngine {
       clientOptions.baseURL = config.baseURL;
     }
 
-    const proxy = config.proxy;
-    if (proxy) {
-      clientOptions.httpAgent = new HttpsProxyAgent(proxy);
-    }
-
     if (config.customHeaders) {
       const headers = parseCustomHeaders(config.customHeaders);
       if (Object.keys(headers).length > 0) {
@@ -55,14 +50,10 @@ export class OpenAiEngine implements AiEngine {
       }
     }
 
-    // The OpenAI SDK's internal fetch may resolve before globalThis.fetch is
-    // available in some Node.js versions, causing premature connection errors.
-    // Explicitly binding globalThis.fetch here defers resolution to call time,
-    // ensuring the runtime's native fetch is used instead of the SDK's bundled
-    // undici — which also avoids double-initialisation in newer Node (>=18).
-    if (!clientOptions.fetch && typeof globalThis.fetch === 'function') {
-      clientOptions.fetch = (...args) => globalThis.fetch(...args);
-    }
+    // Use the native fetch, resolved at call time, instead of the SDK's
+    // bundled fetch, which can fail early in some Node.js versions. The native
+    // fetch ignores `httpAgent`, so the proxy goes through its dispatcher.
+    clientOptions.fetch = createProxyFetch(config.proxy);
 
     this.client = new OpenAI(clientOptions);
   }

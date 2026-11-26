@@ -24,6 +24,7 @@ export enum CONFIG_KEYS {
   OCO_EMOJI = 'OCO_EMOJI',
   OCO_EMOJI_POSITION_BEFORE_DESCRIPTION = 'OCO_EMOJI_POSITION_BEFORE_DESCRIPTION',
   OCO_EMOJI_FULL_SPEC = 'OCO_EMOJI_FULL_SPEC',
+  OCO_TICKET_FROM_BRANCH = 'OCO_TICKET_FROM_BRANCH',
   OCO_MODEL = 'OCO_MODEL',
   OCO_LANGUAGE = 'OCO_LANGUAGE',
   OCO_WHY = 'OCO_WHY',
@@ -143,6 +144,9 @@ export const MODEL_LIST = {
     'mistral-moderation-latest'
   ],
   deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
+
+  // https://api.minimax.io/v1/models (requires an API key)
+  minimax: ['MiniMax-M3', 'MiniMax-M2.7'],
 
   // OpenRouter available models
   // input_modalities: 'text'
@@ -476,7 +480,7 @@ export const MODEL_LIST = {
   ]
 };
 
-const getDefaultModel = (provider: string | undefined): string => {
+export const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
     case 'ollama':
       return '';
@@ -494,6 +498,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.mistral[0];
     case 'deepseek':
       return MODEL_LIST.deepseek[0];
+    case 'minimax':
+      return MODEL_LIST.minimax[0];
     case 'openrouter':
       return MODEL_LIST.openrouter[0];
     default:
@@ -549,7 +555,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "minimax". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -626,6 +632,16 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC](value: any) {
     validateConfig(
       CONFIG_KEYS.OCO_EMOJI_FULL_SPEC,
+      typeof value === 'boolean',
+      'Must be boolean: true or false'
+    );
+
+    return value;
+  },
+
+  [CONFIG_KEYS.OCO_TICKET_FROM_BRANCH](value: any) {
+    validateConfig(
+      CONFIG_KEYS.OCO_TICKET_FROM_BRANCH,
       typeof value === 'boolean',
       'Must be boolean: true or false'
     );
@@ -731,7 +747,7 @@ export const configValidators = {
       (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'groq', 'mistral', 'deepseek', 'openrouter' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'groq', 'mistral', 'deepseek', 'minimax', 'openrouter' or 'openai' (default)`
     );
 
     return value;
@@ -810,6 +826,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/keys',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/api-keys/',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'https://platform.minimax.io/console/keys',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'https://portal.azure.com/',
   [OCO_AI_PROVIDER_ENUM.OLLAMA]: null,
@@ -826,6 +843,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'openai/gpt-oss-120b',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'MiniMax-M3',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini'
 };
 
@@ -840,6 +858,7 @@ export type ConfigType = {
   [CONFIG_KEYS.OCO_EMOJI]: boolean;
   [CONFIG_KEYS.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION]: boolean;
   [CONFIG_KEYS.OCO_EMOJI_FULL_SPEC]: boolean;
+  [CONFIG_KEYS.OCO_TICKET_FROM_BRANCH]: boolean;
   [CONFIG_KEYS.OCO_WHY]: boolean;
   [CONFIG_KEYS.OCO_MODEL]: string;
   [CONFIG_KEYS.OCO_LANGUAGE]: string;
@@ -895,6 +914,7 @@ export const DEFAULT_CONFIG = {
   OCO_EMOJI: false,
   OCO_EMOJI_POSITION_BEFORE_DESCRIPTION: false,
   OCO_EMOJI_FULL_SPEC: false,
+  OCO_TICKET_FROM_BRANCH: false,
   OCO_MODEL: getDefaultModel('openai'),
   OCO_LANGUAGE: 'en',
   OCO_MESSAGE_TEMPLATE_PLACEHOLDER: '$msg',
@@ -963,6 +983,7 @@ const getEnvConfig = (env: NodeJS.ProcessEnv) => {
       env.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
     ),
     OCO_EMOJI_FULL_SPEC: parseConfigVarValue(env.OCO_EMOJI_FULL_SPEC),
+    OCO_TICKET_FROM_BRANCH: parseConfigVarValue(env.OCO_TICKET_FROM_BRANCH),
     OCO_LANGUAGE: env.OCO_LANGUAGE,
     OCO_MESSAGE_TEMPLATE_PLACEHOLDER: env.OCO_MESSAGE_TEMPLATE_PLACEHOLDER,
     OCO_PROMPT_MODULE: env.OCO_PROMPT_MODULE as OCO_PROMPT_MODULE_ENUM,
@@ -1289,6 +1310,12 @@ function getConfigKeyDetails(key) {
       return {
         description:
           'Use the full GitMoji specification instead of the short OCO_EMOJI list, same as the --fgm flag',
+        values: ['true', 'false']
+      };
+    case CONFIG_KEYS.OCO_TICKET_FROM_BRANCH:
+      return {
+        description:
+          'Reference the ticket ID found in the branch name in the commit message, e.g. a "Refs: FOO-1234" footer on feat/foo-1234-button',
         values: ['true', 'false']
       };
     case CONFIG_KEYS.OCO_WHY:

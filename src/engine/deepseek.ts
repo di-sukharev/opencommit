@@ -19,11 +19,11 @@ interface DeepseekChatCompletionParams
 
 export class DeepseekEngine extends OpenAiEngine {
   constructor(config: DeepseekConfig) {
-    // Call OpenAIEngine constructor with forced Deepseek baseURL
-    // Put baseURL first so user config can override it
+    // getEngine passes an unset OCO_API_URL as undefined, so a spread of
+    // config alone would replace the DeepSeek URL with the OpenAI default.
     super({
-      baseURL: 'https://api.deepseek.com/v1',
-      ...config
+      ...config,
+      baseURL: config.baseURL || 'https://api.deepseek.com/v1'
     });
   }
 

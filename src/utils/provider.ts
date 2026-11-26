@@ -11,6 +11,7 @@ export enum OCO_AI_PROVIDER_ENUM {
   MISTRAL = 'mistral',
   MLX = 'mlx',
   DEEPSEEK = 'deepseek',
+  MINIMAX = 'minimax',
   OPENROUTER = 'openrouter'
 }
 
@@ -28,6 +29,7 @@ const PROVIDER_CONFIG_REQUIREMENTS: Record<
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'apiKey',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.AZURE]: 'apiKey',
   [OCO_AI_PROVIDER_ENUM.MLX]: 'model',

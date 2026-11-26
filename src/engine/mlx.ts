@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { getAxiosProxyOptions } from '../utils/proxy';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -21,7 +22,8 @@ export class MLXEngine implements AiEngine {
     this.chatUrl = `${baseUrl}${MLX_CHAT_PATH}`;
 
     this.client = axios.create({
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      ...getAxiosProxyOptions(config.proxy)
     });
   }
 

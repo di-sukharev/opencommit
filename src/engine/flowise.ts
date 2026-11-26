@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { getAxiosProxyOptions } from '../utils/proxy';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -13,8 +14,9 @@ export class FlowiseEngine implements AiEngine {
   constructor(config) {
     this.config = config;
     this.client = axios.create({
-      url: `${config.baseURL}/${config.apiKey}`,
-      headers: { 'Content-Type': 'application/json' }
+      baseURL: `${config.baseURL}/${config.apiKey}`,
+      headers: { 'Content-Type': 'application/json' },
+      ...getAxiosProxyOptions(config.proxy)
     });
   }
 
@@ -37,9 +39,7 @@ export class FlowiseEngine implements AiEngine {
     };
     try {
       const response = await this.client.post('', payload);
-      const message = response.data;
-      let content = message?.text;
-      return removeContentTags(content, 'think');
+      return removeContentTags(response.data?.text, 'think');
     } catch (error) {
       throw normalizeEngineError(error, 'flowise', this.config.model);
     }

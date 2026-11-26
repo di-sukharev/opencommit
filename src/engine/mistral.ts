@@ -1,7 +1,9 @@
 import { Mistral } from '@mistralai/mistralai';
+import { HTTPClient } from '@mistralai/mistralai/lib/http.js';
 import { OpenAI } from 'openai';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
 import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
+import { createProxyFetch } from '../utils/proxy';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
@@ -17,14 +19,11 @@ export class MistralAiEngine implements AiEngine {
   constructor(config: MistralAiConfig) {
     this.config = config;
 
-    if (!config.baseURL) {
-      this.client = new Mistral({ apiKey: config.apiKey });
-    } else {
-      this.client = new Mistral({
-        apiKey: config.apiKey,
-        serverURL: config.baseURL
-      });
-    }
+    this.client = new Mistral({
+      apiKey: config.apiKey,
+      serverURL: config.baseURL || undefined,
+      httpClient: new HTTPClient({ fetcher: createProxyFetch(config.proxy) })
+    });
   }
 
   public generateCommitMessage = async (

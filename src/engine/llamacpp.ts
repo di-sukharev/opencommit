@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { getAxiosProxyOptions } from '../utils/proxy';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -25,7 +26,10 @@ export class LlamaCppEngine implements AiEngine {
       ...config.customHeaders
     };
 
-    this.client = axios.create({ headers });
+    this.client = axios.create({
+      headers,
+      ...getAxiosProxyOptions(config.proxy)
+    });
   }
 
   async generateCommitMessage(

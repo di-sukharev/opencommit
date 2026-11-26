@@ -47,6 +47,7 @@ export const runMigrations = async () => {
   if (
     [
       OCO_AI_PROVIDER_ENUM.DEEPSEEK,
+      OCO_AI_PROVIDER_ENUM.MINIMAX,
       OCO_AI_PROVIDER_ENUM.GROQ,
       OCO_AI_PROVIDER_ENUM.MISTRAL,
       OCO_AI_PROVIDER_ENUM.MLX,

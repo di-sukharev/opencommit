@@ -149,7 +149,7 @@ Create a `.env` file and add OpenCommit config variables there like this:
 
 ```env
 ...
-OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, mlx, gemini, flowise, groq, mistral, deepseek, openrouter>
+OCO_AI_PROVIDER=<openai (default), anthropic, azure, ollama, llamacpp, mlx, gemini, flowise, groq, mistral, deepseek, minimax, openrouter>
 OCO_API_KEY=<your OpenAI API token> // or other LLM provider API token
 OCO_API_URL=<may be used to set proxy path to OpenAI api>
 OCO_API_CUSTOM_HEADERS=<JSON string of custom HTTP headers to include in API requests>
@@ -166,6 +166,7 @@ OCO_LANGUAGE=<locale, scroll to the bottom to see options>
 OCO_MESSAGE_TEMPLATE_PLACEHOLDER=<message template placeholder, default: '$msg'>
 OCO_PROMPT_MODULE=<either conventional-commit or @commitlint, default: conventional-commit>
 OCO_ONE_LINE_COMMIT=<one line commit message, default: false>
+OCO_TICKET_FROM_BRANCH=<boolean, reference the ticket ID from the branch name in the message; default: false>
 ```
 
 Global configs are same as local configs, but they are stored in the global `~/.opencommit` config file and set with `oco config set` command, e.g. `oco config set OCO_MODEL=gpt-4o`.
@@ -449,6 +450,26 @@ For instance, using the command `oco '$msg #205’`, users can leverage this fea
 
 Once users have generated their desired commit message, they can proceed to commit using the generated message. By understanding the feature's full potential and its implementation details, users can confidently use the generated messages for their commits.
 
+### Ticket ID from the branch name
+
+If your branches carry a ticket ID, OpenCommit can reference it in every generated message:
+
+```sh
+oco config set OCO_TICKET_FROM_BRANCH=true
+```
+
+On the branch `feat/foo-1234-button` the ticket is added as a footer, where [Conventional Commits](https://www.conventionalcommits.org/) puts issue references:
+
+```
+feat(button): add the component
+
+Refs: FOO-1234
+```
+
+With `OCO_ONE_LINE_COMMIT=true` the message has no footer, so the ticket goes at the end of the subject: `feat(button): add the component (FOO-1234)`.
+
+The ticket ID is the first `LETTERS-123` style key in the branch name, written in upper case. Branches without such a key keep the generated message as it is, and so do messages that already name the ticket. The setting also applies to the `prepare-commit-msg` git hook.
+
 ### Ignore files
 
 You can remove files from being sent to OpenAI by creating ignore files. OpenCommit supports both local and global ignore files:
@@ -575,6 +596,36 @@ That is it. Now when you push to any branch in your repo — all NEW commits are
 Make sure you exclude public collaboration branches (`main`, `dev`, `etc`) in `branches-ignore`, so OpenCommit does not rebase commits there while improving the messages.
 
 Interactive rebase (`rebase -i`) changes commits' SHA, so the commit history in remote becomes different from your local branch history. This is okay if you work on the branch alone, but may be inconvenient for other collaborators.
+
+## Use OpenCommit as a library
+
+Install OpenCommit as a dependency and call `generateCommitMessage` with the output of `git diff`:
+
+```sh
+npm install opencommit
+```
+
+```js
+import { execSync } from 'node:child_process';
+import { generateCommitMessage } from 'opencommit';
+
+const diff = execSync('git diff --staged', { encoding: 'utf8' });
+
+const message = await generateCommitMessage(diff, {
+  config: {
+    OCO_AI_PROVIDER: 'openai',
+    OCO_API_KEY: process.env.OPENAI_API_KEY,
+    OCO_MODEL: 'gpt-4o-mini',
+    OCO_EMOJI: true
+  },
+  context: 'Optional context for the model, like oco --context',
+  fullGitMojiSpec: false
+});
+```
+
+The `config` keys are the same as the [configuration](#configuration) keys of the CLI. Keys that you omit get the CLI default values. The library does not read `~/.opencommit`, `.env` or `OCO_*` environment variables, and it does not prompt or commit. The library always uses the `conventional-commit` prompt module. Errors from the provider are thrown to the caller.
+
+[`OCO_PROXY`](#use-with-proxy) applies only to the requests to the AI provider. The library does not change the global proxy settings of your process. The library throws an error if you set `OCO_PROXY` with the `gemini` or `azure` provider.
 
 ## Payments
 

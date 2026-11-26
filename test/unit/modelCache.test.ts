@@ -2,6 +2,7 @@ import { MODEL_LIST, RECOMMENDED_MODELS } from '../../src/commands/config';
 import {
   fetchAnthropicModels,
   fetchDeepSeekModels,
+  fetchMiniMaxModels,
   fetchGroqModels,
   fetchLlamaCppModels,
   fetchMistralModels,
@@ -144,6 +145,16 @@ describe('provider model fetchers', () => {
       ],
       payload: { data: [{ id: 'deepseek-z' }, { id: 'deepseek-a' }] },
       expected: ['deepseek-a', 'deepseek-z']
+    },
+    {
+      provider: 'MiniMax',
+      fetchModels: () => fetchMiniMaxModels('minimax-key'),
+      request: [
+        'https://api.minimax.io/v1/models',
+        { headers: { Authorization: 'Bearer minimax-key' } }
+      ],
+      payload: { data: [{ id: 'MiniMax-M3' }, { id: 'MiniMax-M2.7' }] },
+      expected: ['MiniMax-M2.7', 'MiniMax-M3']
     }
   ])(
     'preserves the $provider request and response mapping',
@@ -163,7 +174,8 @@ describe('provider model fetchers', () => {
     ['Mistral', () => fetchMistralModels('key'), MODEL_LIST.mistral],
     ['Groq', () => fetchGroqModels('key'), MODEL_LIST.groq],
     ['OpenRouter', () => fetchOpenRouterModels('key'), MODEL_LIST.openrouter],
-    ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek]
+    ['DeepSeek', () => fetchDeepSeekModels('key'), MODEL_LIST.deepseek],
+    ['MiniMax', () => fetchMiniMaxModels('key'), MODEL_LIST.minimax]
   ])(
     'returns the existing %s fallback for a non-OK response',
     async (_, fetchModels, fallback) => {

@@ -12,6 +12,7 @@ import { TestAi, TestMockType } from '../engine/testAi';
 import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
+import { MiniMaxEngine } from '../engine/minimax';
 import { OpenRouterEngine } from '../engine/openrouter';
 import { parseCustomHeaders } from './customHeaders';
 import { getRemovedProviderMessage } from './provider';
@@ -76,6 +77,9 @@ export function getEngine(config = getConfig()): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
       return new DeepseekEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.MINIMAX:
+      return new MiniMaxEngine(DEFAULT_CONFIG);
 
     case OCO_AI_PROVIDER_ENUM.OPENROUTER:
       return new OpenRouterEngine(DEFAULT_CONFIG);

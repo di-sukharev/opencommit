@@ -79,6 +79,11 @@ const SETUP_PROVIDERS: SetupProviderDefinition[] = [
     selectionGroup: 'other'
   },
   {
+    provider: OCO_AI_PROVIDER_ENUM.MINIMAX,
+    displayName: 'MiniMax',
+    selectionGroup: 'other'
+  },
+  {
     provider: OCO_AI_PROVIDER_ENUM.OPENROUTER,
     displayName: 'OpenRouter (Multiple providers)',
     selectionGroup: 'other'

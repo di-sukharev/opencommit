@@ -196,6 +196,16 @@ export async function fetchDeepSeekModels(apiKey: string): Promise<string[]> {
   });
 }
 
+export async function fetchMiniMaxModels(apiKey: string): Promise<string[]> {
+  return fetchModelList({
+    url: 'https://api.minimax.io/v1/models',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    fallback: MODEL_LIST.minimax,
+    mapModels: (data) =>
+      (data as ModelListResponse).data?.map((model) => model.id).sort()
+  });
+}
+
 export async function fetchModelsForProvider(
   provider: string,
   apiKey?: string,
@@ -262,6 +272,14 @@ export async function fetchModelsForProvider(
         models = await fetchDeepSeekModels(apiKey);
       } else {
         models = MODEL_LIST.deepseek;
+      }
+      break;
+
+    case OCO_AI_PROVIDER_ENUM.MINIMAX:
+      if (apiKey) {
+        models = await fetchMiniMaxModels(apiKey);
+      } else {
+        models = MODEL_LIST.minimax;
       }
       break;
 
