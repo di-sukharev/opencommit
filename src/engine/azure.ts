@@ -2,11 +2,10 @@ import {
   AzureKeyCredential,
   OpenAIClient as AzureOpenAIClient
 } from '@azure/openai';
-import { outro } from '@clack/prompts';
-import axios from 'axios';
-import chalk from 'chalk';
 import { OpenAI } from 'openai';
-import { GenerateCommitMessageErrorEnum } from '../generateCommitMessageFromGitDiff';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
+import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -52,26 +51,11 @@ export class AzureEngine implements AiEngine {
       if (message?.content === null) {
         return undefined;
       }
-      return message?.content;
+
+      let content = message?.content;
+      return removeContentTags(content, 'think');
     } catch (error) {
-      outro(`${chalk.red('✖')} ${this.config.model}`);
-
-      const err = error as Error;
-      outro(`${chalk.red('✖')} ${JSON.stringify(error)}`);
-
-      if (
-        axios.isAxiosError<{ error?: { message: string } }>(error) &&
-        error.response?.status === 401
-      ) {
-        const openAiError = error.response.data.error;
-
-        if (openAiError?.message) outro(openAiError.message);
-        outro(
-          'For help look into README https://github.com/di-sukharev/opencommit#setup'
-        );
-      }
-
-      throw err;
+      throw normalizeEngineError(error, 'azure', this.config.model);
     }
   };
 }

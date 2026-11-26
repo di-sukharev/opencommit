@@ -1,10 +1,12 @@
-import 'cli-testing-library/extend-expect'
-import { configure } from 'cli-testing-library'
 import { jest } from '@jest/globals';
+import 'cli-testing-library/extend-expect';
+import { configure } from 'cli-testing-library';
 
+// Make Jest available globally
 global.jest = jest;
 
 /**
- * Adjusted the wait time for waitFor/findByText to 2000ms, because the default 1000ms makes the test results flaky
+ * CLI rendering gets noticeably slower under coverage and on CI, so keep a
+ * slightly roomier timeout than the library default.
  */
-configure({ asyncUtilTimeout: 2000 })
+configure({ asyncUtilTimeout: 10000 });

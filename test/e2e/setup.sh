@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -eu
+
 current_dir=$(pwd)
 setup_dir="$(cd "$(dirname "$0")" && pwd)"
 

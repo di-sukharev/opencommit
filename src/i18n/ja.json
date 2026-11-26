@@ -2,5 +2,7 @@
   "localLanguage": "日本語",
   "commitFix": "修正(server.ts): ポート変数を小文字のportから大文字のPORTに変更",
   "commitFeat": "新機能(server.ts): 環境変数process.env.PORTのサポートを追加",
-  "commitDescription": "ポート変数は現在PORTという名前になり、定数であるPORTを使うことで命名規則に一貫性が生まれました。環境変数をサポートすることで、環境変数process.env.PORTで指定された任意の利用可能なポートで実行できるようになり、アプリケーションはより柔軟になりました。"
+  "commitDescription": "ポート変数は現在PORTという名前になり、定数であるPORTを使うことで命名規則に一貫性が生まれました。環境変数をサポートすることで、環境変数process.env.PORTで指定された任意の利用可能なポートで実行できるようになり、アプリケーションはより柔軟になりました。",
+  "commitFixOmitScope": "修正: ポート変数を小文字のportから大文字のPORTに変更",
+  "commitFeatOmitScope": "新機能: 環境変数process.env.PORTのサポートを追加"
 }

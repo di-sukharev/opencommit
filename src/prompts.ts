@@ -6,7 +6,10 @@ import { configureCommitlintIntegration } from './modules/commitlint/config';
 import { commitlintPrompts } from './modules/commitlint/prompts';
 import { ConsistencyPrompt } from './modules/commitlint/types';
 import * as utils from './modules/commitlint/utils';
-import { removeConventionalCommitWord } from './utils/removeConventionalCommitWord';
+import {
+  formatGitMojiCommit,
+  getGitMojiPositionInstruction
+} from './utils/gitmoji';
 
 const config = getConfig();
 const translation = i18n[(config.OCO_LANGUAGE as I18nLocals) || 'en'];
@@ -95,11 +98,11 @@ const CONVENTIONAL_COMMIT_KEYWORDS =
   'Do not preface the commit with anything, except for the conventional commit keywords: fix, feat, build, chore, ci, docs, style, refactor, perf, test.';
 
 const getCommitConvention = (fullGitMojiSpec: boolean) =>
-  config.OCO_EMOJI
-    ? fullGitMojiSpec
-      ? FULL_GITMOJI_SPEC
-      : GITMOJI_HELP
-    : CONVENTIONAL_COMMIT_KEYWORDS;
+  fullGitMojiSpec
+    ? FULL_GITMOJI_SPEC
+    : config.OCO_EMOJI
+      ? GITMOJI_HELP
+      : CONVENTIONAL_COMMIT_KEYWORDS;
 
 const getDescriptionInstruction = () =>
   config.OCO_DESCRIPTION
@@ -108,7 +111,12 @@ const getDescriptionInstruction = () =>
 
 const getOneLineCommitInstruction = () =>
   config.OCO_ONE_LINE_COMMIT
-    ? 'Craft a concise commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in a one single message, without diverging into a list of commit per file change.'
+    ? 'Craft a concise, single sentence, commit message that encapsulates all changes made, with an emphasis on the primary updates. If the modifications share a common theme or scope, mention it succinctly; otherwise, leave the scope out to maintain focus. The goal is to provide a clear and unified overview of the changes in one single message.'
+    : '';
+
+const getScopeInstruction = () =>
+  config.OCO_OMIT_SCOPE
+    ? 'Do not include a scope in the commit message format. Use the format: <type>: <subject>'
     : '';
 
 /**
@@ -118,40 +126,47 @@ const getOneLineCommitInstruction = () =>
  *  $ oco -- This is a context used to generate the commit message
  * @returns - The context of the user input
  */
-const userInputCodeContext = (context: string) => {
-  if (context !== '' && context !== ' ') {
-    return `Additional context provided by the user: <context>${context}</context>\nConsider this context when generating the commit message, incorporating relevant information when appropriate.`;
+const userInputCodeContext = (context: string | undefined | null) => {
+  const trimmed = (context ?? '').trim();
+  if (trimmed === '') {
+    return '';
   }
-  return '';
+  return `Additional context provided by the user: <context>${trimmed}</context>\nConsider this context when generating the commit message, incorporating relevant information when appropriate.`;
 };
 
 const INIT_MAIN_PROMPT = (
   language: string,
   fullGitMojiSpec: boolean,
   context: string
-): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
-  role: 'system',
-  content: (() => {
-    const commitConvention = fullGitMojiSpec
-      ? 'GitMoji specification'
-      : 'Conventional Commit Convention';
-    const missionStatement = `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${commitConvention} and explain WHAT were the changes and mainly WHY the changes were done.`;
-    const diffInstruction =
-      "I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.";
-    const conventionGuidelines = getCommitConvention(fullGitMojiSpec);
-    const descriptionGuideline = getDescriptionInstruction();
-    const oneLineCommitGuideline = getOneLineCommitInstruction();
-    const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
-    const userInputContext = userInputCodeContext(context);
+): OpenAI.Chat.Completions.ChatCompletionMessageParam => {
+  const commitConvention = fullGitMojiSpec
+    ? 'GitMoji specification'
+    : 'Conventional Commit Convention';
+  const missionStatement = `${IDENTITY} Your mission is to create clean and comprehensive commit messages as per the ${commitConvention} and explain WHAT were the changes and mainly WHY the changes were done.`;
+  const diffInstruction =
+    "I'll send you an output of 'git diff --staged' command, and you are to convert it into a commit message.";
+  const conventionGuidelines = getCommitConvention(fullGitMojiSpec);
+  const useGitMoji = fullGitMojiSpec || config.OCO_EMOJI;
+  const gitMojiPositionGuideline = useGitMoji
+    ? getGitMojiPositionInstruction(
+        config.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION
+      )
+    : '';
+  const descriptionGuideline = getDescriptionInstruction();
+  const oneLineCommitGuideline = getOneLineCommitInstruction();
+  const scopeInstruction = getScopeInstruction();
+  const generalGuidelines = `Use the present tense. Lines must not be longer than 74 characters. Use ${language} for the commit message.`;
+  const userInputContext = userInputCodeContext(context);
 
-    return `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${generalGuidelines}\n${userInputContext}`;
-  })()
-});
+  const content = `${missionStatement}\n${diffInstruction}\n${conventionGuidelines}\n${gitMojiPositionGuideline}\n${descriptionGuideline}\n${oneLineCommitGuideline}\n${scopeInstruction}\n${generalGuidelines}\n${userInputContext}`;
+
+  return { role: 'system', content };
+};
 
 export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessageParam =
-{
-  role: 'user',
-  content: `diff --git a/src/server.ts b/src/server.ts
+  {
+    role: 'user',
+    content: `diff --git a/src/server.ts b/src/server.ts
     index ad4db42..f3b18a9 100644
     --- a/src/server.ts
     +++ b/src/server.ts
@@ -175,35 +190,69 @@ export const INIT_DIFF_PROMPT: OpenAI.Chat.Completions.ChatCompletionMessagePara
                 +app.listen(process.env.PORT || PORT, () => {
                     +  console.log(\`Server listening on port \${PORT}\`);
                 });`
+  };
+
+const COMMIT_TYPES = {
+  fix: '🐛',
+  feat: '✨'
+} as const;
+
+const generateCommitString = (
+  type: keyof typeof COMMIT_TYPES,
+  message: string,
+  useGitMoji: boolean
+): string => {
+  if (!useGitMoji) return message;
+
+  return formatGitMojiCommit({
+    beforeDescription: config.OCO_EMOJI_POSITION_BEFORE_DESCRIPTION,
+    emoji: COMMIT_TYPES[type],
+    message
+  });
 };
 
-const getContent = (translation: ConsistencyPrompt) => {
-  const fix = config.OCO_EMOJI
-    ? `🐛 ${removeConventionalCommitWord(translation.commitFix)}`
-    : translation.commitFix;
+const getConsistencyContent = (
+  translation: ConsistencyPrompt,
+  useGitMoji: boolean
+) => {
+  const fixMessage =
+    config.OCO_OMIT_SCOPE && translation.commitFixOmitScope
+      ? translation.commitFixOmitScope
+      : translation.commitFix;
 
-  const feat = config.OCO_EMOJI
-    ? `✨ ${removeConventionalCommitWord(translation.commitFeat)}`
-    : translation.commitFeat;
+  const featMessage =
+    config.OCO_OMIT_SCOPE && translation.commitFeatOmitScope
+      ? translation.commitFeatOmitScope
+      : translation.commitFeat;
+
+  const fix = generateCommitString('fix', fixMessage, useGitMoji);
+  const feat = config.OCO_ONE_LINE_COMMIT
+    ? ''
+    : generateCommitString('feat', featMessage, useGitMoji);
 
   const description = config.OCO_DESCRIPTION
     ? translation.commitDescription
     : '';
 
-  return `${fix}\n${feat}\n${description}`;
+  return [fix, feat, description].filter(Boolean).join('\n');
 };
 
 const INIT_CONSISTENCY_PROMPT = (
-  translation: ConsistencyPrompt
+  translation: ConsistencyPrompt,
+  useGitMoji: boolean
 ): OpenAI.Chat.Completions.ChatCompletionMessageParam => ({
   role: 'assistant',
-  content: getContent(translation)
+  content: getConsistencyContent(translation, useGitMoji)
 });
 
 export const getMainCommitPrompt = async (
   fullGitMojiSpec: boolean,
   context: string
 ): Promise<Array<OpenAI.Chat.Completions.ChatCompletionMessageParam>> => {
+  // --fgm turns the full spec on for one run, OCO_EMOJI_FULL_SPEC keeps it on
+  const useFullGitMojiSpec = fullGitMojiSpec || config.OCO_EMOJI_FULL_SPEC;
+  const useGitMoji = useFullGitMojiSpec || config.OCO_EMOJI;
+
   switch (config.OCO_PROMPT_MODULE) {
     case '@commitlint':
       if (!(await utils.commitlintLLMConfigExists())) {
@@ -214,26 +263,40 @@ export const getMainCommitPrompt = async (
       }
 
       // Replace example prompt with a prompt that's generated by OpenAI for the commitlint config.
-      const commitLintConfig = await utils.getCommitlintLLMConfig();
+      let commitLintConfig = await utils.getCommitlintLLMConfig();
+
+      // Guard against outdated or corrupted config files that are missing the
+      // prompts field (e.g. generated by an older version of opencommit).
+      if (!Array.isArray(commitLintConfig.prompts)) {
+        note('Commitlint LLM config is missing prompts, regenerating...');
+        await configureCommitlintIntegration(true);
+        commitLintConfig = await utils.getCommitlintLLMConfig();
+      }
 
       return [
         commitlintPrompts.INIT_MAIN_PROMPT(
           translation.localLanguage,
-          commitLintConfig.prompts
+          commitLintConfig.prompts,
+          useGitMoji
         ),
         INIT_DIFF_PROMPT,
         INIT_CONSISTENCY_PROMPT(
           commitLintConfig.consistency[
-          translation.localLanguage
-          ] as ConsistencyPrompt
+            translation.localLanguage
+          ] as ConsistencyPrompt,
+          useGitMoji
         )
       ];
 
     default:
       return [
-        INIT_MAIN_PROMPT(translation.localLanguage, fullGitMojiSpec, context),
+        INIT_MAIN_PROMPT(
+          translation.localLanguage,
+          useFullGitMojiSpec,
+          context
+        ),
         INIT_DIFF_PROMPT,
-        INIT_CONSISTENCY_PROMPT(translation)
+        INIT_CONSISTENCY_PROMPT(translation, useGitMoji)
       ];
   }
 };

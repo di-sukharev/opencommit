@@ -1,5 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
+import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
 interface FlowiseAiConfig extends AiEngineConfig {}
@@ -40,10 +42,10 @@ export class FlowiseEngine implements AiEngine {
       );
       
       const message = response.data;
-      return message?.text;
-    } catch (err: any) {
-      const message = err.response?.data?.error ?? err.message;
-      throw new Error('local model issues. details: ' + message);
+      let content = message?.text;
+      return removeContentTags(content, 'think');
+    } catch (error) {
+      throw normalizeEngineError(error, 'flowise', this.config.model);
     }
   }
 }

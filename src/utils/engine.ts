@@ -4,28 +4,53 @@ import { AzureEngine } from '../engine/azure';
 import { AiEngine } from '../engine/Engine';
 import { FlowiseEngine } from '../engine/flowise';
 import { GeminiEngine } from '../engine/gemini';
+import { LlamaCppEngine } from '../engine/llamacpp';
 import { OllamaEngine } from '../engine/ollama';
 import { OpenAiEngine } from '../engine/openAi';
 import { MistralAiEngine } from '../engine/mistral';
 import { TestAi, TestMockType } from '../engine/testAi';
 import { GroqEngine } from '../engine/groq';
 import { MLXEngine } from '../engine/mlx';
+import { DeepseekEngine } from '../engine/deepseek';
+import { AimlApiEngine } from '../engine/aimlapi';
+import { OpenRouterEngine } from '../engine/openrouter';
+import { OrcaRouterEngine } from '../engine/orcarouter';
+import { CheaperInferenceEngine } from '../engine/cheaperinference';
+import { RequestyEngine } from '../engine/requesty';
+import { AtlasCloudEngine } from '../engine/atlascloud';
+import { UberLLMEngine } from '../engine/uberllm';
+import { TrustedRouterEngine } from '../engine/trustedrouter';
+import { AIGROWEngine } from '../engine/aigrow';
+import { parseCustomHeaders } from './customHeaders';
+import { resolveProxy } from './proxy';
 
-export function getEngine(): AiEngine {
-  const config = getConfig();
+export function getEngine(config = getConfig()): AiEngine {
   const provider = config.OCO_AI_PROVIDER;
+
+  const customHeaders = parseCustomHeaders(config.OCO_API_CUSTOM_HEADERS);
+  const resolvedProxy = resolveProxy(config.OCO_PROXY);
 
   const DEFAULT_CONFIG = {
     model: config.OCO_MODEL!,
     maxTokensOutput: config.OCO_TOKENS_MAX_OUTPUT!,
     maxTokensInput: config.OCO_TOKENS_MAX_INPUT!,
     baseURL: config.OCO_API_URL!,
-    apiKey: config.OCO_API_KEY!
+    proxy: resolvedProxy,
+    apiKey: config.OCO_API_KEY!,
+    isReasoning: config.OCO_REASONING,
+    tokensMaxReasoning: config.OCO_REASONING_MAX_TOKENS,
+    customHeaders
   };
 
   switch (provider) {
     case OCO_AI_PROVIDER_ENUM.OLLAMA:
-      return new OllamaEngine(DEFAULT_CONFIG);
+      return new OllamaEngine({
+        ...DEFAULT_CONFIG,
+        ollamaThink: config.OCO_OLLAMA_THINK
+      });
+
+    case OCO_AI_PROVIDER_ENUM.LLAMACPP:
+      return new LlamaCppEngine(DEFAULT_CONFIG);
 
     case OCO_AI_PROVIDER_ENUM.ANTHROPIC:
       return new AnthropicEngine(DEFAULT_CONFIG);
@@ -50,6 +75,31 @@ export function getEngine(): AiEngine {
 
     case OCO_AI_PROVIDER_ENUM.MLX:
       return new MLXEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.DEEPSEEK:
+      return new DeepseekEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.AIMLAPI:
+      return new AimlApiEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.OPENROUTER:
+      return new OpenRouterEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.ORCAROUTER:
+      return new OrcaRouterEngine(DEFAULT_CONFIG);
+
+    case OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE:
+      return new CheaperInferenceEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.REQUESTY:
+      return new RequestyEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.ATLAS_CLOUD:
+      return new AtlasCloudEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.UBERLLM:
+      return new UberLLMEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.TRUSTEDROUTER:
+      return new TrustedRouterEngine(DEFAULT_CONFIG);
+    case OCO_AI_PROVIDER_ENUM.AIGROW:
+      return new AIGROWEngine(DEFAULT_CONFIG);
 
     default:
       return new OpenAiEngine(DEFAULT_CONFIG);

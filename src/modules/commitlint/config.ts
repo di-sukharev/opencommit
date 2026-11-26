@@ -53,10 +53,10 @@ export const configureCommitlintIntegration = async (force = false) => {
 
   spin.start('Generating consistency with given @commitlint rules');
 
-  const prompts = inferPromptsFromCommitlintConfig(commitLintConfig);
+  const prompts = inferPromptsFromCommitlintConfig(commitLintConfig as any);
 
   const consistencyPrompts =
-    commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts);
+    commitlintPrompts.GEN_COMMITLINT_CONSISTENCY_PROMPT(prompts, translation);
 
   // debug prompt which will generate a consistency
   // await fs.writeFile(
