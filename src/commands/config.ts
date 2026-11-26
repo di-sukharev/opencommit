@@ -142,6 +142,9 @@ export const MODEL_LIST = {
   ],
   deepseek: ['deepseek-v4-flash', 'deepseek-v4-pro'],
 
+  // https://api.minimax.io/v1/models (requires an API key)
+  minimax: ['MiniMax-M3', 'MiniMax-M2.7'],
+
   // AI/ML API available chat-completion models
   // https://api.aimlapi.com/v1/models
   aimlapi: [
@@ -633,6 +636,8 @@ const getDefaultModel = (provider: string | undefined): string => {
       return MODEL_LIST.mistral[0];
     case 'deepseek':
       return MODEL_LIST.deepseek[0];
+    case 'minimax':
+      return MODEL_LIST.minimax[0];
     case 'aimlapi':
       return MODEL_LIST.aimlapi[0];
     case 'openrouter':
@@ -704,7 +709,7 @@ export const configValidators = {
     validateConfig(
       'OCO_API_KEY',
       value,
-      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "orcarouter" or "atlascloud" or "uberllm" or "requesty" or "cheaperinference" or "trustedrouter" or "aigrow". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
+      'You need to provide the OCO_API_KEY when OCO_AI_PROVIDER set to "openai" (default) or "ollama" or "mlx" or "azure" or "gemini" or "flowise" or "anthropic" or "deepseek" or "minimax" or "orcarouter" or "atlascloud" or "uberllm" or "requesty" or "cheaperinference" or "trustedrouter" or "aigrow". Run `oco config set OCO_API_KEY=your_key OCO_AI_PROVIDER=openai`'
     );
 
     return value;
@@ -888,7 +893,7 @@ export const configValidators = {
       (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
         value.startsWith('ollama') ||
         value.startsWith('llamacpp'),
-      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm', 'requesty', 'cheaperinference', 'trustedrouter', 'aigrow' or 'openai' (default)`
+      `${value} is not supported yet, use 'ollama', 'llamacpp', 'mlx', 'anthropic', 'azure', 'gemini', 'flowise', 'mistral', 'deepseek', 'minimax', 'aimlapi', 'orcarouter', 'atlascloud', 'uberllm', 'requesty', 'cheaperinference', 'trustedrouter', 'aigrow' or 'openai' (default)`
     );
 
     return value;
@@ -967,6 +972,7 @@ export const PROVIDER_API_KEY_URLS: Record<string, string | null> = {
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'https://console.groq.com/keys',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'https://console.mistral.ai/api-keys/',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'https://platform.deepseek.com/api_keys',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'https://platform.minimax.io/console/keys',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'https://openrouter.ai/keys',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'https://www.orcarouter.ai',
   [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]:
@@ -993,6 +999,7 @@ export const RECOMMENDED_MODELS: Record<string, string> = {
   [OCO_AI_PROVIDER_ENUM.GROQ]: 'openai/gpt-oss-120b',
   [OCO_AI_PROVIDER_ENUM.MISTRAL]: 'mistral-small-latest',
   [OCO_AI_PROVIDER_ENUM.DEEPSEEK]: 'deepseek-v4-flash',
+  [OCO_AI_PROVIDER_ENUM.MINIMAX]: 'MiniMax-M3',
   [OCO_AI_PROVIDER_ENUM.OPENROUTER]: 'openai/gpt-4o-mini',
   [OCO_AI_PROVIDER_ENUM.ORCAROUTER]: 'orcarouter/auto',
   [OCO_AI_PROVIDER_ENUM.CHEAPERINFERENCE]: 'gpt-5.4-mini',

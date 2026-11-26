@@ -34,6 +34,7 @@ const OCO_AI_PROVIDER_ENUM = {
   MISTRAL: 'mistral',
   MLX: 'mlx',
   DEEPSEEK: 'deepseek',
+  MINIMAX: 'minimax',
   AIMLAPI: 'aimlapi',
   OPENROUTER: 'openrouter',
   ORCAROUTER: 'orcarouter',
@@ -94,6 +95,7 @@ const OTHER_OPTIONS = [
   { value: 'groq', label: 'Groq (Fast inference, free tier)' },
   { value: 'mistral', label: 'Mistral AI' },
   { value: 'deepseek', label: 'DeepSeek' },
+  { value: 'minimax', label: 'MiniMax' },
   { value: 'openrouter', label: 'OpenRouter (Multiple providers)' },
   { value: 'orcarouter', label: 'OrcaRouter (Smart routing gateway)' },
   { value: 'atlascloud', label: 'Atlas Cloud (Unified model API)' },
@@ -175,6 +177,7 @@ describe('setup provider behavior', () => {
     'groq',
     'mistral',
     'deepseek',
+    'minimax',
     'aimlapi',
     'openrouter'
   ])('requires an API key on first run for %s', (provider) => {
