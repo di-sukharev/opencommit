@@ -7,8 +7,10 @@ import {
   setGlobalConfig,
   getGlobalConfig,
   MODEL_LIST,
+  OCO_AI_PROVIDER_ENUM,
   RECOMMENDED_MODELS
 } from './commands/config';
+import { isGroqReasoningModel } from './engine/groq';
 import { getMainCommitPrompt } from './prompts';
 import { getEngine } from './utils/engine';
 import {
@@ -18,11 +20,16 @@ import {
 } from './utils/errors';
 import { GenerateCommitMessageErrorEnum } from './utils/generateCommitMessageErrors';
 import { mergeDiffs } from './utils/mergeDiffs';
-import { tokenCount } from './utils/tokenCount';
-
-const config = getConfig();
-const MAX_TOKENS_INPUT = config.OCO_TOKENS_MAX_INPUT;
-const MAX_TOKENS_OUTPUT = config.OCO_TOKENS_MAX_OUTPUT;
+import {
+  AsyncTask,
+  runTasksWithConcurrency
+} from './utils/runTasksWithConcurrency';
+import {
+  splitByTokenLimit,
+  TOKEN_BOUNDARY_RESERVE,
+  tokenCount,
+  tokenCountAsync
+} from './utils/tokenCount';
 
 const generateCommitMessageChatCompletionPrompt = async (
   diff: string,
@@ -131,6 +138,8 @@ async function handleModelNotFoundError(
 }
 
 const ADJUSTMENT_FACTOR = 20;
+const MAX_CONCURRENT_GENERATIONS = 3;
+type CommitMessage = string | null | undefined;
 
 export const generateCommitMessageByDiff = async (
   diff: string,
@@ -152,21 +161,50 @@ export const generateCommitMessageByDiff = async (
       (msg) => tokenCount(msg.content as string) + 4
     ).reduce((a, b) => a + b, 0);
 
+    const isReasoningModel =
+      typeof currentConfig.OCO_REASONING === 'boolean'
+        ? currentConfig.OCO_REASONING
+        : /^(o[1-9]|gpt-5)/.test(currentModel) ||
+          (provider === OCO_AI_PROVIDER_ENUM.GROQ &&
+            isGroqReasoningModel(currentModel));
+
+    const maxInputTokens =
+      currentConfig.OCO_TOKENS_MAX_INPUT ??
+      DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_INPUT;
+
+    const maxOutputTokens = isReasoningModel
+      ? (currentConfig.OCO_REASONING_MAX_TOKENS ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_REASONING)
+      : (currentConfig.OCO_TOKENS_MAX_OUTPUT ??
+        DEFAULT_TOKEN_LIMITS.DEFAULT_MAX_TOKENS_OUTPUT);
+
     const MAX_REQUEST_TOKENS =
-      MAX_TOKENS_INPUT -
+      maxInputTokens -
       ADJUSTMENT_FACTOR -
       INIT_MESSAGES_PROMPT_LENGTH -
-      MAX_TOKENS_OUTPUT;
+      maxOutputTokens;
 
-    if (tokenCount(diff) >= MAX_REQUEST_TOKENS) {
-      const commitMessagePromises = await getCommitMsgsPromisesFromFileDiffs(
+    if ((await tokenCountAsync(diff)) >= MAX_REQUEST_TOKENS) {
+      const commitMessageTasks = await getCommitMessageTasksFromFileDiffs(
         diff,
         MAX_REQUEST_TOKENS,
         fullGitMojiSpec,
         context
       );
 
-      const commitMessages = await Promise.all(commitMessagePromises);
+      const commitMessages = await runTasksWithConcurrency(
+        commitMessageTasks,
+        MAX_CONCURRENT_GENERATIONS
+      );
+
+      // Keep one-line mode intact when a large diff is split into multiple
+      // requests by combining the subject from each generated message.
+      if (currentConfig.OCO_ONE_LINE_COMMIT) {
+        return commitMessages
+          .filter(Boolean)
+          .map((message) => message!.split('\n')[0].trim())
+          .join('; ');
+      }
 
       return commitMessages.join('\n\n');
     }
@@ -215,87 +253,88 @@ export const generateCommitMessageByDiff = async (
   }
 };
 
-function getMessagesPromisesByChangesInFile(
+async function getMessageTasksByChangesInFile(
   fileDiff: string,
   separator: string,
   maxChangeLength: number,
   fullGitMojiSpec: boolean,
   context: string
-) {
+): Promise<Array<AsyncTask<CommitMessage>>> {
   const hunkHeaderSeparator = '@@ ';
   const [fileHeader, ...fileDiffByLines] = fileDiff.split(hunkHeaderSeparator);
 
   // merge multiple line-diffs into 1 to save tokens
-  const mergedChanges = mergeDiffs(
+  const mergedChanges = await mergeDiffs(
     fileDiffByLines.map((line) => hunkHeaderSeparator + line),
     maxChangeLength
   );
 
   const lineDiffsWithHeader = [] as string[];
   for (const change of mergedChanges) {
-    const totalChange = fileHeader + change;
-    if (tokenCount(totalChange) > maxChangeLength) {
+    const diffPrefix = separator + fileHeader;
+    const totalChange = diffPrefix + change;
+    if ((await tokenCountAsync(totalChange)) > maxChangeLength) {
       // If the totalChange is too large, split it into smaller pieces
-      const splitChanges = splitDiff(totalChange, maxChangeLength);
+      const splitChanges = await splitDiff(change, diffPrefix, maxChangeLength);
       lineDiffsWithHeader.push(...splitChanges);
     } else {
       lineDiffsWithHeader.push(totalChange);
     }
   }
 
-  const engine = getEngine();
-  const commitMsgsFromFileLineDiffs = lineDiffsWithHeader.map(
-    async (lineDiff) => {
+  return lineDiffsWithHeader.map(
+    (lineDiff) => async (): Promise<CommitMessage> => {
       const messages = await generateCommitMessageChatCompletionPrompt(
-        separator + lineDiff,
+        lineDiff,
         fullGitMojiSpec,
         context
       );
 
+      const engine = getEngine();
       return engine.generateCommitMessage(messages);
     }
   );
-
-  return commitMsgsFromFileLineDiffs;
 }
 
-function splitDiff(diff: string, maxChangeLength: number) {
-  const lines = diff.split('\n');
-  const splitDiffs = [] as string[];
-  let currentDiff = '';
+const getLinesWithEndings = (content: string): string[] =>
+  content.match(/[^\n]*\n|[^\n]+$/g) ?? [];
 
+async function splitDiff(
+  diff: string,
+  prefix: string,
+  maxChangeLength: number
+) {
   if (maxChangeLength <= 0) {
     throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
   }
 
-  for (let line of lines) {
-    // If a single line exceeds maxChangeLength, split it into multiple lines
-    while (tokenCount(line) > maxChangeLength) {
-      const subLine = line.substring(0, maxChangeLength);
-      line = line.substring(maxChangeLength);
-      splitDiffs.push(subLine);
-    }
+  const prefixTokens = await tokenCountAsync(prefix);
+  const maxDiffTokens = maxChangeLength - prefixTokens - TOKEN_BOUNDARY_RESERVE;
 
-    // Check the tokenCount of the currentDiff and the line separately
-    if (tokenCount(currentDiff) + tokenCount('\n' + line) > maxChangeLength) {
-      // If adding the next line would exceed the maxChangeLength, start a new diff
-      splitDiffs.push(currentDiff);
-      currentDiff = line;
-    } else {
-      // Otherwise, add the line to the current diff
-      currentDiff += '\n' + line;
-    }
+  if (maxDiffTokens <= 0) {
+    throw new Error(GenerateCommitMessageErrorEnum.outputTokensTooHigh);
   }
 
-  // Add the last diff
-  if (currentDiff) {
-    splitDiffs.push(currentDiff);
+  const lineChunks = await mergeDiffs(getLinesWithEndings(diff), maxDiffTokens);
+  const splitDiffs: string[] = [];
+
+  for (const lineChunk of lineChunks) {
+    if ((await tokenCountAsync(lineChunk)) <= maxDiffTokens) {
+      splitDiffs.push(prefix + lineChunk);
+      continue;
+    }
+
+    const oversizedLineChunks = await splitByTokenLimit(
+      lineChunk,
+      maxDiffTokens
+    );
+    splitDiffs.push(...oversizedLineChunks.map((chunk) => prefix + chunk));
   }
 
   return splitDiffs;
 }
 
-export const getCommitMsgsPromisesFromFileDiffs = async (
+export const getCommitMessageTasksFromFileDiffs = async (
   diff: string,
   maxDiffLength: number,
   fullGitMojiSpec: boolean,
@@ -303,38 +342,43 @@ export const getCommitMsgsPromisesFromFileDiffs = async (
 ) => {
   const separator = 'diff --git ';
 
-  const diffByFiles = diff.split(separator).slice(1);
+  const diffByFiles = diff
+    .split(separator)
+    .slice(1)
+    .map((fileDiff) => separator + fileDiff);
 
   // merge multiple files-diffs into 1 prompt to save tokens
-  const mergedFilesDiffs = mergeDiffs(diffByFiles, maxDiffLength);
+  const mergedFilesDiffs = await mergeDiffs(diffByFiles, maxDiffLength);
 
-  const commitMessagePromises = [] as Promise<string | null | undefined>[];
+  const commitMessageTasks: Array<AsyncTask<CommitMessage>> = [];
 
   for (const fileDiff of mergedFilesDiffs) {
-    if (tokenCount(fileDiff) >= maxDiffLength) {
+    if ((await tokenCountAsync(fileDiff)) > maxDiffLength) {
       // if file-diff is bigger than gpt context — split fileDiff into lineDiff
-      const messagesPromises = getMessagesPromisesByChangesInFile(
-        fileDiff,
+      const messageTasks = await getMessageTasksByChangesInFile(
+        fileDiff.slice(separator.length),
         separator,
         maxDiffLength,
         fullGitMojiSpec,
         context
       );
 
-      commitMessagePromises.push(...messagesPromises);
+      commitMessageTasks.push(...messageTasks);
     } else {
-      const messages = await generateCommitMessageChatCompletionPrompt(
-        separator + fileDiff,
-        fullGitMojiSpec,
-        context
-      );
+      commitMessageTasks.push(async (): Promise<CommitMessage> => {
+        const messages = await generateCommitMessageChatCompletionPrompt(
+          fileDiff,
+          fullGitMojiSpec,
+          context
+        );
 
-      const engine = getEngine();
-      commitMessagePromises.push(engine.generateCommitMessage(messages));
+        const engine = getEngine();
+        return engine.generateCommitMessage(messages);
+      });
     }
   }
 
-  return commitMessagePromises;
+  return commitMessageTasks;
 };
 
 function delay(ms: number) {

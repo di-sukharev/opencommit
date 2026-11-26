@@ -5,7 +5,8 @@ import { intro, outro, spinner } from '@clack/prompts';
 
 import { generateCommitMessageByDiff } from '../generateCommitMessageFromGitDiff';
 import { getChangedFiles, getDiff, getStagedFiles, gitAdd } from '../utils/git';
-import { getConfig } from './config';
+import { getProviderConfigRequirement } from '../utils/provider';
+import { getConfig, OCO_AI_PROVIDER_ENUM } from './config';
 
 const [messageFilePath, commitSource] = process.argv.slice(2);
 
@@ -38,10 +39,14 @@ export const prepareCommitMessageHook = async (
     intro('opencommit');
 
     const config = getConfig();
+    const provider = config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
 
-    if (!config.OCO_API_KEY) {
+    if (
+      getProviderConfigRequirement(provider) === 'apiKey' &&
+      !config.OCO_API_KEY
+    ) {
       outro(
-        'No OCO_API_KEY is set. Set your key via `oco config set OCO_API_KEY=<value>. For more info see https://github.com/di-sukharev/opencommit'
+        `No OCO_API_KEY is set. Add it to the repository .env file or configure ${provider} globally with oco config set OCO_AI_PROVIDER=${provider} OCO_API_KEY=<value>.`
       );
       return;
     }

@@ -93,7 +93,6 @@ function isModelNotFoundMessage(message: string): boolean {
     (lowerMessage.includes('model') &&
       (lowerMessage.includes('not found') ||
         lowerMessage.includes('does not exist') ||
-        lowerMessage.includes('invalid') ||
         lowerMessage.includes('pull'))) ||
     lowerMessage.includes('does_not_exist')
   );
@@ -171,6 +170,10 @@ export function normalizeEngineError(
   }
 
   // Handle based on error message content
+  if (statusCode === 400) {
+    return error instanceof Error ? error : new Error(message);
+  }
+
   if (isModelNotFoundMessage(message)) {
     return new ModelNotFoundError(model, provider, 404);
   }

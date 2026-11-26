@@ -7,9 +7,11 @@ import {
   prepareEnvironment,
   prepareRepo,
   runCli,
+  runGit,
   startMockOpenAiServer,
   appendRepoFile,
-  waitForExit
+  waitForExit,
+  writeRepoFile
 } from './utils';
 
 it('cli flow to generate commit message for 1 new file (staged)', async () => {
@@ -57,6 +59,58 @@ it('cli flow to generate commit message for 1 new file (staged)', async () => {
         await getCurrentBranchName(gitDir)
       )
     ).toBe('feat(cli): commit one staged file through the CLI');
+  } finally {
+    await server.cleanup();
+    await cleanup();
+  }
+});
+
+it('cli ignores configured external diff tools when generating the prompt', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment({ remotes: 0 });
+  const server = await startMockOpenAiServer(
+    'fix(diff): use the staged patch in the prompt'
+  );
+
+  try {
+    await prepareRepo(
+      gitDir,
+      {
+        'index.ts': 'console.log("before");\n'
+      },
+      {
+        stage: true,
+        commitMessage: 'add initial file'
+      }
+    );
+    writeRepoFile(gitDir, 'index.ts', 'console.log("after");\n');
+    await runGit(['add', 'index.ts'], gitDir);
+    await runGit(
+      ['config', 'diff.external', 'echo OCO_EXTERNAL_DIFF_USED'],
+      gitDir
+    );
+
+    const oco = await runCli(['--yes'], {
+      cwd: gitDir,
+      env: getMockOpenAiEnv(server.baseUrl)
+    });
+
+    expect(await waitForExit(oco)).toBe(0);
+    await assertHeadCommit(
+      gitDir,
+      'fix(diff): use the staged patch in the prompt'
+    );
+
+    const requestContents = server.requestBodies
+      .flatMap(
+        (body) =>
+          (body as { messages?: Array<{ content: string }> }).messages ?? []
+      )
+      .map((message) => message.content)
+      .join('\n');
+
+    expect(requestContents).toContain('-console.log("before");');
+    expect(requestContents).toContain('+console.log("after");');
+    expect(requestContents).not.toContain('OCO_EXTERNAL_DIFF_USED');
   } finally {
     await server.cleanup();
     await cleanup();

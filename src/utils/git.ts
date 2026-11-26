@@ -1,7 +1,8 @@
 import { execa } from 'execa';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import ignore, { Ignore } from 'ignore';
-import { join } from 'path';
+import { join, resolve as pathResolve } from 'path';
+import { homedir } from 'os';
 import { outro, spinner } from '@clack/prompts';
 
 export const assertGitRepo = async () => {
@@ -18,26 +19,39 @@ export const assertGitRepo = async () => {
 
 export const getOpenCommitIgnore = async (): Promise<Ignore> => {
   const gitDir = await getGitDir();
-
   const ig = ignore();
 
-  try {
-    ig.add(
-      readFileSync(join(gitDir, '.opencommitignore')).toString().split('\n')
-    );
-  } catch (e) {}
+  const globalIgnorePath = join(homedir(), '.opencommitignore');
+  if (existsSync(globalIgnorePath)) {
+    try {
+      const globalIgnoreContent = readFileSync(globalIgnorePath, 'utf8');
+      ig.add(globalIgnoreContent.split('\n'));
+    } catch (e) {
+      // do nothing
+    }
+  }
+
+  const localIgnorePath = join(gitDir, '.opencommitignore');
+  if (existsSync(localIgnorePath)) {
+    try {
+      const localIgnoreContent = readFileSync(localIgnorePath, 'utf8');
+      ig.add(localIgnoreContent.split('\n'));
+    } catch (e) {
+      // do nothing
+    }
+  }
 
   return ig;
 };
 
-export const getCoreHooksPath = async (): Promise<string> => {
+export const getGitHooksPath = async (): Promise<string> => {
   const gitDir = await getGitDir();
 
-  const { stdout } = await execa('git', ['config', 'core.hooksPath'], {
+  const { stdout } = await execa('git', ['rev-parse', '--git-path', 'hooks'], {
     cwd: gitDir
   });
 
-  return stdout;
+  return pathResolve(gitDir, stdout);
 };
 
 export const getStagedFiles = async (): Promise<string[]> => {
@@ -120,7 +134,7 @@ export const getDiff = async ({ files }: { files: string[] }) => {
 
   const { stdout: diff } = await execa(
     'git',
-    ['diff', '--staged', '--', ...diffableFiles],
+    ['diff', '--staged', '--no-ext-diff', '--', ...diffableFiles],
     { cwd: gitDir }
   );
 

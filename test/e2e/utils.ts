@@ -21,7 +21,12 @@ const fsRemove = promisify(rm);
 
 const CLI_PATH = path.resolve(process.cwd(), 'out/cli.cjs');
 const DEFAULT_TEST_ENV = {
-  OCO_TEST_SKIP_VERSION_CHECK: 'true'
+  OCO_TEST_SKIP_VERSION_CHECK: 'true',
+  GIT_CONFIG_NOSYSTEM: '1',
+  GIT_CONFIG_GLOBAL: path.resolve(
+    tmpdir(),
+    `opencommit-test-empty-global-gitconfig-${process.pid}`
+  )
 };
 const COMPLETED_MIGRATIONS = [
   '00_use_single_api_key_and_url',
@@ -66,9 +71,17 @@ export const runCli = async (
 
 export const runGit = async (
   args: string[],
-  cwd: string
+  cwd: string,
+  env: NodeJS.ProcessEnv = {}
 ): Promise<{ stdout: string; stderr: string }> => {
-  const { stdout = '', stderr = '' } = await fsExecFile('git', args, { cwd });
+  const { stdout = '', stderr = '' } = await fsExecFile('git', args, {
+    cwd,
+    env: {
+      ...process.env,
+      ...DEFAULT_TEST_ENV,
+      ...env
+    }
+  });
   return { stdout, stderr };
 };
 
@@ -92,21 +105,17 @@ export const prepareEnvironment = async ({
   let otherRemoteDir: string | undefined;
 
   if (remotes === 0) {
-    await fsExecFile('git', ['init', 'test'], { cwd: tempDir });
+    await runGit(['init', 'test'], tempDir);
   } else {
-    await fsExecFile('git', ['init', '--bare', 'remote.git'], {
-      cwd: tempDir
-    });
+    await runGit(['init', '--bare', 'remote.git'], tempDir);
     remoteDir = path.resolve(tempDir, 'remote.git');
 
     if (remotes === 2) {
-      await fsExecFile('git', ['init', '--bare', 'other.git'], {
-        cwd: tempDir
-      });
+      await runGit(['init', '--bare', 'other.git'], tempDir);
       otherRemoteDir = path.resolve(tempDir, 'other.git');
     }
 
-    await fsExecFile('git', ['clone', 'remote.git', 'test'], { cwd: tempDir });
+    await runGit(['clone', 'remote.git', 'test'], tempDir);
 
     if (remotes === 2) {
       await runGit(['remote', 'add', 'other', '../other.git'], gitDir);
@@ -130,6 +139,47 @@ export const prepareEnvironment = async ({
   };
 };
 
+export const prepareSubmoduleEnvironment = async (): Promise<{
+  tempDir: string;
+  parentDir: string;
+  submoduleDir: string;
+  cleanup: () => Promise<void>;
+}> => {
+  const tempDir = await prepareTempDir();
+  const parentDir = path.resolve(tempDir, 'parent');
+  const sourceDir = path.resolve(tempDir, 'source');
+  const submoduleDir = path.resolve(parentDir, 'nested');
+
+  await runGit(['init', 'source'], tempDir);
+  await configureGitUser(sourceDir);
+  await runGit(
+    ['-c', 'core.hooksPath=/dev/null', 'commit', '--allow-empty', '-m', 'init'],
+    sourceDir
+  );
+
+  await runGit(['init', 'parent'], tempDir);
+  await configureGitUser(parentDir);
+  await runGit(
+    [
+      '-c',
+      'protocol.file.allow=always',
+      'submodule',
+      'add',
+      sourceDir,
+      'nested'
+    ],
+    parentDir
+  );
+
+  const cleanup = async () => {
+    if (existsSync(tempDir)) {
+      await fsRemove(tempDir, { force: true, recursive: true });
+    }
+  };
+
+  return { tempDir, parentDir, submoduleDir, cleanup };
+};
+
 export const prepareTempDir = async (): Promise<string> => {
   return fsMakeTempDir(path.join(tmpdir(), 'opencommit-test-'));
 };
@@ -150,10 +200,10 @@ export const prepareRepo = async (
     options.stage === true
       ? Object.keys(files)
       : Array.isArray(options.stage)
-      ? options.stage
-      : options.commitMessage
-      ? Object.keys(files)
-      : [];
+        ? options.stage
+        : options.commitMessage
+          ? Object.keys(files)
+          : [];
 
   if (stageFiles.length > 0) {
     await runGit(['add', ...stageFiles], gitDir);
@@ -308,7 +358,13 @@ export const getRemoteBranchHeadSubject = async (
       '--pretty=%s',
       `refs/heads/${branchName}`
     ],
-    { cwd: process.cwd() }
+    {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ...DEFAULT_TEST_ENV
+      }
+    }
   );
 
   return stdout.trim();
@@ -329,7 +385,13 @@ export const remoteBranchExists = async (
         '--quiet',
         `refs/heads/${branchName}`
       ],
-      { cwd: process.cwd() }
+      {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          ...DEFAULT_TEST_ENV
+        }
+      }
     );
     return true;
   } catch {
@@ -368,15 +430,19 @@ export const startMockOpenAiServer = async (
         status?: number;
         body: Record<string, any>;
         headers?: Record<string, string>;
-      })
+      }),
+  { responseDelayMs = 0 }: { responseDelayMs?: number } = {}
 ): Promise<{
   authHeaders: string[];
   requestBodies: Array<Record<string, any>>;
+  readonly maxActiveRequests: number;
   baseUrl: string;
   cleanup: () => Promise<void>;
 }> => {
   const authHeaders: string[] = [];
   const requestBodies: Array<Record<string, any>> = [];
+  let activeRequests = 0;
+  let maxActiveRequests = 0;
 
   const server = http.createServer((req, res) => {
     const authorization = req.headers.authorization;
@@ -390,7 +456,7 @@ export const startMockOpenAiServer = async (
     req.on('data', (chunk) => {
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     });
-    req.on('end', () => {
+    req.on('end', async () => {
       const rawBody = Buffer.concat(chunks).toString('utf8');
       let parsedBody: Record<string, any> | undefined;
       if (rawBody) {
@@ -403,33 +469,42 @@ export const startMockOpenAiServer = async (
       }
 
       if (req.method === 'POST' && req.url?.includes('/chat/completions')) {
-        const payload =
-          typeof response === 'string'
-            ? {
-                status: 200,
-                body: {
-                  choices: [
-                    {
-                      message: {
-                        content: response
-                      }
-                    }
-                  ]
-                }
-              }
-            : response({
-                authorization: Array.isArray(authorization)
-                  ? authorization[0]
-                  : authorization,
-                body: parsedBody,
-                requestIndex: requestBodies.length - 1
-              });
+        activeRequests += 1;
+        maxActiveRequests = Math.max(maxActiveRequests, activeRequests);
 
-        res.writeHead(payload.status ?? 200, {
-          'Content-Type': 'application/json',
-          ...payload.headers
-        });
-        res.end(JSON.stringify(payload.body));
+        try {
+          const payload =
+            typeof response === 'string'
+              ? {
+                  status: 200,
+                  body: {
+                    choices: [
+                      {
+                        message: {
+                          content: response
+                        }
+                      }
+                    ]
+                  }
+                }
+              : response({
+                  authorization: Array.isArray(authorization)
+                    ? authorization[0]
+                    : authorization,
+                  body: parsedBody,
+                  requestIndex: requestBodies.length - 1
+                });
+
+          if (responseDelayMs > 0) await wait(responseDelayMs);
+
+          res.writeHead(payload.status ?? 200, {
+            'Content-Type': 'application/json',
+            ...payload.headers
+          });
+          res.end(JSON.stringify(payload.body));
+        } finally {
+          activeRequests -= 1;
+        }
         return;
       }
 
@@ -447,6 +522,9 @@ export const startMockOpenAiServer = async (
   return {
     authHeaders,
     requestBodies,
+    get maxActiveRequests() {
+      return maxActiveRequests;
+    },
     baseUrl: `http://127.0.0.1:${port}/v1`,
     cleanup: () =>
       new Promise<void>((resolve, reject) => {
@@ -457,6 +535,65 @@ export const startMockOpenAiServer = async (
           }
           resolve();
         });
+      })
+  };
+};
+
+export const startMockAnthropicServer = async (response: {
+  content: unknown[];
+  stop_reason: string;
+}): Promise<{
+  apiKeys: string[];
+  requestBodies: Array<Record<string, unknown>>;
+  baseUrl: string;
+  cleanup: () => Promise<void>;
+}> => {
+  const apiKeys: string[] = [];
+  const requestBodies: Array<Record<string, unknown>> = [];
+  const server = http.createServer((req, res) => {
+    if (req.method !== 'POST' || req.url !== '/v1/messages') {
+      res.writeHead(404);
+      res.end();
+      return;
+    }
+
+    const apiKey = req.headers['x-api-key'];
+    if (typeof apiKey === 'string') apiKeys.push(apiKey);
+
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    });
+    req.on('end', () => {
+      const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+      requestBodies.push(body);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          id: 'msg_test',
+          type: 'message',
+          role: 'assistant',
+          model: body.model,
+          stop_sequence: null,
+          usage: { input_tokens: 100, output_tokens: 20 },
+          ...response
+        })
+      );
+    });
+  });
+
+  await new Promise<void>((resolve) => {
+    server.listen(0, '127.0.0.1', () => resolve());
+  });
+  const { port } = server.address() as AddressInfo;
+
+  return {
+    apiKeys,
+    requestBodies,
+    baseUrl: `http://127.0.0.1:${port}`,
+    cleanup: () =>
+      new Promise<void>((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
       })
   };
 };

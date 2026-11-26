@@ -32,7 +32,6 @@ async function listModels(
   useCache: boolean = true
 ): Promise<void> {
   const config = getConfig();
-  const apiKey = config.OCO_API_KEY;
   const currentModel = config.OCO_MODEL;
 
   // Get cached models or fetch new ones
@@ -69,10 +68,7 @@ async function listModels(
   console.log('');
 }
 
-async function refreshModels(provider: string): Promise<void> {
-  const config = getConfig();
-  const apiKey = config.OCO_API_KEY;
-
+async function refreshModels(provider: string, apiKey?: string): Promise<void> {
   const loadingSpinner = spinner();
   loadingSpinner.start(`Fetching models from ${provider}...`);
 
@@ -122,8 +118,9 @@ export const modelsCommand = command(
   },
   async ({ flags }) => {
     const config = getConfig();
-    const provider =
-      flags.provider || config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
+    const configuredProvider =
+      config.OCO_AI_PROVIDER || OCO_AI_PROVIDER_ENUM.OPENAI;
+    const provider = flags.provider || configuredProvider;
 
     intro(chalk.bgCyan(' OpenCommit Models '));
 
@@ -145,7 +142,11 @@ export const modelsCommand = command(
     }
 
     if (flags.refresh) {
-      await refreshModels(provider);
+      const apiKey =
+        provider.toLowerCase() === configuredProvider.toLowerCase()
+          ? config.OCO_API_KEY
+          : undefined;
+      await refreshModels(provider, apiKey);
     } else {
       await listModels(provider);
     }

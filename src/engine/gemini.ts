@@ -101,7 +101,7 @@ export class GeminiEngine implements AiEngine {
           ({
             parts: [{ text: m.content } as Part],
             role: m.role === 'user' ? m.role : 'model'
-          } as Content)
+          }) as Content
       );
 
     try {
@@ -126,7 +126,6 @@ export class GeminiEngine implements AiEngine {
           }
         ],
         generationConfig: {
-          maxOutputTokens: this.config.maxTokensOutput,
           temperature: 0,
           topP: 0.1
         }
