@@ -171,6 +171,42 @@ describe('generateCommitMessage', () => {
     Object.assign(process.env, originalEnv);
   });
 
+  it('passes a final-line edit diff with the no-newline marker through to the model input', async () => {
+    // Issue #427: a small last-line change whose long unchanged context line
+    // dominated the generated commit message. This pins the input contract:
+    // the raw diff reaches the model verbatim (marker included) and the
+    // system prompt tells the model to describe only changed lines.
+    const FINAL_LINE_EDIT_DIFF = `diff --git a/.aliases b/.aliases
+index 1111111..2222222 100644
+--- a/.aliases
++++ b/.aliases
+@@ -1,2 +1,2 @@
+ alias velero-makecontainer='make container'
+-alias restart-displaylink='echo old'
++alias restart-displaylink='osascript -e "quit app DisplayLink"'
+\\ No newline at end of file
+`;
+
+    await generateCommitMessage(FINAL_LINE_EDIT_DIFF, {
+      config: {
+        OCO_AI_PROVIDER: 'openai',
+        OCO_API_KEY: 'library-key',
+        OCO_API_URL: apiUrl,
+        OCO_MODEL: 'library-model'
+      }
+    });
+
+    expect(requests).toHaveLength(1);
+    const [{ body }] = requests;
+    expect(body.messages.at(-1)).toEqual({
+      role: 'user',
+      content: FINAL_LINE_EDIT_DIFF
+    });
+    const systemPrompt = body.messages[0].content;
+    expect(systemPrompt).toContain('lines that start with + or -');
+    expect(systemPrompt).toContain('unchanged context');
+  });
+
   it('generates a message with the given config', async () => {
     const message = await generateCommitMessage(DIFF, {
       config: {
