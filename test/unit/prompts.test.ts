@@ -216,3 +216,22 @@ it('places GitMoji after an unscoped Conventional Commit type', async () => {
     'feat: ✨ add support for process.env.PORT'
   );
 });
+
+describe('diff grounding guideline', () => {
+  it.each([false, true])(
+    'instructs the model to describe only changed lines (fullGitMojiSpec=%s)',
+    async (fullGitMojiSpec) => {
+      const prompt = await loadPrompt({
+        description: false,
+        emoji: false,
+        fullGitMojiSpec,
+        positionBeforeDescription: false
+      });
+
+      expect(prompt.system).toContain('lines that start with + or -');
+      expect(prompt.system).toContain('unchanged context');
+      expect(prompt.system).toContain('+++ and --- lines are file headers');
+    }
+  );
+
+});
