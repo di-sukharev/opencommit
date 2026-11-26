@@ -1328,44 +1328,119 @@ it.each([
 );
 
 it.each([
-  { source: 'the shell', args: [], env: { OCO_AI_PROVIDER: 'requesty' } },
-  { source: 'the repository .env file', args: [], envFile: true },
   {
-    source: 'oco config set',
-    args: ['config', 'set', 'OCO_AI_PROVIDER=requesty']
+    source: 'the shell',
+    env: { OCO_AI_PROVIDER: 'requesty', OCO_API_KEY: 'test-requesty-key' }
+  },
+  {
+    source: 'the repository .env file',
+    envFile: 'OCO_AI_PROVIDER=requesty\nOCO_API_KEY=test-requesty-key\n'
   }
 ])(
-  'shows the replacement for a removed provider from $source',
-  async ({ args, env = {}, envFile = false }) => {
+  'does not send the key when $source sets a removed provider',
+  async ({ env = {}, envFile }) => {
+    const { gitDir, cleanup } = await prepareEnvironment();
     const homeDir = await prepareTempDir();
+    // The OpenAI SDK sends requests here when no OCO_API_URL is configured.
+    const server = await startMockOpenAiServer('feat: unexpected request');
 
     try {
-      const configPath = writeGlobalConfig(homeDir, [
+      writeGlobalConfig(homeDir, [
         'OCO_AI_PROVIDER=openai',
-        'OCO_API_KEY=test-openai-key'
+        'OCO_API_KEY=test-openai-key',
+        'OCO_GITPUSH=false'
       ]);
       seedMigrations(homeDir);
-      const savedConfig = readFileSync(configPath, 'utf8');
-      if (envFile) {
-        writeFileSync(resolve(homeDir, '.env'), 'OCO_AI_PROVIDER=requesty\n');
-      }
+      if (envFile) writeFileSync(resolve(gitDir, '.env'), envFile);
+      await prepareRepo(
+        gitDir,
+        { 'index.ts': 'export {};\n' },
+        { stage: true }
+      );
 
-      const oco = await runCli(args, {
-        cwd: homeDir,
-        env: { HOME: homeDir, ...env }
+      const oco = await runCli(['--yes'], {
+        cwd: gitDir,
+        env: { HOME: homeDir, OPENAI_BASE_URL: server.baseUrl, ...env }
       });
 
       expect(await waitForExit(oco)).toBe(1);
-      expect(oco.getStdallStr()).toContain('OCO_AI_PROVIDER=openai');
       expect(oco.getStdallStr()).toContain(
         'OCO_API_URL=https://router.requesty.ai/v1'
       );
-      expect(readFileSync(configPath, 'utf8')).toBe(savedConfig);
+      expect(server.authHeaders).toEqual([]);
     } finally {
+      await server.cleanup();
       rmSync(homeDir, { force: true, recursive: true });
+      await cleanup();
     }
   }
 );
+
+it('prepare-commit-msg hook does not send the key of a removed provider', async () => {
+  const { gitDir, cleanup } = await prepareEnvironment();
+  const homeDir = await prepareTempDir();
+  // The OpenAI SDK sends requests here when no OCO_API_URL is configured.
+  const server = await startMockOpenAiServer('feat: unexpected request');
+  const hookPath = resolve(gitDir, '.git/hooks/prepare-commit-msg');
+  const messageFile = resolve(gitDir, '.git/COMMIT_EDITMSG');
+
+  try {
+    // The hook runs no migrations, so the removed provider stays in place.
+    writeGlobalConfig(homeDir, [
+      'OCO_AI_PROVIDER=requesty',
+      'OCO_API_KEY=test-requesty-key'
+    ]);
+    await prepareRepo(gitDir, { 'index.ts': 'export {};\n' }, { stage: true });
+
+    const setHook = await runCli(['hook', 'set'], {
+      cwd: gitDir,
+      env: { HOME: homeDir }
+    });
+    expect(await waitForExit(setHook)).toBe(0);
+    writeFileSync(messageFile, '# existing\n');
+
+    const hookRun = await runProcess(hookPath, [messageFile], {
+      cwd: gitDir,
+      env: { HOME: homeDir, OPENAI_BASE_URL: server.baseUrl }
+    });
+
+    await waitForExit(hookRun);
+    expect(hookRun.getStdallStr()).toContain(
+      'OCO_API_URL=https://router.requesty.ai/v1'
+    );
+    expect(server.authHeaders).toEqual([]);
+  } finally {
+    await server.cleanup();
+    rmSync(homeDir, { force: true, recursive: true });
+    await cleanup();
+  }
+});
+
+it('oco config set rejects a removed provider with its replacement', async () => {
+  const homeDir = await prepareTempDir();
+
+  try {
+    const configPath = writeGlobalConfig(homeDir, [
+      'OCO_AI_PROVIDER=openai',
+      'OCO_API_KEY=test-openai-key'
+    ]);
+    seedMigrations(homeDir);
+    const savedConfig = readFileSync(configPath, 'utf8');
+
+    const oco = await runCli(['config', 'set', 'OCO_AI_PROVIDER=requesty'], {
+      cwd: homeDir,
+      env: { HOME: homeDir }
+    });
+
+    expect(await waitForExit(oco)).toBe(1);
+    expect(oco.getStdallStr()).toContain(
+      'OCO_API_URL=https://router.requesty.ai/v1'
+    );
+    expect(readFileSync(configPath, 'utf8')).toBe(savedConfig);
+  } finally {
+    rmSync(homeDir, { force: true, recursive: true });
+  }
+});
 
 it('cli ignores files listed in .opencommitignore when they are the only staged changes', async () => {
   const { gitDir, cleanup } = await prepareEnvironment();

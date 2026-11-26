@@ -57,3 +57,14 @@ const REMOVED_PROVIDER_API_URLS = new Map([
 export const getRemovedProviderApiUrl = (
   provider: string | undefined
 ): string | undefined => provider && REMOVED_PROVIDER_API_URLS.get(provider);
+
+/** Returns how to replace a removed provider, or undefined for other values. */
+export const getRemovedProviderMessage = (
+  provider: string | undefined
+): string | undefined => {
+  const apiUrl = getRemovedProviderApiUrl(provider);
+  return (
+    apiUrl &&
+    `${provider} was removed. Set OCO_AI_PROVIDER=openai and OCO_API_URL=${apiUrl} to use its OpenAI-compatible API`
+  );
+};

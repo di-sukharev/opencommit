@@ -14,10 +14,16 @@ import { MLXEngine } from '../engine/mlx';
 import { DeepseekEngine } from '../engine/deepseek';
 import { OpenRouterEngine } from '../engine/openrouter';
 import { parseCustomHeaders } from './customHeaders';
+import { getRemovedProviderMessage } from './provider';
 import { resolveProxy } from './proxy';
 
 export function getEngine(config = getConfig()): AiEngine {
   const provider = config.OCO_AI_PROVIDER;
+
+  // Without this check the OpenAI fallback below would send the gateway key to
+  // api.openai.com, for example from the git hook before migrations run.
+  const removedProviderMessage = getRemovedProviderMessage(provider);
+  if (removedProviderMessage) throw new Error(removedProviderMessage);
 
   const customHeaders = parseCustomHeaders(config.OCO_API_CUSTOM_HEADERS);
   const resolvedProxy = resolveProxy(config.OCO_PROXY);

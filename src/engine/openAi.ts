@@ -2,6 +2,7 @@ import { OpenAI } from 'openai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { parseCustomHeaders } from '../utils/customHeaders';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { ApiKeyMissingError } from '../utils/errors';
 import { GenerateCommitMessageErrorEnum } from '../utils/generateCommitMessageErrors';
 import { removeContentTags } from '../utils/removeContentTags';
 import { tokenCount } from '../utils/tokenCount';
@@ -13,12 +14,30 @@ export class OpenAiEngine implements AiEngine {
   config: OpenAiConfig;
   client: OpenAI;
 
-  constructor(config: OpenAiConfig) {
+  /**
+   * Provider name used for error normalization. Subclasses for other
+   * OpenAI-compatible APIs pass their name to the constructor so errors are
+   * attributed to the right provider without re-implementing the request path.
+   */
+  protected providerName = 'openai';
+  protected useSamplingParameters = true;
+
+  constructor(config: OpenAiConfig, compatibleProvider?: string) {
     this.config = config;
 
     const clientOptions: OpenAI.ClientOptions = {
       apiKey: config.apiKey
     };
+
+    if (compatibleProvider) {
+      if (typeof config.apiKey !== 'string' || !config.apiKey.trim()) {
+        throw new ApiKeyMissingError(compatibleProvider);
+      }
+      this.providerName = compatibleProvider;
+      // Avoid the SDK's OpenAI environment defaults for this provider.
+      clientOptions.organization = null;
+      clientOptions.project = null;
+    }
 
     if (config.baseURL) {
       clientOptions.baseURL = config.baseURL;
@@ -64,9 +83,10 @@ export class OpenAiEngine implements AiEngine {
       ...(isReasoningModel
         ? { max_completion_tokens: reasoningTokens }
         : {
-            temperature: 0,
-            top_p: 0.1,
-            max_tokens: this.config.maxTokensOutput
+            max_tokens: this.config.maxTokensOutput,
+            ...(this.useSamplingParameters
+              ? { temperature: 0, top_p: 0.1 }
+              : {})
           })
     };
 
@@ -92,7 +112,7 @@ export class OpenAiEngine implements AiEngine {
       let content = message?.content;
       return removeContentTags(content, 'think');
     } catch (error) {
-      throw normalizeEngineError(error, 'openai', this.config.model);
+      throw normalizeEngineError(error, this.providerName, this.config.model);
     }
   };
 }

@@ -10,7 +10,7 @@ import { COMMANDS } from './ENUMS';
 import { TEST_MOCK_TYPES } from '../engine/testAi';
 import { getI18nLocal, i18n } from '../i18n';
 import {
-  getRemovedProviderApiUrl,
+  getRemovedProviderMessage,
   OCO_AI_PROVIDER_ENUM
 } from '../utils/provider';
 
@@ -523,15 +523,6 @@ const validateConfig = (
   }
 };
 
-const validateProviderIsNotRemoved = (provider: string) => {
-  const apiUrl = getRemovedProviderApiUrl(provider);
-  validateConfig(
-    CONFIG_KEYS.OCO_AI_PROVIDER,
-    !apiUrl,
-    `${provider} was removed. Set OCO_AI_PROVIDER=openai and OCO_API_URL=${apiUrl} to use its OpenAI-compatible API`
-  );
-};
-
 const parsePositiveInteger = (value: unknown): number | undefined => {
   if (typeof value === 'number') {
     return Number.isSafeInteger(value) && value > 0 ? value : undefined;
@@ -727,7 +718,14 @@ export const configValidators = {
   [CONFIG_KEYS.OCO_AI_PROVIDER](value: any) {
     if (!value) value = 'openai';
 
-    validateProviderIsNotRemoved(value);
+    const removedProviderMessage = getRemovedProviderMessage(value);
+    if (removedProviderMessage) {
+      validateConfig(
+        CONFIG_KEYS.OCO_AI_PROVIDER,
+        false,
+        removedProviderMessage
+      );
+    }
     validateConfig(
       CONFIG_KEYS.OCO_AI_PROVIDER,
       (Object.values(OCO_AI_PROVIDER_ENUM) as string[]).includes(value) ||
@@ -1159,8 +1157,6 @@ export const getConfig = ({
   const globalConfig = getGlobalConfig(globalPath);
   const overrideProvider =
     shellConfig.OCO_AI_PROVIDER ?? repositoryConfig.OCO_AI_PROVIDER;
-  // A migration replaces a removed provider in the global config only.
-  if (overrideProvider) validateProviderIsNotRemoved(overrideProvider);
   // An override skips global migrations. Use only its own legacy transport.
   const legacyTransport = overridesProvider(
     overrideProvider,
