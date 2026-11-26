@@ -1600,9 +1600,8 @@ it('fails with a non-zero exit code outside a git repository', async () => {
     });
 
     expect(await waitForExit(oco)).toBe(1);
-    expect(oco.getStdallStr()).toMatch(
-      /No changes detected|not a git repository/
-    );
+    expect(oco.getStdallStr()).toContain('not a git repository');
+    expect(oco.getStdallStr()).not.toContain('No changes detected');
   } finally {
     rmSync(tempDir, { force: true, recursive: true });
   }
