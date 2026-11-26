@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { OpenAI } from 'openai';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { getAxiosProxyOptions } from '../utils/proxy';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -14,7 +15,8 @@ export class FlowiseEngine implements AiEngine {
     this.config = config;
     this.client = axios.create({
       baseURL: `${config.baseURL}/${config.apiKey}`,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
+      ...getAxiosProxyOptions(config.proxy)
     });
   }
 

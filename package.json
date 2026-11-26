@@ -15,7 +15,8 @@
     "commit",
     "ollama"
   ],
-  "main": "cli.js",
+  "main": "out/index.cjs",
+  "types": "out/index.d.cts",
   "bin": {
     "opencommit": "out/cli.cjs",
     "oco": "out/cli.cjs"
@@ -28,6 +29,8 @@
   "license": "MIT",
   "files": [
     "out/cli.cjs",
+    "out/index.cjs",
+    "out/index.d.cts",
     "out/tiktoken_bg.wasm"
   ],
   "release": {
@@ -62,7 +65,7 @@
     "test:e2e:smoke": "npm run build && npm run test:e2e:smoke:run",
     "test:e2e:smoke:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/smoke.test.ts",
     "test:e2e:core": "npm run build && npm run test:e2e:core:run",
-    "test:e2e:core:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/cliBehavior.test.ts test/e2e/anthropicBehavior.test.ts test/e2e/geminiBehavior.test.ts test/e2e/gitPush.test.ts test/e2e/oneFile.test.ts test/e2e/noChanges.test.ts",
+    "test:e2e:core:run": "OCO_TEST_SKIP_VERSION_CHECK=true jest test/e2e/cliBehavior.test.ts test/e2e/anthropicBehavior.test.ts test/e2e/geminiBehavior.test.ts test/e2e/gitPush.test.ts test/e2e/oneFile.test.ts test/e2e/noChanges.test.ts test/e2e/library.test.ts",
     "test:e2e:setup": "npm run test:e2e:prompt-module:setup",
     "test:e2e:prompt-module:setup": "sh test/e2e/setup.sh",
     "test:e2e:prompt-module": "npm run build && npm run test:e2e:prompt-module:run",

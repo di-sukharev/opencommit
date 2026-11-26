@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { Agent, ProxyAgent, setGlobalDispatcher } from 'undici';
 
@@ -16,35 +16,52 @@ export function resolveProxy(proxySetting?: ProxySetting): ProxySetting {
   return process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
 }
 
-function resetProxySetup(disableEnvProxy: boolean) {
-  setGlobalDispatcher(new Agent());
-  axios.defaults.httpAgent = undefined;
-  axios.defaults.httpsAgent = undefined;
-  axios.defaults.proxy = disableEnvProxy ? false : undefined;
+// Engines apply the proxy to their own clients, so a library call does not
+// change the global state of the host process. The CLI also calls
+// `setupProxy` for the requests outside the engines.
+
+/**
+ * Returns a fetch that sends requests through the proxy. Without a proxy, it
+ * uses the default dispatcher. It resolves globalThis.fetch at call time.
+ */
+export function createProxyFetch(proxySetting: ProxySetting): typeof fetch {
+  const dispatcher = proxySetting ? new ProxyAgent(proxySetting) : undefined;
+
+  return (input, init) =>
+    globalThis.fetch(input, { ...init, dispatcher } as RequestInit);
+}
+
+/**
+ * Returns the axios options that send requests through the proxy. A null
+ * proxy also stops axios from reading HTTP_PROXY and HTTPS_PROXY.
+ */
+export function getAxiosProxyOptions(
+  proxySetting: ProxySetting
+): AxiosRequestConfig {
+  if (proxySetting === null) {
+    return { proxy: false };
+  }
+
+  if (!proxySetting) {
+    return {};
+  }
+
+  const agent = new HttpsProxyAgent(proxySetting);
+  return { httpAgent: agent, httpsAgent: agent, proxy: false };
 }
 
 export function setupProxy(proxySetting?: ProxySetting) {
   try {
-    if (proxySetting === null) {
-      resetProxySetup(true);
-      return;
-    }
+    // The global dispatcher of undici affects globalThis.fetch.
+    setGlobalDispatcher(
+      proxySetting ? new ProxyAgent(proxySetting) : new Agent()
+    );
 
-    resetProxySetup(false);
-
-    if (!proxySetting) {
-      return;
-    }
-
-    // Set global dispatcher for undici (affects globalThis.fetch used by Gemini and others)
-    const dispatcher = new ProxyAgent(proxySetting);
-    setGlobalDispatcher(dispatcher);
-
-    // Set axios global agents and disable axios built-in proxy handling.
-    const agent = new HttpsProxyAgent(proxySetting);
-    axios.defaults.httpAgent = agent;
-    axios.defaults.httpsAgent = agent;
-    axios.defaults.proxy = false;
+    Object.assign(
+      axios.defaults,
+      { httpAgent: undefined, httpsAgent: undefined, proxy: undefined },
+      getAxiosProxyOptions(proxySetting)
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[Proxy Error] Failed to set proxy: ${message}`);

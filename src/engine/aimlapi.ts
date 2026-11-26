@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import axios, { AxiosInstance } from 'axios';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { getAxiosProxyOptions } from '../utils/proxy';
 import { AiEngine, AiEngineConfig } from './Engine';
 
 interface AimlApiConfig extends AiEngineConfig {}
@@ -17,7 +18,8 @@ export class AimlApiEngine implements AiEngine {
         'X-Title': 'opencommit',
         'Content-Type': 'application/json',
         ...config.customHeaders
-      }
+      },
+      ...getAxiosProxyOptions(config.proxy)
     });
   }
 

@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import axios, { AxiosInstance } from 'axios';
 import { normalizeEngineError } from '../utils/engineErrorHandler';
+import { getAxiosProxyOptions } from '../utils/proxy';
 import { removeContentTags } from '../utils/removeContentTags';
 import { AiEngine, AiEngineConfig } from './Engine';
 
@@ -17,7 +18,8 @@ export class OpenRouterEngine implements AiEngine {
         'HTTP-Referer': 'https://github.com/di-sukharev/opencommit',
         'X-Title': 'OpenCommit',
         'Content-Type': 'application/json'
-      }
+      },
+      ...getAxiosProxyOptions(config.proxy)
     });
   }
 

@@ -618,7 +618,7 @@ export const MODEL_LIST = {
   aigrow: ['claude-haiku-5.5']
 };
 
-const getDefaultModel = (provider: string | undefined): string => {
+export const getDefaultModel = (provider: string | undefined): string => {
   switch (provider) {
     case 'ollama':
       return '';
